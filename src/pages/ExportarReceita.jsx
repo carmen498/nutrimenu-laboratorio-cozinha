@@ -1,0 +1,160 @@
+import { useState, useMemo, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
+import { toast } from "sonner";
+
+export default function ExportarReceita() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(window.location.search);
+  const porcoes = parseInt(params.get("porcoes")) || null;
+  const [ocultarCustos, setOcultarCustos] = useState(false);
+  const printRef = useRef();
+
+  const { data: receita } = useQuery({
+    queryKey: ["receita", id],
+    queryFn: () => base44.entities.Receita.filter({ id }),
+    select: (d) => d[0],
+  });
+
+  const { data: itens = [] } = useQuery({
+    queryKey: ["itens-receita", id],
+    queryFn: () => base44.entities.IngredienteReceita.filter({ receita_id: id }),
+  });
+
+  const { data: ingredientesDB = [] } = useQuery({
+    queryKey: ["ingredientes"],
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+  });
+
+  const ingMap = useMemo(() => {
+    const map = {};
+    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    return map;
+  }, [ingredientesDB]);
+
+  if (!receita) {
+    return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
+  }
+
+  const porcoesExport = porcoes || receita.porcoes_base || 1;
+  const fator = receita.porcoes_base > 0 ? porcoesExport / receita.porcoes_base : 1;
+  
+  const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const formatWeight = (g, u) => {
+    if (u === "ml") return g >= 1000 ? `${(g / 1000).toFixed(2)} lt` : `${g.toFixed(0)} ml`;
+    return g >= 1000 ? `${(g / 1000).toFixed(2)} kg` : `${g.toFixed(0)} g`;
+  };
+
+  const itensFicha = itens
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+    .map((item) => {
+      const ing = ingMap[item.ingrediente_id];
+      const qtd = item.quantidade_por_porcao * porcoesExport;
+      const fc = ing?.fator_correcao || 1;
+      const custo = qtd * fc * (ing?.preco_por_g_rs || 0);
+      return { ...item, ing, qtd, custo };
+    });
+
+  const custoTotal = itensFicha.reduce((s, i) => s + i.custo, 0);
+  const custoPorcao = custoTotal / porcoesExport;
+
+  const handlePrint = () => window.print();
+
+  const handleShare = () => {
+    let text = `🍽 ${receita.nome}\n`;
+    text += `📋 ${porcoesExport} porções\n\n`;
+    text += `INGREDIENTES:\n`;
+    itensFicha.forEach(item => {
+      text += `• ${item.ingrediente_nome || item.ing?.nome} — ${formatWeight(item.qtd, receita.unidade_base)}`;
+      if (item.pre_preparo) text += ` (${item.pre_preparo})`;
+      text += `\n`;
+    });
+    if (receita.modo_preparo) {
+      text += `\nMODO DE PREPARO:\n${receita.modo_preparo}\n`;
+    }
+    if (!ocultarCustos) {
+      text += `\n💰 Custo por porção: ${formatCurrency(custoPorcao)}`;
+    }
+
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      navigator.clipboard.writeText(text);
+      toast.success("Receita copiada!");
+    }
+  };
+
+  return (
+    <div className="space-y-4 pb-24 md:pb-8">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => navigate(`/receita/${id}`)}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <h1 className="font-display text-xl font-bold flex-1">Exportar Receita</h1>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Switch checked={ocultarCustos} onCheckedChange={setOcultarCustos} />
+        <span className="text-sm">Ocultar custos na exportação</span>
+      </div>
+
+      {/* Preview */}
+      <Card className="p-6 print:shadow-none print:border-0" ref={printRef}>
+        {receita.foto_url && (
+          <img src={receita.foto_url} alt={receita.nome} className="w-full h-48 object-cover rounded-lg mb-4" />
+        )}
+        <h2 className="font-display text-2xl font-bold">{receita.nome}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{receita.categoria} · {porcoesExport} porções</p>
+
+        <h3 className="font-semibold mt-6 mb-2">Ingredientes</h3>
+        <div className="space-y-1">
+          {itensFicha.map((item) => (
+            <div key={item.id} className="flex justify-between text-sm py-1 border-b border-border/50">
+              <span>
+                {item.ingrediente_nome || item.ing?.nome}
+                {item.pre_preparo && <span className="text-muted-foreground"> ({item.pre_preparo})</span>}
+              </span>
+              <div className="flex gap-4">
+                <span>{item.medida_caseira && `${item.medida_caseira} · `}{formatWeight(item.qtd, receita.unidade_base)}</span>
+                {!ocultarCustos && <span className="text-primary font-medium w-20 text-right">{formatCurrency(item.custo)}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {!ocultarCustos && (
+          <div className="mt-4 p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
+            <span>Custo por porção</span>
+            <span className="text-primary">{formatCurrency(custoPorcao)}</span>
+          </div>
+        )}
+
+        {receita.modo_preparo && (
+          <>
+            <h3 className="font-semibold mt-6 mb-2">Modo de Preparo</h3>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">{receita.modo_preparo}</p>
+          </>
+        )}
+
+        <p className="text-xs text-muted-foreground mt-6 text-center">
+          Receita na Medida · por Carmen Reinstein
+        </p>
+      </Card>
+
+      <div className="flex gap-2">
+        <Button className="flex-1" onClick={handlePrint}>
+          <FileText className="w-4 h-4 mr-1" /> Imprimir / PDF
+        </Button>
+        <Button variant="outline" className="flex-1" onClick={handleShare}>
+          <Share2 className="w-4 h-4 mr-1" /> Compartilhar
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,246 @@
+import { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sparkles, Loader2, Check, AlertCircle, Plus } from "lucide-react";
+import { toast } from "sonner";
+
+const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
+
+export default function NovaReceitaIA({ open, onClose, onCreated }) {
+  const [texto, setTexto] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const [parsed, setParsed] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+
+  const { data: ingredientes = [] } = useQuery({
+    queryKey: ["ingredientes"],
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+  });
+
+  const { data: medidas = [] } = useQuery({
+    queryKey: ["medidas"],
+    queryFn: () => base44.entities.MedidaCaseira.list("-nome", 200),
+  });
+
+  const handleParse = async () => {
+    if (!texto.trim()) { toast.error("Cole o texto da receita"); return; }
+    setProcessing(true);
+    try {
+      const ingNames = ingredientes.map(i => i.nome).join(", ");
+      const medidasInfo = medidas.filter(m => !m.ingrediente_especifico).map(m =>
+        `${m.nome}: ${m.equivalencia_g}g / ${m.equivalencia_ml}ml`
+      ).join("; ");
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analise este texto de receita e extraia os dados estruturados. Converta todas as medidas caseiras para gramas ou ml usando estas equivalências: ${medidasInfo}. 
+        
+Ingredientes disponíveis no banco: ${ingNames}
+
+Texto da receita:
+${texto}
+
+IMPORTANTE: 
+- Para cada ingrediente, tente encontrar o mais próximo no banco existente
+- Converta xícaras, colheres, unidades para gramas/ml
+- Se a receita não informar porções, sugira um valor razoável
+- O modo de preparo deve manter o texto original organizado em passos`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            nome: { type: "string", description: "Nome da receita" },
+            categoria: { type: "string", enum: CATEGORIAS },
+            porcoes_base: { type: "number" },
+            unidade_base: { type: "string", enum: ["g", "ml"] },
+            modo_preparo: { type: "string" },
+            ingredientes: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  nome_original: { type: "string", description: "Nome como aparece no texto" },
+                  nome_banco: { type: "string", description: "Nome mais próximo no banco de ingredientes" },
+                  pre_preparo: { type: "string" },
+                  quantidade_g: { type: "number", description: "Quantidade em gramas ou ml" },
+                  medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" }
+                }
+              }
+            }
+          }
+        }
+      });
+      setParsed(result);
+    } catch (err) {
+      toast.error("Erro ao processar: " + err.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!parsed) return;
+    setSaving(true);
+    try {
+      const receita = await base44.entities.Receita.create({
+        nome: parsed.nome,
+        categoria: parsed.categoria,
+        porcoes_base: parsed.porcoes_base || 4,
+        unidade_base: parsed.unidade_base || "g",
+        modo_preparo: parsed.modo_preparo,
+        rendimento_total: 0,
+        custo_total: 0,
+        custo_por_porcao: 0,
+      });
+
+      // Link ingredients
+      for (let i = 0; i < (parsed.ingredientes || []).length; i++) {
+        const ing = parsed.ingredientes[i];
+        // Find matching ingredient in bank
+        let matchedIng = ingredientes.find(
+          bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase()
+        );
+        // If not found, create it
+        if (!matchedIng) {
+          matchedIng = await base44.entities.Ingrediente.create({
+            nome: ing.nome_banco || ing.nome_original,
+            categoria: "DIVERSOS",
+            unidade_compra: "KG",
+            peso_embalagem_g: 1000,
+            preco_embalagem_rs: 0,
+            preco_por_g_rs: 0,
+            fator_correcao: 1.0,
+          });
+        }
+        const qtdPorPorcao = (ing.quantidade_g || 0) / (parsed.porcoes_base || 4);
+        await base44.entities.IngredienteReceita.create({
+          receita_id: receita.id,
+          ingrediente_id: matchedIng.id,
+          ingrediente_nome: matchedIng.nome,
+          pre_preparo: ing.pre_preparo || "",
+          quantidade_por_porcao: qtdPorPorcao,
+          medida_caseira: ing.medida_original || "",
+          ordem: i,
+        });
+      }
+
+      qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      toast.success("Receita importada com sucesso!");
+      onCreated(receita.id);
+    } catch (err) {
+      toast.error("Erro ao salvar: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-primary" /> Importar Receita com IA
+          </DialogTitle>
+        </DialogHeader>
+
+        {!parsed ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Cole o texto completo da receita (da internet, PDF ou anotação) e a IA vai estruturar automaticamente.
+            </p>
+            <Textarea
+              rows={10}
+              value={texto}
+              onChange={(e) => setTexto(e.target.value)}
+              placeholder="Cole aqui o texto da receita..."
+              className="text-sm"
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={onClose}>Cancelar</Button>
+              <Button onClick={handleParse} disabled={processing}>
+                {processing ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Processando...</> : <><Sparkles className="w-4 h-4 mr-1" /> Estruturar Receita</>}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="p-3 bg-accent rounded-lg border">
+              <p className="text-xs text-muted-foreground mb-1">Revise os dados antes de salvar</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Nome</Label>
+                <Input value={parsed.nome || ""} onChange={(e) => setParsed({ ...parsed, nome: e.target.value })} />
+              </div>
+              <div>
+                <Label>Categoria</Label>
+                <Select value={parsed.categoria} onValueChange={(v) => setParsed({ ...parsed, categoria: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{CATEGORIAS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Porções</Label>
+                <Input type="number" value={parsed.porcoes_base || 4} onChange={(e) => setParsed({ ...parsed, porcoes_base: parseInt(e.target.value) || 4 })} />
+              </div>
+              <div>
+                <Label>Unidade base</Label>
+                <Select value={parsed.unidade_base || "g"} onValueChange={(v) => setParsed({ ...parsed, unidade_base: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="g">Gramas</SelectItem>
+                    <SelectItem value="ml">Mililitros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Ingredientes identificados</Label>
+              <div className="space-y-2 mt-2">
+                {(parsed.ingredientes || []).map((ing, idx) => {
+                  const found = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
+                  return (
+                    <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border bg-card text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          {found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                          <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground ml-5">
+                          {ing.medida_original} → {ing.quantidade_g?.toFixed(0)}g
+                          {ing.pre_preparo && ` · ${ing.pre_preparo}`}
+                        </p>
+                      </div>
+                      {!found && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Novo</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <Label>Modo de preparo</Label>
+              <Textarea rows={4} value={parsed.modo_preparo || ""} onChange={(e) => setParsed({ ...parsed, modo_preparo: e.target.value })} />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setParsed(null)}>Voltar</Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Salvando..." : "Salvar Receita"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,49 @@
+{
+  "name": "Ingrediente",
+  "type": "object",
+  "properties": {
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "CARNES",
+        "VEGETAIS",
+        "TEMPEROS",
+        "LATIC\u00cdNIOS",
+        "CEREAIS & SECOS",
+        "ENLATADOS",
+        "REFRIGERADOS",
+        "GR\u00c3OS E SEMENTES",
+        "DOCES",
+        "DIVERSOS"
+      ],
+      "description": "Categoria do ingrediente"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome do ingrediente"
+    },
+    "unidade_compra": {
+      "type": "string",
+      "description": "Unidade de compra (G, KG, LT, UN, MOLHO, CX, PACOTE, BALDE...)"
+    },
+    "peso_embalagem_g": {
+      "type": "number",
+      "description": "Peso da embalagem em gramas (ou ml para l\u00edquidos)"
+    },
+    "preco_embalagem_rs": {
+      "type": "number",
+      "description": "Pre\u00e7o pago pela embalagem em R$"
+    },
+    "preco_por_g_rs": {
+      "type": "number",
+      "description": "Calculado: preco_embalagem_rs / peso_embalagem_g"
+    },
+    "fator_correcao": {
+      "type": "number",
+      "description": "Fator de corre\u00e7\u00e3o (padr\u00e3o 1.0)"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

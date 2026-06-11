@@ -1,0 +1,62 @@
+{
+  "name": "Receita",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome da receita"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "Carnes",
+        "Massas",
+        "Molhos",
+        "Vegetais",
+        "Aves",
+        "Peixes",
+        "Sopas",
+        "Sobremesas",
+        "Salgadinhos",
+        "Empanados",
+        "Complementos"
+      ],
+      "description": "Categoria da receita"
+    },
+    "porcoes_base": {
+      "type": "number",
+      "description": "N\u00famero de por\u00e7\u00f5es base"
+    },
+    "rendimento_total": {
+      "type": "number",
+      "description": "Rendimento total em g ou ml"
+    },
+    "unidade_base": {
+      "type": "string",
+      "enum": [
+        "g",
+        "ml"
+      ],
+      "description": "Unidade base da receita: g (s\u00f3lidos) ou ml (l\u00edquidos)"
+    },
+    "modo_preparo": {
+      "type": "string",
+      "description": "Modo de preparo"
+    },
+    "foto_url": {
+      "type": "string",
+      "description": "URL da foto da receita"
+    },
+    "custo_total": {
+      "type": "number",
+      "description": "Custo total calculado"
+    },
+    "custo_por_porcao": {
+      "type": "number",
+      "description": "Custo por por\u00e7\u00e3o calculado"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

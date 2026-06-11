@@ -1,0 +1,68 @@
+{
+  "name": "ListaCompras",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome da lista"
+    },
+    "itens": {
+      "type": "array",
+      "description": "Itens da lista de compras",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ingrediente_id": {
+            "type": "string"
+          },
+          "ingrediente_nome": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "quantidade_g": {
+            "type": "number"
+          },
+          "unidade_compra": {
+            "type": "string"
+          },
+          "peso_embalagem_g": {
+            "type": "number"
+          },
+          "custo_estimado": {
+            "type": "number"
+          },
+          "ja_tenho": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "receitas_incluidas": {
+      "type": "array",
+      "description": "Receitas inclu\u00eddas na lista",
+      "items": {
+        "type": "object",
+        "properties": {
+          "receita_id": {
+            "type": "string"
+          },
+          "receita_nome": {
+            "type": "string"
+          },
+          "porcoes": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "total_geral": {
+      "type": "number",
+      "description": "Total geral da compra"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}
