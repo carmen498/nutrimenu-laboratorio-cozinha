@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
 import { toast } from "sonner";
+import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
 
 export default function ExportarReceita() {
   const { id } = useParams();
@@ -44,6 +45,7 @@ export default function ExportarReceita() {
 
   const porcoesExport = porcoes || receita.porcoes_base || 1;
   const fator = receita.porcoes_base > 0 ? porcoesExport / receita.porcoes_base : 1;
+  const passos = formatarModoPreparo(receita.modo_preparo);
   
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatWeight = (g, u) => {
@@ -75,8 +77,10 @@ export default function ExportarReceita() {
       if (item.pre_preparo) text += ` (${item.pre_preparo})`;
       text += `\n`;
     });
-    if (receita.modo_preparo) {
-      text += `\nMODO DE PREPARO:\n${receita.modo_preparo}\n`;
+    if (passos.length > 0) {
+      text += `\nMODO DE PREPARO:\n`;
+      text += passosParaTexto(passos);
+      text += `\n`;
     }
     if (!ocultarCustos) {
       text += `\n💰 Custo por porção: ${formatCurrency(custoPorcao)}`;
@@ -135,10 +139,14 @@ export default function ExportarReceita() {
           </div>
         )}
 
-        {receita.modo_preparo && (
+        {passos.length > 0 && (
           <>
             <h3 className="font-semibold mt-6 mb-2">Modo de Preparo</h3>
-            <p className="text-sm whitespace-pre-wrap leading-relaxed">{receita.modo_preparo}</p>
+            <ol className="space-y-1.5 list-decimal list-inside">
+              {passos.map((passo, idx) => (
+                <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
+              ))}
+            </ol>
           </>
         )}
 

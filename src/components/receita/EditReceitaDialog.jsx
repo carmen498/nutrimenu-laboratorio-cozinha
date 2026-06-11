@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
 const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
 
@@ -23,6 +24,8 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
     setSaving(true);
     try {
       const { id, created_date, updated_date, created_by_id, ...rest } = form;
+      const passos = formatarModoPreparo(rest.modo_preparo);
+      if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
       await base44.entities.Receita.update(receita.id, rest);
       qc.invalidateQueries({ queryKey: ["receita", receita.id] });
       qc.invalidateQueries({ queryKey: ["receitas"] });

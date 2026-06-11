@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
 const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
 
@@ -25,8 +26,10 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
     if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
     setSaving(true);
     try {
+      const passos = formatarModoPreparo(form.modo_preparo);
       const receita = await base44.entities.Receita.create({
         ...form,
+        modo_preparo: passos.length > 0 ? juntarPassos(passos) : form.modo_preparo,
         custo_total: 0,
         custo_por_porcao: 0,
       });

@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Loader2, Check, AlertCircle, Plus } from "lucide-react";
+import { Sparkles, Loader2, Check, AlertCircle, Plus, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
 const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
 
@@ -50,7 +51,7 @@ IMPORTANTE:
 - Para cada ingrediente, tente encontrar o mais próximo no banco existente
 - Converta xícaras, colheres, unidades para gramas/ml
 - Se a receita não informar porções, sugira um valor razoável
-- O modo de preparo deve manter o texto original organizado em passos`,
+- O modo de preparo deve manter o texto original organizado em passos numerados`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -83,16 +84,33 @@ IMPORTANTE:
     }
   };
 
+  const updateIngrediente = (idx, field, value) => {
+    const novos = [...(parsed.ingredientes || [])];
+    novos[idx] = { ...novos[idx], [field]: value };
+    setParsed({ ...parsed, ingredientes: novos });
+  };
+
+  const removeIngrediente = (idx) => {
+    const novos = (parsed.ingredientes || []).filter((_, i) => i !== idx);
+    setParsed({ ...parsed, ingredientes: novos });
+  };
+
+  const temZero = (parsed?.ingredientes || []).some(ing => (ing.quantidade_g || 0) === 0);
+
   const handleSave = async () => {
     if (!parsed) return;
+    if (temZero) { toast.error("Preencha a quantidade de todos os ingredientes antes de salvar."); return; }
     setSaving(true);
     try {
+      const passosFormatados = formatarModoPreparo(parsed.modo_preparo);
+      const modoPreparoFinal = juntarPassos(passosFormatados);
+
       const receita = await base44.entities.Receita.create({
         nome: parsed.nome,
         categoria: parsed.categoria,
         porcoes_base: parsed.porcoes_base || 4,
         unidade_base: parsed.unidade_base || "g",
-        modo_preparo: parsed.modo_preparo,
+        modo_preparo: modoPreparoFinal,
         rendimento_total: 0,
         custo_total: 0,
         custo_por_porcao: 0,
@@ -204,23 +222,51 @@ IMPORTANTE:
             </div>
 
             <div>
-              <Label>Ingredientes identificados</Label>
-              <div className="space-y-2 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <Label>Ingredientes identificados</Label>
+                {temZero && (
+                  <span className="text-xs text-amber-600 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Preencha as quantidades faltantes
+                  </span>
+                )}
+              </div>
+              <div className="space-y-2">
                 {(parsed.ingredientes || []).map((ing, idx) => {
                   const found = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
+                  const isZero = (ing.quantidade_g || 0) === 0;
                   return (
-                    <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border bg-card text-sm">
+                    <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg border text-sm ${isZero ? "bg-amber-50 border-amber-300" : "bg-card"}`}>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
                           {found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                           <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground ml-5">
-                          {ing.medida_original} → {ing.quantidade_g?.toFixed(0)}g
-                          {ing.pre_preparo && ` · ${ing.pre_preparo}`}
-                        </p>
+                        <div className="flex items-center gap-1 ml-5 mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {ing.medida_original} →
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              className={`h-6 w-20 text-xs text-center ${isZero ? "border-amber-400" : ""}`}
+                              value={ing.quantidade_g || ""}
+                              placeholder="0"
+                              onChange={(e) => updateIngrediente(idx, "quantidade_g", parseFloat(e.target.value) || 0)}
+                            />
+                            <span className="text-xs text-muted-foreground">g</span>
+                          </div>
+                          {isZero && (
+                            <span className="text-xs text-amber-600 font-medium">Informe a quantidade</span>
+                          )}
+                          {ing.pre_preparo && <span className="text-xs text-muted-foreground">· {ing.pre_preparo}</span>}
+                        </div>
                       </div>
-                      {!found && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Novo</span>}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {!found && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Novo</span>}
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeIngrediente(idx)}>
+                          <AlertCircle className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}
@@ -234,7 +280,7 @@ IMPORTANTE:
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setParsed(null)}>Voltar</Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={handleSave} disabled={saving || temZero}>
                 {saving ? "Salvando..." : "Salvar Receita"}
               </Button>
             </div>

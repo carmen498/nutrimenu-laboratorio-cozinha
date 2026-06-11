@@ -13,12 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X
 } from "lucide-react";
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
+import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -30,6 +31,8 @@ export default function ReceitaAberta() {
   const [showMargin, setShowMargin] = useState(false);
   const [margem, setMargem] = useState(30);
   const [editingPrice, setEditingPrice] = useState(null);
+  const [editingQtdId, setEditingQtdId] = useState(null);
+  const [editingQtdValue, setEditingQtdValue] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -109,6 +112,24 @@ export default function ReceitaAberta() {
     },
   });
 
+  const updateQtdMut = useMutation({
+    mutationFn: async ({ itemId, quantidade_por_porcao }) => {
+      await base44.entities.IngredienteReceita.update(itemId, { quantidade_por_porcao });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setEditingQtdId(null);
+    },
+  });
+
+  const handleConfirmQtd = (itemId) => {
+    const val = parseFloat(editingQtdValue);
+    if (!isNaN(val) && val >= 0) {
+      const baseP = receita?.porcoes_base || 1;
+      updateQtdMut.mutate({ itemId, quantidade_por_porcao: val / baseP });
+    }
+  };
+
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatWeight = (g, unit) => {
     if (unit === "ml") return g >= 1000 ? `${(g / 1000).toFixed(2)} lt` : `${g.toFixed(0)} ml`;
@@ -124,6 +145,7 @@ export default function ReceitaAberta() {
   }
 
   const precoVenda = showMargin ? custoPorcao / (1 - margem / 100) : 0;
+  const passos = formatarModoPreparo(receita.modo_preparo);
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
@@ -238,16 +260,50 @@ export default function ReceitaAberta() {
               <div className="col-span-1"></div>
             </div>
 
-            {itensFicha.map((item) => (
-              <Card key={item.id} className="p-3">
+            {itensFicha.map((item) => {
+              const isQtdZero = (item.quantidade_por_porcao || 0) === 0;
+              return (
+              <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""}`}>
                 {/* Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-3">
                     <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
                     {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
+                    {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                   </div>
-                  <div className="col-span-2 text-center text-sm text-muted-foreground">
-                    {formatWeight(item.qtdOriginal, receita.unidade_base)}
+                  <div className="col-span-2 text-center">
+                    {editingQtdId === item.id ? (
+                      <div className="flex items-center gap-1 justify-center">
+                        <Input
+                          type="number"
+                          className="h-7 w-20 text-sm text-center"
+                          value={editingQtdValue}
+                          onChange={(e) => setEditingQtdValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleConfirmQtd(item.id);
+                            if (e.key === "Escape") setEditingQtdId(null);
+                          }}
+                          autoFocus
+                        />
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
+                          <Check className="w-3 h-3 text-green-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        className={`text-sm hover:underline hover:text-primary transition-colors ${isQtdZero ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
+                        onClick={() => {
+                          setEditingQtdId(item.id);
+                          setEditingQtdValue(item.qtdOriginal.toFixed(0));
+                        }}
+                        title="Clique para editar a quantidade"
+                      >
+                        {formatWeight(item.qtdOriginal, receita.unidade_base)}
+                      </button>
+                    )}
                   </div>
                   <div className="col-span-2 text-center text-sm font-medium">
                     {formatWeight(item.qtdNova, receita.unidade_base)}
@@ -270,18 +326,50 @@ export default function ReceitaAberta() {
                   </div>
                 </div>
                 {/* Mobile */}
-                <div className="md:hidden">
+                <div className={`md:hidden ${isQtdZero ? "" : ""}`}>
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
                       {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
+                      {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                     </div>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemMut.mutate(item.id)}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                   <div className="flex justify-between mt-2 text-xs">
-                    <span className="text-muted-foreground">Original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</span>
+                    <span className="text-muted-foreground">Original: </span>
+                    {editingQtdId === item.id ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          className="h-7 w-16 text-xs text-center"
+                          value={editingQtdValue}
+                          onChange={(e) => setEditingQtdValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleConfirmQtd(item.id);
+                            if (e.key === "Escape") setEditingQtdId(null);
+                          }}
+                          autoFocus
+                        />
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
+                          <Check className="w-3 h-3 text-green-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
+                          <X className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <button
+                        className={`hover:underline hover:text-primary ${isQtdZero ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
+                        onClick={() => {
+                          setEditingQtdId(item.id);
+                          setEditingQtdValue(item.qtdOriginal.toFixed(0));
+                        }}
+                      >
+                        {formatWeight(item.qtdOriginal, receita.unidade_base)}
+                      </button>
+                    )}
                     <span className="font-medium">Nova: {formatWeight(item.qtdNova, receita.unidade_base)}</span>
                   </div>
                   <div className="flex justify-between mt-1 text-xs">
@@ -292,17 +380,22 @@ export default function ReceitaAberta() {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
 
       {/* Mode of preparation */}
-      {receita.modo_preparo && (
+      {passos.length > 0 && (
         <div>
           <h2 className="font-display text-lg font-bold mb-2">Modo de Preparo</h2>
           <Card className="p-4">
-            <p className="text-sm whitespace-pre-wrap leading-relaxed">{receita.modo_preparo}</p>
+            <ol className="space-y-2 list-decimal list-inside">
+              {passos.map((passo, idx) => (
+                <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
+              ))}
+            </ol>
           </Card>
         </div>
       )}
