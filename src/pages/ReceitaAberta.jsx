@@ -125,10 +125,12 @@ export default function ReceitaAberta() {
   const handleConfirmQtd = (itemId) => {
     const val = parseFloat(editingQtdValue);
     if (!isNaN(val) && val >= 0) {
-      const baseP = receita?.porcoes_base || 1;
-      updateQtdMut.mutate({ itemId, quantidade_por_porcao: val / baseP });
+      const p = porcoes || receita?.porcoes_base || 1;
+      updateQtdMut.mutate({ itemId, quantidade_por_porcao: val / p });
     }
   };
+
+  const temFatorCorrecao = itensFicha.some(i => (i.ing?.fator_correcao || 1) !== 1);
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatWeight = (g, unit) => {
@@ -252,10 +254,9 @@ export default function ReceitaAberta() {
           <div className="space-y-2">
             {/* Header */}
             <div className="hidden md:grid grid-cols-12 gap-2 px-3 text-xs text-muted-foreground font-medium">
-              <div className="col-span-3">Ingrediente</div>
-              <div className="col-span-2 text-center">Qtd original</div>
-              <div className="col-span-2 text-center">Qtd nova</div>
-              <div className="col-span-2 text-center">Comprar</div>
+              <div className={temFatorCorrecao ? "col-span-4" : "col-span-5"}>Ingrediente</div>
+              <div className={temFatorCorrecao ? "col-span-3 text-center" : "col-span-4 text-center"}>Quantidade</div>
+              {temFatorCorrecao && <div className="col-span-2 text-center">Comprar</div>}
               <div className="col-span-2 text-right">Custo</div>
               <div className="col-span-1"></div>
             </div>
@@ -266,12 +267,12 @@ export default function ReceitaAberta() {
               <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""}`}>
                 {/* Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-2 items-center">
-                  <div className="col-span-3">
+                  <div className={temFatorCorrecao ? "col-span-4" : "col-span-5"}>
                     <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
                     {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                     {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                   </div>
-                  <div className="col-span-2 text-center">
+                  <div className={`${temFatorCorrecao ? "col-span-3" : "col-span-4"} text-center`}>
                     {editingQtdId === item.id ? (
                       <div className="flex items-center gap-1 justify-center">
                         <Input
@@ -293,24 +294,28 @@ export default function ReceitaAberta() {
                         </Button>
                       </div>
                     ) : (
-                      <button
-                        className={`text-sm hover:underline hover:text-primary transition-colors ${isQtdZero ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
-                        onClick={() => {
-                          setEditingQtdId(item.id);
-                          setEditingQtdValue(item.qtdOriginal.toFixed(0));
-                        }}
-                        title="Clique para editar a quantidade"
-                      >
-                        {formatWeight(item.qtdOriginal, receita.unidade_base)}
-                      </button>
+                      <div>
+                        <button
+                          className={`text-sm hover:underline hover:text-primary transition-colors ${isQtdZero ? "text-amber-600 font-medium" : "font-medium"}`}
+                          onClick={() => {
+                            setEditingQtdId(item.id);
+                            setEditingQtdValue(item.qtdNova.toFixed(0));
+                          }}
+                          title="Clique para editar a quantidade"
+                        >
+                          {formatWeight(item.qtdNova, receita.unidade_base)}
+                        </button>
+                        {fator !== 1 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</p>
+                        )}
+                      </div>
                     )}
                   </div>
-                  <div className="col-span-2 text-center text-sm font-medium">
-                    {formatWeight(item.qtdNova, receita.unidade_base)}
-                  </div>
-                  <div className="col-span-2 text-center text-sm">
-                    {formatWeight(item.qtdComprar, receita.unidade_base)}
-                  </div>
+                  {temFatorCorrecao && (
+                    <div className="col-span-2 text-center text-sm text-muted-foreground">
+                      {formatWeight(item.qtdComprar, receita.unidade_base)}
+                    </div>
+                  )}
                   <div className="col-span-2 text-right">
                     <button
                       className="text-sm font-semibold text-primary hover:underline"
@@ -326,7 +331,7 @@ export default function ReceitaAberta() {
                   </div>
                 </div>
                 {/* Mobile */}
-                <div className={`md:hidden ${isQtdZero ? "" : ""}`}>
+                <div className="md:hidden">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
@@ -337,8 +342,8 @@ export default function ReceitaAberta() {
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
-                  <div className="flex justify-between mt-2 text-xs">
-                    <span className="text-muted-foreground">Original: </span>
+                  <div className="flex justify-between mt-2 text-xs items-center">
+                    <span className="text-muted-foreground">Quantidade: </span>
                     {editingQtdId === item.id ? (
                       <div className="flex items-center gap-1">
                         <Input
@@ -361,19 +366,23 @@ export default function ReceitaAberta() {
                       </div>
                     ) : (
                       <button
-                        className={`hover:underline hover:text-primary ${isQtdZero ? "text-amber-600 font-medium" : "text-muted-foreground"}`}
+                        className={`hover:underline hover:text-primary font-medium ${isQtdZero ? "text-amber-600" : ""}`}
                         onClick={() => {
                           setEditingQtdId(item.id);
-                          setEditingQtdValue(item.qtdOriginal.toFixed(0));
+                          setEditingQtdValue(item.qtdNova.toFixed(0));
                         }}
                       >
-                        {formatWeight(item.qtdOriginal, receita.unidade_base)}
+                        {formatWeight(item.qtdNova, receita.unidade_base)}
                       </button>
                     )}
-                    <span className="font-medium">Nova: {formatWeight(item.qtdNova, receita.unidade_base)}</span>
                   </div>
+                  {fator !== 1 && (
+                    <p className="text-xs text-muted-foreground mt-0.5">original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</p>
+                  )}
                   <div className="flex justify-between mt-1 text-xs">
-                    <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>
+                    <div>
+                      {temFatorCorrecao && <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>}
+                    </div>
                     <button className="font-bold text-primary hover:underline" onClick={() => setEditingPrice(item)}>
                       {formatCurrency(item.custo)}
                     </button>
