@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
+import CalculadoraCusto from "@/components/CalculadoraCusto";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -346,8 +347,8 @@ export default function ReceitaAberta() {
 }
 
 function EditPriceDialog({ open, onClose, item, ing, onSave, saving }) {
+  const [peso, setPeso] = useState(ing?.peso_embalagem_g || 0);
   const [preco, setPreco] = useState(ing?.preco_embalagem_rs || 0);
-  const [peso, setPeso] = useState(ing?.peso_embalagem_g || 1000);
 
   if (!ing) return null;
 
@@ -361,21 +362,14 @@ function EditPriceDialog({ open, onClose, item, ing, onSave, saving }) {
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800">Este preço será atualizado em todas as receitas que usam {ing.nome}.</p>
         </div>
-        <div className="space-y-3">
-          <div>
-            <Label>Peso embalagem (g)</Label>
-            <Input type="number" value={peso} onChange={(e) => setPeso(parseFloat(e.target.value) || 0)} />
-          </div>
-          <div>
-            <Label>Preço embalagem (R$)</Label>
-            <Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(parseFloat(e.target.value) || 0)} />
-          </div>
-          {peso > 0 && preco > 0 && (
-            <p className="text-sm text-primary font-medium">
-              Novo preço por g: R$ {(preco / peso).toFixed(4).replace(".", ",")}
-            </p>
-          )}
-        </div>
+        <CalculadoraCusto
+          initialQuantidade={ing?.peso_embalagem_g || ""}
+          initialPrecoTotal={ing?.preco_embalagem_rs || ""}
+          onChange={({ peso_embalagem_g, preco_embalagem_rs }) => {
+            setPeso(peso_embalagem_g);
+            setPreco(preco_embalagem_rs);
+          }}
+        />
         <div className="flex gap-2 justify-end mt-2">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={() => onSave({ ingId: ing.id, preco_embalagem_rs: preco, peso_embalagem_g: peso })} disabled={saving}>

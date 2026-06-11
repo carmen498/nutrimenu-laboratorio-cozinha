@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
 import { toast } from "sonner";
+import CalculadoraCusto from "@/components/CalculadoraCusto";
 
 const CATEGORIAS = [
   "CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS",
@@ -219,25 +220,15 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Unidade de compra</Label>
-              <Input value={form.unidade_compra || ""} onChange={(e) => setForm({ ...form, unidade_compra: e.target.value })} placeholder="KG, LT, UN..." />
-            </div>
-            <div>
-              <Label>Peso embalagem (g)</Label>
-              <Input type="number" value={form.peso_embalagem_g || ""} onChange={(e) => setForm({ ...form, peso_embalagem_g: parseFloat(e.target.value) || 0 })} />
-            </div>
-          </div>
           <div>
-            <Label>Preço da embalagem (R$)</Label>
-            <Input type="number" step="0.01" value={form.preco_embalagem_rs || ""} onChange={(e) => setForm({ ...form, preco_embalagem_rs: parseFloat(e.target.value) || 0 })} />
+            <Label>Unidade de compra</Label>
+            <Input value={form.unidade_compra || ""} onChange={(e) => setForm({ ...form, unidade_compra: e.target.value })} placeholder="KG, LT, UN..." />
           </div>
-          {form.peso_embalagem_g > 0 && form.preco_embalagem_rs > 0 && (
-            <p className="text-sm text-primary font-medium">
-              Preço por g: R$ {(form.preco_embalagem_rs / form.peso_embalagem_g).toFixed(4).replace(".", ",")}
-            </p>
-          )}
+          <CalculadoraCusto
+            initialQuantidade={form.peso_embalagem_g || ""}
+            initialPrecoTotal={form.preco_embalagem_rs || ""}
+            onChange={({ peso_embalagem_g, preco_embalagem_rs }) => setForm({ ...form, peso_embalagem_g, preco_embalagem_rs })}
+          />
           {/* Advanced: fator de correção */}
           <details className="text-sm">
             <summary className="cursor-pointer text-muted-foreground flex items-center gap-1">

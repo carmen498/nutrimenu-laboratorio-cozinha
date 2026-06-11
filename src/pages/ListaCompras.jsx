@@ -117,13 +117,23 @@ export default function ListaCompras() {
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatWeight = (g) => g >= 1000 ? `${(g / 1000).toFixed(2)} kg` : `${g.toFixed(0)} g`;
 
+  const UNIDADES_CONTAGEM = ["UN", "CX", "VIDRO", "LATA", "PACOTE", "MOLHO"];
+  const formatQuantidade = (item) => {
+    const isContagem = UNIDADES_CONTAGEM.includes(item.unidade_compra?.toUpperCase());
+    if (isContagem && item.peso_embalagem_g > 0) {
+      const unidades = Math.ceil(item.quantidade / item.peso_embalagem_g);
+      return `${unidades} un · ${formatWeight(item.quantidade)}`;
+    }
+    return formatWeight(item.quantidade);
+  };
+
   const handleShare = () => {
     let text = "🛒 LISTA DE COMPRAS\n\n";
     Object.keys(grouped).sort().forEach(cat => {
       text += `📌 ${cat}\n`;
       grouped[cat].forEach(item => {
         if (!jaTemho[item.ingrediente_id]) {
-          text += `  • ${item.nome} — ${formatWeight(item.quantidade)} — ${formatCurrency(item.custo)}\n`;
+          text += `  • ${item.nome} — ${formatQuantidade(item)} — ${formatCurrency(item.custo)}\n`;
         }
       });
       text += "\n";
@@ -207,7 +217,7 @@ export default function ListaCompras() {
                       <p className={`text-sm font-medium ${jaTemho[item.ingrediente_id] ? "line-through" : ""}`}>
                         {item.nome}
                       </p>
-                      <p className="text-xs text-muted-foreground">{formatWeight(item.quantidade)}</p>
+                      <p className="text-xs text-muted-foreground">{formatQuantidade(item)}</p>
                     </div>
                     <span className="text-sm font-semibold text-primary shrink-0">{formatCurrency(item.custo)}</span>
                   </Card>
