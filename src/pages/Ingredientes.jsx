@@ -73,13 +73,56 @@ export default function Ingredientes() {
     grouped[cat].push(i);
   });
 
-  const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(4).replace(".", ",")}` : "—";
   const formatPrice = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "—";
+
+  // Weight units that use per-kg pricing
+  const isWeightUnit = (u) => ["G", "KG"].includes(u?.toUpperCase());
+  const isLiquidUnit = (u) => ["ML", "LT"].includes(u?.toUpperCase());
+  const isPackageUnit = (u) => ["UN", "BANDEJA", "CX", "POTE", "VIDRO", "BALDE", "MOLHO", "PC"].includes(u?.toUpperCase());
+
+  const formatWeightStr = (g, unit) => {
+    const u = unit?.toUpperCase();
+    if (isWeightUnit(u)) {
+      return g >= 1000 ? `${(g / 1000).toFixed(g % 1000 === 0 ? 0 : 1).replace(".", ",")} kg` : `${g} g`;
+    }
+    if (isLiquidUnit(u)) {
+      return g >= 1000 ? `${(g / 1000).toFixed(g % 1000 === 0 ? 0 : 1).replace(".", ",")} L` : `${g} ml`;
+    }
+    return `${g} g`;
+  };
+
+  const formatUnitLabel = (unit) => {
+    const u = unit?.toUpperCase();
+    if (u === "KG" || u === "G") return "kg";
+    if (u === "LT" || u === "ML") return "L";
+    return unit?.toLowerCase() || "un";
+  };
+
+  const formatIngredientPrice = (ing) => {
+    const pricePerKg = (ing.preco_por_g_rs || 0) * 1000;
+    const u = ing.unidade_compra?.toUpperCase();
+    const peso = ing.peso_embalagem_g || 0;
+    const precoEmb = ing.preco_embalagem_rs || 0;
+
+    if (isWeightUnit(u)) {
+      return `${formatPrice(pricePerKg)}/kg · embalagem ${formatWeightStr(peso, u)}`;
+    }
+    if (isLiquidUnit(u)) {
+      return `${formatPrice(pricePerKg)}/L · embalagem ${formatWeightStr(peso, u)}`;
+    }
+    if (isPackageUnit(u)) {
+      return `${formatPrice(precoEmb)}/${formatUnitLabel(u)} (${peso} g) · ${formatPrice(pricePerKg)}/kg`;
+    }
+    return `${formatPrice(pricePerKg)}/kg · embalagem ${peso}g`;
+  };
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Ingredientes e Preços</h1>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Ingredientes e Preços</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
@@ -136,11 +179,16 @@ export default function Ingredientes() {
               {grouped[cat].sort((a, b) => a.nome?.localeCompare(b.nome)).map((ing) => (
                 <Card key={ing.id} className="p-3 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm truncate">{ing.nome}</p>
+                    <p className="font-medium text-sm truncate">
+                      {ing.nome}
+                      {(ing.fator_correcao && ing.fator_correcao !== 1.0) && (
+                        <span className="ml-1.5 text-xs text-muted-foreground font-normal">
+                          FC {String(ing.fator_correcao).replace(".", ",")}
+                        </span>
+                      )}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {ing.unidade_compra} {ing.peso_embalagem_g}g · {formatPrice(ing.preco_embalagem_rs)}
-                      <span className="mx-1">→</span>
-                      <span className="font-medium text-primary">{formatCurrency(ing.preco_por_g_rs)}/g</span>
+                      {formatIngredientPrice(ing)}
                     </p>
                   </div>
                   <div className="flex gap-1">
