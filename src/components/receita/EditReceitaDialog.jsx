@@ -11,7 +11,24 @@ import { Camera, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
-const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
+const CATEGORIAS = [
+  "Acompanhamentos, Arroz e Risotos",
+  "Acompanhamentos, Complementos",
+  "Acompanhamentos, Grãos e Leguminosas",
+  "Carnes, Aves",
+  "Carnes, Bacalhau",
+  "Carnes, Bovina",
+  "Carnes, Frutos do mar",
+  "Carnes, Peixes",
+  "Carnes, Suína",
+  "Confeitaria, Doces e Docinhos",
+  "Confeitaria, Sobremesas",
+  "Confeitaria, Tortas",
+  "Entradas, Frias",
+  "Molhos",
+  "Saladas",
+  "Tortas e Quiches",
+];
 
 export default function EditReceitaDialog({ open, onClose, receita }) {
   const [form, setForm] = useState({ ...receita });
@@ -77,7 +94,7 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <Select value={form.categoria || "Carnes"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
+              <Select value={form.categoria || "Carnes, Bovina"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{CATEGORIAS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>

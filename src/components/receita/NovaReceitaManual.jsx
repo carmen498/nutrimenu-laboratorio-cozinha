@@ -11,11 +11,28 @@ import { Camera, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
-const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
+const CATEGORIAS = [
+  "Acompanhamentos, Arroz e Risotos",
+  "Acompanhamentos, Complementos",
+  "Acompanhamentos, Grãos e Leguminosas",
+  "Carnes, Aves",
+  "Carnes, Bacalhau",
+  "Carnes, Bovina",
+  "Carnes, Frutos do mar",
+  "Carnes, Peixes",
+  "Carnes, Suína",
+  "Confeitaria, Doces e Docinhos",
+  "Confeitaria, Sobremesas",
+  "Confeitaria, Tortas",
+  "Entradas, Frias",
+  "Molhos",
+  "Saladas",
+  "Tortas e Quiches",
+];
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
-    nome: "", categoria: "Carnes", porcoes_base: 4, rendimento_total: 0,
+    nome: "", categoria: "Carnes, Bovina", porcoes_base: 4, rendimento_total: 0,
     unidade_base: "g", modo_preparo: "", foto_url: ""
   });
   const [saving, setSaving] = useState(false);

@@ -5,26 +5,44 @@ import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 
-const CATEGORIAS_RECEITA = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
+const CATEGORIAS_RECEITA = [
+  "Acompanhamentos, Arroz e Risotos",
+  "Acompanhamentos, Complementos",
+  "Acompanhamentos, Grãos e Leguminosas",
+  "Carnes, Aves",
+  "Carnes, Bacalhau",
+  "Carnes, Bovina",
+  "Carnes, Frutos do mar",
+  "Carnes, Peixes",
+  "Carnes, Suína",
+  "Confeitaria, Doces e Docinhos",
+  "Confeitaria, Sobremesas",
+  "Confeitaria, Tortas",
+  "Entradas, Frias",
+  "Molhos",
+  "Saladas",
+  "Tortas e Quiches",
+];
 
 export default function Receitas() {
   const [busca, setBusca] = useState("");
   const [catFiltro, setCatFiltro] = useState("todas");
-  const [showNew, setShowNew] = useState(null); // null | "manual" | "ia"
+  const [showNew, setShowNew] = useState(null);
   const [showImportCsv, setShowImportCsv] = useState(false);
+  const [expandedCat, setExpandedCat] = useState(null);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  // Check URL params for auto-open
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("nova") === "manual") setShowNew("manual");
@@ -33,14 +51,13 @@ export default function Receitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 200),
+    queryFn: () => base44.entities.Receita.list("-updated_date", 500),
   });
 
   const duplicarMut = useMutation({
     mutationFn: async (receita) => {
       const { id, created_date, updated_date, created_by_id, ...rest } = receita;
       const nova = await base44.entities.Receita.create({ ...rest, nome: `${receita.nome} — cópia` });
-      // Copy ingredients
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: receita.id });
       for (const ing of ings) {
         const { id: iid, created_date: cd, updated_date: ud, created_by_id: cb, ...irest } = ing;
@@ -72,12 +89,39 @@ export default function Receitas() {
     return matchBusca && matchCat;
   });
 
+  // Group by category and sort
+  const grouped = {};
+  filtered.forEach((r) => {
+    const cat = r.categoria || "Complementos";
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(r);
+  });
+
+  // Auto-expand categories when searching
+  useEffect(() => {
+    if (busca) {
+      const catsWithResults = Object.keys(grouped);
+      if (catsWithResults.length === 1) {
+        setExpandedCat(catsWithResults[0]);
+      }
+    }
+  }, [busca]);
+
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "";
+
+  const formatYield = (r) => {
+    if (!r.rendimento_total || r.rendimento_total <= 0) return null;
+    const u = r.unidade_base === "ml" ? "ml" : "g";
+    const val = r.rendimento_total >= 1000
+      ? `${(r.rendimento_total / 1000).toFixed(1).replace(".", ",")} ${u === "ml" ? "L" : "kg"}`
+      : `${r.rendimento_total} ${u}`;
+    return val;
+  };
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Minhas Receitas</h1>
+        <h1 className="font-display text-2xl font-bold">Receitas</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
@@ -104,72 +148,96 @@ export default function Receitas() {
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar receita..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
+          <Input
+            placeholder="Buscar receita..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="pl-9"
+          />
         </div>
         <Select value={catFiltro} onValueChange={setCatFiltro}>
-          <SelectTrigger className="w-36">
+          <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas</SelectItem>
-            {CATEGORIAS_RECEITA.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {CATEGORIAS_RECEITA.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Recipe cards */}
+      {/* Recipe list by category */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : filtered.length === 0 ? (
+      ) : Object.keys(grouped).sort().map((cat) => (
+        <div key={cat}>
+          <button
+            className="w-full flex items-center justify-between py-2 px-1 text-left"
+            onClick={() => setExpandedCat(expandedCat === cat ? null : cat)}
+          >
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">{cat}</Badge>
+              <span className="text-xs text-muted-foreground">{grouped[cat].length} itens</span>
+            </div>
+            {expandedCat === cat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+          {expandedCat === cat && (
+            <div className="space-y-1.5 mb-4">
+              {grouped[cat].sort((a, b) => a.nome?.localeCompare(b.nome)).map((r) => (
+                <Link key={r.id} to={`/receita/${r.id}`}>
+                  <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{r.nome}</p>
+                      <div className="flex items-center gap-3 mt-0.5">
+                        {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
+                          <span className="text-xs font-bold text-primary">
+                            {formatCurrency(r.custo_por_porcao)} /porção
+                          </span>
+                        )}
+                        {formatYield(r) && (
+                          <span className="text-xs text-muted-foreground">
+                            Rende {formatYield(r)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded-full hover:bg-muted" onClick={(e) => e.preventDefault()}>
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
+                          <BookOpen className="w-4 h-4 mr-2" /> Abrir
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
+                          <Copy className="w-4 h-4 mr-2" /> Duplicar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => {
+                          if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
+                        }}>
+                          <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {!isLoading && filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ChefHat className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-          <p className="text-lg font-medium">Nenhuma receita ainda</p>
-          <p className="text-sm mt-1">Crie sua primeira receita!</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {filtered.map((r) => (
-            <Card key={r.id} className="overflow-hidden group relative">
-              <Link to={`/receita/${r.id}`}>
-                <div className="aspect-[4/3] bg-muted overflow-hidden">
-                  {r.foto_url ? (
-                    <img src={r.foto_url} alt={r.nome} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-primary/5">
-                      <ChefHat className="w-10 h-10 text-primary/30" />
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="font-semibold text-sm truncate">{r.nome}</p>
-                  <p className="text-xs text-muted-foreground">{r.categoria}</p>
-                  {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
-                    <p className="text-xs font-bold text-primary mt-1">{formatCurrency(r.custo_por_porcao)} /porção</p>
-                  )}
-                </div>
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="absolute top-2 right-2 p-1.5 rounded-full bg-black/30 text-white hover:bg-black/50">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
-                    <BookOpen className="w-4 h-4 mr-2" /> Abrir
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
-                    <Copy className="w-4 h-4 mr-2" /> Duplicar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={() => { if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id); }}>
-                    <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </Card>
-          ))}
+          <p className="text-lg font-medium">Nenhuma receita encontrada</p>
+          <p className="text-sm mt-1">Crie uma receita ou importe via CSV.</p>
         </div>
       )}
 
@@ -195,30 +263,6 @@ export default function Receitas() {
       )}
     </div>
   );
-}
-
-// Map CSV categories to Receita entity enum
-function mapearCategoria(csvCat) {
-  const map = {
-    "BACALHAU": "Peixes",
-    "CAMARÃO": "Peixes",
-    "CARNE": "Carnes",
-    "FRANGO": "Aves",
-    "PEIXE": "Peixes",
-    "PORCO": "Carnes",
-    "CORDEIRO": "Carnes",
-    "PERU": "Aves",
-    "SALGADINHO": "Salgadinhos",
-    "SOBREMESA": "Sobremesas",
-    "MASSA": "Massas",
-    "MOLHO": "Molhos",
-    "SOPA": "Sopas",
-    "VEGETAL": "Vegetais",
-    "EMPANADO": "Empanados",
-    "COMPLEMENTO": "Complementos",
-  };
-  const upper = (csvCat || "").toUpperCase().trim();
-  return map[upper] || "Complementos";
 }
 
 function ImportReceitasCsvDialog({ open, onClose }) {
@@ -260,7 +304,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           if (!nome) { skipped++; continue; }
           const payload = {
             nome,
-            categoria: mapearCategoria(item.categoria),
+            categoria: item.categoria || "Complementos",
             porcoes_base: item.porcoes_base || 1,
             rendimento_total: item.rendimento_g || 0,
             unidade_base: "g",
@@ -299,7 +343,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           Selecione o arquivo CSV com as colunas: <strong>nome_receita, categoria, porcoes_base, rendimento_g, modo_preparo</strong>
         </p>
         <p className="text-xs text-muted-foreground">
-          Receitas com mesmo nome serão atualizadas. Categorias do CSV são convertidas automaticamente.
+          Receitas com mesmo nome serão atualizadas. Categorias no formato "Grupo, Subcategoria".
         </p>
         <Label>Arquivo</Label>
         <Input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files[0])} />

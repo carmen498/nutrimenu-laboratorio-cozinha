@@ -11,7 +11,24 @@ import { Sparkles, Loader2, Check, AlertCircle, Plus, AlertTriangle } from "luci
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
-const CATEGORIAS = ["Carnes", "Massas", "Molhos", "Vegetais", "Aves", "Peixes", "Sopas", "Sobremesas", "Salgadinhos", "Empanados", "Complementos"];
+const CATEGORIAS = [
+  "Acompanhamentos, Arroz e Risotos",
+  "Acompanhamentos, Complementos",
+  "Acompanhamentos, Grãos e Leguminosas",
+  "Carnes, Aves",
+  "Carnes, Bacalhau",
+  "Carnes, Bovina",
+  "Carnes, Frutos do mar",
+  "Carnes, Peixes",
+  "Carnes, Suína",
+  "Confeitaria, Doces e Docinhos",
+  "Confeitaria, Sobremesas",
+  "Confeitaria, Tortas",
+  "Entradas, Frias",
+  "Molhos",
+  "Saladas",
+  "Tortas e Quiches",
+];
 
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");

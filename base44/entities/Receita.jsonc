@@ -9,19 +9,24 @@
     "categoria": {
       "type": "string",
       "enum": [
-        "Carnes",
-        "Massas",
+        "Acompanhamentos, Arroz e Risotos",
+        "Acompanhamentos, Complementos",
+        "Acompanhamentos, Gr\u00e3os e Leguminosas",
+        "Carnes, Aves",
+        "Carnes, Bacalhau",
+        "Carnes, Bovina",
+        "Carnes, Frutos do mar",
+        "Carnes, Peixes",
+        "Carnes, Su\u00edna",
+        "Confeitaria, Doces e Docinhos",
+        "Confeitaria, Sobremesas",
+        "Confeitaria, Tortas",
+        "Entradas, Frias",
         "Molhos",
-        "Vegetais",
-        "Aves",
-        "Peixes",
-        "Sopas",
-        "Sobremesas",
-        "Salgadinhos",
-        "Empanados",
-        "Complementos"
+        "Saladas",
+        "Tortas e Quiches"
       ],
-      "description": "Categoria da receita"
+      "description": "Categoria da receita no formato Grupo, Subcategoria"
     },
     "porcoes_base": {
       "type": "number",
