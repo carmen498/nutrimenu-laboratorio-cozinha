@@ -5,10 +5,11 @@ import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -19,6 +20,7 @@ export default function Receitas() {
   const [busca, setBusca] = useState("");
   const [catFiltro, setCatFiltro] = useState("todas");
   const [showNew, setShowNew] = useState(null); // null | "manual" | "ia"
+  const [showImportCsv, setShowImportCsv] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -76,21 +78,26 @@ export default function Receitas() {
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Minhas Receitas</h1>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-1" /> Nova Receita
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setShowNew("manual")}>
-              <BookOpen className="w-4 h-4 mr-2" /> Cadastrar manualmente
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowNew("ia")}>
-              <Sparkles className="w-4 h-4 mr-2" /> Colar texto (IA)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
+            <Upload className="w-4 h-4 mr-1" /> CSV
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-1" /> Nova Receita
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowNew("manual")}>
+                <BookOpen className="w-4 h-4 mr-2" /> Cadastrar manualmente
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowNew("ia")}>
+                <Sparkles className="w-4 h-4 mr-2" /> Colar texto (IA)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Filters */}
@@ -181,6 +188,128 @@ export default function Receitas() {
           onCreated={(id) => { setShowNew(null); navigate(`/receita/${id}`); }}
         />
       )}
+
+      {/* Import CSV dialog */}
+      {showImportCsv && (
+        <ImportReceitasCsvDialog open={true} onClose={() => setShowImportCsv(false)} />
+      )}
     </div>
+  );
+}
+
+// Map CSV categories to Receita entity enum
+function mapearCategoria(csvCat) {
+  const map = {
+    "BACALHAU": "Peixes",
+    "CAMARÃO": "Peixes",
+    "CARNE": "Carnes",
+    "FRANGO": "Aves",
+    "PEIXE": "Peixes",
+    "PORCO": "Carnes",
+    "CORDEIRO": "Carnes",
+    "PERU": "Aves",
+    "SALGADINHO": "Salgadinhos",
+    "SOBREMESA": "Sobremesas",
+    "MASSA": "Massas",
+    "MOLHO": "Molhos",
+    "SOPA": "Sopas",
+    "VEGETAL": "Vegetais",
+    "EMPANADO": "Empanados",
+    "COMPLEMENTO": "Complementos",
+  };
+  const upper = (csvCat || "").toUpperCase().trim();
+  return map[upper] || "Complementos";
+}
+
+function ImportReceitasCsvDialog({ open, onClose }) {
+  const [file, setFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const qc = useQueryClient();
+
+  const handleImport = async () => {
+    if (!file) return;
+    setImporting(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
+        file_url,
+        json_schema: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              nome_receita: { type: "string" },
+              categoria: { type: "string" },
+              porcoes_base: { type: "number" },
+              rendimento_g: { type: "number" },
+              modo_preparo: { type: "string" },
+            }
+          }
+        }
+      });
+
+      if (result.status === "success" && result.output) {
+        const items = Array.isArray(result.output) ? result.output : (result.output.items || []);
+        const existing = await base44.entities.Receita.list("-nome", 500);
+        const existingMap = {};
+        existing.forEach((r) => { existingMap[r.nome?.toLowerCase().trim()] = r; });
+
+        let created = 0, updated = 0, skipped = 0;
+        for (const item of items) {
+          const nome = (item.nome_receita || "").trim();
+          if (!nome) { skipped++; continue; }
+          const payload = {
+            nome,
+            categoria: mapearCategoria(item.categoria),
+            porcoes_base: item.porcoes_base || 1,
+            rendimento_total: item.rendimento_g || 0,
+            unidade_base: "g",
+            modo_preparo: item.modo_preparo || "",
+          };
+          const existingItem = existingMap[nome.toLowerCase()];
+          if (existingItem) {
+            const { id, created_date, updated_date, created_by_id, ...rest } = payload;
+            await base44.entities.Receita.update(existingItem.id, rest);
+            updated++;
+          } else {
+            await base44.entities.Receita.create(payload);
+            created++;
+          }
+        }
+        toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.`);
+        qc.invalidateQueries({ queryKey: ["receitas"] });
+        onClose();
+      } else {
+        toast.error("Erro ao processar arquivo: " + (result.details || "formato inválido"));
+      }
+    } catch (err) {
+      toast.error("Erro na importação: " + err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display">Importar Receitas via CSV</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Selecione o arquivo CSV com as colunas: <strong>nome_receita, categoria, porcoes_base, rendimento_g, modo_preparo</strong>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Receitas com mesmo nome serão atualizadas. Categorias do CSV são convertidas automaticamente.
+        </p>
+        <Label>Arquivo</Label>
+        <Input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files[0])} />
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleImport} disabled={!file || importing}>
+            {importing ? "Importando..." : "Importar"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
