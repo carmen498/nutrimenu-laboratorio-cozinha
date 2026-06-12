@@ -92,7 +92,7 @@ export default function Receitas() {
   // Group by category and sort
   const grouped = {};
   filtered.forEach((r) => {
-    const cat = r.categoria || "Complementos";
+    const cat = r.categoria || "Sem categoria";
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(r);
   });
@@ -304,7 +304,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           if (!nome) { skipped++; continue; }
           const payload = {
             nome,
-            categoria: item.categoria || "Complementos",
+            categoria: item.categoria || "",
             porcoes_base: item.porcoes_base || 1,
             rendimento_total: item.rendimento_g || 0,
             unidade_base: "g",
