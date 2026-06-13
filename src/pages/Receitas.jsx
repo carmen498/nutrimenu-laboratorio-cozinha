@@ -78,7 +78,9 @@ export default function Receitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 5000),
+    queryFn: () => base44.entities.Receita.filter({}),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const duplicarMut = useMutation({

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +18,8 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [parsed, setParsed] = useState(null);
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
+  const parsedRef = useRef(null);
+  parsedRef.current = parsed;
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -98,23 +100,24 @@ IMPORTANTE:
   const temZero = (parsed?.ingredientes || []).some(ing => (ing.quantidade_g || 0) === 0);
 
   const handleSave = async () => {
-    if (!parsed) return;
+    const p = parsedRef.current;
+    if (!p) return;
     if (temZero) { toast.error("Preencha a quantidade de todos os ingredientes antes de salvar."); return; }
     setSaving(true);
     try {
-      const passosFormatados = formatarModoPreparo(parsed.modo_preparo);
+      const passosFormatados = formatarModoPreparo(p.modo_preparo);
       const modoPreparoFinal = juntarPassos(passosFormatados);
 
-      const existingRec = await base44.entities.Receita.filter({ nome: parsed.nome?.toUpperCase() });
+      const existingRec = await base44.entities.Receita.filter({ nome: p.nome?.toUpperCase() });
       const dup = existingRec.length > 0;
 
-      const catFinal = parsed.categoria || "A Revisar";
+      const catFinal = p.categoria || "A Revisar";
       const receita = await base44.entities.Receita.create({
-        nome: parsed.nome?.toUpperCase(),
+        nome: p.nome?.toUpperCase(),
         categoria: catFinal,
         revisar: dup,
-        porcoes_base: parsed.porcoes_base || 4,
-        unidade_base: parsed.unidade_base || "g",
+        porcoes_base: p.porcoes_base || 4,
+        unidade_base: p.unidade_base || "g",
         modo_preparo: modoPreparoFinal,
         rendimento_total: 0,
         custo_total: 0,
@@ -124,8 +127,8 @@ IMPORTANTE:
       if (dup) toast.warning("Receita duplicada — marcada para revisão");
 
       // Link ingredients
-      for (let i = 0; i < (parsed.ingredientes || []).length; i++) {
-        const ing = parsed.ingredientes[i];
+      for (let i = 0; i < (p.ingredientes || []).length; i++) {
+        const ing = p.ingredientes[i];
         // Find matching ingredient in bank — exact match only
         let matchedIng = null;
         if (ing.nome_banco) {
@@ -152,7 +155,7 @@ IMPORTANTE:
             });
           }
         }
-        const qtdPorPorcao = (ing.quantidade_g || 0) / (parsed.porcoes_base || 4);
+        const qtdPorPorcao = (ing.quantidade_g || 0) / (p.porcoes_base || 4);
         await base44.entities.IngredienteReceita.create({
           receita_id: receita.id,
           ingrediente_id: matchedIng.id,
