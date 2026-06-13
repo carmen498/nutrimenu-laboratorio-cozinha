@@ -78,7 +78,7 @@ export default function Receitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.filter({}),
+    queryFn: () => base44.entities.Receita.list("-nome", 1000),
     staleTime: 0,
     refetchOnMount: "always",
   });

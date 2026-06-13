@@ -183,7 +183,7 @@ IMPORTANTE:
     if (!p) return;
     if (temZero) { toast.error("Preencha a quantidade de todos os ingredientes antes de salvar."); return; }
 
-    const todas = await base44.entities.Receita.list("-nome", 500);
+    const todas = await base44.entities.Receita.list("-nome", 1000);
     const normForm = normalizarNome(p.nome);
     const similar = todas.find(r => normalizarNome(r.nome) === normForm);
 
