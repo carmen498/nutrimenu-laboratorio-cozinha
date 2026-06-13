@@ -35,10 +35,13 @@ export default function ReceitaAberta() {
   const [editingQtdValue, setEditingQtdValue] = useState("");
   const [editingIngId, setEditingIngId] = useState(null);
   const [ingSearch, setIngSearch] = useState("");
-  const [showAddGrupo, setShowAddGrupo] = useState(false);
-  const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
+  const [pendingGrupo, setPendingGrupo] = useState(false);
+  const [pendingGrupoTitulo, setPendingGrupoTitulo] = useState("");
   const [editingGrupoId, setEditingGrupoId] = useState(null);
   const [editingGrupoTitulo, setEditingGrupoTitulo] = useState("");
+  const [convertingNAId, setConvertingNAId] = useState(null);
+  const [convertingNATitulo, setConvertingNATitulo] = useState("");
+  // showAddGrupo / novoGrupoTitulo removidos — substituídos por pendingGrupo inline
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -92,7 +95,8 @@ export default function ReceitaAberta() {
         const fc = ing?.fator_correcao || 1;
         const qtdComprar = qtdNova * fc;
         const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
-        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false };
+        const isNA = !!(item.ingrediente_nome && item.ingrediente_nome.toUpperCase() === "N/A");
+        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA };
       });
   }, [itens, ingMap, porcoes, receita, temOrdemManual]);
 
@@ -168,9 +172,27 @@ export default function ReceitaAberta() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
-      setShowAddGrupo(false);
-      setNovoGrupoTitulo("");
-      toast.success("Grupo adicionado");
+      setPendingGrupo(false);
+      setPendingGrupoTitulo("");
+    },
+  });
+
+  const convertToGrupoMut = useMutation({
+    mutationFn: async ({ itemId, titulo }) => {
+      const maxOrdem = itens.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
+      await base44.entities.IngredienteReceita.delete(itemId);
+      await base44.entities.IngredienteReceita.create({
+        receita_id: id,
+        tipo: "grupo",
+        titulo_grupo: titulo,
+        ordem: maxOrdem + 10,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setConvertingNAId(null);
+      setConvertingNATitulo("");
+      toast.success("Convertido para sub-título");
     },
   });
 
@@ -319,7 +341,7 @@ export default function ReceitaAberta() {
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-bold">Ingredientes</h2>
           <div className="flex gap-1">
-            <Button size="sm" variant="outline" onClick={() => setShowAddGrupo(true)}>
+            <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}>
               <Plus className="w-4 h-4 mr-1" /> Sub-título
             </Button>
             <Button size="sm" onClick={() => setShowAddIng(true)}>
@@ -328,28 +350,9 @@ export default function ReceitaAberta() {
           </div>
         </div>
 
-        {showAddGrupo && (
-          <div className="flex items-center gap-2 mb-3 p-3 bg-accent/50 rounded-lg">
-            <Input
-              placeholder="Nome do grupo (ex: MOLHO PROVOLONE)"
-              value={novoGrupoTitulo}
-              onChange={(e) => setNovoGrupoTitulo(e.target.value)}
-              className="h-9 text-sm"
-              autoFocus
-              onKeyDown={(e) => { if (e.key === "Enter" && novoGrupoTitulo.trim()) addGrupoMut.mutate(novoGrupoTitulo.trim().toUpperCase()); if (e.key === "Escape") { setShowAddGrupo(false); setNovoGrupoTitulo(""); } }}
-            />
-            <Button size="sm" onClick={() => addGrupoMut.mutate(novoGrupoTitulo.trim().toUpperCase())} disabled={!novoGrupoTitulo.trim()}>
-              <Check className="w-4 h-4" />
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => { setShowAddGrupo(false); setNovoGrupoTitulo(""); }}>
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
-
         {loadingItens ? (
           <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
-        ) : itensFicha.filter(i => !i.isGrupo).length === 0 && itensFicha.filter(i => i.isGrupo).length === 0 ? (
+        ) : itensFicha.filter(i => !i.isGrupo && !i.isNA).length === 0 && itensFicha.filter(i => i.isGrupo || i.isNA).length === 0 && !pendingGrupo ? (
           <Card className="p-8 text-center text-muted-foreground">
             <p>Nenhum ingrediente adicionado</p>
             <Button size="sm" className="mt-3" onClick={() => setShowAddIng(true)}>
@@ -403,6 +406,57 @@ export default function ReceitaAberta() {
                         <>
                           <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              }
+
+              if (item.isNA) {
+                return (
+                  <Card key={item.id} className="p-2 bg-primary/5 border-primary/20 border-dashed">
+                    <div className="flex items-center gap-2">
+                      {convertingNAId === item.id ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input
+                            className="h-8 text-sm font-bold flex-1"
+                            value={convertingNATitulo}
+                            onChange={(e) => setConvertingNATitulo(e.target.value)}
+                            placeholder="Digite o nome do sub-título..."
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && convertingNATitulo.trim()) {
+                                convertToGrupoMut.mutate({ itemId: item.id, titulo: convertingNATitulo.trim().toUpperCase() });
+                              }
+                              if (e.key === "Escape") { setConvertingNAId(null); setConvertingNATitulo(""); }
+                            }}
+                          />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                            if (convertingNATitulo.trim()) convertToGrupoMut.mutate({ itemId: item.id, titulo: convertingNATitulo.trim().toUpperCase() });
+                            else { setConvertingNAId(null); setConvertingNATitulo(""); }
+                          }}>
+                            <Check className="w-3 h-3 text-green-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setConvertingNAId(null); setConvertingNATitulo(""); }}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="flex-1 text-sm text-muted-foreground italic">N/A — sem nome</span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary/80" onClick={() => { setConvertingNAId(item.id); setConvertingNATitulo(item.ingrediente_nome === "N/A" ? "" : item.ingrediente_nome); }} title="Converter para sub-título">
                             <Pencil className="w-3 h-3" />
                           </Button>
                         </>
@@ -649,6 +703,35 @@ export default function ReceitaAberta() {
               </Card>
               );
             })}
+
+            {pendingGrupo && (
+              <Card className="p-2 bg-primary/5 border-primary/20 border-dashed">
+                <div className="flex items-center gap-2">
+                  <Input
+                    className="h-9 text-sm font-bold flex-1"
+                    value={pendingGrupoTitulo}
+                    onChange={(e) => setPendingGrupoTitulo(e.target.value)}
+                    placeholder="Digite o nome do sub-título..."
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && pendingGrupoTitulo.trim()) {
+                        addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
+                      }
+                      if (e.key === "Escape") { setPendingGrupo(false); setPendingGrupoTitulo(""); }
+                    }}
+                  />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                    if (pendingGrupoTitulo.trim()) addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
+                    else { setPendingGrupo(false); setPendingGrupoTitulo(""); }
+                  }}>
+                    <Check className="w-4 h-4 text-green-600" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setPendingGrupo(false); setPendingGrupoTitulo(""); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </Card>
+            )}
           </div>
         )}
       </div>
