@@ -28,6 +28,7 @@ const CATEGORIAS = [
   "Molhos",
   "Saladas",
   "Tortas e Quiches",
+  "A Revisar",
 ];
 
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
@@ -122,9 +123,13 @@ IMPORTANTE:
       const passosFormatados = formatarModoPreparo(parsed.modo_preparo);
       const modoPreparoFinal = juntarPassos(passosFormatados);
 
+      const existingRec = await base44.entities.Receita.filter({ nome: parsed.nome?.toUpperCase() });
+      const dup = existingRec.length > 0;
+
       const receita = await base44.entities.Receita.create({
-        nome: parsed.nome,
+        nome: parsed.nome?.toUpperCase(),
         categoria: parsed.categoria,
+        revisar: dup,
         porcoes_base: parsed.porcoes_base || 4,
         unidade_base: parsed.unidade_base || "g",
         modo_preparo: modoPreparoFinal,
@@ -132,6 +137,8 @@ IMPORTANTE:
         custo_total: 0,
         custo_por_porcao: 0,
       });
+
+      if (dup) toast.warning("Receita duplicada — marcada para revisão");
 
       // Link ingredients
       for (let i = 0; i < (parsed.ingredientes || []).length; i++) {

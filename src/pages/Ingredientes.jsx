@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2 } from "lucide-react";
+import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 
 const CATEGORIAS = [
   "CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS",
-  "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS"
+  "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar"
 ];
 
 export default function Ingredientes() {
@@ -24,6 +24,7 @@ export default function Ingredientes() {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [expandedCat, setExpandedCat] = useState(null);
+  const [showRevisar, setShowRevisar] = useState(false);
   const qc = useQueryClient();
 
   const { data: ingredientes = [], isLoading } = useQuery({
@@ -40,6 +41,12 @@ export default function Ingredientes() {
       if (data.id) {
         const { id, created_date, updated_date, created_by_id, ...rest } = payload;
         return base44.entities.Ingrediente.update(id, rest);
+      }
+      // Check for duplicate name
+      const existing = await base44.entities.Ingrediente.filter({ nome: data.nome });
+      if (existing.length > 0) {
+        payload.revisar = true;
+        toast.warning("Ingrediente duplicado — marcado para revisão");
       }
       return base44.entities.Ingrediente.create(payload);
     },
@@ -60,6 +67,7 @@ export default function Ingredientes() {
   });
 
   const filtered = ingredientes.filter((i) => {
+    if (showRevisar) return i.revisar === true;
     const matchBusca = !busca || i.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = catFiltro === "todas" || i.categoria === catFiltro;
     return matchBusca && matchCat;
@@ -68,7 +76,7 @@ export default function Ingredientes() {
   // Group by category
   const grouped = {};
   filtered.forEach((i) => {
-    const cat = i.categoria || "DIVERSOS";
+    const cat = i.categoria || "A Revisar";
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(i);
   });
@@ -144,7 +152,16 @@ export default function Ingredientes() {
             className="pl-9"
           />
         </div>
-        <Select value={catFiltro} onValueChange={setCatFiltro}>
+        <Button
+          variant={showRevisar ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setShowRevisar(!showRevisar); setCatFiltro("todas"); setBusca(""); }}
+          className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
+        >
+          <AlertTriangle className="w-4 h-4 mr-1" />
+          Revisar
+        </Button>
+        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); }}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -237,7 +254,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
     if (item) {
       setForm({ ...item });
     } else {
-      setForm({ categoria: "DIVERSOS", nome: "", unidade_compra: "KG", peso_embalagem_g: 1000, preco_embalagem_rs: 0, fator_correcao: 1.0 });
+      setForm({ categoria: "A Revisar", nome: "", unidade_compra: "KG", peso_embalagem_g: 1000, preco_embalagem_rs: 0, fator_correcao: 1.0 });
     }
   };
 
@@ -259,10 +276,10 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
           </div>
           <div>
             <Label>Categoria</Label>
-            <Select value={form.categoria || "DIVERSOS"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
+            <Select value={form.categoria || "A Revisar"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS", "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS"].map((c) => (
+                {["CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS", "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar"].map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
@@ -348,10 +365,10 @@ function ImportDialog({ open, onClose }) {
           const existingItem = existingMap[item.nome.toLowerCase()];
           if (existingItem) {
             const { id, created_date, updated_date, created_by_id, nome, ...rest } = payload;
-            await base44.entities.Ingrediente.update(existingItem.id, rest);
+            await base44.entities.Ingrediente.update(existingItem.id, { ...rest, revisar: true });
             updated++;
           } else {
-            await base44.entities.Ingrediente.create(payload);
+            await base44.entities.Ingrediente.create({ ...payload, revisar: false });
             created++;
           }
         }

@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Sparkles, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Camera, Sparkles, Loader2, ChevronDown, Search, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
@@ -28,29 +29,107 @@ const CATEGORIAS = [
   "Molhos",
   "Saladas",
   "Tortas e Quiches",
+  "A Revisar",
 ];
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
-    nome: "", categoria: "Carnes, Bovina", porcoes_base: 4, rendimento_total: 0,
+    nome: "", categoria: "", porcoes_base: 4, rendimento_total: 0,
     unidade_base: "g", modo_preparo: "", foto_url: ""
   });
   const [saving, setSaving] = useState(false);
   const [generatingPhoto, setGeneratingPhoto] = useState(false);
+  const [catBusca, setCatBusca] = useState("");
+  const [catOpen, setCatOpen] = useState(false);
+
+  // Ingredient section state
+  const [ingBusca, setIngBusca] = useState("");
+  const [selectedIng, setSelectedIng] = useState(null);
+  const [ingQtd, setIngQtd] = useState("");
+  const [ingPrePreparo, setIngPrePreparo] = useState("");
+  const [addedIngs, setAddedIngs] = useState([]);
+
   const qc = useQueryClient();
+
+  const { data: ingredientesDB = [] } = useQuery({
+    queryKey: ["ingredientes"],
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+  });
+
+  const filteredIngs = useMemo(() => {
+    if (!ingBusca.trim()) return [];
+    const term = ingBusca.toLowerCase();
+    return ingredientesDB
+      .filter(i => i.nome?.toLowerCase().includes(term))
+      .slice(0, 20);
+  }, [ingBusca, ingredientesDB]);
+
+  const handleAddIng = () => {
+    if (!selectedIng) { toast.error("Selecione um ingrediente"); return; }
+    const qtd = parseFloat(ingQtd);
+    if (!qtd || qtd <= 0) { toast.error("Informe a quantidade por porção"); return; }
+    if (addedIngs.some(a => a.ingrediente_id === selectedIng.id)) {
+      toast.error("Ingrediente já adicionado");
+      return;
+    }
+    setAddedIngs([...addedIngs, {
+      ingrediente_id: selectedIng.id,
+      ingrediente_nome: selectedIng.nome,
+      quantidade_por_porcao: qtd,
+      pre_preparo: ingPrePreparo,
+      ordem: addedIngs.length,
+    }]);
+    setSelectedIng(null);
+    setIngBusca("");
+    setIngQtd("");
+    setIngPrePreparo("");
+  };
+
+  const handleRemoveIng = (idx) => {
+    setAddedIngs(addedIngs.filter((_, i) => i !== idx));
+  };
 
   const handleSave = async () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
+    if (addedIngs.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
+
+    // Validate all ingredients have quantity
+    const zeroQtd = addedIngs.some(a => (a.quantidade_por_porcao || 0) === 0);
+    if (zeroQtd) { toast.error("Todos os ingredientes precisam ter quantidade"); return; }
+
     setSaving(true);
     try {
       const passos = formatarModoPreparo(form.modo_preparo);
+      // Check for duplicate name
+      const existing = await base44.entities.Receita.filter({ nome: form.nome?.toUpperCase() });
+      const isDuplicate = existing.length > 0;
+
       const receita = await base44.entities.Receita.create({
         ...form,
+        nome: form.nome?.toUpperCase(),
         modo_preparo: passos.length > 0 ? juntarPassos(passos) : form.modo_preparo,
         custo_total: 0,
         custo_por_porcao: 0,
+        revisar: isDuplicate,
       });
+
+      if (isDuplicate) toast.warning("Receita duplicada — marcada para revisão");
+
+      // Create ingredient links
+      for (let i = 0; i < addedIngs.length; i++) {
+        const ing = addedIngs[i];
+        await base44.entities.IngredienteReceita.create({
+          receita_id: receita.id,
+          ingrediente_id: ing.ingrediente_id,
+          ingrediente_nome: ing.ingrediente_nome,
+          quantidade_por_porcao: ing.quantidade_por_porcao,
+          pre_preparo: ing.pre_preparo || "",
+          ordem: i * 10,
+        });
+      }
+
       qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["itens-receita"] });
       toast.success("Receita criada!");
       onCreated(receita.id);
     } catch (err) {
@@ -100,12 +179,36 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <Select value={form.categoria} onValueChange={(v) => setForm({ ...form, categoria: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIAS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Popover open={catOpen} onOpenChange={setCatOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between font-normal">
+                    {form.categoria || <span className="text-muted-foreground">&lt;selecionar&gt;</span>}
+                    <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <div className="flex items-center border-b px-3">
+                    <Search className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+                    <Input
+                      placeholder="Buscar categoria..."
+                      value={catBusca}
+                      onChange={(e) => setCatBusca(e.target.value)}
+                      className="border-0 focus-visible:ring-0 h-9"
+                    />
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {CATEGORIAS.filter((c) => !catBusca || c.toLowerCase().includes(catBusca.toLowerCase())).map((c) => (
+                      <button
+                        key={c}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                        onClick={() => { setForm({ ...form, categoria: c }); setCatOpen(false); setCatBusca(""); }}
+                      >
+                        {c}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <Label>Porções base</Label>
@@ -130,7 +233,93 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
           </div>
           <div>
             <Label>Modo de preparo</Label>
-            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder="Descreva o passo a passo..." />
+            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder="Descreva ou cole o passo a passo da receita" />
+          </div>
+
+          {/* Ingredients section */}
+          <div className="pt-2 border-t">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-base font-display">Ingredientes</Label>
+              <span className="text-xs text-muted-foreground">{addedIngs.length} adicionados</span>
+            </div>
+
+            {/* Added ingredients list */}
+            {addedIngs.length > 0 && (
+              <div className="space-y-1.5 mb-3">
+                {addedIngs.map((ing, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-muted/50 rounded-lg p-2 text-sm">
+                    <span className="flex-1 truncate font-medium">{ing.ingrediente_nome}</span>
+                    <span className="text-muted-foreground shrink-0">{ing.quantidade_por_porcao}g/porção</span>
+                    {ing.pre_preparo && <span className="text-xs text-muted-foreground italic shrink-0">({ing.pre_preparo})</span>}
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add ingredient form */}
+            <div className="space-y-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between font-normal" size="sm">
+                    {selectedIng ? selectedIng.nome : <span className="text-muted-foreground">Buscar ingrediente...</span>}
+                    <Search className="w-3.5 h-3.5 ml-2 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Input
+                    placeholder="Digite o nome do ingrediente..."
+                    value={ingBusca}
+                    onChange={(e) => { setIngBusca(e.target.value); setSelectedIng(null); }}
+                    className="border-0 focus-visible:ring-0 h-9 px-3"
+                    autoFocus
+                  />
+                  <div className="max-h-48 overflow-y-auto border-t">
+                    {filteredIngs.length > 0 ? filteredIngs.map((ing) => (
+                      <button
+                        key={ing.id}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between"
+                        onClick={() => { setSelectedIng(ing); setIngBusca(ing.nome); }}
+                      >
+                        <span>{ing.nome}</span>
+                        {ing.preco_por_g_rs > 0 && (
+                          <span className="text-xs text-muted-foreground">R$ {(ing.preco_por_g_rs * 1000).toFixed(2).replace(".", ",")}/kg</span>
+                        )}
+                      </button>
+                    )) : ingBusca.trim() ? (
+                      <p className="text-xs text-muted-foreground px-3 py-4 text-center">Nenhum ingrediente encontrado</p>
+                    ) : null}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Quant. por porção (g)"
+                    value={ingQtd}
+                    onChange={(e) => setIngQtd(e.target.value)}
+                    className="h-9 text-sm"
+                    min={0}
+                    step={0.1}
+                  />
+                </div>
+                <div className="flex-1">
+                  <Input
+                    placeholder="Pré-preparo (opcional)"
+                    value={ingPrePreparo}
+                    onChange={(e) => setIngPrePreparo(e.target.value)}
+                    className="h-9 text-sm"
+                  />
+                </div>
+                <Button size="sm" onClick={handleAddIng} className="shrink-0">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
 
           {/* Photo */}

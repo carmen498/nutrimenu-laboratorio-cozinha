@@ -28,6 +28,7 @@ const CATEGORIAS = [
   "Molhos",
   "Saladas",
   "Tortas e Quiches",
+  "A Revisar",
 ];
 
 export default function EditReceitaDialog({ open, onClose, receita }) {
@@ -41,6 +42,7 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
     setSaving(true);
     try {
       const { id, created_date, updated_date, created_by_id, ...rest } = form;
+      rest.nome = rest.nome?.toUpperCase();
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
       await base44.entities.Receita.update(receita.id, rest);
@@ -94,7 +96,7 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <Select value={form.categoria || "Carnes, Bovina"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
+              <Select value={form.categoria || ""} onValueChange={(v) => setForm({ ...form, categoria: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{CATEGORIAS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>

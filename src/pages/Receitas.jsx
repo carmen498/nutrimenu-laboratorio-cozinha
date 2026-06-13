@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -32,6 +32,7 @@ const CATEGORIAS_RECEITA = [
   "Molhos",
   "Saladas",
   "Tortas e Quiches",
+  "A Revisar",
 ];
 
 export default function Receitas() {
@@ -40,6 +41,7 @@ export default function Receitas() {
   const [showNew, setShowNew] = useState(null);
   const [showImportCsv, setShowImportCsv] = useState(false);
   const [expandedCat, setExpandedCat] = useState(null);
+  const [showRevisar, setShowRevisar] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -84,6 +86,7 @@ export default function Receitas() {
   });
 
   const filtered = receitas.filter((r) => {
+    if (showRevisar) return r.revisar === true;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = catFiltro === "todas" || r.categoria === catFiltro;
     return matchBusca && matchCat;
@@ -92,7 +95,7 @@ export default function Receitas() {
   // Group by category and sort
   const grouped = {};
   filtered.forEach((r) => {
-    const cat = r.categoria || "Sem categoria";
+    const cat = r.categoria || "A Revisar";
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(r);
   });
@@ -155,8 +158,17 @@ export default function Receitas() {
             className="pl-9"
           />
         </div>
-        <Select value={catFiltro} onValueChange={setCatFiltro}>
-          <SelectTrigger className="w-40">
+        <Button
+          variant={showRevisar ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setShowRevisar(!showRevisar); setCatFiltro("todas"); setBusca(""); }}
+          className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
+        >
+          <AlertTriangle className="w-4 h-4 mr-1" />
+          Revisar
+        </Button>
+        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); }}>
+        <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -303,7 +315,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           const nome = (item.nome_receita || "").trim();
           if (!nome) { skipped++; continue; }
           const payload = {
-            nome,
+            nome: nome.toUpperCase(),
             categoria: item.categoria || "",
             porcoes_base: item.porcoes_base || 1,
             rendimento_total: item.rendimento_g || 0,
@@ -313,10 +325,10 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           const existingItem = existingMap[nome.toLowerCase()];
           if (existingItem) {
             const { id, created_date, updated_date, created_by_id, ...rest } = payload;
-            await base44.entities.Receita.update(existingItem.id, rest);
+            await base44.entities.Receita.update(existingItem.id, { ...rest, revisar: true });
             updated++;
           } else {
-            await base44.entities.Receita.create(payload);
+            await base44.entities.Receita.create({ ...payload, revisar: false });
             created++;
           }
         }

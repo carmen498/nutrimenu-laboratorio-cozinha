@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown
 } from "lucide-react";
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
@@ -64,9 +64,15 @@ export default function ReceitaAberta() {
 
   const fator = receita && receita.porcoes_base > 0 ? (porcoes || receita.porcoes_base) / receita.porcoes_base : 1;
 
+  const temOrdemManual = useMemo(() => itens.some(i => (i.ordem || 0) > 0), [itens]);
+
   const itensFicha = useMemo(() => {
-    return itens
-      .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+    return [...itens]
+      .sort((a, b) => {
+        if (temOrdemManual) return (a.ordem || 0) - (b.ordem || 0);
+        return ((b.quantidade_por_porcao || 0) * (porcoes || receita?.porcoes_base || 1))
+             - ((a.quantidade_por_porcao || 0) * (porcoes || receita?.porcoes_base || 1));
+      })
       .map((item) => {
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
@@ -121,6 +127,27 @@ export default function ReceitaAberta() {
       setEditingQtdId(null);
     },
   });
+
+  const updateOrdemMut = useMutation({
+    mutationFn: async ({ itemId, ordem }) => {
+      await base44.entities.IngredienteReceita.update(itemId, { ordem });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    },
+  });
+
+  const handleMove = (idx, dir) => {
+    const items = [...itensFicha];
+    if (dir < 0 && idx === 0) return;
+    if (dir > 0 && idx >= items.length - 1) return;
+    const targetIdx = idx + dir;
+    const ordemA = items[idx].ordem || (idx + 1) * 10;
+    const ordemB = items[targetIdx].ordem || (targetIdx + 1) * 10;
+    updateOrdemMut.mutate({ itemId: items[idx].id, ordem: ordemB });
+    updateOrdemMut.mutate({ itemId: items[targetIdx].id, ordem: ordemA });
+    toast.success("Ordem alterada");
+  };
 
   const handleConfirmQtd = (itemId) => {
     const val = parseFloat(editingQtdValue);
@@ -254,25 +281,25 @@ export default function ReceitaAberta() {
           <div className="space-y-2">
             {/* Header */}
             <div className="hidden md:grid grid-cols-12 gap-2 px-3 text-xs text-muted-foreground font-medium">
-              <div className={temFatorCorrecao ? "col-span-4" : "col-span-5"}>Ingrediente</div>
-              <div className={temFatorCorrecao ? "col-span-3 text-center" : "col-span-4 text-center"}>Quantidade</div>
+              <div className={temFatorCorrecao ? "col-span-3" : "col-span-3"}>Ingrediente</div>
+              <div className={temFatorCorrecao ? "col-span-2 text-center" : "col-span-3 text-center"}>Quantidade</div>
               {temFatorCorrecao && <div className="col-span-2 text-center">Comprar</div>}
               <div className="col-span-2 text-right">Custo</div>
-              <div className="col-span-1"></div>
+              <div className="col-span-3"></div>
             </div>
 
-            {itensFicha.map((item) => {
+            {itensFicha.map((item, idx) => {
               const isQtdZero = (item.quantidade_por_porcao || 0) === 0;
               return (
               <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""}`}>
                 {/* Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-2 items-center">
-                  <div className={temFatorCorrecao ? "col-span-4" : "col-span-5"}>
+                  <div className="col-span-3">
                     <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
                     {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                     {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                   </div>
-                  <div className={`${temFatorCorrecao ? "col-span-3" : "col-span-4"} text-center`}>
+                  <div className={`${temFatorCorrecao ? "col-span-2" : "col-span-3"} text-center`}>
                     {editingQtdId === item.id ? (
                       <div className="flex items-center gap-1 justify-center">
                         <Input
@@ -324,7 +351,13 @@ export default function ReceitaAberta() {
                       {formatCurrency(item.custo)}
                     </button>
                   </div>
-                  <div className="col-span-1 flex justify-end">
+                  <div className="col-span-3 flex justify-end gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                      <ArrowUp className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                      <ArrowDown className="w-3 h-3" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemMut.mutate(item.id)}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
@@ -338,9 +371,17 @@ export default function ReceitaAberta() {
                       {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                       {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemMut.mutate(item.id)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                    <div className="flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemMut.mutate(item.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex justify-between mt-2 text-xs items-center">
                     <span className="text-muted-foreground">Quantidade: </span>
