@@ -24,7 +24,8 @@
         "Entradas, Frias",
         "Molhos",
         "Saladas",
-        "Tortas e Quiches"
+        "Tortas e Quiches",
+        "A Revisar"
       ],
       "description": "Categoria da receita no formato Grupo, Subcategoria"
     },
