@@ -33,6 +33,8 @@ export default function ReceitaAberta() {
   const [editingPrice, setEditingPrice] = useState(null);
   const [editingQtdId, setEditingQtdId] = useState(null);
   const [editingQtdValue, setEditingQtdValue] = useState("");
+  const [editingIngId, setEditingIngId] = useState(null);
+  const [ingSearch, setIngSearch] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -52,7 +54,7 @@ export default function ReceitaAberta() {
 
   useEffect(() => {
     if (receita && porcoes === null) {
-      setPorcoes(receita.porcoes_base || 4);
+      setPorcoes(receita.porcoes_base || 1);
     }
   }, [receita, porcoes]);
 
@@ -134,6 +136,21 @@ export default function ReceitaAberta() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    },
+  });
+
+  const replaceIngMut = useMutation({
+    mutationFn: async ({ itemId, newIngredienteId, newIngredienteNome }) => {
+      await base44.entities.IngredienteReceita.update(itemId, {
+        ingrediente_id: newIngredienteId,
+        ingrediente_nome: newIngredienteNome,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setEditingIngId(null);
+      setIngSearch("");
+      toast.success("Ingrediente substituído");
     },
   });
 
@@ -295,9 +312,50 @@ export default function ReceitaAberta() {
                 {/* Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-3">
-                    <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
-                    {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
-                    {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
+                    {editingIngId === item.id ? (
+                      <div className="relative">
+                        <div className="flex items-center gap-1">
+                          <Input
+                            placeholder="Buscar ingrediente..."
+                            value={ingSearch}
+                            onChange={(e) => setIngSearch(e.target.value)}
+                            className="h-7 text-sm flex-1"
+                            autoFocus
+                            onKeyDown={(e) => { if (e.key === "Escape") { setEditingIngId(null); setIngSearch(""); } }}
+                          />
+                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { setEditingIngId(null); setIngSearch(""); }}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                        {ingSearch && (
+                          <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+                            {ingredientesDB
+                              .filter(ing => ing.nome.toLowerCase().includes(ingSearch.toLowerCase()))
+                              .slice(0, 20)
+                              .map(ing => (
+                                <button
+                                  key={ing.id}
+                                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                                  onClick={() => replaceIngMut.mutate({
+                                    itemId: item.id,
+                                    newIngredienteId: ing.id,
+                                    newIngredienteNome: ing.nome
+                                  })}
+                                >
+                                  {ing.nome}
+                                </button>
+                              ))
+                            }
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
+                        {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
+                        {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
+                      </>
+                    )}
                   </div>
                   <div className={`${temFatorCorrecao ? "col-span-2" : "col-span-3"} text-center`}>
                     {editingQtdId === item.id ? (
@@ -352,6 +410,9 @@ export default function ReceitaAberta() {
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir ingrediente">
+                      <Pencil className="w-3 h-3" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
                       <ArrowUp className="w-3 h-3" />
                     </Button>
@@ -365,13 +426,55 @@ export default function ReceitaAberta() {
                 </div>
                 {/* Mobile */}
                 <div className="md:hidden">
-                  <div className="flex items-start justify-between">
+                  {editingIngId === item.id ? (
+                    <div className="relative mb-2">
+                      <div className="flex items-center gap-1">
+                        <Input
+                          placeholder="Buscar ingrediente..."
+                          value={ingSearch}
+                          onChange={(e) => setIngSearch(e.target.value)}
+                          className="h-8 text-sm flex-1"
+                          autoFocus
+                          onKeyDown={(e) => { if (e.key === "Escape") { setEditingIngId(null); setIngSearch(""); } }}
+                        />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => { setEditingIngId(null); setIngSearch(""); }}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      {ingSearch && (
+                        <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
+                          {ingredientesDB
+                            .filter(ing => ing.nome.toLowerCase().includes(ingSearch.toLowerCase()))
+                            .slice(0, 20)
+                            .map(ing => (
+                              <button
+                                key={ing.id}
+                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
+                                onClick={() => replaceIngMut.mutate({
+                                  itemId: item.id,
+                                  newIngredienteId: ing.id,
+                                  newIngredienteNome: ing.nome
+                                })}
+                              >
+                                {ing.nome}
+                              </button>
+                            ))
+                          }
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <div>
                       <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
                       {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                       {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                     </div>
+                  )}
+                  <div className="flex items-start justify-between">
                     <div className="flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir ingrediente">
+                        <Pencil className="w-3 h-3" />
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
                         <ArrowUp className="w-3 h-3" />
                       </Button>
