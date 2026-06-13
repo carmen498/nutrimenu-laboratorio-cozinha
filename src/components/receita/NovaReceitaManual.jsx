@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Camera, Sparkles, Loader2, Search, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
+import { Camera, Sparkles, Loader2, Search, Plus, Trash2, X, Check, AlertCircle, ArrowUp, ArrowDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
@@ -34,6 +34,8 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [duplicateWarning, setDuplicateWarning] = useState(null);
   const [showAddGrupo, setShowAddGrupo] = useState(false);
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
+  const [editingGrupoIdx, setEditingGrupoIdx] = useState(null);
+  const [editingGrupoText, setEditingGrupoText] = useState("");
 
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -74,6 +76,22 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
   const handleRemoveIng = (idx) => {
     setAddedIngs(addedIngs.filter((_, i) => i !== idx));
+  };
+
+  const handleMoveIng = (idx, dir) => {
+    const newIdx = idx + dir;
+    if (newIdx < 0 || newIdx >= addedIngs.length) return;
+    const list = [...addedIngs];
+    [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
+    setAddedIngs(list);
+  };
+
+  const handleUpdateGrupo = (idx) => {
+    if (!editingGrupoText.trim()) { setEditingGrupoIdx(null); return; }
+    const list = [...addedIngs];
+    list[idx] = { ...list[idx], titulo_grupo: editingGrupoText.trim().toUpperCase() };
+    setAddedIngs(list);
+    setEditingGrupoIdx(null);
   };
 
   const handleAddGrupo = () => {
@@ -227,17 +245,50 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             {addedIngs.length > 0 && (
               <div className="space-y-1.5 mb-3">
                 {addedIngs.map((ing, idx) => ing.tipo === "grupo" ? (
-                  <div key={idx} className="flex items-center gap-2 bg-primary/5 border border-primary/20 border-dashed rounded-lg p-2 text-sm">
-                    <span className="flex-1 font-bold text-xs text-primary uppercase tracking-wide">{ing.titulo_grupo}</span>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
-                      <Trash2 className="w-3 h-3 text-destructive" />
-                    </Button>
-                  </div>
+                  editingGrupoIdx === idx ? (
+                    <div key={idx} className="flex items-center gap-2 bg-primary/5 border border-primary/20 border-dashed rounded-lg p-2">
+                      <Input
+                        className="h-7 text-sm font-bold flex-1"
+                        value={editingGrupoText}
+                        onChange={(e) => setEditingGrupoText(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === "Enter") handleUpdateGrupo(idx); if (e.key === "Escape") setEditingGrupoIdx(null); }}
+                      />
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleUpdateGrupo(idx)}>
+                        <Check className="w-3 h-3 text-green-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingGrupoIdx(null)}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div key={idx} className="flex items-center gap-1 bg-primary/5 border border-primary/20 border-dashed rounded-lg p-2 text-sm">
+                      <span className="flex-1 font-bold text-xs text-primary uppercase tracking-wide">{ing.titulo_grupo}</span>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, -1)} title="Subir">
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, 1)} title="Descer">
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { setEditingGrupoIdx(idx); setEditingGrupoText(ing.titulo_grupo); }} title="Editar título">
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </Button>
+                    </div>
+                  )
                 ) : (
-                  <div key={idx} className="flex items-center gap-2 bg-muted/50 rounded-lg p-2 text-sm">
+                  <div key={idx} className="flex items-center gap-1 bg-muted/50 rounded-lg p-2 text-sm">
                     <span className="flex-1 truncate font-medium">{ing.ingrediente_nome}</span>
-                    <span className="text-muted-foreground shrink-0">{ing.quantidade_por_porcao}g/porção</span>
+                    <span className="text-muted-foreground shrink-0 text-xs">{ing.quantidade_por_porcao}g/porção</span>
                     {ing.pre_preparo && <span className="text-xs text-muted-foreground italic shrink-0">({ing.pre_preparo})</span>}
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, -1)} title="Subir">
+                      <ArrowUp className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, 1)} title="Descer">
+                      <ArrowDown className="w-3 h-3" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
                       <Trash2 className="w-3 h-3 text-destructive" />
                     </Button>

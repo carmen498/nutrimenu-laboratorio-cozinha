@@ -420,7 +420,7 @@ export default function ReceitaAberta() {
                   <Card key={item.id} className="p-2 bg-primary/5 border-primary/20 border-dashed">
                     <div className="flex items-center gap-2">
                       {editingGrupoId === item.id ? (
-                        <div className="flex items-center gap-2 flex-1">
+                        <>
                           <Input
                             className="h-8 text-sm font-bold flex-1"
                             value={editingGrupoTitulo}
@@ -433,33 +433,33 @@ export default function ReceitaAberta() {
                               if (e.key === "Escape") setEditingGrupoId(null);
                             }}
                           />
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             if (editingGrupoTitulo.trim()) updateGrupoMut.mutate({ itemId: item.id, titulo: editingGrupoTitulo.trim().toUpperCase() });
                             else setEditingGrupoId(null);
                           }}>
-                            <Check className="w-3 h-3 text-green-600" />
+                            <Check className="w-4 h-4 text-green-600" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingGrupoId(null)}>
-                            <X className="w-3 h-3" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingGrupoId(null)}>
+                            <X className="w-4 h-4" />
                           </Button>
-                        </div>
+                        </>
                       ) : (
                         <>
                           <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                            <ArrowUp className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                            <ArrowDown className="w-3 h-3" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
                             <Pencil className="w-3 h-3" />
                           </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </>
                       )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
-                        <ArrowUp className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
-                        <ArrowDown className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
                     </div>
                   </Card>
                 );
