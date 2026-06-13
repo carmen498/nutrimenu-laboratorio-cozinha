@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Camera, Sparkles, Loader2, Search, Plus, Trash2, AlertCircle } from "lucide-react";
+import { Camera, Sparkles, Loader2, Search, Plus, Trash2, X, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
@@ -32,6 +32,8 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [showNovoIng, setShowNovoIng] = useState(false);
   const [novoIngNome, setNovoIngNome] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [showAddGrupo, setShowAddGrupo] = useState(false);
+  const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
 
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -74,6 +76,17 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
     setAddedIngs(addedIngs.filter((_, i) => i !== idx));
   };
 
+  const handleAddGrupo = () => {
+    if (!novoGrupoTitulo.trim()) return;
+    setAddedIngs([...addedIngs, {
+      tipo: "grupo",
+      titulo_grupo: novoGrupoTitulo.trim().toUpperCase(),
+      ordem: addedIngs.length,
+    }]);
+    setNovoGrupoTitulo("");
+    setShowAddGrupo(false);
+  };
+
   const doSave = async () => {
     setSaving(true);
     try {
@@ -89,14 +102,23 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
       for (let i = 0; i < addedIngs.length; i++) {
         const ing = addedIngs[i];
-        await base44.entities.IngredienteReceita.create({
-          receita_id: receita.id,
-          ingrediente_id: ing.ingrediente_id,
-          ingrediente_nome: ing.ingrediente_nome,
-          quantidade_por_porcao: ing.quantidade_por_porcao,
-          pre_preparo: ing.pre_preparo || "",
-          ordem: i * 10,
-        });
+        if (ing.tipo === "grupo") {
+          await base44.entities.IngredienteReceita.create({
+            receita_id: receita.id,
+            tipo: "grupo",
+            titulo_grupo: ing.titulo_grupo,
+            ordem: i * 10,
+          });
+        } else {
+          await base44.entities.IngredienteReceita.create({
+            receita_id: receita.id,
+            ingrediente_id: ing.ingrediente_id,
+            ingrediente_nome: ing.ingrediente_nome,
+            quantidade_por_porcao: ing.quantidade_por_porcao,
+            pre_preparo: ing.pre_preparo || "",
+            ordem: i * 10,
+          });
+        }
       }
 
       qc.invalidateQueries({ queryKey: ["receitas"] });
@@ -114,8 +136,9 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
   const handleSave = async () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
-    if (addedIngs.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
-    const zeroQtd = addedIngs.some(a => (a.quantidade_por_porcao || 0) === 0);
+    const ingsReais = addedIngs.filter(a => a.tipo !== "grupo");
+    if (ingsReais.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
+    const zeroQtd = ingsReais.some(a => (a.quantidade_por_porcao || 0) === 0);
     if (zeroQtd) { toast.error("Todos os ingredientes precisam ter quantidade"); return; }
 
     // Busca similar por nome normalizado
@@ -203,7 +226,14 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             {/* Added ingredients list */}
             {addedIngs.length > 0 && (
               <div className="space-y-1.5 mb-3">
-                {addedIngs.map((ing, idx) => (
+                {addedIngs.map((ing, idx) => ing.tipo === "grupo" ? (
+                  <div key={idx} className="flex items-center gap-2 bg-primary/5 border border-primary/20 border-dashed rounded-lg p-2 text-sm">
+                    <span className="flex-1 font-bold text-xs text-primary uppercase tracking-wide">{ing.titulo_grupo}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
+                ) : (
                   <div key={idx} className="flex items-center gap-2 bg-muted/50 rounded-lg p-2 text-sm">
                     <span className="flex-1 truncate font-medium">{ing.ingrediente_nome}</span>
                     <span className="text-muted-foreground shrink-0">{ing.quantidade_por_porcao}g/porção</span>
@@ -215,6 +245,32 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                 ))}
               </div>
             )}
+
+            {/* Add group header */}
+            <div className="flex items-center gap-2 mb-2">
+              {showAddGrupo ? (
+                <>
+                  <Input
+                    placeholder="Nome do grupo (ex: MOLHO PROVOLONE)"
+                    value={novoGrupoTitulo}
+                    onChange={(e) => setNovoGrupoTitulo(e.target.value)}
+                    className="h-8 text-sm flex-1"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAddGrupo(); if (e.key === "Escape") { setShowAddGrupo(false); setNovoGrupoTitulo(""); } }}
+                  />
+                  <Button size="sm" onClick={handleAddGrupo} disabled={!novoGrupoTitulo.trim()}>
+                    <Check className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowAddGrupo(false); setNovoGrupoTitulo(""); }}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setShowAddGrupo(true)}>
+                  <Plus className="w-3 h-3 mr-1" /> Adicionar sub-título de grupo
+                </Button>
+              )}
+            </div>
 
             {/* Add ingredient form */}
             <div className="space-y-2">

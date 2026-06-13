@@ -8,7 +8,7 @@
     },
     "ingrediente_id": {
       "type": "string",
-      "description": "ID do ingrediente"
+      "description": "ID do ingrediente (vazio para tipo=grupo)"
     },
     "ingrediente_nome": {
       "type": "string",
@@ -29,10 +29,22 @@
     "ordem": {
       "type": "number",
       "description": "Ordem de exibi\u00e7\u00e3o"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "ingrediente",
+        "grupo"
+      ],
+      "default": "ingrediente",
+      "description": "Tipo do item na lista: ingrediente ou grupo"
+    },
+    "titulo_grupo": {
+      "type": "string",
+      "description": "T\u00edtulo do grupo (usado quando tipo=grupo)"
     }
   },
   "required": [
-    "receita_id",
-    "ingrediente_id"
+    "receita_id"
   ]
 }

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Loader2, Check, AlertCircle, Plus, AlertTriangle } from "lucide-react";
+import { Sparkles, Loader2, Check, X, AlertCircle, Plus, AlertTriangle } from "lucide-react";
 import CategoriaPicker, { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
@@ -23,6 +23,8 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const parsedRef = useRef(null);
   parsedRef.current = parsed;
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [showAddGrupo, setShowAddGrupo] = useState(false);
+  const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const navigate = useNavigate();
 
   const { data: ingredientes = [] } = useQuery({
@@ -101,7 +103,14 @@ IMPORTANTE:
     setParsed({ ...parsed, ingredientes: novos });
   };
 
-  const temZero = (parsed?.ingredientes || []).some(ing => (ing.quantidade_g || 0) === 0);
+  const handleAddGrupo = () => {
+    if (!novoGrupoTitulo.trim()) return;
+    setParsed({ ...parsed, ingredientes: [...(parsed.ingredientes || []), { tipo: "grupo", titulo_grupo: novoGrupoTitulo.trim().toUpperCase() }] });
+    setNovoGrupoTitulo("");
+    setShowAddGrupo(false);
+  };
+
+  const temZero = (parsed?.ingredientes || []).some(ing => ing.tipo !== "grupo" && (ing.quantidade_g || 0) === 0);
 
   const doSave = async () => {
     const p = parsedRef.current;
@@ -127,6 +136,18 @@ IMPORTANTE:
       // Link ingredients
       for (let i = 0; i < (p.ingredientes || []).length; i++) {
         const ing = p.ingredientes[i];
+
+        // Group header
+        if (ing.tipo === "grupo") {
+          await base44.entities.IngredienteReceita.create({
+            receita_id: receita.id,
+            tipo: "grupo",
+            titulo_grupo: ing.titulo_grupo,
+            ordem: i,
+          });
+          continue;
+        }
+
         // Find matching ingredient in bank — exact match only
         let matchedIng = null;
         if (ing.nome_banco) {
@@ -257,14 +278,49 @@ IMPORTANTE:
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Ingredientes identificados</Label>
-                {temZero && (
-                  <span className="text-xs text-amber-600 flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Preencha as quantidades faltantes
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {temZero && (
+                    <span className="text-xs text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Preencha as quantidades faltantes
+                    </span>
+                  )}
+                  <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setShowAddGrupo(!showAddGrupo)}>
+                    <Plus className="w-3 h-3 mr-1" /> Sub-título
+                  </Button>
+                </div>
               </div>
+
+              {showAddGrupo && (
+                <div className="flex items-center gap-2 mb-2 p-2 bg-accent/50 rounded-lg">
+                  <Input
+                    placeholder="Nome do grupo (ex: MOLHO PROVOLONE)"
+                    value={novoGrupoTitulo}
+                    onChange={(e) => setNovoGrupoTitulo(e.target.value)}
+                    className="h-8 text-sm flex-1"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAddGrupo(); if (e.key === "Escape") { setShowAddGrupo(false); setNovoGrupoTitulo(""); } }}
+                  />
+                  <Button size="sm" onClick={handleAddGrupo} disabled={!novoGrupoTitulo.trim()}>
+                    <Check className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowAddGrupo(false); setNovoGrupoTitulo(""); }}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-2">
                 {(parsed.ingredientes || []).map((ing, idx) => {
+                  if (ing.tipo === "grupo") {
+                    return (
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 border-dashed rounded-lg text-sm">
+                        <span className="flex-1 font-bold text-xs text-primary uppercase tracking-wide">{ing.titulo_grupo}</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeIngrediente(idx)}>
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    );
+                  }
                   const found = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
                   const isZero = (ing.quantidade_g || 0) === 0;
                   return (

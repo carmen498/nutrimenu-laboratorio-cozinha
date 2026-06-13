@@ -35,6 +35,10 @@ export default function ReceitaAberta() {
   const [editingQtdValue, setEditingQtdValue] = useState("");
   const [editingIngId, setEditingIngId] = useState(null);
   const [ingSearch, setIngSearch] = useState("");
+  const [showAddGrupo, setShowAddGrupo] = useState(false);
+  const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
+  const [editingGrupoId, setEditingGrupoId] = useState(null);
+  const [editingGrupoTitulo, setEditingGrupoTitulo] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -72,19 +76,25 @@ export default function ReceitaAberta() {
     return [...itens]
       .sort((a, b) => {
         if (temOrdemManual) return (a.ordem || 0) - (b.ordem || 0);
+        // grupos vão para o topo quando sem ordem explícita
+        if (a.tipo === "grupo" && b.tipo !== "grupo") return -1;
+        if (a.tipo !== "grupo" && b.tipo === "grupo") return 1;
         return ((b.quantidade_por_porcao || 0) * (porcoes || receita?.porcoes_base || 1))
              - ((a.quantidade_por_porcao || 0) * (porcoes || receita?.porcoes_base || 1));
       })
       .map((item) => {
+        if (item.tipo === "grupo") {
+          return { ...item, isGrupo: true, custo: 0, qtdOriginal: 0, qtdNova: 0, qtdComprar: 0 };
+        }
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
         const qtdNova = item.quantidade_por_porcao * (porcoes || receita?.porcoes_base || 1);
         const fc = ing?.fator_correcao || 1;
         const qtdComprar = qtdNova * fc;
         const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
-        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo };
+        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false };
       });
-  }, [itens, ingMap, porcoes, receita]);
+  }, [itens, ingMap, porcoes, receita, temOrdemManual]);
 
   const custoTotal = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
@@ -99,14 +109,6 @@ export default function ReceitaAberta() {
       }
     }
   }, [custoTotal, custoPorcao, receita, fator, id]);
-
-  const deleteItemMut = useMutation({
-    mutationFn: (itemId) => base44.entities.IngredienteReceita.delete(itemId),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
-      toast.success("Ingrediente removido");
-    },
-  });
 
   const updatePriceMut = useMutation({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
@@ -151,6 +153,42 @@ export default function ReceitaAberta() {
       setEditingIngId(null);
       setIngSearch("");
       toast.success("Ingrediente substituído");
+    },
+  });
+
+  const addGrupoMut = useMutation({
+    mutationFn: async (titulo) => {
+      const maxOrdem = itens.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
+      await base44.entities.IngredienteReceita.create({
+        receita_id: id,
+        tipo: "grupo",
+        titulo_grupo: titulo,
+        ordem: maxOrdem + 10,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setShowAddGrupo(false);
+      setNovoGrupoTitulo("");
+      toast.success("Grupo adicionado");
+    },
+  });
+
+  const updateGrupoMut = useMutation({
+    mutationFn: async ({ itemId, titulo }) => {
+      await base44.entities.IngredienteReceita.update(itemId, { titulo_grupo: titulo });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setEditingGrupoId(null);
+    },
+  });
+
+  const deleteItemOrGrupoMut = useMutation({
+    mutationFn: (itemId) => base44.entities.IngredienteReceita.delete(itemId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Item removido");
     },
   });
 
@@ -280,14 +318,38 @@ export default function ReceitaAberta() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-bold">Ingredientes</h2>
-          <Button size="sm" onClick={() => setShowAddIng(true)}>
-            <Plus className="w-4 h-4 mr-1" /> Adicionar
-          </Button>
+          <div className="flex gap-1">
+            <Button size="sm" variant="outline" onClick={() => setShowAddGrupo(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Sub-título
+            </Button>
+            <Button size="sm" onClick={() => setShowAddIng(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Ingrediente
+            </Button>
+          </div>
         </div>
+
+        {showAddGrupo && (
+          <div className="flex items-center gap-2 mb-3 p-3 bg-accent/50 rounded-lg">
+            <Input
+              placeholder="Nome do grupo (ex: MOLHO PROVOLONE)"
+              value={novoGrupoTitulo}
+              onChange={(e) => setNovoGrupoTitulo(e.target.value)}
+              className="h-9 text-sm"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter" && novoGrupoTitulo.trim()) addGrupoMut.mutate(novoGrupoTitulo.trim().toUpperCase()); if (e.key === "Escape") { setShowAddGrupo(false); setNovoGrupoTitulo(""); } }}
+            />
+            <Button size="sm" onClick={() => addGrupoMut.mutate(novoGrupoTitulo.trim().toUpperCase())} disabled={!novoGrupoTitulo.trim()}>
+              <Check className="w-4 h-4" />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowAddGrupo(false); setNovoGrupoTitulo(""); }}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
 
         {loadingItens ? (
           <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
-        ) : itensFicha.length === 0 ? (
+        ) : itensFicha.filter(i => !i.isGrupo).length === 0 && itensFicha.filter(i => i.isGrupo).length === 0 ? (
           <Card className="p-8 text-center text-muted-foreground">
             <p>Nenhum ingrediente adicionado</p>
             <Button size="sm" className="mt-3" onClick={() => setShowAddIng(true)}>
@@ -306,7 +368,59 @@ export default function ReceitaAberta() {
             </div>
 
             {itensFicha.map((item, idx) => {
-              const isQtdZero = (item.quantidade_por_porcao || 0) === 0;
+              const isQtdZero = !item.isGrupo && (item.quantidade_por_porcao || 0) === 0;
+
+              // Grupo header
+              if (item.isGrupo) {
+                return (
+                  <Card key={item.id} className="p-2 bg-primary/5 border-primary/20 border-dashed">
+                    <div className="flex items-center gap-2">
+                      {editingGrupoId === item.id ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <Input
+                            className="h-8 text-sm font-bold flex-1"
+                            value={editingGrupoTitulo}
+                            onChange={(e) => setEditingGrupoTitulo(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && editingGrupoTitulo.trim()) {
+                                updateGrupoMut.mutate({ itemId: item.id, titulo: editingGrupoTitulo.trim().toUpperCase() });
+                              }
+                              if (e.key === "Escape") setEditingGrupoId(null);
+                            }}
+                          />
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                            if (editingGrupoTitulo.trim()) updateGrupoMut.mutate({ itemId: item.id, titulo: editingGrupoTitulo.trim().toUpperCase() });
+                            else setEditingGrupoId(null);
+                          }}>
+                            <Check className="w-3 h-3 text-green-600" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingGrupoId(null)}>
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              }
+
               return (
               <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""}`}>
                 {/* Desktop */}
@@ -419,7 +533,7 @@ export default function ReceitaAberta() {
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
                       <ArrowDown className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemMut.mutate(item.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -481,7 +595,7 @@ export default function ReceitaAberta() {
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
                         <ArrowDown className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemMut.mutate(item.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
