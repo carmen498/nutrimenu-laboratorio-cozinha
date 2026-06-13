@@ -59,6 +59,11 @@ export default function ReceitaAberta() {
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
   });
 
+  const { data: receitasBasicas = [] } = useQuery({
+    queryKey: ["receitas-basicas"],
+    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+  });
+
   useEffect(() => {
     if (receita && porcoes === null) {
       setPorcoes(receita.porcoes_base || 1);
@@ -70,6 +75,12 @@ export default function ReceitaAberta() {
     ingredientesDB.forEach((i) => { map[i.id] = i; });
     return map;
   }, [ingredientesDB]);
+
+  const receitasBasicasMap = useMemo(() => {
+    const map = {};
+    receitasBasicas.forEach((r) => { map[r.id] = r; });
+    return map;
+  }, [receitasBasicas]);
 
   const fator = receita && receita.porcoes_base > 0 ? (porcoes || receita.porcoes_base) / receita.porcoes_base : 1;
 
@@ -88,6 +99,15 @@ export default function ReceitaAberta() {
       .map((item) => {
         if (item.tipo === "grupo") {
           return { ...item, isGrupo: true, custo: 0, qtdOriginal: 0, qtdNova: 0, qtdComprar: 0 };
+        }
+        if (item.tipo === "subreceita") {
+          const rb = receitasBasicasMap[item.subreceita_id];
+          const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
+          const qtdNova = item.quantidade_por_porcao * (porcoes || receita?.porcoes_base || 1);
+          const custo = rb && rb.rendimento_total > 0
+            ? (qtdNova / rb.rendimento_total) * (rb.custo_total || 0)
+            : 0;
+          return { ...item, isSubreceita: true, receitaBase: rb, custo, qtdOriginal, qtdNova, qtdComprar: qtdNova, isGrupo: false, isNA: false };
         }
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
@@ -148,8 +168,11 @@ export default function ReceitaAberta() {
   const replaceIngMut = useMutation({
     mutationFn: async ({ itemId, newIngredienteId, newIngredienteNome }) => {
       await base44.entities.IngredienteReceita.update(itemId, {
+        tipo: "ingrediente",
         ingrediente_id: newIngredienteId,
         ingrediente_nome: newIngredienteNome,
+        subreceita_id: "",
+        subreceita_nome: "",
       });
     },
     onSuccess: () => {
@@ -157,6 +180,24 @@ export default function ReceitaAberta() {
       setEditingIngId(null);
       setIngSearch("");
       toast.success("Ingrediente substituído");
+    },
+  });
+
+  const replaceWithSubreceitaMut = useMutation({
+    mutationFn: async ({ itemId, receitaId, receitaNome }) => {
+      await base44.entities.IngredienteReceita.update(itemId, {
+        tipo: "subreceita",
+        ingrediente_id: "",
+        ingrediente_nome: "",
+        subreceita_id: receitaId,
+        subreceita_nome: receitaNome,
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setEditingIngId(null);
+      setIngSearch("");
+      toast.success("Substituído por sub-receita");
     },
   });
 
@@ -475,6 +516,144 @@ export default function ReceitaAberta() {
                 );
               }
 
+              if (item.isSubreceita) {
+                return (
+                  <Card key={item.id} className="p-3 bg-amber-50/70 border-amber-200/60">
+                    {/* Desktop */}
+                    <div className="hidden md:grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-3">
+                        <div className="flex items-center gap-1.5">
+                          <ChefHat className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <div>
+                            <p className="font-medium text-sm">{item.subreceita_nome}</p>
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5 border-amber-300 text-amber-700 bg-amber-100/50">Preparar antes</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={temFatorCorrecao ? "col-span-2" : "col-span-3"}>
+                        {editingQtdId === item.id ? (
+                          <div className="flex items-center gap-1 justify-center">
+                            <Input
+                              type="number"
+                              className="h-7 w-20 text-sm text-center"
+                              value={editingQtdValue}
+                              onChange={(e) => setEditingQtdValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleConfirmQtd(item.id);
+                                if (e.key === "Escape") setEditingQtdId(null);
+                              }}
+                              autoFocus
+                            />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
+                              <Check className="w-3 h-3 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
+                              <X className="w-3 h-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            className="text-sm font-medium hover:underline hover:text-primary transition-colors"
+                            onClick={() => {
+                              setEditingQtdId(item.id);
+                              setEditingQtdValue(item.qtdNova.toFixed(0));
+                            }}
+                            title="Clique para editar a quantidade"
+                          >
+                            {formatWeight(item.qtdNova, receita.unidade_base)}
+                          </button>
+                        )}
+                      </div>
+                      {temFatorCorrecao && <div className="col-span-2"></div>}
+                      <div className="col-span-2 text-right">
+                        <span className="text-sm font-semibold text-primary">{formatCurrency(item.custo)}</span>
+                      </div>
+                      <div className="col-span-3 flex justify-end gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir">
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                          <ArrowUp className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                          <ArrowDown className="w-3 h-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    {/* Mobile */}
+                    <div className="md:hidden">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <ChefHat className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <div>
+                          <p className="font-medium text-sm">{item.subreceita_nome}</p>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5 border-amber-300 text-amber-700 bg-amber-100/50">Preparar antes</Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-start justify-between">
+                        <div className="flex gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir">
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                            <ArrowUp className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                            <ArrowDown className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between mt-2 text-xs items-center">
+                        <span className="text-muted-foreground">Quantidade: </span>
+                        {editingQtdId === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              className="h-7 w-16 text-xs text-center"
+                              value={editingQtdValue}
+                              onChange={(e) => setEditingQtdValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleConfirmQtd(item.id);
+                                if (e.key === "Escape") setEditingQtdId(null);
+                              }}
+                              autoFocus
+                            />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
+                              <Check className="w-3 h-3 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
+                              <X className="w-3 h-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            className="hover:underline hover:text-primary font-medium"
+                            onClick={() => {
+                              setEditingQtdId(item.id);
+                              setEditingQtdValue(item.qtdNova.toFixed(0));
+                            }}
+                          >
+                            {formatWeight(item.qtdNova, receita.unidade_base)}
+                          </button>
+                        )}
+                      </div>
+                      {fator !== 1 && (
+                        <p className="text-xs text-muted-foreground mt-0.5">original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</p>
+                      )}
+                      <div className="flex justify-between mt-1 text-xs">
+                        <div></div>
+                        <span className="font-bold text-primary">{formatCurrency(item.custo)}</span>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              }
+
               return (
               <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""}`}>
                 {/* Desktop */}
@@ -502,7 +681,7 @@ export default function ReceitaAberta() {
                               .slice(0, 20)
                               .map(ing => (
                                 <button
-                                  key={ing.id}
+                                  key={`ing-${ing.id}`}
                                   className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
                                   onClick={() => replaceIngMut.mutate({
                                     itemId: item.id,
@@ -511,6 +690,27 @@ export default function ReceitaAberta() {
                                   })}
                                 >
                                   {ing.nome}
+                                </button>
+                              ))
+                            }
+                            {receitasBasicas
+                              .filter(r => r.nome.toUpperCase().includes(ingSearch.toUpperCase()))
+                              .slice(0, 10)
+                              .map(r => (
+                                <button
+                                  key={`rec-${r.id}`}
+                                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center justify-between"
+                                  onClick={() => replaceWithSubreceitaMut.mutate({
+                                    itemId: item.id,
+                                    receitaId: r.id,
+                                    receitaNome: r.nome
+                                  })}
+                                >
+                                  <span className="flex items-center gap-1">
+                                    <ChefHat className="w-3 h-3 text-primary" />
+                                    {r.nome}
+                                  </span>
+                                  <Badge variant="secondary" className="text-[10px] px-1 py-0">Receita</Badge>
                                 </button>
                               ))
                             }
@@ -616,7 +816,7 @@ export default function ReceitaAberta() {
                             .slice(0, 20)
                             .map(ing => (
                               <button
-                                key={ing.id}
+                                key={`ing-m-${ing.id}`}
                                 className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
                                 onClick={() => replaceIngMut.mutate({
                                   itemId: item.id,
@@ -625,6 +825,27 @@ export default function ReceitaAberta() {
                                 })}
                               >
                                 {ing.nome}
+                              </button>
+                            ))
+                          }
+                          {receitasBasicas
+                            .filter(r => r.nome.toUpperCase().includes(ingSearch.toUpperCase()))
+                            .slice(0, 10)
+                            .map(r => (
+                              <button
+                                key={`rec-m-${r.id}`}
+                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center justify-between"
+                                onClick={() => replaceWithSubreceitaMut.mutate({
+                                  itemId: item.id,
+                                  receitaId: r.id,
+                                  receitaNome: r.nome
+                                })}
+                              >
+                                <span className="flex items-center gap-1">
+                                  <ChefHat className="w-3 h-3 text-primary" />
+                                  {r.nome}
+                                </span>
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0">Receita</Badge>
                               </button>
                             ))
                           }

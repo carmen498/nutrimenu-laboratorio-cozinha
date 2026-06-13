@@ -46,7 +46,8 @@ export const CATEGORIAS = [
   "Receitas, Internacionais",
   "Receitas, Pastosa",
   "Receitas, Regionais",
-  "Receitas, Veganas"
+  "Receitas, Veganas",
+  "Receitas Básicas"
 ];
 
 export default function CategoriaPicker({ value, onChange }) {

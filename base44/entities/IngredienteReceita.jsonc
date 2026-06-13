@@ -8,7 +8,7 @@
     },
     "ingrediente_id": {
       "type": "string",
-      "description": "ID do ingrediente (vazio para tipo=grupo)"
+      "description": "ID do ingrediente (vazio para tipo=grupo ou tipo=subreceita)"
     },
     "ingrediente_nome": {
       "type": "string",
@@ -34,14 +34,23 @@
       "type": "string",
       "enum": [
         "ingrediente",
-        "grupo"
+        "grupo",
+        "subreceita"
       ],
       "default": "ingrediente",
-      "description": "Tipo do item na lista: ingrediente ou grupo"
+      "description": "Tipo do item na lista: ingrediente, grupo ou subreceita"
     },
     "titulo_grupo": {
       "type": "string",
       "description": "T\u00edtulo do grupo (usado quando tipo=grupo)"
+    },
+    "subreceita_id": {
+      "type": "string",
+      "description": "ID da receita usada como sub-receita (quando tipo=subreceita)"
+    },
+    "subreceita_nome": {
+      "type": "string",
+      "description": "Nome da sub-receita (cache)"
     }
   },
   "required": [

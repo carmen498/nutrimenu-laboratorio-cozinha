@@ -50,7 +50,8 @@
         "Receitas, Internacionais",
         "Receitas, Pastosa",
         "Receitas, Regionais",
-        "Receitas, Veganas"
+        "Receitas, Veganas",
+        "Receitas B\u00e1sicas"
       ],
       "description": "Categoria da receita no formato Grupo, Subcategoria"
     },
