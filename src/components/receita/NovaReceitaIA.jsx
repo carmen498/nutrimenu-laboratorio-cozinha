@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ import { Sparkles, Loader2, Check, AlertCircle, Plus, AlertTriangle } from "luci
 import CategoriaPicker, { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
+import { normalizarNome } from "@/lib/normalizarNome";
 
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");
@@ -20,6 +22,8 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const qc = useQueryClient();
   const parsedRef = useRef(null);
   parsedRef.current = parsed;
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const navigate = useNavigate();
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -99,23 +103,19 @@ IMPORTANTE:
 
   const temZero = (parsed?.ingredientes || []).some(ing => (ing.quantidade_g || 0) === 0);
 
-  const handleSave = async () => {
+  const doSave = async () => {
     const p = parsedRef.current;
     if (!p) return;
-    if (temZero) { toast.error("Preencha a quantidade de todos os ingredientes antes de salvar."); return; }
     setSaving(true);
     try {
       const passosFormatados = formatarModoPreparo(p.modo_preparo);
       const modoPreparoFinal = juntarPassos(passosFormatados);
 
-      const existingRec = await base44.entities.Receita.filter({ nome: p.nome?.toUpperCase() });
-      const dup = existingRec.length > 0;
-
       const catFinal = p.categoria || "A Revisar";
       const receita = await base44.entities.Receita.create({
         nome: p.nome?.toUpperCase(),
         categoria: catFinal,
-        revisar: dup,
+        revisar: duplicateWarning != null,
         porcoes_base: p.porcoes_base || 4,
         unidade_base: p.unidade_base || "g",
         modo_preparo: modoPreparoFinal,
@@ -123,8 +123,6 @@ IMPORTANTE:
         custo_total: 0,
         custo_por_porcao: 0,
       });
-
-      if (dup) toast.warning("Receita duplicada — marcada para revisão");
 
       // Link ingredients
       for (let i = 0; i < (p.ingredientes || []).length; i++) {
@@ -169,12 +167,30 @@ IMPORTANTE:
 
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      toast.success("Receita importada com sucesso!");
+      if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
+      else toast.success("Receita importada com sucesso!");
       onCreated(receita.id);
     } catch (err) {
       toast.error("Erro ao salvar: " + err.message);
     } finally {
       setSaving(false);
+      setDuplicateWarning(null);
+    }
+  };
+
+  const handleSave = async () => {
+    const p = parsedRef.current;
+    if (!p) return;
+    if (temZero) { toast.error("Preencha a quantidade de todos os ingredientes antes de salvar."); return; }
+
+    const todas = await base44.entities.Receita.list("-nome", 500);
+    const normForm = normalizarNome(p.nome);
+    const similar = todas.find(r => normalizarNome(r.nome) === normForm);
+
+    if (similar) {
+      setDuplicateWarning(similar);
+    } else {
+      doSave();
     }
   };
 
@@ -304,6 +320,32 @@ IMPORTANTE:
           </div>
         )}
       </DialogContent>
+
+      {duplicateWarning && (
+        <Dialog open={true} onOpenChange={() => setDuplicateWarning(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="font-display text-lg">Receita similar encontrada</DialogTitle>
+              <DialogDescription className="text-sm">
+                Já existe uma receita cadastrada com este nome: <strong>"{duplicateWarning.nome}"</strong>.
+                Deseja mesmo salvar como uma nova receita, ou prefere editar a receita existente?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 justify-end mt-2">
+              <Button variant="outline" onClick={() => {
+                setDuplicateWarning(null);
+                onClose();
+                navigate(`/receita/${duplicateWarning.id}`);
+              }}>
+                Editar existente
+              </Button>
+              <Button onClick={doSave}>
+                Salvar mesmo assim
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }

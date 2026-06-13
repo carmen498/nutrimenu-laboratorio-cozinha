@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
+import { normalizarNome } from "@/lib/normalizarNome";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -29,7 +31,9 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [addedIngs, setAddedIngs] = useState([]);
   const [showNovoIng, setShowNovoIng] = useState(false);
   const [novoIngNome, setNovoIngNome] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState(null);
 
+  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const { data: ingredientesDB = [] } = useQuery({
@@ -70,33 +74,19 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
     setAddedIngs(addedIngs.filter((_, i) => i !== idx));
   };
 
-  const handleSave = async () => {
-    if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
-    if (addedIngs.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
-
-    // Validate all ingredients have quantity
-    const zeroQtd = addedIngs.some(a => (a.quantidade_por_porcao || 0) === 0);
-    if (zeroQtd) { toast.error("Todos os ingredientes precisam ter quantidade"); return; }
-
+  const doSave = async () => {
     setSaving(true);
     try {
       const passos = formatarModoPreparo(form.modo_preparo);
-      // Check for duplicate name
-      const existing = await base44.entities.Receita.filter({ nome: form.nome?.toUpperCase() });
-      const isDuplicate = existing.length > 0;
-
       const receita = await base44.entities.Receita.create({
         ...form,
         nome: form.nome?.toUpperCase(),
         modo_preparo: passos.length > 0 ? juntarPassos(passos) : form.modo_preparo,
         custo_total: 0,
         custo_por_porcao: 0,
-        revisar: isDuplicate,
+        revisar: duplicateWarning != null,
       });
 
-      if (isDuplicate) toast.warning("Receita duplicada — marcada para revisão");
-
-      // Create ingredient links
       for (let i = 0; i < addedIngs.length; i++) {
         const ing = addedIngs[i];
         await base44.entities.IngredienteReceita.create({
@@ -111,12 +101,32 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["itens-receita"] });
-      toast.success("Receita criada!");
+      if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
+      else toast.success("Receita criada!");
       onCreated(receita.id);
     } catch (err) {
       toast.error("Erro ao criar receita");
     } finally {
       setSaving(false);
+      setDuplicateWarning(null);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
+    if (addedIngs.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
+    const zeroQtd = addedIngs.some(a => (a.quantidade_por_porcao || 0) === 0);
+    if (zeroQtd) { toast.error("Todos os ingredientes precisam ter quantidade"); return; }
+
+    // Busca similar por nome normalizado
+    const todas = await base44.entities.Receita.list("-nome", 500);
+    const normForm = normalizarNome(form.nome);
+    const similar = todas.find(r => normalizarNome(r.nome) === normForm);
+
+    if (similar) {
+      setDuplicateWarning(similar);
+    } else {
+      doSave();
     }
   };
 
@@ -325,6 +335,32 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             setShowNovoIng(false);
           }}
         />
+      )}
+
+      {duplicateWarning && (
+        <Dialog open={true} onOpenChange={() => setDuplicateWarning(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="font-display text-lg">Receita similar encontrada</DialogTitle>
+              <DialogDescription className="text-sm">
+                Já existe uma receita cadastrada com este nome: <strong>"{duplicateWarning.nome}"</strong>.
+                Deseja mesmo salvar como uma nova receita, ou prefere editar a receita existente?
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex gap-2 justify-end mt-2">
+              <Button variant="outline" onClick={() => {
+                setDuplicateWarning(null);
+                onClose();
+                navigate(`/receita/${duplicateWarning.id}`);
+              }}>
+                Editar existente
+              </Button>
+              <Button onClick={doSave}>
+                Salvar mesmo assim
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </Dialog>
   );
