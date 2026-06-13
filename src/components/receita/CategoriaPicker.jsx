@@ -4,27 +4,50 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Search, ChevronDown } from "lucide-react";
 
-const CATEGORIAS = [
-  "Acompanhamentos, Arroz e Risotos",
-  "Acompanhamentos, Complementos",
-  "Acompanhamentos, Grãos e Leguminosas",
-  "Carnes, Aves",
-  "Carnes, Bacalhau",
+export const CATEGORIAS = [
+  "Entradas, Frias",
+  "Entradas, Quentes",
+  "Saladas",
+  "Sopas, Cremes e Caldos",
   "Carnes, Bovina",
-  "Carnes, Frutos do mar",
-  "Carnes, Peixes",
   "Carnes, Suína",
+  "Carnes, Aves",
+  "Carnes, Peixes",
+  "Carnes, Frutos do mar",
+  "Carnes, Bacalhau",
+  "Acompanhamentos, Arroz e Risotos",
+  "Acompanhamentos, Legumes e Hortaliças",
+  "Acompanhamentos, Grãos e Leguminosas",
+  "Acompanhamentos, Complementos",
+  "Molhos",
+  "Massas",
+  "Tortas e Quiches",
+  "Panquecas e Crepes",
+  "Sanduíches e Lanches",
+  "Petiscos e aperitivos",
+  "Pães e Panificação",
+  "Sorvetes e Gelados",
+  "Bebidas, Sucos e Drinks",
+  "Padaria, Pães e Panificação",
+  "Padaria, Bolos e Cakes",
+  "Padaria, Salgados e Salgadinhos",
+  "Confeitaria, Chocolates e Trufas",
   "Confeitaria, Doces e Docinhos",
+  "Confeitaria, Geléias, Conservas e Compotas",
   "Confeitaria, Sobremesas",
   "Confeitaria, Tortas",
-  "Entradas, Frias",
-  "Molhos",
-  "Saladas",
-  "Tortas e Quiches",
-  "A Revisar",
+  "Receitas, Funcionais",
+  "Receitas, Integrais",
+  "Receitas, Low Carb",
+  "Receitas, Proteicas",
+  "Receitas, Vegetarianas",
+  "Receitas, Marmitas e Refeições Completas",
+  "Receitas, Fitness",
+  "Receitas, Internacionais",
+  "Receitas, Pastosa",
+  "Receitas, Regionais",
+  "Receitas, Veganas"
 ];
-
-export { CATEGORIAS };
 
 export default function CategoriaPicker({ value, onChange }) {
   const [open, setOpen] = useState(false);
