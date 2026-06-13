@@ -42,6 +42,10 @@
     "fator_correcao": {
       "type": "number",
       "description": "Fator de corre\u00e7\u00e3o (padr\u00e3o 1.0)"
+    },
+    "revisar": {
+      "type": "boolean",
+      "description": "Flag: Duplicado \u2014 revisar"
     }
   },
   "required": [
