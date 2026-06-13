@@ -8,29 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Camera, Sparkles, Loader2, ChevronDown, Search, Plus, Trash2 } from "lucide-react";
+import { Camera, Sparkles, Loader2, Search, Plus, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
-
-const CATEGORIAS = [
-  "Acompanhamentos, Arroz e Risotos",
-  "Acompanhamentos, Complementos",
-  "Acompanhamentos, Grãos e Leguminosas",
-  "Carnes, Aves",
-  "Carnes, Bacalhau",
-  "Carnes, Bovina",
-  "Carnes, Frutos do mar",
-  "Carnes, Peixes",
-  "Carnes, Suína",
-  "Confeitaria, Doces e Docinhos",
-  "Confeitaria, Sobremesas",
-  "Confeitaria, Tortas",
-  "Entradas, Frias",
-  "Molhos",
-  "Saladas",
-  "Tortas e Quiches",
-  "A Revisar",
-];
+import CategoriaPicker from "@/components/receita/CategoriaPicker";
+import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -39,15 +21,14 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
   });
   const [saving, setSaving] = useState(false);
   const [generatingPhoto, setGeneratingPhoto] = useState(false);
-  const [catBusca, setCatBusca] = useState("");
-  const [catOpen, setCatOpen] = useState(false);
-
   // Ingredient section state
   const [ingBusca, setIngBusca] = useState("");
   const [selectedIng, setSelectedIng] = useState(null);
   const [ingQtd, setIngQtd] = useState("");
   const [ingPrePreparo, setIngPrePreparo] = useState("");
   const [addedIngs, setAddedIngs] = useState([]);
+  const [showNovoIng, setShowNovoIng] = useState(false);
+  const [novoIngNome, setNovoIngNome] = useState("");
 
   const qc = useQueryClient();
 
@@ -179,36 +160,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <Popover open={catOpen} onOpenChange={setCatOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between font-normal">
-                    {form.categoria || <span className="text-muted-foreground">&lt;selecionar&gt;</span>}
-                    <ChevronDown className="w-4 h-4 ml-2 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                  <div className="flex items-center border-b px-3">
-                    <Search className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
-                    <Input
-                      placeholder="Buscar categoria..."
-                      value={catBusca}
-                      onChange={(e) => setCatBusca(e.target.value)}
-                      className="border-0 focus-visible:ring-0 h-9"
-                    />
-                  </div>
-                  <div className="max-h-60 overflow-y-auto">
-                    {CATEGORIAS.filter((c) => !catBusca || c.toLowerCase().includes(catBusca.toLowerCase())).map((c) => (
-                      <button
-                        key={c}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
-                        onClick={() => { setForm({ ...form, categoria: c }); setCatOpen(false); setCatBusca(""); }}
-                      >
-                        {c}
-                      </button>
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <CategoriaPicker value={form.categoria} onChange={(v) => setForm({ ...form, categoria: v })} />
             </div>
             <div>
               <Label>Porções base</Label>
@@ -289,7 +241,18 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                         )}
                       </button>
                     )) : ingBusca.trim() ? (
-                      <p className="text-xs text-muted-foreground px-3 py-4 text-center">Nenhum ingrediente encontrado</p>
+                      <div className="px-3 py-3 text-center space-y-2">
+                        <p className="text-xs text-muted-foreground">Ingrediente não localizado na lista.</p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-xs"
+                          onClick={() => { setNovoIngNome(ingBusca); setShowNovoIng(true); }}
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Cadastrar "{ingBusca}"
+                        </Button>
+                      </div>
                     ) : null}
                   </div>
                 </PopoverContent>
@@ -342,11 +305,27 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             </div>
           </div>
         </div>
+        <div className="mt-3 p-3 bg-accent/50 rounded-lg text-xs text-muted-foreground text-center">
+          Após salvar a receita, você poderá: adicionar/reordenar ingredientes e enviar uma foto.
+        </div>
         <div className="flex gap-2 justify-end mt-4">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? "Criando..." : "Criar Receita"}</Button>
         </div>
       </DialogContent>
+
+      {showNovoIng && (
+        <NovoIngredienteRapido
+          open={true}
+          onClose={() => setShowNovoIng(false)}
+          nomeSugerido={novoIngNome}
+          onCreated={(ing) => {
+            setSelectedIng(ing);
+            setIngBusca(ing.nome);
+            setShowNovoIng(false);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

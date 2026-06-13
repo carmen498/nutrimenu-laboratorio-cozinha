@@ -8,28 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Loader2, Check, AlertCircle, Plus, AlertTriangle } from "lucide-react";
+import CategoriaPicker, { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
-
-const CATEGORIAS = [
-  "Acompanhamentos, Arroz e Risotos",
-  "Acompanhamentos, Complementos",
-  "Acompanhamentos, Grãos e Leguminosas",
-  "Carnes, Aves",
-  "Carnes, Bacalhau",
-  "Carnes, Bovina",
-  "Carnes, Frutos do mar",
-  "Carnes, Peixes",
-  "Carnes, Suína",
-  "Confeitaria, Doces e Docinhos",
-  "Confeitaria, Sobremesas",
-  "Confeitaria, Tortas",
-  "Entradas, Frias",
-  "Molhos",
-  "Saladas",
-  "Tortas e Quiches",
-  "A Revisar",
-];
 
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");
@@ -60,13 +41,14 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Analise este texto de receita e extraia os dados estruturados. Converta todas as medidas caseiras para gramas ou ml usando estas equivalências: ${medidasInfo}. 
         
-Ingredientes disponíveis no banco: ${ingNames}
+Ingredientes disponíveis no banco (use APENAS correspondência EXATA): ${ingNames}
 
 Texto da receita:
 ${texto}
 
 IMPORTANTE: 
-- Para cada ingrediente, tente encontrar o mais próximo no banco existente
+- Para cada ingrediente, busque correspondência EXATA no banco acima. Se não houver correspondência exata, deixe nome_banco VAZIO e marque o nome_original corretamente — o sistema criará o ingrediente novo.
+- NUNCA substitua um ingrediente por outro parecido (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango")
 - Converta xícaras, colheres, unidades para gramas/ml
 - Se a receita não informar porções, sugira um valor razoável
 - O modo de preparo deve manter o texto original organizado em passos numerados`,
@@ -143,21 +125,31 @@ IMPORTANTE:
       // Link ingredients
       for (let i = 0; i < (parsed.ingredientes || []).length; i++) {
         const ing = parsed.ingredientes[i];
-        // Find matching ingredient in bank
-        let matchedIng = ingredientes.find(
-          bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase()
-        );
-        // If not found, create it
+        // Find matching ingredient in bank — exact match only
+        let matchedIng = null;
+        if (ing.nome_banco) {
+          matchedIng = ingredientes.find(
+            bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase()
+          );
+        }
+        // If not found, create it with nome_original
         if (!matchedIng) {
-          matchedIng = await base44.entities.Ingrediente.create({
-            nome: ing.nome_banco || ing.nome_original,
-            categoria: "DIVERSOS",
-            unidade_compra: "KG",
-            peso_embalagem_g: 1000,
-            preco_embalagem_rs: 0,
-            preco_por_g_rs: 0,
-            fator_correcao: 1.0,
-          });
+          const nomeCriar = ing.nome_banco || ing.nome_original;
+          // Check if it already exists in the DB (maybe created since fetch)
+          const existente = await base44.entities.Ingrediente.filter({ nome: nomeCriar });
+          if (existente.length > 0) {
+            matchedIng = existente[0];
+          } else {
+            matchedIng = await base44.entities.Ingrediente.create({
+              nome: nomeCriar,
+              categoria: "A Revisar",
+              unidade_compra: "KG",
+              peso_embalagem_g: 1000,
+              preco_embalagem_rs: 0,
+              preco_por_g_rs: 0,
+              fator_correcao: 1.0,
+            });
+          }
         }
         const qtdPorPorcao = (ing.quantidade_g || 0) / (parsed.porcoes_base || 4);
         await base44.entities.IngredienteReceita.create({
@@ -222,10 +214,7 @@ IMPORTANTE:
               </div>
               <div>
                 <Label>Categoria</Label>
-                <Select value={parsed.categoria} onValueChange={(v) => setParsed({ ...parsed, categoria: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIAS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
+                <CategoriaPicker value={parsed.categoria} onChange={(v) => setParsed({ ...parsed, categoria: v })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

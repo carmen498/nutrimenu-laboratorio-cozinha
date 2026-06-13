@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Plus } from "lucide-react";
 import { toast } from "sonner";
+import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes, unidadeBase }) {
   const [busca, setBusca] = useState("");
@@ -16,6 +17,8 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
   const [medidaSel, setMedidaSel] = useState("g");
   const [prePreparo, setPrePreparo] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showNovoIng, setShowNovoIng] = useState(false);
+  const [novoIngNome, setNovoIngNome] = useState("");
   const qc = useQueryClient();
 
   const { data: ingredientes = [] } = useQuery({
@@ -109,9 +112,25 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
                     <span className="text-xs text-muted-foreground">{ing.categoria}</span>
                   </button>
                 ))}
-                {filtered.length === 0 && (
+                {filtered.length === 0 && busca.trim() && (
+                  <div className="text-center py-3 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Ingrediente não localizado na lista. Deseja adicionar "{busca}"?
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => { setNovoIngNome(busca); setShowNovoIng(true); }}
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Cadastrar "{busca}"
+                    </Button>
+                  </div>
+                )}
+                {filtered.length === 0 && !busca.trim() && (
                   <p className="text-center text-sm text-muted-foreground py-4">
-                    Nenhum ingrediente encontrado. Cadastre na tela de Ingredientes.
+                    Digite para buscar ingredientes.
                   </p>
                 )}
               </div>
@@ -171,6 +190,20 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           )}
         </div>
       </DialogContent>
+
+      {showNovoIng && (
+        <NovoIngredienteRapido
+          open={true}
+          onClose={() => setShowNovoIng(false)}
+          nomeSugerido={novoIngNome}
+          onCreated={(ing) => {
+            setSelected(ing);
+            setBusca(ing.nome);
+            setShowNovoIng(false);
+            qc.invalidateQueries({ queryKey: ["ingredientes"] });
+          }}
+        />
+      )}
     </Dialog>
   );
 }
