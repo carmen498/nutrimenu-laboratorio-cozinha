@@ -16,23 +16,48 @@ import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 
 const CATEGORIAS_RECEITA = [
-  "Acompanhamentos, Arroz e Risotos",
-  "Acompanhamentos, Complementos",
-  "Acompanhamentos, Grãos e Leguminosas",
-  "Carnes, Aves",
-  "Carnes, Bacalhau",
+  "Entradas, Frias",
+  "Entradas, Quentes",
+  "Saladas",
+  "Sopas, Cremes e Caldos",
   "Carnes, Bovina",
-  "Carnes, Frutos do mar",
-  "Carnes, Peixes",
   "Carnes, Suína",
+  "Carnes, Aves",
+  "Carnes, Peixes",
+  "Carnes, Frutos do mar",
+  "Carnes, Bacalhau",
+  "Acompanhamentos, Arroz e Risotos",
+  "Acompanhamentos, Legumes e Hortaliças",
+  "Acompanhamentos, Grãos e Leguminosas",
+  "Acompanhamentos, Complementos",
+  "Molhos",
+  "Massas",
+  "Tortas e Quiches",
+  "Panquecas e Crepes",
+  "Sanduíches e Lanches",
+  "Petiscos e aperitivos",
+  "Pães e Panificação",
+  "Sorvetos e Gelados",
+  "Bebidas, Sucos e Drinks",
+  "Padaria, Pães e Panificação",
+  "Padaria, Bolos e Cakes",
+  "Padaria, Salgados e Salgadinhos",
+  "Confeitaria, Chocolates e Trufas",
   "Confeitaria, Doces e Docinhos",
+  "Confeitaria, Geléias, Conservas e Compotas",
   "Confeitaria, Sobremesas",
   "Confeitaria, Tortas",
-  "Entradas, Frias",
-  "Molhos",
-  "Saladas",
-  "Tortas e Quiches",
-  "A Revisar",
+  "Receitas, Funcionais",
+  "Receitas, Integrais",
+  "Receitas, Low Carb",
+  "Receitas, Proteicas",
+  "Receitas, Vegetarianas",
+  "Receitas, Marmitas e Refeições Completas",
+  "Receitas, Fitness",
+  "Receitas, Internacionais",
+  "Receitas, Pastosa",
+  "Receitas, Regionais",
+  "Receitas, Veganas"
 ];
 
 export default function Receitas() {
@@ -53,7 +78,7 @@ export default function Receitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 500),
+    queryFn: () => base44.entities.Receita.list("-updated_date", 5000),
   });
 
   const duplicarMut = useMutation({

@@ -108,9 +108,10 @@ IMPORTANTE:
       const existingRec = await base44.entities.Receita.filter({ nome: parsed.nome?.toUpperCase() });
       const dup = existingRec.length > 0;
 
+      const catFinal = parsed.categoria || "A Revisar";
       const receita = await base44.entities.Receita.create({
         nome: parsed.nome?.toUpperCase(),
-        categoria: parsed.categoria,
+        categoria: catFinal,
         revisar: dup,
         porcoes_base: parsed.porcoes_base || 4,
         unidade_base: parsed.unidade_base || "g",
