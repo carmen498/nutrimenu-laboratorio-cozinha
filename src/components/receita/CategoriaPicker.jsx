@@ -69,5 +69,3 @@ export default function CategoriaPicker({ value, onChange }) {
     </Popover>
   );
 }
-
-export { CATEGORIAS };

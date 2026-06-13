@@ -16,7 +16,7 @@ import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
-    nome: "", categoria: "", porcoes_base: 4, rendimento_total: 0,
+    nome: "", categoria: "", porcoes_base: "", rendimento_total: 0,
     unidade_base: "g", modo_preparo: "", foto_url: ""
   });
   const [saving, setSaving] = useState(false);
@@ -164,7 +164,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             </div>
             <div>
               <Label>Porções base</Label>
-              <Input type="number" min={1} value={form.porcoes_base} onChange={(e) => setForm({ ...form, porcoes_base: parseInt(e.target.value) || 1 })} />
+              <Input type="number" min={0} value={form.porcoes_base} onChange={(e) => setForm({ ...form, porcoes_base: e.target.value })} placeholder="&lt;opcional&gt;" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -183,11 +183,6 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
               </Select>
             </div>
           </div>
-          <div>
-            <Label>Modo de preparo</Label>
-            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder="Descreva ou cole o passo a passo da receita" />
-          </div>
-
           {/* Ingredients section */}
           <div className="pt-2 border-t">
             <div className="flex items-center justify-between mb-3">
@@ -283,6 +278,11 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                 </Button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <Label>Modo de preparo</Label>
+            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder="Descreva ou cole o passo a passo da receita" />
           </div>
 
           {/* Photo */}
