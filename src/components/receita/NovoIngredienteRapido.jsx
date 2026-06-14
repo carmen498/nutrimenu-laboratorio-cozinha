@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const CATEGORIAS_ING = [
   "CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS",
-  "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar"
+  "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar", "Receitas Básicas"
 ];
 
 const UNIDADES = ["G", "KG", "LT", "ML", "UN", "MOLHO", "CX", "PACOTE", "BANDEJA", "BALDE", "LATA", "SACHÊ", "PC", "DÚZIA"];

@@ -26,6 +26,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
   // Ingredient section state
   const [ingBusca, setIngBusca] = useState("");
   const [selectedIng, setSelectedIng] = useState(null);
+  const [selectedType, setSelectedType] = useState(null); // "ingrediente" | "subreceita"
   const [ingQtd, setIngQtd] = useState("");
   const [ingPrePreparo, setIngPrePreparo] = useState("");
   const [addedIngs, setAddedIngs] = useState([]);
@@ -45,30 +46,55 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
   });
 
+  const { data: receitasBasicas = [] } = useQuery({
+    queryKey: ["receitas-basicas"],
+    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+  });
+
   const filteredIngs = useMemo(() => {
-    if (!ingBusca.trim()) return [];
+    if (!ingBusca.trim()) return { ings: [], recs: [] };
     const term = ingBusca.toLowerCase();
-    return ingredientesDB
+    const ings = ingredientesDB
       .filter(i => i.nome?.toLowerCase().includes(term))
       .slice(0, 20);
-  }, [ingBusca, ingredientesDB]);
+    const recs = receitasBasicas
+      .filter(r => r.nome?.toUpperCase().includes(ingBusca.toUpperCase()))
+      .slice(0, 10);
+    return { ings, recs };
+  }, [ingBusca, ingredientesDB, receitasBasicas]);
 
   const handleAddIng = () => {
     if (!selectedIng) { toast.error("Selecione um ingrediente"); return; }
     const qtd = parseFloat(ingQtd);
     if (!qtd || qtd <= 0) { toast.error("Informe a quantidade por porção"); return; }
-    if (addedIngs.some(a => a.ingrediente_id === selectedIng.id)) {
-      toast.error("Ingrediente já adicionado");
-      return;
+
+    if (selectedType === "subreceita") {
+      if (addedIngs.some(a => a.tipo === "subreceita" && a.subreceita_id === selectedIng.id)) {
+        toast.error("Sub-receita já adicionada");
+        return;
+      }
+      setAddedIngs([...addedIngs, {
+        tipo: "subreceita",
+        subreceita_id: selectedIng.id,
+        subreceita_nome: selectedIng.nome,
+        quantidade_por_porcao: qtd,
+        ordem: addedIngs.length,
+      }]);
+    } else {
+      if (addedIngs.some(a => a.tipo !== "subreceita" && a.tipo !== "grupo" && a.ingrediente_id === selectedIng.id)) {
+        toast.error("Ingrediente já adicionado");
+        return;
+      }
+      setAddedIngs([...addedIngs, {
+        ingrediente_id: selectedIng.id,
+        ingrediente_nome: selectedIng.nome,
+        quantidade_por_porcao: qtd,
+        pre_preparo: ingPrePreparo,
+        ordem: addedIngs.length,
+      }]);
     }
-    setAddedIngs([...addedIngs, {
-      ingrediente_id: selectedIng.id,
-      ingrediente_nome: selectedIng.nome,
-      quantidade_por_porcao: qtd,
-      pre_preparo: ingPrePreparo,
-      ordem: addedIngs.length,
-    }]);
     setSelectedIng(null);
+    setSelectedType(null);
     setIngBusca("");
     setIngQtd("");
     setIngPrePreparo("");
@@ -125,6 +151,15 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             receita_id: receita.id,
             tipo: "grupo",
             titulo_grupo: ing.titulo_grupo,
+            ordem: i * 10,
+          });
+        } else if (ing.tipo === "subreceita") {
+          await base44.entities.IngredienteReceita.create({
+            receita_id: receita.id,
+            tipo: "subreceita",
+            subreceita_id: ing.subreceita_id,
+            subreceita_nome: ing.subreceita_nome,
+            quantidade_por_porcao: ing.quantidade_por_porcao,
             ordem: i * 10,
           });
         } else {
@@ -278,6 +313,24 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                       </Button>
                     </div>
                   )
+                ) : ing.tipo === "subreceita" ? (
+                  <div key={idx} className="flex items-center gap-1 bg-amber-50/70 border border-amber-200/60 rounded-lg p-2 text-sm">
+                    <span className="flex items-center gap-1 flex-1 truncate font-medium">
+                      <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
+                      {ing.subreceita_nome}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0 rounded bg-amber-100 text-amber-700 font-medium shrink-0">Preparar antes</span>
+                    <span className="text-muted-foreground shrink-0 text-xs">{ing.quantidade_por_porcao}g/porção</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, -1)} title="Subir">
+                      <ArrowUp className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, 1)} title="Descer">
+                      <ArrowDown className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
                 ) : (
                   <div key={idx} className="flex items-center gap-1 bg-muted/50 rounded-lg p-2 text-sm">
                     <span className="flex-1 truncate font-medium">{ing.ingrediente_nome}</span>
@@ -328,7 +381,14 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className="w-full justify-between font-normal" size="sm">
-                    {selectedIng ? selectedIng.nome : <span className="text-muted-foreground">Buscar ingrediente...</span>}
+                    {selectedIng ? (
+                      selectedType === "subreceita" ? (
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="w-3 h-3 text-amber-500" />
+                          {selectedIng.nome}
+                        </span>
+                      ) : selectedIng.nome
+                    ) : <span className="text-muted-foreground">Buscar ingrediente ou sub-receita...</span>}
                     <Search className="w-3.5 h-3.5 ml-2 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -336,23 +396,40 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                   <Input
                     placeholder="Digite o nome do ingrediente..."
                     value={ingBusca}
-                    onChange={(e) => { setIngBusca(e.target.value); setSelectedIng(null); }}
+                    onChange={(e) => { setIngBusca(e.target.value); setSelectedIng(null); setSelectedType(null); }}
                     className="border-0 focus-visible:ring-0 h-9 px-3"
                     autoFocus
                   />
                   <div className="max-h-48 overflow-y-auto border-t">
-                    {filteredIngs.length > 0 ? filteredIngs.map((ing) => (
-                      <button
-                        key={ing.id}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between"
-                        onClick={() => { setSelectedIng(ing); setIngBusca(ing.nome); }}
-                      >
-                        <span>{ing.nome}</span>
-                        {ing.preco_por_g_rs > 0 && (
-                          <span className="text-xs text-muted-foreground">R$ {(ing.preco_por_g_rs * 1000).toFixed(2).replace(".", ",")}/kg</span>
-                        )}
-                      </button>
-                    )) : ingBusca.trim() ? (
+                    {(filteredIngs.ings.length > 0 || filteredIngs.recs.length > 0) ? (
+                      <>
+                        {filteredIngs.ings.map((ing) => (
+                          <button
+                            key={`ing-${ing.id}`}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between"
+                            onClick={() => { setSelectedIng(ing); setSelectedType("ingrediente"); setIngBusca(ing.nome); }}
+                          >
+                            <span>{ing.nome}</span>
+                            {ing.preco_por_g_rs > 0 && (
+                              <span className="text-xs text-muted-foreground">R$ {(ing.preco_por_g_rs * 1000).toFixed(2).replace(".", ",")}/kg</span>
+                            )}
+                          </button>
+                        ))}
+                        {filteredIngs.recs.map((rec) => (
+                          <button
+                            key={`rec-${rec.id}`}
+                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between items-center"
+                            onClick={() => { setSelectedIng(rec); setSelectedType("subreceita"); setIngBusca(rec.nome); }}
+                          >
+                            <span className="flex items-center gap-1">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                              {rec.nome}
+                            </span>
+                            <span className="text-[10px] px-1.5 py-0 rounded bg-amber-100 text-amber-700 font-medium">Sub-receita</span>
+                          </button>
+                        ))}
+                      </>
+                    ) : ingBusca.trim() ? (
                       <div className="px-3 py-3 text-center space-y-2">
                         <p className="text-xs text-muted-foreground">Ingrediente não localizado na lista.</p>
                         <Button
