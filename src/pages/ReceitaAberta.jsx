@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown
 } from "lucide-react";
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
@@ -29,6 +29,7 @@ export default function ReceitaAberta() {
   const [showAddIng, setShowAddIng] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showMargin, setShowMargin] = useState(false);
+  const [orderingByPrep, setOrderingByPrep] = useState(false);
   const [margem, setMargem] = useState(30);
   const [editingPrice, setEditingPrice] = useState(null);
   const [editingQtdId, setEditingQtdId] = useState(null);
@@ -267,6 +268,98 @@ export default function ReceitaAberta() {
     toast.success("Ordem alterada");
   };
 
+  const handleOrderByPrep = async () => {
+    if (!receita?.modo_preparo) {
+      toast.error("A receita não tem modo de preparo descrito.");
+      return;
+    }
+    setOrderingByPrep(true);
+    try {
+      // Build list of non-group items with their names and current index
+      const nonGroup = [];
+      const groupPositions = [];
+      itens.forEach((item, idx) => {
+        if (item.tipo === "grupo") {
+          groupPositions.push({ ...item, idx });
+        } else {
+          const nome = item.ingrediente_nome || item.subreceita_nome || "";
+          if (nome) nonGroup.push({ ...item, idx, nome });
+        }
+      });
+
+      if (nonGroup.length === 0) { setOrderingByPrep(false); return; }
+
+      const ingNames = nonGroup.map((ng, i) => `${i}. ${ng.nome}`).join("\n");
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Analise o modo de preparo abaixo e determine a ordem em que cada ingrediente aparece pela primeira vez no texto. Retorne os índices na ordem correta.
+
+Modo de preparo:
+${receita.modo_preparo}
+
+Ingredientes (índice 0 a ${nonGroup.length - 1}):
+${ingNames}
+
+IMPORTANTE: Retorne um array com os índices numéricos na sequência correta. Ingredientes não mencionados no modo de preparo devem ficar no final do array.`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            ordem_indices: {
+              type: "array",
+              items: { type: "number" },
+              description: "Array com os índices (números) na nova ordem"
+            }
+          }
+        }
+      });
+
+      const newOrder = result.ordem_indices || [];
+      if (newOrder.length === 0) {
+        toast.error("Não foi possível determinar a ordem dos ingredientes.");
+        setOrderingByPrep(false);
+        return;
+      }
+
+      // Rebuild full list: groups stay in position relative to surrounding ingredients
+      const reorderedNonGroup = newOrder.map(i => nonGroup[i]).filter(Boolean);
+      // Add any missing items at the end
+      nonGroup.forEach(ng => {
+        if (!reorderedNonGroup.find(r => r.id === ng.id)) {
+          reorderedNonGroup.push(ng);
+        }
+      });
+
+      // Interleave groups based on their original position relative to ingredients
+      const finalOrder = [];
+      let ngIdx = 0;
+      for (const gp of groupPositions) {
+        // Insert ingredients that were originally before this group
+        while (ngIdx < reorderedNonGroup.length && reorderedNonGroup[ngIdx].idx < gp.idx) {
+          finalOrder.push(reorderedNonGroup[ngIdx]);
+          ngIdx++;
+        }
+        finalOrder.push(gp);
+      }
+      // Remaining ingredients
+      while (ngIdx < reorderedNonGroup.length) {
+        finalOrder.push(reorderedNonGroup[ngIdx]);
+        ngIdx++;
+      }
+
+      // Apply order
+      for (let i = 0; i < finalOrder.length; i++) {
+        await base44.entities.IngredienteReceita.update(finalOrder[i].id, { ordem: i * 10 });
+      }
+
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Ingredientes ordenados conforme o modo de preparo. Ajuste manualmente se necessário.");
+    } catch (err) {
+      toast.error("Erro ao ordenar: " + err.message);
+    } finally {
+      setOrderingByPrep(false);
+    }
+  };
+
   const handleConfirmQtd = (itemId) => {
     const val = parseFloat(editingQtdValue);
     if (!isNaN(val) && val >= 0) {
@@ -381,7 +474,11 @@ export default function ReceitaAberta() {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-bold">Ingredientes</h2>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
+            <Button size="sm" variant="outline" onClick={handleOrderByPrep} disabled={orderingByPrep || !receita?.modo_preparo} title="Ordenar ingredientes conforme o modo de preparo">
+              {orderingByPrep ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowUpDown className="w-4 h-4 mr-1" />}
+              Ordenar por preparo
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}>
               <Plus className="w-4 h-4 mr-1" /> Sub-título
             </Button>

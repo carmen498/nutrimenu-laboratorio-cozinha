@@ -59,7 +59,8 @@ IMPORTANTE:
 - NUNCA substitua um ingrediente por outro parecido (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango")
 - Converta xícaras, colheres, unidades para gramas/ml
 - Se a receita não informar porções, sugira um valor razoável
-- O modo de preparo deve manter o texto original organizado em passos numerados`,
+- O modo de preparo deve manter o texto original organizado em passos numerados
+- ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.`,
         response_json_schema: {
           type: "object",
           properties: {
