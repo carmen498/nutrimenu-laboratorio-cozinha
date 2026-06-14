@@ -102,7 +102,7 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
           </div>
           <div>
             <Label>Modo de preparo</Label>
-            <Textarea rows={5} value={form.modo_preparo || ""} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} />
+            <Textarea rows={5} value={form.modo_preparo || ""} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Descreva o passo a passo em etapas numeradas. Uma ação por linha. Ex:\n1. Derreta o chocolate em banho-maria.\n2. Acrescente a manteiga e mexa. Reserve.\n3. Bata os ovos com o açúcar até formar creme fofo."} />
           </div>
           <div>
             <Label>Foto</Label>

@@ -14,6 +14,7 @@ import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, 
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
+import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
 
 const CATEGORIAS_RECEITA = [
   "Entradas, Frias",
@@ -167,7 +168,10 @@ export default function Receitas() {
                 <BookOpen className="w-4 h-4 mr-2" /> Cadastrar manualmente
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowNew("ia")}>
-                <Sparkles className="w-4 h-4 mr-2" /> Colar texto (IA)
+                <Sparkles className="w-4 h-4 mr-2" /> Colar receita (IA estrutura)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowNew("lote")}>
+                <Upload className="w-4 h-4 mr-2" /> Importar em lote
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -293,6 +297,12 @@ export default function Receitas() {
           open={true}
           onClose={() => { setShowNew(null); window.history.replaceState({}, "", "/receitas"); }}
           onCreated={(id) => { setShowNew(null); navigate(`/receita/${id}`); }}
+        />
+      )}
+      {showNew === "lote" && (
+        <ImportarLoteDialog
+          open={true}
+          onClose={() => { setShowNew(null); window.history.replaceState({}, "", "/receitas"); }}
         />
       )}
 

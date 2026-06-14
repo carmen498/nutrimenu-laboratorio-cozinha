@@ -220,15 +220,15 @@ IMPORTANTE:
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" /> Importar Receita com IA
+            <Sparkles className="w-5 h-5 text-primary" /> Colar receita (IA estrutura)
           </DialogTitle>
+          <DialogDescription>
+            Cole o texto da receita (da internet, PDF ou suas anotações) e a IA organiza ingredientes, quantidades e modo de preparo automaticamente.
+          </DialogDescription>
         </DialogHeader>
 
         {!parsed ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Cole o texto completo da receita (da internet, PDF ou anotação) e a IA vai estruturar automaticamente.
-            </p>
             <Textarea
               rows={10}
               value={texto}
