@@ -14,7 +14,7 @@ import CalculadoraCusto from "@/components/CalculadoraCusto";
 
 const CATEGORIAS = [
   "CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS",
-  "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar"
+  "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar", "Receitas Básicas"
 ];
 
 export default function Ingredientes() {
@@ -279,7 +279,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             <Select value={form.categoria || "A Revisar"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS", "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar"].map((c) => (
+                {["CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS", "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar", "Receitas Básicas"].map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
