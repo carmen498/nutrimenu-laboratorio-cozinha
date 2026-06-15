@@ -71,9 +71,7 @@ export default function ReceitaAberta() {
       if (porcoes === null) {
         setPorcoes(receita.porcoes_base || 1);
       }
-      if (quantidadeTotal === null) {
-        setQuantidadeTotal(receita.rendimento_total || 0);
-      }
+      // quantidadeTotal intentionally left null — user types it; base info is in header
     }
   }, [receita, porcoes, quantidadeTotal]);
 
@@ -451,7 +449,7 @@ REGRAS:
         <div className="grid grid-cols-2 gap-4">
           {/* Left: Quantidade total (g) */}
           <div>
-            <Label className="text-sm font-semibold">Qual a quantidade (g)?</Label>
+            <Label className="text-sm font-semibold">Qual a quantidade?</Label>
             <Input
               type="number"
               min={1}
