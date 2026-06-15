@@ -449,7 +449,7 @@ REGRAS:
         <div className="grid grid-cols-2 gap-4">
           {/* Left: Quantidade total (g) */}
           <div>
-            <Label className="text-sm font-semibold">Qual a quantidade?</Label>
+            <Label className="text-sm font-semibold">Qual a quantidade (g)?</Label>
             <Input
               type="number"
               min={1}
