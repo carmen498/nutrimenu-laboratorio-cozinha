@@ -84,12 +84,21 @@ export default function Receitas() {
     refetchOnMount: "always",
   });
 
-  // Query dedicada ao contador — total bruto de todas as receitas
+  // Query dedicada ao contador — total bruto de todas as receitas (paginação para não pesar)
   const { data: totalReceitas = 0 } = useQuery({
     queryKey: ["receitas-count-total"],
     queryFn: async () => {
-      const todas = await base44.entities.Receita.list("", 5000);
-      return todas.length;
+      let total = 0;
+      const batchSize = 500;
+      let lastId = null;
+      while (true) {
+        const query = lastId ? { id: { $gt: lastId } } : {};
+        const lote = await base44.entities.Receita.filter(query, "id", batchSize);
+        total += lote.length;
+        if (lote.length < batchSize) break;
+        lastId = lote[lote.length - 1].id;
+      }
+      return total;
     },
     staleTime: 0,
     refetchOnMount: "always",
