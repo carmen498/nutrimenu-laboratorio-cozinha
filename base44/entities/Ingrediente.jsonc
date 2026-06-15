@@ -16,7 +16,14 @@
         "DOCES",
         "DIVERSOS",
         "A Revisar",
-        "Receitas B\u00e1sicas"
+        "Receitas B\u00e1sicas",
+        "Conservas e Enlatados",
+        "Peixes e Frutos do Mar",
+        "Legumes e Verduras",
+        "Frutas",
+        "Temperos e Ervas",
+        "\u00d3leos e Gorduras",
+        "Ovos"
       ],
       "description": "Categoria do ingrediente"
     },
