@@ -825,6 +825,7 @@ REGRAS:
                     ) : (
                       <>
                         <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
+                        {item.medida_caseira && <p className="text-xs text-muted-foreground">{item.medida_caseira}</p>}
                         {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                         {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                       </>
@@ -960,6 +961,7 @@ REGRAS:
                   ) : (
                     <div>
                       <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
+                      {item.medida_caseira && <p className="text-xs text-muted-foreground">{item.medida_caseira}</p>}
                       {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                       {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                     </div>
