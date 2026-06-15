@@ -84,6 +84,17 @@ export default function Receitas() {
     refetchOnMount: "always",
   });
 
+  // Query dedicada ao contador — total bruto de todas as receitas
+  const { data: totalReceitas = 0 } = useQuery({
+    queryKey: ["receitas-count-total"],
+    queryFn: async () => {
+      const todas = await base44.entities.Receita.list("", 5000);
+      return todas.length;
+    },
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
   const duplicarMut = useMutation({
     mutationFn: async (receita) => {
       const { id, created_date, updated_date, created_by_id, ...rest } = receita;
@@ -97,6 +108,7 @@ export default function Receitas() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       toast.success("Receita duplicada!");
     },
   });
@@ -109,6 +121,7 @@ export default function Receitas() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       toast.success("Receita excluída!");
     },
   });
@@ -152,7 +165,7 @@ export default function Receitas() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{receitas.length}</Badge></h1>
+        <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge></h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
@@ -371,6 +384,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
         }
         toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.`);
         qc.invalidateQueries({ queryKey: ["receitas"] });
+        qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
         onClose();
       } else {
         toast.error("Erro ao processar arquivo: " + (result.details || "formato inválido"));

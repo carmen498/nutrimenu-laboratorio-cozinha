@@ -175,6 +175,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
       }
 
       qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["itens-receita"] });
       if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
       else toast.success("Receita criada!");

@@ -464,6 +464,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
 
       toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.`);
       qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
       handleClose();
     } catch (err) {

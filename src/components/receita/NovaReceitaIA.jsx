@@ -256,6 +256,7 @@ IMPORTANTE:
       }
 
       qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
       if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
       else toast.success("Receita importada com sucesso!");
