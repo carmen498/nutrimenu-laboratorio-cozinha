@@ -37,6 +37,7 @@ export default function InsumosSection({ receitaId }) {
   const [editingCusto, setEditingCusto] = useState("");
   const [editingNomeId, setEditingNomeId] = useState(null);
   const [editingNome, setEditingNome] = useState("");
+  const [savedCustoId, setSavedCustoId] = useState(null);
 
   const { data: insumosReceita = [] } = useQuery({
     queryKey: ["insumos-receita", receitaId],
@@ -130,10 +131,16 @@ export default function InsumosSection({ receitaId }) {
         await base44.entities.Insumo.update(item.insumo_id, { preco_unitario: custo_unitario });
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });
       qc.invalidateQueries({ queryKey: ["insumos-db"] });
       setEditingId(null);
+      setSavedCustoId(vars.itemId);
+      setTimeout(() => setSavedCustoId(null), 1200);
+      toast.success("Custo unitário salvo");
+    },
+    onError: (err) => {
+      toast.error("Erro ao salvar: " + err.message);
     },
   });
 
@@ -352,7 +359,7 @@ export default function InsumosSection({ receitaId }) {
                 </div>
                 <div className="col-span-2 text-right">
                   <div className="flex items-center justify-end gap-0.5">
-                    <span className="text-xs font-semibold text-primary">
+                    <span className={`text-xs font-semibold transition-colors duration-300 ${savedCustoId === item.id ? "text-green-600" : "text-primary"}`}>
                       {formatCurrency(item.custo_total || 0)}
                     </span>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteMut.mutate(item.id)}>

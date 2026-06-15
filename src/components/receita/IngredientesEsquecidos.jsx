@@ -43,6 +43,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const [customQtd, setCustomQtd] = useState("");
   const [editingCustoId, setEditingCustoId] = useState(null);
   const [editingCustoVal, setEditingCustoVal] = useState("");
+  const [savedCustoId, setSavedCustoId] = useState(null);
 
   const { data: esquecidos = [] } = useQuery({
     queryKey: ["esquecidos-receita", receitaId],
@@ -126,9 +127,15 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
         custo_total: parseFloat((custo_unitario * qtd).toFixed(4)),
       });
     },
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });
       setEditingCustoId(null);
+      setSavedCustoId(vars.itemId);
+      setTimeout(() => setSavedCustoId(null), 1200);
+      toast.success("Custo salvo");
+    },
+    onError: (err) => {
+      toast.error("Erro ao salvar: " + err.message);
     },
   });
 
@@ -277,7 +284,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
                     </div>
                   )}
                 </div>
-                <span className="text-xs font-medium text-primary w-20 text-right">
+                <span className={`text-xs font-medium w-20 text-right transition-colors duration-300 ${savedCustoId === item.id ? "text-green-600" : "text-primary"}`}>
                   {formatCurrency(item.custo_total || 0)}
                 </span>
                 <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => deleteMut.mutate(item.id)}>
