@@ -1,0 +1,45 @@
+{
+  "name": "InsumoReceita",
+  "type": "object",
+  "properties": {
+    "receita_id": {
+      "type": "string",
+      "description": "ID da receita"
+    },
+    "insumo_id": {
+      "type": "string",
+      "description": "ID do insumo no banco"
+    },
+    "insumo_nome": {
+      "type": "string",
+      "description": "Nome do insumo (cache)"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "material",
+        "embalagem"
+      ],
+      "description": "Categoria do insumo"
+    },
+    "quantidade": {
+      "type": "number",
+      "description": "Quantidade usada por lote"
+    },
+    "unidade": {
+      "type": "string",
+      "description": "Unidade de medida usada"
+    },
+    "custo_unitario": {
+      "type": "number",
+      "description": "Custo unit\u00e1rio edit\u00e1vel (R$)"
+    },
+    "custo_total": {
+      "type": "number",
+      "description": "Custo total calculado: quantidade * custo_unitario"
+    }
+  },
+  "required": [
+    "receita_id"
+  ]
+}

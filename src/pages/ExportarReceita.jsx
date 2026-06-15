@@ -29,6 +29,11 @@ export default function ExportarReceita() {
     queryFn: () => base44.entities.IngredienteReceita.filter({ receita_id: id }),
   });
 
+  const { data: insumosReceita = [] } = useQuery({
+    queryKey: ["insumos-receita", id],
+    queryFn: () => base44.entities.InsumoReceita.filter({ receita_id: id }),
+  });
+
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
@@ -65,7 +70,9 @@ export default function ExportarReceita() {
       return { ...item, ing, qtd, custo };
     });
 
-  const custoTotal = itensFicha.reduce((s, i) => s + i.custo, 0);
+  const custoIngredientes = itensFicha.reduce((s, i) => s + i.custo, 0);
+  const custoInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
+  const custoTotal = custoIngredientes + custoInsumos;
   const custoPorcao = custoTotal / porcoesExport;
 
   const handlePrint = () => window.print();
@@ -79,13 +86,23 @@ export default function ExportarReceita() {
       if (item.pre_preparo) text += ` (${item.pre_preparo})`;
       text += `\n`;
     });
+    if (insumosReceita.length > 0) {
+      text += `\nINSUMOS E EMBALAGENS:\n`;
+      insumosReceita.forEach(item => {
+        text += `• ${item.insumo_nome} — ${item.quantidade} ${item.unidade}`;
+        if (aba === "custos") text += ` (${formatCurrency(item.custo_total || 0)})`;
+        text += `\n`;
+      });
+    }
     if (passos.length > 0) {
       text += `\nMODO DE PREPARO:\n`;
       text += passosParaTexto(passos);
       text += `\n`;
     }
     if (aba === "custos") {
-      text += `\n💰 Custo total: ${formatCurrency(custoTotal)} · Por porção: ${formatCurrency(custoPorcao)}`;
+      text += `\n💰 Ingredientes: ${formatCurrency(custoIngredientes)}`;
+      if (custoInsumos > 0) text += ` · Insumos: ${formatCurrency(custoInsumos)}`;
+      text += `\n💰 Total: ${formatCurrency(custoTotal)} · Por porção: ${formatCurrency(custoPorcao)}`;
     }
 
     if (navigator.share) {
@@ -165,8 +182,36 @@ export default function ExportarReceita() {
           })}
         </div>
 
+        {insumosReceita.length > 0 && (
+          <>
+            <h3 className="font-semibold mt-6 mb-2">Insumos e Embalagens</h3>
+            <div className="text-sm">
+              {insumosReceita.map((item) => (
+                <div key={item.id} className="flex py-1 border-b border-border/50 px-1 items-center">
+                  <span className="flex-[5]">
+                    {item.insumo_nome}
+                    <span className="text-muted-foreground ml-1 text-xs">({item.categoria})</span>
+                  </span>
+                  <span className="flex-[2] text-center">{item.quantidade} {item.unidade}</span>
+                  {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo_total || 0)}</span>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {aba === "custos" && (
           <div className="mt-4 space-y-2">
+            <div className="p-3 bg-primary/5 rounded-lg flex justify-between text-sm">
+              <span>Ingredientes</span>
+              <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
+            </div>
+            {custoInsumos > 0 && (
+              <div className="p-3 bg-primary/5 rounded-lg flex justify-between text-sm">
+                <span>Insumos e embalagens</span>
+                <span className="font-medium">{formatCurrency(custoInsumos)}</span>
+              </div>
+            )}
             <div className="p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
               <span>Custo total</span>
               <span className="text-primary">{formatCurrency(custoTotal)}</span>

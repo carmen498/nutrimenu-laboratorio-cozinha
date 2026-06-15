@@ -1,0 +1,29 @@
+{
+  "name": "Insumo",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do insumo"
+    },
+    "categoria": {
+      "type": "string",
+      "enum": [
+        "material",
+        "embalagem"
+      ],
+      "description": "Categoria: material de uso direto ou embalagem"
+    },
+    "unidade": {
+      "type": "string",
+      "description": "Unidade de medida (cm, folha, unidade, par, etc.)"
+    },
+    "preco_unitario": {
+      "type": "number",
+      "description": "Pre\u00e7o unit\u00e1rio em R$"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

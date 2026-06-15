@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
+import InsumosSection from "@/components/receita/InsumosSection";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 
@@ -64,6 +65,11 @@ export default function ReceitaAberta() {
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
     queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+  });
+
+  const { data: insumosReceita = [] } = useQuery({
+    queryKey: ["insumos-receita", id],
+    queryFn: () => base44.entities.InsumoReceita.filter({ receita_id: id }),
   });
 
   useEffect(() => {
@@ -155,7 +161,9 @@ export default function ReceitaAberta() {
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
-  const custoTotal = itensFicha.reduce((sum, i) => sum + i.custo, 0);
+  const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
+  const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
+  const custoTotal = custoIngredientes + custoInsumos;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
 
   // Save costs to recipe
@@ -163,11 +171,12 @@ export default function ReceitaAberta() {
     if (receita && fator === 1 && custoTotal > 0) {
       const newCT = parseFloat(custoTotal.toFixed(2));
       const newCP = parseFloat(custoPorcao.toFixed(2));
-      if (newCT !== receita.custo_total || newCP !== receita.custo_por_porcao) {
-        base44.entities.Receita.update(id, { custo_total: newCT, custo_por_porcao: newCP });
+      const newCI = parseFloat(custoInsumos.toFixed(2));
+      if (newCT !== receita.custo_total || newCP !== receita.custo_por_porcao || newCI !== (receita.custo_insumos || 0)) {
+        base44.entities.Receita.update(id, { custo_total: newCT, custo_por_porcao: newCP, custo_insumos: newCI });
       }
     }
-  }, [custoTotal, custoPorcao, receita, fator, id]);
+  }, [custoTotal, custoPorcao, custoInsumos, receita, fator, id]);
 
   const updatePriceMut = useMutation({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
@@ -508,16 +517,28 @@ REGRAS:
       </Card>
 
       {/* Cost summary */}
-      <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4 text-center">
-          <p className="text-xs text-muted-foreground">Custo total</p>
-          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(custoTotal)}</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <p className="text-xs text-muted-foreground">Custo por porção</p>
-          <p className="text-xl font-bold text-primary mt-1">{formatCurrency(custoPorcao)}</p>
-        </Card>
-      </div>
+      <Card className="p-4">
+        <h3 className="font-display text-sm font-bold mb-3">Custo total real</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Ingredientes</span>
+            <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Insumos e embalagens</span>
+            <span className="font-medium">{formatCurrency(custoInsumos)}</span>
+          </div>
+          <Separator />
+          <div className="flex justify-between font-bold text-base">
+            <span>Total</span>
+            <span className="text-primary">{formatCurrency(custoTotal)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground pt-1">
+            <span>Custo por porção</span>
+            <span className="font-semibold text-primary">{formatCurrency(custoPorcao)}</span>
+          </div>
+        </div>
+      </Card>
 
       {/* Margin calculator */}
       <Card className="p-4">
@@ -1124,6 +1145,9 @@ REGRAS:
           </div>
         )}
       </div>
+
+      {/* Insumos e Embalagens */}
+      <InsumosSection receitaId={id} />
 
       {/* Mode of preparation */}
       {passos.length > 0 && (
