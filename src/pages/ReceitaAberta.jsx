@@ -275,7 +275,7 @@ export default function ReceitaAberta() {
     }
     setOrderingByPrep(true);
     try {
-      // Build list of non-group items with their names and current index
+      // Only reorder existing non-group items — never create or delete
       const nonGroup = [];
       const groupPositions = [];
       itens.forEach((item, idx) => {
@@ -289,64 +289,72 @@ export default function ReceitaAberta() {
 
       if (nonGroup.length === 0) { setOrderingByPrep(false); return; }
 
-      const ingNames = nonGroup.map((ng, i) => `${i}. ${ng.nome}`).join("\n");
+      const ingNames = nonGroup.map((ng, i) => `ID:${i} — ${ng.nome}`).join("\n");
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analise o modo de preparo abaixo e determine a ordem em que cada ingrediente aparece pela primeira vez no texto. Retorne os índices na ordem correta.
+        prompt: `Analise o modo de preparo abaixo e devolva os IDs na ordem em que cada ingrediente aparece pela PRIMEIRA vez no texto.
 
 Modo de preparo:
 ${receita.modo_preparo}
 
-Ingredientes (índice 0 a ${nonGroup.length - 1}):
+Ingredientes:
 ${ingNames}
 
-IMPORTANTE: Retorne um array com os índices numéricos na sequência correta. Ingredientes não mencionados no modo de preparo devem ficar no final do array.`,
+REGRAS:
+- Retorne APENAS os IDs dos ingredientes que REALMENTE aparecem na lista acima, na nova ordem.
+- NUNCA invente ingredientes novos — use apenas os IDs fornecidos.
+- Ingredientes NÃO mencionados no modo de preparo: coloque no FINAL do array.
+- Se um ingrediente do modo de preparo não estiver na lista fornecida, IGNORE — não invente um ID.`,
         response_json_schema: {
           type: "object",
           properties: {
-            ordem_indices: {
+            ids_ordenados: {
               type: "array",
               items: { type: "number" },
-              description: "Array com os índices (números) na nova ordem"
+              description: "Array com os IDs (números) na nova ordem. Apenas IDs da lista fornecida."
             }
           }
         }
       });
 
-      const newOrder = result.ordem_indices || [];
-      if (newOrder.length === 0) {
+      const orderedIds = (result.ids_ordenados || []).map(Number);
+      if (orderedIds.length === 0) {
         toast.error("Não foi possível determinar a ordem dos ingredientes.");
         setOrderingByPrep(false);
         return;
       }
 
-      // Rebuild full list: groups stay in position relative to surrounding ingredients
-      const reorderedNonGroup = newOrder.map(i => nonGroup[i]).filter(Boolean);
-      // Add any missing items at the end
-      nonGroup.forEach(ng => {
-        if (!reorderedNonGroup.find(r => r.id === ng.id)) {
-          reorderedNonGroup.push(ng);
+      // Map IDs back to items, skipping any ID that doesn't match
+      const reordered = [];
+      const usedIds = new Set();
+      for (const id of orderedIds) {
+        const match = nonGroup.find(ng => ng.idx === id);
+        if (match && !usedIds.has(match.id)) {
+          reordered.push(match);
+          usedIds.add(match.id);
         }
-      });
+      }
+      // Append any remaining nonGroup items not included by the LLM
+      for (const ng of nonGroup) {
+        if (!usedIds.has(ng.id)) reordered.push(ng);
+      }
 
       // Interleave groups based on their original position relative to ingredients
       const finalOrder = [];
-      let ngIdx = 0;
+      let ri = 0;
       for (const gp of groupPositions) {
-        // Insert ingredients that were originally before this group
-        while (ngIdx < reorderedNonGroup.length && reorderedNonGroup[ngIdx].idx < gp.idx) {
-          finalOrder.push(reorderedNonGroup[ngIdx]);
-          ngIdx++;
+        while (ri < reordered.length && reordered[ri].idx < gp.idx) {
+          finalOrder.push(reordered[ri]);
+          ri++;
         }
         finalOrder.push(gp);
       }
-      // Remaining ingredients
-      while (ngIdx < reorderedNonGroup.length) {
-        finalOrder.push(reorderedNonGroup[ngIdx]);
-        ngIdx++;
+      while (ri < reordered.length) {
+        finalOrder.push(reordered[ri]);
+        ri++;
       }
 
-      // Apply order
+      // Only update ordem — never touch name, quantity, or cost
       for (let i = 0; i < finalOrder.length; i++) {
         await base44.entities.IngredienteReceita.update(finalOrder[i].id, { ordem: i * 10 });
       }

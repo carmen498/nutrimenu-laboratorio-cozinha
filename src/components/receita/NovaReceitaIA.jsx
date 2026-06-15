@@ -59,7 +59,21 @@ IMPORTANTE:
 - NUNCA substitua um ingrediente por outro parecido (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango")
 - Converta xícaras, colheres, unidades para gramas/ml
 - Se a receita não informar porções, sugira um valor razoável
-- O modo de preparo deve manter o texto original organizado em passos numerados
+- O modo de preparo deve ser REWRITTEN seguindo ESTRITAMENTE este padrão:
+  * Uma ação por linha, numerada
+  * Verbo no imperativo direto (ex: "Derreta", "Acrescente", "Bata")
+  * Sem repetir ingredientes desnecessariamente
+  * Temperatura, tempo e ponto crítico na mesma linha da ação
+  * Sem explicações óbvias ou instruções alternativas extensas — quando houver alternativa, usar parênteses curtos: (ou microondas)
+  Exemplo correto:
+  1. Derreta o chocolate picado em banho-maria ou microondas.
+  2. Acrescente a manteiga (ou margarina), mexa. Reserve.
+  3. Bata os ovos e o açúcar até formar creme fofo e esbranquiçado.
+  4. Adicione o chocolate derretido até homogeneizar.
+  5. Acrescente a farinha de trigo por último.
+  6. Despeje em forma untada e polvilhada com cacau em pó.
+  7. Asse a 180°C por 20 minutos.
+  8. Retire do forno e aguarde esfriar para cortar.
 - ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.`,
         response_json_schema: {
           type: "object",

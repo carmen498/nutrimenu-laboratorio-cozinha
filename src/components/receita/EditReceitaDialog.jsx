@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Camera, Sparkles, Loader2 } from "lucide-react";
+import { Camera, Sparkles, Loader2, Wand2 } from "lucide-react";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
@@ -16,6 +16,7 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
   const [form, setForm] = useState({ ...receita });
   const [saving, setSaving] = useState(false);
   const [generatingPhoto, setGeneratingPhoto] = useState(false);
+  const [rewritingPrep, setRewritingPrep] = useState(false);
   const qc = useQueryClient();
 
   const handleSave = async () => {
@@ -63,6 +64,48 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
     }
   };
 
+  const handleRewritePrep = async () => {
+    if (!form.modo_preparo?.trim()) { toast.error("Preencha o modo de preparo primeiro"); return; }
+    setRewritingPrep(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Reescreva este modo de preparo seguindo ESTRITAMENTE este padrão:
+- Uma ação por linha, numerada
+- Verbo no imperativo direto (ex: "Derreta", "Acrescente", "Bata")
+- Sem repetir ingredientes desnecessariamente
+- Temperatura, tempo e ponto crítico na mesma linha da ação
+- Sem explicações óbvias ou instruções alternativas extensas — quando houver alternativa, usar parênteses curtos: (ou microondas)
+
+Exemplo:
+1. Derreta o chocolate picado em banho-maria ou microondas.
+2. Acrescente a manteiga (ou margarina), mexa. Reserve.
+3. Bata os ovos e o açúcar até formar creme fofo e esbranquiçado.
+4. Adicione o chocolate derretido até homogeneizar.
+5. Acrescente a farinha de trigo por último.
+6. Despeje em forma untada e polvilhada com cacau em pó.
+7. Asse a 180°C por 20 minutos.
+8. Retire do forno e aguarde esfriar para cortar.
+
+Texto original:
+${form.modo_preparo}`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            modo_preparo: { type: "string", description: "Modo de preparo reescrito no padrão solicitado" }
+          }
+        }
+      });
+      if (result.modo_preparo) {
+        setForm({ ...form, modo_preparo: result.modo_preparo });
+        toast.success("Modo de preparo reescrito!");
+      }
+    } catch {
+      toast.error("Erro ao reescrever");
+    } finally {
+      setRewritingPrep(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -101,7 +144,13 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
             </div>
           </div>
           <div>
-            <Label>Modo de preparo</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Modo de preparo</Label>
+              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleRewritePrep} disabled={rewritingPrep || !form.modo_preparo?.trim()}>
+                {rewritingPrep ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Wand2 className="w-3 h-3 mr-1" />}
+                Reescrever com IA
+              </Button>
+            </div>
             <Textarea rows={5} value={form.modo_preparo || ""} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Descreva o passo a passo em etapas numeradas. Uma ação por linha. Ex:\n1. Derreta o chocolate em banho-maria.\n2. Acrescente a manteiga e mexa. Reserve.\n3. Bata os ovos com o açúcar até formar creme fofo."} />
           </div>
           <div>
