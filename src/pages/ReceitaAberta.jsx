@@ -72,7 +72,7 @@ export default function ReceitaAberta() {
         setPorcoes(receita.porcoes_base || 1);
       }
       if (quantidadeTotal === null) {
-        setQuantidadeTotal(receita.rendimento_total || 0);
+        setQuantidadeTotal(Math.round(receita.rendimento_total || 0));
       }
     }
   }, [receita, porcoes, quantidadeTotal]);
@@ -468,13 +468,13 @@ REGRAS:
               type="text"
               inputMode="numeric"
               placeholder="ex: 500 ou 1,5kg"
-              value={quantidadeTotal || ""}
+              value={quantidadeTotal ? Math.round(quantidadeTotal) : ""}
               onChange={(e) => handleQuantidadeChange(e.target.value)}
               className="text-center text-lg font-bold h-10 mt-1"
             />
-            {quantidadeTotal > 0 && (
+            {quantidadeTotal > 0 && quantidadeTotal >= 1000 && (
               <p className="text-xs text-muted-foreground mt-1 text-center">
-                {quantidadeTotal >= 1000 ? `${quantidadeTotal.toLocaleString("pt-BR")}g · ${(quantidadeTotal / 1000).toFixed(1).replace(".", ",")} kg` : `${quantidadeTotal}g`}
+                = {(quantidadeTotal / 1000).toFixed(1).replace(".", ",")} kg
               </p>
             )}
           </div>
