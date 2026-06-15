@@ -14,6 +14,7 @@ export default function ExportarReceita() {
   const navigate = useNavigate();
   const params = new URLSearchParams(window.location.search);
   const porcoes = parseInt(params.get("porcoes")) || null;
+  const qtdG = parseInt(params.get("qtd")) || null;
   const [ocultarCustos, setOcultarCustos] = useState(false);
   const printRef = useRef();
 
@@ -44,7 +45,9 @@ export default function ExportarReceita() {
   }
 
   const porcoesExport = porcoes || receita.porcoes_base || 1;
-  const fator = receita.porcoes_base > 0 ? porcoesExport / receita.porcoes_base : 1;
+  const qtdExport = qtdG || receita.rendimento_total || 0;
+  const fator = receita.rendimento_total > 0 && qtdG ? qtdG / receita.rendimento_total : (receita.porcoes_base > 0 ? porcoesExport / receita.porcoes_base : 1);
+  const formatKgDisplay = (g) => g >= 1000 ? `${(g / 1000).toFixed(1).replace(".", ",")} kg` : `${g} g`;
   const passos = formatarModoPreparo(receita.modo_preparo);
   
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -114,7 +117,21 @@ export default function ExportarReceita() {
           <img src={receita.foto_url} alt={receita.nome} className="w-full h-48 object-cover rounded-lg mb-4" />
         )}
         <h2 className="font-display text-2xl font-bold">{receita.nome}</h2>
-        <p className="text-sm text-muted-foreground mt-1">{receita.categoria} · {porcoesExport} porções</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {receita.categoria} · Base: {receita.porcoes_base} porções
+          {receita.rendimento_total > 0 && ` · ${receita.rendimento_total.toLocaleString("pt-BR")} ${receita.unidade_base}`}
+        </p>
+
+        {/* Bloco de escalonamento */}
+        <div className="mt-3 p-3 bg-primary/5 rounded-lg text-sm">
+          <p className="font-semibold text-primary">Produção escalonada</p>
+          <p className="text-muted-foreground mt-0.5">
+            Quantidade: <strong>{qtdExport.toLocaleString("pt-BR")} {receita.unidade_base}</strong>
+            {qtdExport >= 1000 && ` (${(qtdExport / 1000).toFixed(1).replace(".", ",")} kg)`}
+            {" · "}Porções: <strong>{porcoesExport}</strong>
+            {fator !== 1 && <span className="ml-1">· Fator: ×{fator.toFixed(2)}</span>}
+          </p>
+        </div>
 
         <h3 className="font-semibold mt-6 mb-2">Ingredientes</h3>
         <div className="text-sm">
@@ -148,9 +165,15 @@ export default function ExportarReceita() {
         </div>
 
         {!ocultarCustos && (
-          <div className="mt-4 p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
-            <span>Custo por porção</span>
-            <span className="text-primary">{formatCurrency(custoPorcao)}</span>
+          <div className="mt-4 space-y-2">
+            <div className="p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
+              <span>Custo total</span>
+              <span className="text-primary">{formatCurrency(custoTotal)}</span>
+            </div>
+            <div className="p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
+              <span>Custo por porção</span>
+              <span className="text-primary">{formatCurrency(custoPorcao)}</span>
+            </div>
           </div>
         )}
 
@@ -166,13 +189,13 @@ export default function ExportarReceita() {
         )}
 
         <p className="text-xs text-muted-foreground mt-6 text-center">
-          Receita na Medida · por Carmen Reinstein
+          Gerado por Receita na Medida · {new Date().toLocaleDateString("pt-BR")}
         </p>
       </Card>
 
       <div className="flex gap-2">
         <Button className="flex-1" onClick={handlePrint}>
-          <FileText className="w-4 h-4 mr-1" /> Imprimir / PDF
+          <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF — Preparo e Custos
         </Button>
         <Button variant="outline" className="flex-1" onClick={handleShare}>
           <Share2 className="w-4 h-4 mr-1" /> Compartilhar
