@@ -71,24 +71,38 @@ export default function ReceitaAberta() {
       if (porcoes === null) {
         setPorcoes(receita.porcoes_base || 1);
       }
-      // quantidadeTotal intentionally left null — user types it; base info is in header
+      if (quantidadeTotal === null) {
+        setQuantidadeTotal(receita.rendimento_total || 0);
+      }
     }
   }, [receita, porcoes, quantidadeTotal]);
 
   const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
 
-  const handlePorcoesChange = (newPorcoes) => {
-    setPorcoes(newPorcoes);
-    if (rendPorPorcao > 0) {
-      setQuantidadeTotal(Math.round(newPorcoes * rendPorPorcao));
+  const parseKgInput = (input) => {
+    if (typeof input === "number") return input;
+    const cleaned = String(input).trim().toLowerCase().replace(/\s/g, "");
+    const kgMatch = cleaned.match(/^([\d.,]+)kg$/);
+    if (kgMatch) {
+      const val = parseFloat(kgMatch[1].replace(",", "."));
+      return Math.round(val * 1000);
     }
+    return Math.max(1, parseInt(cleaned, 10) || 1);
   };
 
-  const handleQuantidadeChange = (newQtd) => {
+  const handleQuantidadeChange = (rawInput) => {
+    const newQtd = parseKgInput(rawInput);
     setQuantidadeTotal(newQtd);
     if (rendPorPorcao > 0) {
       const newP = Math.max(1, Math.round(newQtd / rendPorPorcao));
       setPorcoes(newP);
+    }
+  };
+
+  const handlePorcoesChange = (newPorcoes) => {
+    setPorcoes(newPorcoes);
+    if (rendPorPorcao > 0) {
+      setQuantidadeTotal(Math.round(newPorcoes * rendPorPorcao));
     }
   };
 
@@ -104,7 +118,7 @@ export default function ReceitaAberta() {
     return map;
   }, [receitasBasicas]);
 
-  const fator = receita && receita.porcoes_base > 0 ? (porcoes || receita.porcoes_base) / receita.porcoes_base : 1;
+  const fator = receita && receita.rendimento_total > 0 && quantidadeTotal > 0 ? quantidadeTotal / receita.rendimento_total : 1;
 
   const temOrdemManual = useMemo(() => itens.some(i => (i.ordem || 0) > 0), [itens]);
 
@@ -115,8 +129,8 @@ export default function ReceitaAberta() {
         // grupos vão para o topo quando sem ordem explícita
         if (a.tipo === "grupo" && b.tipo !== "grupo") return -1;
         if (a.tipo !== "grupo" && b.tipo === "grupo") return 1;
-        return ((b.quantidade_por_porcao || 0) * (porcoes || receita?.porcoes_base || 1))
-             - ((a.quantidade_por_porcao || 0) * (porcoes || receita?.porcoes_base || 1));
+        return ((b.quantidade_por_porcao || 0) * (receita?.porcoes_base || 1) * fator)
+             - ((a.quantidade_por_porcao || 0) * (receita?.porcoes_base || 1) * fator);
       })
       .map((item) => {
         if (item.tipo === "grupo") {
@@ -125,7 +139,7 @@ export default function ReceitaAberta() {
         if (item.tipo === "subreceita") {
           const rb = receitasBasicasMap[item.subreceita_id];
           const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
-          const qtdNova = item.quantidade_por_porcao * (porcoes || receita?.porcoes_base || 1);
+          const qtdNova = item.quantidade_por_porcao * (receita?.porcoes_base || 1) * fator;
           const custo = rb && rb.rendimento_total > 0
             ? (qtdNova / rb.rendimento_total) * (rb.custo_total || 0)
             : 0;
@@ -133,14 +147,14 @@ export default function ReceitaAberta() {
         }
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
-        const qtdNova = item.quantidade_por_porcao * (porcoes || receita?.porcoes_base || 1);
+        const qtdNova = item.quantidade_por_porcao * (receita?.porcoes_base || 1) * fator;
         const fc = ing?.fator_correcao || 1;
         const qtdComprar = qtdNova * fc;
         const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
         const isNA = !!(item.ingrediente_nome && item.ingrediente_nome.toUpperCase() === "N/A");
         return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA };
       });
-  }, [itens, ingMap, porcoes, receita, temOrdemManual]);
+  }, [itens, ingMap, fator, receita, temOrdemManual]);
 
   const custoTotal = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
@@ -392,8 +406,8 @@ REGRAS:
   const handleConfirmQtd = (itemId) => {
     const val = parseFloat(editingQtdValue);
     if (!isNaN(val) && val >= 0) {
-      const p = porcoes || receita?.porcoes_base || 1;
-      updateQtdMut.mutate({ itemId, quantidade_por_porcao: val / p });
+      const baseTotal = (receita?.porcoes_base || 1) * fator;
+      updateQtdMut.mutate({ itemId, quantidade_por_porcao: baseTotal > 0 ? val / baseTotal : val });
     }
   };
 
@@ -449,16 +463,13 @@ REGRAS:
         <div className="grid grid-cols-2 gap-4">
           {/* Left: Quantidade total (g) */}
           <div>
-            <Label className="text-sm font-semibold">Qual a quantidade (g)?</Label>
+            <Label className="text-sm font-semibold">Quantidade desejada (g)?</Label>
             <Input
-              type="number"
-              min={1}
-              placeholder="digite a quantidade"
+              type="text"
+              inputMode="numeric"
+              placeholder="ex: 500 ou 1,5kg"
               value={quantidadeTotal || ""}
-              onChange={(e) => {
-                const val = Math.max(1, parseInt(e.target.value) || 1);
-                handleQuantidadeChange(val);
-              }}
+              onChange={(e) => handleQuantidadeChange(e.target.value)}
               className="text-center text-lg font-bold h-10 mt-1"
             />
             {quantidadeTotal > 0 && (
