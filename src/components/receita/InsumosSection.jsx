@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const INSUMOS_PREDEFINIDOS = [
   // Materiais
-  { nome: "Papel manteiga", categoria: "material", unidade: "cm" },
+  { nome: "Papel manteiga", categoria: "material", unidade: "folha" },
   { nome: "Papel alumínio", categoria: "material", unidade: "cm" },
   { nome: "Papel filme", categoria: "material", unidade: "cm" },
   { nome: "Saco plástico pequeno", categoria: "material", unidade: "unidade" },
@@ -35,6 +35,8 @@ export default function InsumosSection({ receitaId }) {
   const [customUnidade, setCustomUnidade] = useState("unidade");
   const [editingId, setEditingId] = useState(null);
   const [editingCusto, setEditingCusto] = useState("");
+  const [editingNomeId, setEditingNomeId] = useState(null);
+  const [editingNome, setEditingNome] = useState("");
 
   const { data: insumosReceita = [] } = useQuery({
     queryKey: ["insumos-receita", receitaId],
@@ -147,6 +149,22 @@ export default function InsumosSection({ receitaId }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
   });
 
+  const updateNomeMut = useMutation({
+    mutationFn: async ({ itemId, nome }) => {
+      await base44.entities.InsumoReceita.update(itemId, { insumo_nome: nome });
+      const item = insumosReceita.find(i => i.id === itemId);
+      if (item?.insumo_id) {
+        await base44.entities.Insumo.update(item.insumo_id, { nome });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });
+      qc.invalidateQueries({ queryKey: ["insumos-db"] });
+      setEditingNomeId(null);
+      toast.success("Nome atualizado");
+    },
+  });
+
   const deleteMut = useMutation({
     mutationFn: (itemId) => base44.entities.InsumoReceita.delete(itemId),
     onSuccess: () => {
@@ -243,8 +261,40 @@ export default function InsumosSection({ receitaId }) {
             <Card key={item.id} className="p-2.5">
               <div className="grid grid-cols-12 gap-2 items-center text-sm">
                 <div className="col-span-5 min-w-0">
-                  <p className="font-medium truncate text-sm">{item.insumo_nome}</p>
-                  <span className="text-[10px] text-muted-foreground capitalize">{item.categoria}</span>
+                  {editingNomeId === item.id ? (
+                    <div className="flex items-center gap-1">
+                      <Input
+                        className="h-7 text-sm flex-1"
+                        value={editingNome}
+                        onChange={(e) => setEditingNome(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && editingNome.trim()) updateNomeMut.mutate({ itemId: item.id, nome: editingNome.trim() });
+                          if (e.key === "Escape") setEditingNomeId(null);
+                        }}
+                        autoFocus
+                      />
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { if (editingNome.trim()) updateNomeMut.mutate({ itemId: item.id, nome: editingNome.trim() }); }}>
+                        <Check className="w-3 h-3 text-green-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingNomeId(null)}>
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1">
+                        <p className="font-medium truncate text-sm">{item.insumo_nome}</p>
+                        <button
+                          className="text-muted-foreground hover:text-primary shrink-0"
+                          onClick={() => { setEditingNomeId(item.id); setEditingNome(item.insumo_nome); }}
+                          title="Editar nome"
+                        >
+                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                        </button>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground capitalize">{item.categoria}</span>
+                    </>
+                  )}
                 </div>
                 <div className="col-span-2 text-center">
                   <div className="flex items-center gap-1 justify-center">
@@ -263,6 +313,7 @@ export default function InsumosSection({ receitaId }) {
                   </div>
                 </div>
                 <div className="col-span-3 text-center">
+                  <span className="block text-[10px] text-muted-foreground mb-0.5">Custo unit.</span>
                   {editingId === item.id ? (
                     <div className="flex items-center gap-1 justify-center">
                       <Input

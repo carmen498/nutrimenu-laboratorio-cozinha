@@ -8,19 +8,33 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const SUGESTOES = [
+const SUGESTOES_PROCESSO = [
   { nome: "Farinha para enfarinhar/espichar massa", busca: ["farinha de trigo", "farinha"] },
   { nome: "Cacau em pó para polvilhar forma", busca: ["cacau em pó", "cacau"] },
   { nome: "Óleo/manteiga para untar", busca: ["óleo", "manteiga", "azeite"] },
   { nome: "Queijo parmesão para salpicar/gratinar", busca: ["queijo parmesão", "parmesão"] },
-  { nome: "Azeite para finalizar", busca: ["azeite"] },
-  { nome: "Flor de sal para finalizar", busca: ["sal", "flor de sal"] },
-  { nome: "Ervas frescas para decorar", busca: ["ervas", "manjericão", "salsa", "coentro", "cebolinha"] },
-  { nome: "Confeitos/granulados para decorar", busca: ["confeito", "granulado", "chocolate"] },
-  { nome: "Glacê/cobertura", busca: ["glacê", "cobertura", "açúcar de confeiteiro"] },
+  { nome: "Ovo / Gema para pincelar", busca: ["ovo", "gema"] },
+  { nome: "Leite para pincelar", busca: ["leite"] },
+  { nome: "Farinha de rosca para empanar", busca: ["farinha de rosca", "farinha"] },
+  { nome: "Sal da água do cozimento", busca: ["sal"] },
+];
+
+const SUGESTOES_DECORACAO = [
+  { nome: "Açúcar de confeiteiro para polvilhar", busca: ["açúcar de confeiteiro", "açúcar"] },
+  { nome: "Granulado / Confeitos para decorar", busca: ["granulado", "confeito", "chocolate"] },
+  { nome: "Glacê / Cobertura", busca: ["glacê", "cobertura", "açúcar"] },
   { nome: "Calda para finalizar", busca: ["calda", "mel", "açúcar"] },
   { nome: "Brilho para torta", busca: ["gelatina", "geléia", "brilho"] },
+  { nome: "Azeite para finalizar", busca: ["azeite"] },
+  { nome: "Flor de sal para finalizar", busca: ["sal", "flor de sal"] },
+  { nome: "Chantilly para decorar", busca: ["chantilly", "creme de leite"] },
+  { nome: "Frutas frescas para decorar", busca: ["frutas", "morango", "framboesa", "mirtilo"] },
+  { nome: "Ervas frescas para decorar", busca: ["ervas", "manjericão", "salsa", "coentro", "cebolinha", "hortelã"] },
+  { nome: "Chocolate ralado para decorar", busca: ["chocolate"] },
+  { nome: "Nozes / Castanhas para decorar", busca: ["nozes", "castanha", "amêndoa", "avelã"] },
 ];
+
+const SUGESTOES = [...SUGESTOES_PROCESSO, ...SUGESTOES_DECORACAO];
 
 export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const qc = useQueryClient();
@@ -128,9 +142,24 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
           </PopoverTrigger>
           <PopoverContent className="w-72 p-0" align="end">
             <div className="max-h-64 overflow-y-auto">
-              {SUGESTOES.map((sug, idx) => (
+              <div className="px-3 py-1.5">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Processo</p>
+              </div>
+              {SUGESTOES_PROCESSO.map((sug, idx) => (
                 <button
-                  key={idx}
+                  key={"p"+idx}
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                  onClick={() => addMut.mutate(sug.nome)}
+                >
+                  {sug.nome}
+                </button>
+              ))}
+              <div className="px-3 py-1.5 border-t mt-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold">Decoração / Acabamento</p>
+              </div>
+              {SUGESTOES_DECORACAO.map((sug, idx) => (
+                <button
+                  key={"d"+idx}
                   className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
                   onClick={() => addMut.mutate(sug.nome)}
                 >
