@@ -447,14 +447,15 @@ REGRAS:
       </div>
 
       {/* Portion scaler */}
-      <Card className="p-4">
+      <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="grid grid-cols-2 gap-4">
           {/* Left: Quantidade total (g) */}
           <div>
-            <Label className="text-sm font-semibold">Qual a quantidade (g)</Label>
+            <Label className="text-sm font-semibold">Qual a quantidade (g)?</Label>
             <Input
               type="number"
               min={1}
+              placeholder="digite a quantidade"
               value={quantidadeTotal || ""}
               onChange={(e) => {
                 const val = Math.max(1, parseInt(e.target.value) || 1);
@@ -494,9 +495,6 @@ REGRAS:
                 <Badge variant="secondary" className="text-xs">×{fator.toFixed(1)}</Badge>
               </p>
             )}
-            <p className="text-xs font-medium text-primary mt-1 text-center">
-              Custo por porção: {formatCurrency(custoPorcao)}
-            </p>
           </div>
         </div>
       </Card>
