@@ -523,56 +523,6 @@ REGRAS:
         </div>
       </Card>
 
-      {/* Cost summary */}
-      <Card className="p-4">
-        <h3 className="font-display text-sm font-bold mb-3">Custo total real</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Ingredientes</span>
-            <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Insumos e embalagens</span>
-            <span className="font-medium">{formatCurrency(custoInsumos)}</span>
-          </div>
-          {custoEsquecidos > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground italic text-xs">Ingredientes esquecidos</span>
-              <span className="font-medium text-xs">{formatCurrency(custoEsquecidos)}</span>
-            </div>
-          )}
-          <Separator />
-          <div className="flex justify-between font-bold text-base">
-            <span>Total</span>
-            <span className="text-primary">{formatCurrency(custoTotal)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-muted-foreground pt-1">
-            <span>Custo por porção</span>
-            <span className="font-semibold text-primary">{formatCurrency(custoPorcao)}</span>
-          </div>
-        </div>
-      </Card>
-
-      {/* Margin calculator */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <DollarSign className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Quanto cobrar se eu vender?</span>
-          </div>
-          <Switch checked={showMargin} onCheckedChange={setShowMargin} />
-        </div>
-        {showMargin && (
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Margem: {margem}%</span>
-              <span className="font-bold text-primary text-lg">{formatCurrency(precoVenda)} /porção</span>
-            </div>
-            <Slider value={[margem]} min={10} max={80} step={5} onValueChange={(v) => setMargem(v[0])} />
-          </div>
-        )}
-      </Card>
-
       {/* Ingredients table */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -1178,6 +1128,56 @@ REGRAS:
           </Card>
         </div>
       )}
+
+      {/* Cost summary */}
+      <Card className="p-4">
+        <h3 className="font-display text-sm font-bold mb-3">Custo total real</h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Ingredientes</span>
+            <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Insumos e embalagens</span>
+            <span className="font-medium">{formatCurrency(custoInsumos)}</span>
+          </div>
+          {custoEsquecidos > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground italic text-xs">Ingredientes esquecidos</span>
+              <span className="font-medium text-xs">{formatCurrency(custoEsquecidos)}</span>
+            </div>
+          )}
+          <Separator />
+          <div className="flex justify-between font-bold text-base">
+            <span>Total</span>
+            <span className="text-primary">{formatCurrency(custoTotal)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-muted-foreground pt-1">
+            <span>Custo por porção</span>
+            <span className="font-semibold text-primary">{formatCurrency(custoPorcao)}</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Margin calculator */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Quanto cobrar se eu vender?</span>
+          </div>
+          <Switch checked={showMargin} onCheckedChange={setShowMargin} />
+        </div>
+        {showMargin && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span>Margem: {margem}%</span>
+              <span className="font-bold text-primary text-lg">{formatCurrency(precoVenda)} /porção</span>
+            </div>
+            <Slider value={[margem]} min={10} max={80} step={5} onValueChange={(v) => setMargem(v[0])} />
+          </div>
+        )}
+      </Card>
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
