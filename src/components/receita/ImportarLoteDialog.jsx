@@ -38,7 +38,9 @@ REGRAS DE EXTRAÇÃO:
 
 5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão: uma ação por linha numerada, verbo no imperativo direto (Derreta, Acrescente, Bata, Asse), sem repetir ingredientes.
 
-6. QUANTIDADE: sempre em gramas, converta vírgula para ponto. Ex: "250,00" → 250, "0,01" → 0.01.
+6. NORMALIZAÇÃO DE NOMES: "Nata" e "nata" devem ser mapeados para "Creme de leite fresco".
+
+7. QUANTIDADE: sempre em gramas, converta vírgula para ponto. Ex: "250,00" → 250, "0,01" → 0.01.
 
 7. CATEGORIA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
 
