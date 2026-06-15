@@ -11,7 +11,9 @@ import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 const TABS = { PASTE: "paste", FILE: "file" };
 
 const RECIPE_EXTRACTION_PROMPT = `
-Analise este conteúdo e extraia TODAS as receitas encontradas.
+⚠️ CRÍTICO: Use SOMENTE o conteúdo fornecido abaixo. NÃO invente, NÃO sugira, NÃO complemente nenhuma receita. Se não houver receitas no texto, retorne array vazio.
+
+Analise o conteúdo e extraia SOMENTE as receitas que estão explicitamente nele.
 
 O conteúdo pode vir de uma tabela Word convertida para texto corrido com este padrão:
 
@@ -38,9 +40,9 @@ REGRAS DE EXTRAÇÃO:
 
 6. QUANTIDADE: sempre em gramas, converta vírgula para ponto. Ex: "250,00" → 250, "0,01" → 0.01.
 
-7. CATEGORIA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos", "Acompanhamentos, Arroz e Risotos"). Se incerto, use string vazia.
+7. CATEGORIA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
 
-Retorne TODAS as receitas, mesmo que muitas. Se não houver receitas claras, retorne array vazio.
+CONTEÚDO:
 `;
 
 export default function ImportarLoteDialog({ open, onClose }) {
@@ -49,6 +51,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
   const [file, setFile] = useState(null);
   const [dragOver, setDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(""); // "uploading" | "extracting" | "identifying" | ""
   const [result, setResult] = useState(null);
   const [error, setError] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -61,6 +64,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
     setError(false);
     setResult(null);
     setLoading(false);
+    setLoadingStep("");
     setImporting(false);
   };
 
@@ -82,6 +86,37 @@ export default function ImportarLoteDialog({ open, onClose }) {
     setResult(null);
   };
 
+  const responseSchema = {
+    type: "object",
+    properties: {
+      receitas: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            nome: { type: "string" },
+            categoria: { type: "string" },
+            porcoes_base: { type: "number" },
+            rendimento_g: { type: "number" },
+            modo_preparo: { type: "string" },
+            ingredientes: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  nome: { type: "string" },
+                  pre_preparo: { type: "string" },
+                  quantidade_g: { type: "number" },
+                  tipo: { type: "string", enum: ["ingrediente", "grupo"] }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  };
+
   const handleIdentify = async () => {
     if (tab === TABS.PASTE && !texto.trim()) { toast.error("Cole o texto da receita"); return; }
     if (tab === TABS.FILE && !file) { toast.error("Selecione um arquivo"); return; }
@@ -91,56 +126,123 @@ export default function ImportarLoteDialog({ open, onClose }) {
     setResult(null);
 
     try {
-      let receitasExtraidas = [];
+      let conteudo = "";
+      const ext = tab === TABS.FILE ? file.name?.split(".").pop()?.toLowerCase() : null;
 
-      const responseSchema = {
-        type: "object",
-        properties: {
-          receitas: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                nome: { type: "string" },
-                categoria: { type: "string" },
-                porcoes_base: { type: "number" },
-                rendimento_g: { type: "number" },
-                modo_preparo: { type: "string" },
-                ingredientes: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      nome: { type: "string" },
-                      pre_preparo: { type: "string" },
-                      quantidade_g: { type: "number" },
-                      tipo: { type: "string", enum: ["ingrediente", "grupo"] }
-                    }
-                  }
+      // — PASTE TAB: use text directly —
+      if (tab === TABS.PASTE) {
+        conteudo = texto;
+      }
+      // — FILE TAB: extract text first —
+      else {
+        setLoadingStep("uploading");
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+        if (ext === "txt") {
+          // Fetch .txt content directly
+          const response = await fetch(file_url);
+          conteudo = await response.text();
+        } else if (ext === "pdf") {
+          // Use ExtractDataFromUploadedFile for PDF
+          setLoadingStep("extracting");
+          try {
+            const extraction = await base44.integrations.Core.ExtractDataFromUploadedFile({
+              file_url,
+              json_schema: {
+                type: "object",
+                properties: {
+                  texto_completo: { type: "string" }
                 }
               }
+            });
+            if (extraction.status === "success" && extraction.output?.texto_completo) {
+              conteudo = extraction.output.texto_completo;
             }
+          } catch {
+            // Extraction failed, try LLM fallback
           }
+          // If still empty, try LLM-based extraction
+          if (!conteudo?.trim()) {
+            setLoadingStep("extracting");
+            const textResult = await base44.integrations.Core.InvokeLLM({
+              prompt: "Extraia TODO o texto deste arquivo, palavra por palavra. Retorne o texto bruto. Se não conseguir ler, retorne string vazia.",
+              file_urls: [file_url],
+              response_json_schema: {
+                type: "object",
+                properties: { texto: { type: "string" } }
+              }
+            });
+            conteudo = textResult.texto || "";
+          }
+        } else {
+          // .docx — LLM to extract text
+          setLoadingStep("extracting");
+          const textResult = await base44.integrations.Core.InvokeLLM({
+            prompt: "Extraia TODO o texto deste arquivo .docx, palavra por palavra, preservando quebras de linha. Retorne o texto bruto completo. Se não conseguir ler o arquivo, retorne string vazia.",
+            file_urls: [file_url],
+            response_json_schema: {
+              type: "object",
+              properties: { texto: { type: "string" } }
+            }
+          });
+          conteudo = textResult.texto || "";
         }
-      };
-
-      if (tab === TABS.PASTE) {
-        const llmResult = await base44.integrations.Core.InvokeLLM({
-          prompt: RECIPE_EXTRACTION_PROMPT + `\nConteúdo:\n${texto}`,
-          response_json_schema: responseSchema,
-          model: "gemini_3_flash"
-        });
-        receitasExtraidas = (llmResult.receitas || []).filter(r => (r.nome || "").trim());
-      } else {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-        const llmResult = await base44.integrations.Core.InvokeLLM({
-          prompt: RECIPE_EXTRACTION_PROMPT,
-          file_urls: [file_url],
-          response_json_schema: responseSchema,
-          model: "gemini_3_flash"
-        });
-        receitasExtraidas = (llmResult.receitas || []).filter(r => (r.nome || "").trim());
       }
+
+      // — VALIDATE extracted content —
+      if (!conteudo || !conteudo.trim()) {
+        // Try one more approach for files: let LLM read file directly with strict anti-hallucination
+        if (tab === TABS.FILE && file) {
+          setLoadingStep("identifying");
+          const { file_url: url2 } = await base44.integrations.Core.UploadFile({ file });
+          const directResult = await base44.integrations.Core.InvokeLLM({
+            prompt: `⚠️ CRÍTICO: Leia SOMENTE o que está neste arquivo. Se o arquivo não contiver receitas claramente identificáveis, retorne receitas vazio E marque conteudo_vazio=true. NUNCA invente receitas.
+
+${RECIPE_EXTRACTION_PROMPT}`,
+            file_urls: [url2],
+            response_json_schema: {
+              type: "object",
+              properties: {
+                receitas: responseSchema.properties.receitas,
+                conteudo_vazio: { type: "boolean" }
+              }
+            }
+          });
+          if (directResult.conteudo_vazio || !directResult.receitas?.length) {
+            setError(true);
+            setLoading(false);
+            return;
+          }
+          const receitas = (directResult.receitas || []).filter(r => (r.nome || "").trim());
+          if (receitas.length === 0) { setError(true); setLoading(false); return; }
+          setResult({ receitas });
+          setLoading(false);
+          return;
+        }
+        setError(true);
+        setLoading(false);
+        return;
+      }
+
+      // Verify extracted text actually looks like recipes
+      const temIndiciosReceita = /modo de preparo|ingredientes|nome da receita|porções|rendimento/i.test(conteudo);
+      // Also check for recipe-like structure (lines with quantities, numbered steps)
+      const temEstruturaReceita = /\d+[.,]\d{2}/.test(conteudo) || /^\d+\.\s/.test(conteudo);
+
+      if (!temIndiciosReceita && !temEstruturaReceita) {
+        setError(true);
+        setLoading(false);
+        return;
+      }
+
+      // — IDENTIFY RECIPES —
+      setLoadingStep("identifying");
+      const llmResult = await base44.integrations.Core.InvokeLLM({
+        prompt: RECIPE_EXTRACTION_PROMPT + conteudo,
+        response_json_schema: responseSchema
+      });
+
+      const receitasExtraidas = (llmResult.receitas || []).filter(r => (r.nome || "").trim());
 
       if (receitasExtraidas.length === 0) {
         setError(true);
@@ -153,6 +255,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
       toast.error("Erro ao processar: " + err.message);
     } finally {
       setLoading(false);
+      setLoadingStep("");
     }
   };
 
@@ -160,7 +263,6 @@ export default function ImportarLoteDialog({ open, onClose }) {
     if (!result?.receitas?.length) return;
     setImporting(true);
     try {
-      // Load all existing ingredients for matching
       const existingIngredientes = await base44.entities.Ingrediente.list("-nome", 2000);
       const ingredienteMap = {};
       existingIngredientes.forEach(ing => {
@@ -168,7 +270,6 @@ export default function ImportarLoteDialog({ open, onClose }) {
         if (key) ingredienteMap[key] = ing;
       });
 
-      // Load existing recipes for duplicate detection
       const existingReceitas = await base44.entities.Receita.list("-nome", 500);
       const receitaMap = {};
       existingReceitas.forEach(r => { receitaMap[r.nome?.toLowerCase().trim()] = r; });
@@ -198,7 +299,6 @@ export default function ImportarLoteDialog({ open, onClose }) {
         if (existingReceita) {
           receitaId = existingReceita.id;
           await base44.entities.Receita.update(receitaId, { ...payload, revisar: true });
-          // Delete old IngredienteReceita for this recipe
           const oldItems = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId }, "", 200);
           for (const old of oldItems) {
             await base44.entities.IngredienteReceita.delete(old.id);
@@ -210,7 +310,6 @@ export default function ImportarLoteDialog({ open, onClose }) {
           created++;
         }
 
-        // Create IngredienteReceita entries
         const ingredientes = item.ingredientes || [];
         let ordem = 0;
         for (const ing of ingredientes) {
@@ -227,7 +326,6 @@ export default function ImportarLoteDialog({ open, onClose }) {
             continue;
           }
 
-          // Match or create ingredient
           const ingNome = (ing.nome || "").trim();
           if (!ingNome) { ordem++; continue; }
 
@@ -235,7 +333,6 @@ export default function ImportarLoteDialog({ open, onClose }) {
           let ingId = ingredienteMap[ingKey]?.id;
 
           if (!ingId) {
-            // Create new ingredient
             const novoIng = await base44.entities.Ingrediente.create({
               nome: ingNome,
               categoria: "A Revisar",
@@ -250,13 +347,12 @@ export default function ImportarLoteDialog({ open, onClose }) {
             ingredienteMap[ingKey] = novoIng;
           }
 
-          const qtd = ing.quantidade_g || 0;
           await base44.entities.IngredienteReceita.create({
             receita_id: receitaId,
             ingrediente_id: ingId,
             ingrediente_nome: ingNome,
             pre_preparo: ing.pre_preparo || "",
-            quantidade_por_porcao: qtd,
+            quantidade_por_porcao: ing.quantidade_g || 0,
             tipo: "ingrediente",
             ordem: ordem++,
           });
@@ -275,6 +371,10 @@ export default function ImportarLoteDialog({ open, onClose }) {
   };
 
   const hasContent = tab === TABS.PASTE ? texto.trim() : file;
+  const loadingLabel = loadingStep === "uploading" ? "Enviando arquivo..."
+    : loadingStep === "extracting" ? "Lendo conteúdo..."
+    : loadingStep === "identifying" ? "Identificando receitas..."
+    : "Processando...";
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
@@ -318,7 +418,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
           </div>
         )}
 
-        {/* Result state — show identified recipes */}
+        {/* Result state */}
         {result && !loading && (
           <div className="space-y-3">
             <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2.5">
@@ -406,7 +506,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>
             <Button onClick={handleIdentify} disabled={!hasContent || loading}>
-              {loading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Identificando...</> : <><Sparkles className="w-4 h-4 mr-1" /> Identificar Receitas</>}
+              {loading ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> {loadingLabel}</> : <><Sparkles className="w-4 h-4 mr-1" /> Identificar Receitas</>}
             </Button>
           </div>
         )}
