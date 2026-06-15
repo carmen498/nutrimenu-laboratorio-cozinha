@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
 const SUGESTOES_PROCESSO = [
@@ -41,6 +41,8 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [customNome, setCustomNome] = useState("");
   const [customQtd, setCustomQtd] = useState("");
+  const [editingCustoId, setEditingCustoId] = useState(null);
+  const [editingCustoVal, setEditingCustoVal] = useState("");
 
   const { data: esquecidos = [] } = useQuery({
     queryKey: ["esquecidos-receita", receitaId],
@@ -113,6 +115,21 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] }),
+  });
+
+  const updateCustoMut = useMutation({
+    mutationFn: async ({ itemId, custo_unitario }) => {
+      const item = esquecidos.find(e => e.id === itemId);
+      const qtd = item?.quantidade_g || 0;
+      await base44.entities.IngredienteEsquecidoReceita.update(itemId, {
+        custo_unitario,
+        custo_total: parseFloat((custo_unitario * qtd).toFixed(4)),
+      });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });
+      setEditingCustoId(null);
+    },
   });
 
   const deleteMut = useMutation({
@@ -218,6 +235,47 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
                     }}
                   />
                   <span className="text-xs text-muted-foreground w-4">g</span>
+                </div>
+                <div className="w-20 text-right shrink-0">
+                  {editingCustoId === item.id ? (
+                    <div className="flex items-center gap-0.5 justify-end">
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-6 w-16 text-[10px] text-center"
+                        value={editingCustoVal}
+                        onChange={(e) => setEditingCustoVal(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const val = parseFloat(editingCustoVal.replace(",", ".")) || 0;
+                            updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
+                          }
+                          if (e.key === "Escape") setEditingCustoId(null);
+                        }}
+                        autoFocus
+                      />
+                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => {
+                        const val = parseFloat(editingCustoVal.replace(",", ".")) || 0;
+                        updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
+                      }}>
+                        <Check className="w-2.5 h-2.5 text-green-600" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setEditingCustoId(null)}>
+                        <X className="w-2.5 h-2.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="block text-[10px] text-muted-foreground leading-none">R$/g</span>
+                      <button
+                        className="text-xs font-medium text-primary hover:underline"
+                        onClick={() => { setEditingCustoId(item.id); setEditingCustoVal(String((item.custo_unitario || 0)).replace(".", ",")); }}
+                        title="Editar custo por grama"
+                      >
+                        {formatCurrency(item.custo_unitario || 0)}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <span className="text-xs font-medium text-primary w-20 text-right">
                   {formatCurrency(item.custo_total || 0)}

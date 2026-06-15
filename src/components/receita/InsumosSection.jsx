@@ -317,21 +317,24 @@ export default function InsumosSection({ receitaId }) {
                   {editingId === item.id ? (
                     <div className="flex items-center gap-1 justify-center">
                       <Input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         className="h-7 w-20 text-xs text-center"
                         value={editingCusto}
                         onChange={(e) => setEditingCusto(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
-                            updateCustoMut.mutate({ itemId: item.id, custo_unitario: parseFloat(editingCusto) || 0 });
+                            const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
+                            updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
                           }
                           if (e.key === "Escape") setEditingId(null);
                         }}
                         autoFocus
-                        step={0.01}
-                        min={0}
                       />
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCustoMut.mutate({ itemId: item.id, custo_unitario: parseFloat(editingCusto) || 0 })}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                        const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
+                        updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
+                      }}>
                         <Check className="w-3 h-3 text-green-600" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingId(null)}>
@@ -341,7 +344,7 @@ export default function InsumosSection({ receitaId }) {
                   ) : (
                     <button
                       className="hover:underline hover:text-primary font-semibold text-primary text-xs"
-                      onClick={() => { setEditingId(item.id); setEditingCusto(String(item.custo_unitario || 0)); }}
+                      onClick={() => { setEditingId(item.id); setEditingCusto(String((item.custo_unitario || 0)).replace(".", ",")); }}
                     >
                       {formatCurrency(item.custo_unitario || 0)}
                     </button>
