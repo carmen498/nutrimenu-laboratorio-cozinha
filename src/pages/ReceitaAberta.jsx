@@ -26,6 +26,7 @@ export default function ReceitaAberta() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [porcoes, setPorcoes] = useState(null);
+  const [quantidadeTotal, setQuantidadeTotal] = useState(null);
   const [showAddIng, setShowAddIng] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showMargin, setShowMargin] = useState(false);
@@ -66,10 +67,32 @@ export default function ReceitaAberta() {
   });
 
   useEffect(() => {
-    if (receita && porcoes === null) {
-      setPorcoes(receita.porcoes_base || 1);
+    if (receita) {
+      if (porcoes === null) {
+        setPorcoes(receita.porcoes_base || 1);
+      }
+      if (quantidadeTotal === null) {
+        setQuantidadeTotal(receita.rendimento_total || 0);
+      }
     }
-  }, [receita, porcoes]);
+  }, [receita, porcoes, quantidadeTotal]);
+
+  const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
+
+  const handlePorcoesChange = (newPorcoes) => {
+    setPorcoes(newPorcoes);
+    if (rendPorPorcao > 0) {
+      setQuantidadeTotal(Math.round(newPorcoes * rendPorPorcao));
+    }
+  };
+
+  const handleQuantidadeChange = (newQtd) => {
+    setQuantidadeTotal(newQtd);
+    if (rendPorPorcao > 0) {
+      const newP = Math.max(1, Math.round(newQtd / rendPorPorcao));
+      setPorcoes(newP);
+    }
+  };
 
   const ingMap = useMemo(() => {
     const map = {};
@@ -424,25 +447,57 @@ REGRAS:
       </div>
 
       {/* Portion scaler */}
-      <Card className="p-4 bg-primary/5 border-primary/20">
-        <Label className="text-sm font-semibold text-primary">Quantas porções?</Label>
-        <div className="flex items-center gap-3 mt-2">
-          <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setPorcoes(Math.max(1, (porcoes || 1) - 1))}>
-            <Minus className="w-4 h-4" />
-          </Button>
-          <Input
-            type="number"
-            min={1}
-            value={porcoes || ""}
-            onChange={(e) => setPorcoes(Math.max(1, parseInt(e.target.value) || 1))}
-            className="text-center text-2xl font-bold h-12 w-24"
-          />
-          <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => setPorcoes((porcoes || 1) + 1)}>
-            <Plus className="w-4 h-4" />
-          </Button>
-          {fator !== 1 && (
-            <Badge variant="secondary" className="text-xs">×{fator.toFixed(1)}</Badge>
-          )}
+      <Card className="p-4">
+        <div className="grid grid-cols-2 gap-4">
+          {/* Left: Quantidade total (g) */}
+          <div>
+            <Label className="text-sm font-semibold">Qual a quantidade (g)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={quantidadeTotal || ""}
+              onChange={(e) => {
+                const val = Math.max(1, parseInt(e.target.value) || 1);
+                handleQuantidadeChange(val);
+              }}
+              className="text-center text-lg font-bold h-10 mt-1"
+            />
+            {quantidadeTotal > 0 && (
+              <p className="text-xs text-muted-foreground mt-1 text-center">
+                {quantidadeTotal >= 1000 ? `${quantidadeTotal.toLocaleString("pt-BR")}g · ${(quantidadeTotal / 1000).toFixed(1).replace(".", ",")} kg` : `${quantidadeTotal}g`}
+              </p>
+            )}
+          </div>
+          {/* Right: Porções */}
+          <div>
+            <Label className="text-sm font-semibold">Quantas porções?</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePorcoesChange(Math.max(1, (porcoes || 1) - 1))}>
+                <Minus className="w-4 h-4" />
+              </Button>
+              <Input
+                type="number"
+                min={1}
+                value={porcoes || ""}
+                onChange={(e) => {
+                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  handlePorcoesChange(val);
+                }}
+                className="text-center text-lg font-bold h-10 flex-1"
+              />
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePorcoesChange((porcoes || 1) + 1)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {fator !== 1 && (
+              <p className="text-xs text-muted-foreground mt-1 text-center">
+                <Badge variant="secondary" className="text-xs">×{fator.toFixed(1)}</Badge>
+              </p>
+            )}
+            <p className="text-xs font-medium text-primary mt-1 text-center">
+              Custo por porção: {formatCurrency(custoPorcao)}
+            </p>
+          </div>
         </div>
       </Card>
 
