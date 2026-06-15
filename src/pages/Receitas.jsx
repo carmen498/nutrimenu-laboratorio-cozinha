@@ -293,8 +293,9 @@ export default function Receitas() {
                       </div>
                     </div>
                     <button
-                      className="p-1.5 rounded-full hover:bg-muted shrink-0"
+                      className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
+                      disabled={favoritarMut.isPending}
                       title={r.favorita ? "Remover das favoritas" : "Marcar como favorita"}
                     >
                       <Star className={`w-4 h-4 ${r.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />

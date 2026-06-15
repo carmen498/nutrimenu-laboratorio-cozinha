@@ -45,6 +45,7 @@ export default function ReceitaAberta() {
   const [editingGrupoTitulo, setEditingGrupoTitulo] = useState("");
   const [convertingNAId, setConvertingNAId] = useState(null);
   const [convertingNATitulo, setConvertingNATitulo] = useState("");
+  const [localFavoritando, setLocalFavoritando] = useState(false);
   // showAddGrupo / novoGrupoTitulo removidos — substituídos por pendingGrupo inline
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
@@ -454,8 +455,18 @@ REGRAS:
         </Button>
         <h1 className="font-display text-xl font-bold flex-1 truncate">{receita.nome}</h1>
         <button
-          onClick={() => base44.entities.Receita.update(id, { favorita: !receita.favorita }).then(() => qc.invalidateQueries({ queryKey: ["receita", id] }))}
-          className="p-1.5 rounded-full hover:bg-muted shrink-0"
+          onClick={async () => {
+            if (localFavoritando) return;
+            setLocalFavoritando(true);
+            try {
+              await base44.entities.Receita.update(id, { favorita: !receita.favorita });
+              qc.invalidateQueries({ queryKey: ["receita", id] });
+            } finally {
+              setLocalFavoritando(false);
+            }
+          }}
+          disabled={localFavoritando}
+          className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${localFavoritando ? "opacity-50" : ""}`}
           title={receita.favorita ? "Remover das favoritas" : "Marcar como favorita"}
         >
           <Star className={`w-5 h-5 ${receita.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
