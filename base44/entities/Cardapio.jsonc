@@ -1,0 +1,53 @@
+{
+  "name": "Cardapio",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do card\u00e1pio"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "evento",
+        "marmitas",
+        "buffet",
+        "semanal"
+      ],
+      "description": "Tipo do card\u00e1pio"
+    },
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Data do card\u00e1pio (opcional)"
+    },
+    "observacoes": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es gerais"
+    },
+    "num_pessoas_ou_unidades": {
+      "type": "number",
+      "description": "N\u00famero de pessoas (evento/buffet) ou unidades (marmitas)"
+    },
+    "custo_total": {
+      "type": "number",
+      "description": "Custo total calculado do card\u00e1pio"
+    },
+    "custo_por_unidade": {
+      "type": "number",
+      "description": "Custo por pessoa/unidade"
+    },
+    "markup_percentual": {
+      "type": "number",
+      "description": "Markup percentual para venda"
+    },
+    "preco_venda_sugerido": {
+      "type": "number",
+      "description": "Pre\u00e7o de venda sugerido"
+    }
+  },
+  "required": [
+    "nome",
+    "tipo"
+  ]
+}

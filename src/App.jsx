@@ -14,6 +14,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import Home from '@/pages/Home';
 import Receitas from '@/pages/Receitas';
 import ReceitaAberta from '@/pages/ReceitaAberta';
+import Cardapios from '@/pages/Cardapios';
+import CardapioAberto from '@/pages/CardapioAberto';
 import Ingredientes from '@/pages/Ingredientes';
 import ListaCompras from '@/pages/ListaCompras';
 import ExportarReceita from '@/pages/ExportarReceita';
@@ -50,6 +52,8 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Home />} />
           <Route path="/receitas" element={<Receitas />} />
           <Route path="/receita/:id" element={<ReceitaAberta />} />
+          <Route path="/cardapios" element={<Cardapios />} />
+          <Route path="/cardapio/:id" element={<CardapioAberto />} />
           <Route path="/ingredientes" element={<Ingredientes />} />
           <Route path="/lista-compras" element={<ListaCompras />} />
           <Route path="/exportar/:id" element={<ExportarReceita />} />

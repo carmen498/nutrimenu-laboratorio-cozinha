@@ -1,0 +1,37 @@
+{
+  "name": "CardapioInsumo",
+  "type": "object",
+  "properties": {
+    "cardapio_id": {
+      "type": "string",
+      "description": "ID do card\u00e1pio"
+    },
+    "insumo_id": {
+      "type": "string",
+      "description": "ID do insumo no banco (se vinculado)"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome do insumo"
+    },
+    "quantidade": {
+      "type": "number",
+      "description": "Quantidade usada"
+    },
+    "unidade": {
+      "type": "string",
+      "description": "Unidade de medida"
+    },
+    "custo_unitario": {
+      "type": "number",
+      "description": "Custo unit\u00e1rio em R$"
+    },
+    "custo_total": {
+      "type": "number",
+      "description": "Custo total calculado"
+    }
+  },
+  "required": [
+    "cardapio_id"
+  ]
+}
