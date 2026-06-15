@@ -152,7 +152,7 @@ export default function Receitas() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground">{receitas.length}</Badge></h1>
+        <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{receitas.length}</Badge></h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV

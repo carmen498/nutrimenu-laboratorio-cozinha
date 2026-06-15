@@ -4,8 +4,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, FileText, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
 
@@ -15,7 +15,7 @@ export default function ExportarReceita() {
   const params = new URLSearchParams(window.location.search);
   const porcoes = parseInt(params.get("porcoes")) || null;
   const qtdG = parseInt(params.get("qtd")) || null;
-  const [ocultarCustos, setOcultarCustos] = useState(false);
+  const [aba, setAba] = useState("preparo");
   const printRef = useRef();
 
   const { data: receita } = useQuery({
@@ -47,7 +47,6 @@ export default function ExportarReceita() {
   const porcoesExport = porcoes || receita.porcoes_base || 1;
   const qtdExport = qtdG || receita.rendimento_total || 0;
   const fator = receita.rendimento_total > 0 && qtdG ? qtdG / receita.rendimento_total : (receita.porcoes_base > 0 ? porcoesExport / receita.porcoes_base : 1);
-  const formatKgDisplay = (g) => g >= 1000 ? `${(g / 1000).toFixed(1).replace(".", ",")} kg` : `${g} g`;
   const passos = formatarModoPreparo(receita.modo_preparo);
   
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
@@ -85,8 +84,8 @@ export default function ExportarReceita() {
       text += passosParaTexto(passos);
       text += `\n`;
     }
-    if (!ocultarCustos) {
-      text += `\n💰 Custo por porção: ${formatCurrency(custoPorcao)}`;
+    if (aba === "custos") {
+      text += `\n💰 Custo total: ${formatCurrency(custoTotal)} · Por porção: ${formatCurrency(custoPorcao)}`;
     }
 
     if (navigator.share) {
@@ -106,10 +105,12 @@ export default function ExportarReceita() {
         <h1 className="font-display text-xl font-bold flex-1">Exportar Receita</h1>
       </div>
 
-      <div className="flex items-center gap-3">
-        <Switch checked={ocultarCustos} onCheckedChange={setOcultarCustos} />
-        <span className="text-sm">Ocultar custos na exportação</span>
-      </div>
+      <Tabs value={aba} onValueChange={setAba}>
+        <TabsList className="w-full">
+          <TabsTrigger value="preparo" className="flex-1">📋 Preparo</TabsTrigger>
+          <TabsTrigger value="custos" className="flex-1">💰 Custos</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Preview */}
       <Card className="p-6 print:shadow-none print:border-0" ref={printRef}>
@@ -140,7 +141,7 @@ export default function ExportarReceita() {
             <span className="flex-[4]">Ingrediente</span>
             <span className="flex-[2.5]">Medida caseira</span>
             <span className="flex-[1.5]">Qtd. (g)</span>
-            {!ocultarCustos && <span className="flex-[2] text-right">Custo</span>}
+            {aba === "custos" && <span className="flex-[2] text-right">Custo</span>}
           </div>
           {itensFicha.map((item) => {
             if (item.tipo === "grupo") {
@@ -158,13 +159,13 @@ export default function ExportarReceita() {
                 </span>
                 <span className="flex-[2.5] text-muted-foreground">{item.medida_caseira || ""}</span>
                 <span className="flex-[1.5]">{formatWeight(item.qtd, receita.unidade_base)}</span>
-                {!ocultarCustos && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
+                {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
               </div>
             );
           })}
         </div>
 
-        {!ocultarCustos && (
+        {aba === "custos" && (
           <div className="mt-4 space-y-2">
             <div className="p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
               <span>Custo total</span>
@@ -177,7 +178,7 @@ export default function ExportarReceita() {
           </div>
         )}
 
-        {passos.length > 0 && (
+        {aba === "preparo" && passos.length > 0 && (
           <>
             <h3 className="font-semibold mt-6 mb-2">Modo de Preparo</h3>
             <ol className="space-y-1.5 list-decimal list-inside">
@@ -195,7 +196,7 @@ export default function ExportarReceita() {
 
       <div className="flex gap-2">
         <Button className="flex-1" onClick={handlePrint}>
-          <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF — Preparo e Custos
+          <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF
         </Button>
         <Button variant="outline" className="flex-1" onClick={handleShare}>
           <Share2 className="w-4 h-4 mr-1" /> Compartilhar

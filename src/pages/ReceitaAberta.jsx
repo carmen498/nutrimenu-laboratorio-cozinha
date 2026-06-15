@@ -1145,7 +1145,7 @@ REGRAS:
           <ShoppingCart className="w-4 h-4 mr-1" /> Lista de Compras
         </Button>
         <Button variant="outline" onClick={() => navigate(`/exportar/${id}?porcoes=${porcoes || 1}&qtd=${quantidadeTotal || receita?.rendimento_total || 0}`)}>
-          <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF — Preparo e Custos
+          <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF
         </Button>
       </div>
 
