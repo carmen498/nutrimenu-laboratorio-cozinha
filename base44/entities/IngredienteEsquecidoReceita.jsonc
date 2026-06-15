@@ -1,0 +1,34 @@
+{
+  "name": "IngredienteEsquecidoReceita",
+  "type": "object",
+  "properties": {
+    "receita_id": {
+      "type": "string",
+      "description": "ID da receita"
+    },
+    "nome": {
+      "type": "string",
+      "description": "Nome do ingrediente esquecido"
+    },
+    "quantidade_g": {
+      "type": "number",
+      "description": "Quantidade em gramas"
+    },
+    "ingrediente_id": {
+      "type": "string",
+      "description": "ID do ingrediente no banco (se encontrado)"
+    },
+    "custo_unitario": {
+      "type": "number",
+      "description": "Pre\u00e7o por grama do ingrediente correspondente"
+    },
+    "custo_total": {
+      "type": "number",
+      "description": "Custo total calculado: quantidade_g * custo_unitario"
+    }
+  },
+  "required": [
+    "receita_id",
+    "nome"
+  ]
+}

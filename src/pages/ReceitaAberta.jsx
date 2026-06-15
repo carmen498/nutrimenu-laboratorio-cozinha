@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
 import InsumosSection from "@/components/receita/InsumosSection";
+import IngredientesEsquecidos from "@/components/receita/IngredientesEsquecidos";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 
@@ -70,6 +71,11 @@ export default function ReceitaAberta() {
   const { data: insumosReceita = [] } = useQuery({
     queryKey: ["insumos-receita", id],
     queryFn: () => base44.entities.InsumoReceita.filter({ receita_id: id }),
+  });
+
+  const { data: esquecidos = [] } = useQuery({
+    queryKey: ["esquecidos-receita", id],
+    queryFn: () => base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: id }),
   });
 
   useEffect(() => {
@@ -163,7 +169,8 @@ export default function ReceitaAberta() {
 
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
-  const custoTotal = custoIngredientes + custoInsumos;
+  const custoEsquecidos = esquecidos.reduce((sum, i) => sum + ((i.custo_total || 0) * fator), 0);
+  const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
 
   // Save costs to recipe
@@ -528,6 +535,12 @@ REGRAS:
             <span className="text-muted-foreground">Insumos e embalagens</span>
             <span className="font-medium">{formatCurrency(custoInsumos)}</span>
           </div>
+          {custoEsquecidos > 0 && (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground italic text-xs">Ingredientes esquecidos</span>
+              <span className="font-medium text-xs">{formatCurrency(custoEsquecidos)}</span>
+            </div>
+          )}
           <Separator />
           <div className="flex justify-between font-bold text-base">
             <span>Total</span>
@@ -1145,6 +1158,9 @@ REGRAS:
           </div>
         )}
       </div>
+
+      {/* Ingredientes Esquecidos */}
+      <IngredientesEsquecidos receitaId={id} fator={fator} />
 
       {/* Insumos e Embalagens */}
       <InsumosSection receitaId={id} />

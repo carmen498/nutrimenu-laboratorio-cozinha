@@ -34,6 +34,11 @@ export default function ExportarReceita() {
     queryFn: () => base44.entities.InsumoReceita.filter({ receita_id: id }),
   });
 
+  const { data: esquecidos = [] } = useQuery({
+    queryKey: ["esquecidos-receita", id],
+    queryFn: () => base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: id }),
+  });
+
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
@@ -72,7 +77,8 @@ export default function ExportarReceita() {
 
   const custoIngredientes = itensFicha.reduce((s, i) => s + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
-  const custoTotal = custoIngredientes + custoInsumos;
+  const custoEsquecidos = esquecidos.reduce((s, i) => s + ((i.custo_total || 0) * fator), 0);
+  const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
   const custoPorcao = custoTotal / porcoesExport;
 
   const handlePrint = () => window.print();
@@ -86,6 +92,14 @@ export default function ExportarReceita() {
       if (item.pre_preparo) text += ` (${item.pre_preparo})`;
       text += `\n`;
     });
+    if (esquecidos.length > 0) {
+      text += `\nINGREDIENTES ESQUECIDOS:\n`;
+      esquecidos.forEach(item => {
+        text += `• ${item.nome} — ${item.quantidade_g || 0} g`;
+        if (aba === "custos") text += ` (${formatCurrency((item.custo_total || 0) * fator)})`;
+        text += `\n`;
+      });
+    }
     if (insumosReceita.length > 0) {
       text += `\nINSUMOS E EMBALAGENS:\n`;
       insumosReceita.forEach(item => {
@@ -102,6 +116,7 @@ export default function ExportarReceita() {
     if (aba === "custos") {
       text += `\n💰 Ingredientes: ${formatCurrency(custoIngredientes)}`;
       if (custoInsumos > 0) text += ` · Insumos: ${formatCurrency(custoInsumos)}`;
+      if (custoEsquecidos > 0) text += ` · Esquecidos: ${formatCurrency(custoEsquecidos)}`;
       text += `\n💰 Total: ${formatCurrency(custoTotal)} · Por porção: ${formatCurrency(custoPorcao)}`;
     }
 
@@ -182,6 +197,21 @@ export default function ExportarReceita() {
           })}
         </div>
 
+        {esquecidos.length > 0 && (
+          <>
+            <h3 className="font-semibold mt-6 mb-2 text-muted-foreground italic text-sm">Ingredientes Esquecidos</h3>
+            <div className="text-sm">
+              {esquecidos.map((item) => (
+                <div key={item.id} className="flex py-1 border-b border-border/50 px-1 items-center">
+                  <span className="flex-[5] text-muted-foreground">{item.nome}</span>
+                  <span className="flex-[2] text-center text-muted-foreground">{item.quantidade_g || 0} g</span>
+                  {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency((item.custo_total || 0) * fator)}</span>}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         {insumosReceita.length > 0 && (
           <>
             <h3 className="font-semibold mt-6 mb-2">Insumos e Embalagens</h3>
@@ -210,6 +240,12 @@ export default function ExportarReceita() {
               <div className="p-3 bg-primary/5 rounded-lg flex justify-between text-sm">
                 <span>Insumos e embalagens</span>
                 <span className="font-medium">{formatCurrency(custoInsumos)}</span>
+              </div>
+            )}
+            {custoEsquecidos > 0 && (
+              <div className="p-3 bg-primary/5 rounded-lg flex justify-between text-sm">
+                <span className="italic text-muted-foreground">Ingredientes esquecidos</span>
+                <span className="font-medium">{formatCurrency(custoEsquecidos)}</span>
               </div>
             )}
             <div className="p-3 bg-primary/5 rounded-lg flex justify-between font-semibold">
