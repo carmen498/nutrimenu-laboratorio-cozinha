@@ -42,8 +42,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const [customNome, setCustomNome] = useState("");
   const [customQtd, setCustomQtd] = useState("");
   const [editingCustoId, setEditingCustoId] = useState(null);
-  const [editingPreco, setEditingPreco] = useState("");
-  const [editingPeso, setEditingPeso] = useState("");
+  const [editingCustoVal, setEditingCustoVal] = useState("");
   const [savedCustoId, setSavedCustoId] = useState(null);
 
   const { data: esquecidos = [] } = useQuery({
@@ -148,11 +147,13 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
     },
   });
 
-  const commitCusto = (itemId) => {
-    const p = parseFloat(String(editingPreco).replace(",", ".")) || 0;
-    const w = parseFloat(String(editingPeso).replace(",", ".")) || 0;
-    const cu = w > 0 ? p / w : 0;
-    updateCustoMut.mutate({ itemId, custo_unitario: parseFloat(cu.toFixed(6)) });
+  const confirmCusto = (itemId) => {
+    const val = parseFloat(String(editingCustoVal).replace(",", "."));
+    if (!isNaN(val) && val >= 0) {
+      updateCustoMut.mutate({ itemId, custo_unitario: parseFloat(val.toFixed(6)) });
+    } else {
+      setEditingCustoId(null);
+    }
   };
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "R$ 0,00";
@@ -251,71 +252,38 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
                   />
                   <span className="text-xs text-muted-foreground w-4">g</span>
                 </div>
-                <div className="shrink-0 text-right" style={{ width: "160px" }}>
+                <div className="shrink-0 text-right" style={{ width: "130px" }}>
                   {editingCustoId === item.id ? (
-                    <div>
-                      <div className="flex items-center gap-1 justify-end">
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          className="h-6 w-20 text-[10px] text-center"
-                          placeholder="R$ embal."
-                          value={editingPreco}
-                          onChange={(e) => setEditingPreco(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === "Tab") {
-                              e.preventDefault();
-                              commitCusto(item.id);
-                            }
-                            if (e.key === "Escape") setEditingCustoId(null);
-                          }}
-                          onBlur={() => setTimeout(() => { if (editingCustoId === item.id) commitCusto(item.id); }, 150)}
-                          autoFocus
-                        />
-                        <span className="text-[10px] text-muted-foreground">÷</span>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          className="h-6 w-14 text-[10px] text-center"
-                          placeholder="g"
-                          value={editingPeso}
-                          onChange={(e) => setEditingPeso(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === "Tab") {
-                              e.preventDefault();
-                              commitCusto(item.id);
-                            }
-                            if (e.key === "Escape") setEditingCustoId(null);
-                          }}
-                          onBlur={() => setTimeout(() => { if (editingCustoId === item.id) commitCusto(item.id); }, 150)}
-                        />
-                      </div>
-                      {(() => {
-                        const p = parseFloat(String(editingPreco).replace(",", ".")) || 0;
-                        const w = parseFloat(String(editingPeso).replace(",", ".")) || 0;
-                        const cu = w > 0 ? p / w : 0;
-                        return (
-                          <p className="text-[9px] text-muted-foreground mt-0.5 text-right">
-                            R$/g = {formatCurrency(cu)}
-                          </p>
-                        );
-                      })()}
-                      <div className="flex justify-end gap-0.5 mt-0.5">
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => commitCusto(item.id)}>
-                          <Check className="w-2.5 h-2.5 text-green-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setEditingCustoId(null)}>
-                          <X className="w-2.5 h-2.5" />
-                        </Button>
-                      </div>
+                    <div className="flex items-center gap-0.5 justify-end">
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-6 w-16 text-[10px] text-center"
+                        value={editingCustoVal}
+                        onChange={(e) => setEditingCustoVal(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === "Tab") {
+                            e.preventDefault();
+                            confirmCusto(item.id);
+                          }
+                          if (e.key === "Escape") setEditingCustoId(null);
+                        }}
+                        onBlur={() => {
+                          setTimeout(() => confirmCusto(item.id), 150);
+                        }}
+                        autoFocus
+                      />
                     </div>
                   ) : (
                     <div>
                       <span className="block text-[10px] text-muted-foreground leading-none">R$/g</span>
                       <button
                         className="text-xs font-medium text-primary hover:underline"
-                        onClick={() => { setEditingCustoId(item.id); setEditingPreco(""); setEditingPeso(""); }}
-                        title="Editar custo — preço da embalagem ÷ peso"
+                        onClick={() => {
+                          setEditingCustoId(item.id);
+                          setEditingCustoVal(String((item.custo_unitario || 0)).replace(".", ","));
+                        }}
+                        title="Editar custo por grama"
                       >
                         {formatCurrency(item.custo_unitario || 0)}
                       </button>

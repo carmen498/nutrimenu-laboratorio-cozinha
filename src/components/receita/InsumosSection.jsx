@@ -180,6 +180,15 @@ export default function InsumosSection({ receitaId }) {
     },
   });
 
+  const confirmCusto = (itemId) => {
+    const val = parseFloat(String(editingCusto).replace(",", "."));
+    if (!isNaN(val) && val >= 0) {
+      updateCustoMut.mutate({ itemId, custo_unitario: parseFloat(val.toFixed(2)) });
+    } else {
+      setEditingId(null);
+    }
+  };
+
   const custoTotalInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "R$ 0,00";
@@ -332,28 +341,13 @@ export default function InsumosSection({ receitaId }) {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === "Tab") {
                             e.preventDefault();
-                            const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
-                            updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
+                            confirmCusto(item.id);
                           }
                           if (e.key === "Escape") setEditingId(null);
                         }}
-                        onBlur={() => setTimeout(() => {
-                          if (editingId === item.id) {
-                            const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
-                            updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
-                          }
-                        }, 150)}
+                        onBlur={() => setTimeout(() => confirmCusto(item.id), 150)}
                         autoFocus
                       />
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
-                        const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
-                        updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
-                      }}>
-                        <Check className="w-3 h-3 text-green-600" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingId(null)}>
-                        <X className="w-3 h-3" />
-                      </Button>
                     </div>
                   ) : (
                     <button
