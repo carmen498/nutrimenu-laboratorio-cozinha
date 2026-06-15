@@ -84,8 +84,11 @@ Texto da receita:
 ${texto}
 
 IMPORTANTE: 
-- Para cada ingrediente, busque correspondência EXATA no banco acima. Se não houver correspondência exata, deixe nome_banco VAZIO e marque o nome_original corretamente — o sistema fará busca por similaridade depois.
-- NUNCA substitua um ingrediente por outro parecido (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango")
+- CORRIJA erros de digitação ÓBVIOS nos nomes dos ingredientes (ex: "perito" → "peito", "frago" → "frango", "açucar" → "açúcar", "farinah" → "farinha"). Use o nome CORRIGIDO no campo nome_banco.
+- NÃO substitua um ingrediente por outro DIFERENTE (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango"). Só corrija erros de grafia.
+- Se NENHUM ingrediente do banco corresponder (mesmo após correção), deixe nome_banco VAZIO.
+- Se o ingrediente parecer ser uma RECEITA BÁSICA (ex: "Molho Bechamel", "Massa de pizza", "Calda de chocolate"), marque eh_receita_basica=true e coloque o nome da receita em nome_banco MESMO que não seja uma correspondência exata — o sistema confirmará depois.
+- Se não conseguir identificar DE FORMA ALGUMA o ingrediente, tente INFERIR pelo contexto do modo de preparo. Ex: se o modo de preparo diz "grelhar o filé de frango" e há um ingrediente sem nome claro, sugira "Filé de peito de frango" no nome_original. NUNCA retorne nome_original VAZIO — sempre preencha com sua melhor inferência.
 - Converta SEMPRE medidas caseiras para gramas usando a tabela acima
 - NÃO invente porções: se o texto mencionar explicitamente quantas porções rende, use esse valor. Se NÃO mencionar, deixe porcoes_base = 0 (zero).
 - NÃO invente categoria — a categoria será determinada pelo sistema com base nos ingredientes
@@ -135,17 +138,30 @@ IMPORTANTE:
       const catAuto = categorizarPorIngredientes(ingNomes);
       if (catAuto) result.categoria = catAuto;
       
+      // Post-process: check if any nome_banco matches a receita básica even without the flag
+      (result.ingredientes || []).forEach((ing, i) => {
+        if (ing.tipo === "grupo" || ing.eh_receita_basica) return;
+        if (ing.nome_banco) {
+          const recMatch = receitasBasicas.find(r => r.nome?.toUpperCase() === ing.nome_banco?.toUpperCase());
+          if (recMatch && !ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase())) {
+            ing.eh_receita_basica = true;
+          }
+        }
+      });
+
       setParsed(result);
       
-      // Run similarity search for ingredients without exact match
+      // Run similarity search for ingredients AND receitas básicas without exact match
       const newSugs = {};
+      const newRecSugs = {}; // separate suggestions for receitas básicas
       (result.ingredientes || []).forEach((ing, i) => {
         if (ing.tipo === "grupo") return;
         if (ing.nome_banco) return; // already matched
         const busca = (ing.nome_original || "").toLowerCase();
         if (!busca) return;
-        const palavras = busca.replace(/[,\/\(\)]/g, " ").split(/\s+/).filter(p => p.length >= 3 && !["com", "sem", "para", "dos", "das", "aos"].includes(p));
+        const palavras = busca.replace(/[,\/\(\)]/g, " ").split(/\s+/).filter(p => p.length >= 3 && !["com", "sem", "para", "dos", "das", "aos", "de"].includes(p));
         if (palavras.length > 0) {
+          // Search ingredients
           const similares = ingredientes.filter(bi => {
             const biNome = (bi.nome || "").toLowerCase();
             return palavras.some(p => biNome.includes(p));
@@ -153,9 +169,17 @@ IMPORTANTE:
           if (similares.length > 0 && !similares.some(s => s.nome?.toLowerCase() === busca)) {
             newSugs[i] = similares;
           }
+          // Search receitas básicas too
+          const recSimilares = receitasBasicas.filter(r => {
+            const rNome = (r.nome || "").toLowerCase();
+            return palavras.some(p => rNome.includes(p));
+          }).slice(0, 3);
+          if (recSimilares.length > 0) {
+            newRecSugs[i] = recSimilares;
+          }
         }
       });
-      setSimilarSuggestions(newSugs);
+      setSimilarSuggestions({ ingredientes: newSugs, receitas: newRecSugs });
     } catch (err) {
       toast.error("Erro ao processar: " + err.message);
     } finally {
@@ -441,17 +465,28 @@ IMPORTANTE:
                   const found = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
                   const isRecBasica = ing.eh_receita_basica && receitasBasicas.find(r => r.nome?.toUpperCase() === ing.nome_banco?.toUpperCase());
                   const isZero = (ing.quantidade_g || 0) === 0;
-                  const sugs = similarSuggestions[idx] || [];
-                  const hasSuggestion = !found && sugs.length > 0;
+                  const sugs = (similarSuggestions.ingredientes || {})[idx] || [];
+                  const recSugs = (similarSuggestions.receitas || {})[idx] || [];
+                  const hasSuggestion = !found && !isRecBasica && (sugs.length > 0 || recSugs.length > 0);
                   const conv = converterMedida(ing.medida_original || "", ing.nome_banco || ing.nome_original || "");
                   
                   const acceptSimilar = (sugIng) => {
                     const novos = [...(parsed.ingredientes || [])];
-                    novos[idx] = { ...novos[idx], nome_banco: sugIng.nome };
+                    novos[idx] = { ...novos[idx], nome_banco: sugIng.nome, eh_receita_basica: false };
                     setParsed({ ...parsed, ingredientes: novos });
-                    // Clear suggestions for this index
-                    const newSugs = { ...similarSuggestions };
-                    delete newSugs[idx];
+                    const newSugs = { ingredientes: { ...(similarSuggestions.ingredientes || {}) }, receitas: { ...(similarSuggestions.receitas || {}) } };
+                    delete newSugs.ingredientes[idx];
+                    delete newSugs.receitas[idx];
+                    setSimilarSuggestions(newSugs);
+                  };
+
+                  const acceptRecBasica = (rec) => {
+                    const novos = [...(parsed.ingredientes || [])];
+                    novos[idx] = { ...novos[idx], nome_banco: rec.nome, eh_receita_basica: true };
+                    setParsed({ ...parsed, ingredientes: novos });
+                    const newSugs = { ingredientes: { ...(similarSuggestions.ingredientes || {}) }, receitas: { ...(similarSuggestions.receitas || {}) } };
+                    delete newSugs.ingredientes[idx];
+                    delete newSugs.receitas[idx];
                     setSimilarSuggestions(newSugs);
                   };
                   
@@ -481,7 +516,9 @@ IMPORTANTE:
                               <span className="text-xs text-muted-foreground">g</span>
                             </div>
                             {isZero && (
-                              <span className="text-xs text-amber-600 font-medium">Informe a quantidade</span>
+                              <span className="text-xs text-amber-600 font-medium">
+                                {isRecBasica ? "Quantidade a usar (g)" : "Informe a quantidade"}
+                              </span>
                             )}
                             {ing.pre_preparo && <span className="text-xs text-muted-foreground">· {ing.pre_preparo}</span>}
                           </div>
@@ -491,27 +528,44 @@ IMPORTANTE:
                               <p className="text-xs text-blue-700 mb-1">
                                 Encontramos no banco. É esse?
                               </p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {sugs.map((sug, si) => (
-                                  <button
-                                    key={si}
-                                    className="text-xs px-2 py-1 rounded bg-white border border-blue-300 hover:bg-blue-100 text-blue-800 transition-colors"
-                                    onClick={() => acceptSimilar(sug)}
-                                  >
-                                    {sug.nome}
-                                  </button>
-                                ))}
-                                <button
-                                  className="text-xs px-2 py-1 rounded border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-                                  onClick={() => {
-                                    const newSugs = { ...similarSuggestions };
-                                    delete newSugs[idx];
-                                    setSimilarSuggestions(newSugs);
-                                  }}
-                                >
-                                  Cadastrar "{ing.nome_original}" novo
-                                </button>
-                              </div>
+                              {sugs.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                  {sugs.map((sug, si) => (
+                                    <button
+                                      key={`ing-${si}`}
+                                      className="text-xs px-2 py-1 rounded bg-white border border-blue-300 hover:bg-blue-100 text-blue-800 transition-colors"
+                                      onClick={() => acceptSimilar(sug)}
+                                    >
+                                      {sug.nome}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {recSugs.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                  {recSugs.map((rec, si) => (
+                                    <button
+                                      key={`rec-${si}`}
+                                      className="text-xs px-2 py-1 rounded bg-white border border-green-300 hover:bg-green-100 text-green-800 transition-colors flex items-center gap-1"
+                                      onClick={() => acceptRecBasica(rec)}
+                                    >
+                                      <ChefHat className="w-3 h-3" /> {rec.nome}
+                                      <Badge variant="secondary" className="text-[9px] px-1 py-0">Receita</Badge>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              <button
+                                className="text-xs px-2 py-1 rounded border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                onClick={() => {
+                                  const newSugs = { ingredientes: { ...(similarSuggestions.ingredientes || {}) }, receitas: { ...(similarSuggestions.receitas || {}) } };
+                                  delete newSugs.ingredientes[idx];
+                                  delete newSugs.receitas[idx];
+                                  setSimilarSuggestions(newSugs);
+                                }}
+                              >
+                                Cadastrar "{ing.nome_original}" novo
+                              </button>
                             </div>
                           )}
                         </div>
