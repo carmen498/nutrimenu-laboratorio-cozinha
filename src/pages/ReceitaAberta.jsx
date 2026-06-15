@@ -67,15 +67,10 @@ export default function ReceitaAberta() {
   });
 
   useEffect(() => {
-    if (receita) {
-      if (porcoes === null) {
-        setPorcoes(receita.porcoes_base || 1);
-      }
-      if (quantidadeTotal === null) {
-        setQuantidadeTotal(Math.round(receita.rendimento_total || 0));
-      }
+    if (receita && porcoes === null) {
+      setPorcoes(receita.porcoes_base || 1);
     }
-  }, [receita, porcoes, quantidadeTotal]);
+  }, [receita]);
 
   const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
 
@@ -91,6 +86,10 @@ export default function ReceitaAberta() {
   };
 
   const handleQuantidadeChange = (rawInput) => {
+    if (!rawInput || String(rawInput).trim() === "") {
+      setQuantidadeTotal(null);
+      return;
+    }
     const newQtd = parseKgInput(rawInput);
     setQuantidadeTotal(newQtd);
     if (rendPorPorcao > 0) {
@@ -467,16 +466,16 @@ REGRAS:
             <Input
               type="text"
               inputMode="numeric"
-              placeholder="ex: 500 ou 1,5kg"
+              placeholder="ex: 11.500"
               value={quantidadeTotal ? Math.round(quantidadeTotal) : ""}
               onChange={(e) => handleQuantidadeChange(e.target.value)}
               className="text-center text-lg font-bold h-10 mt-1"
             />
-            {quantidadeTotal > 0 && (
-              <p className="text-xs text-muted-foreground mt-1 text-center">
-                {quantidadeTotal.toLocaleString("pt-BR")}g = {parseFloat((quantidadeTotal / 1000).toFixed(3)).toString().replace(".", ",")} kg
-              </p>
-            )}
+            <p className="text-xs text-muted-foreground mt-1 text-center">
+              {quantidadeTotal
+                ? `${quantidadeTotal.toLocaleString("pt-BR")}g = ${parseFloat((quantidadeTotal / 1000).toFixed(3)).toString().replace(".", ",")} kg`
+                : "ex: 11.500g = 11,5 kg"}
+            </p>
           </div>
           {/* Right: Porções */}
           <div>
