@@ -94,6 +94,11 @@
     "revisar": {
       "type": "boolean",
       "description": "Flag: Duplicado \u2014 revisar"
+    },
+    "favorita": {
+      "type": "boolean",
+      "default": false,
+      "description": "Flag: Receita favorita"
     }
   },
   "required": [

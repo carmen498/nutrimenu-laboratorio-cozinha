@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Loader2, Check, X, AlertCircle, Plus, AlertTriangle } from "lucide-react";
+import { Sparkles, Loader2, Check, X, AlertCircle, Plus, AlertTriangle, ChefHat } from "lucide-react";
 import CategoriaPicker, { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
@@ -49,11 +50,17 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
   });
 
+  const { data: receitasBasicas = [] } = useQuery({
+    queryKey: ["receitas-basicas"],
+    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+  });
+
   const handleParse = async () => {
     if (!texto.trim()) { toast.error("Cole o texto da receita"); return; }
     setProcessing(true);
     try {
       const ingNames = ingredientes.map(i => i.nome).join(", ");
+      const recBasicasNomes = receitasBasicas.map(r => r.nome).join(", ");
 
       const tabelaPrompt = gerarTabelaPrompt();
 
@@ -70,6 +77,8 @@ IMPORTANTE SOBRE CONVERSÃO:
 - NÃO invente valores de conversão — use apenas os da tabela
         
 Ingredientes disponíveis no banco (use APENAS correspondência EXATA): ${ingNames}
+
+Receitas Básicas disponíveis (se um ingrediente corresponder a uma receita básica, marque como subreceita usando o campo eh_receita_basica=true): ${recBasicasNomes}
 
 Texto da receita:
 ${texto}
@@ -110,7 +119,8 @@ IMPORTANTE:
                 type: "object",
                 properties: {
                   nome_original: { type: "string", description: "Nome como aparece no texto" },
-                  nome_banco: { type: "string", description: "Nome mais próximo no banco de ingredientes" },
+                  nome_banco: { type: "string", description: "Nome mais próximo no banco de ingredientes ou receitas básicas" },
+                  eh_receita_basica: { type: "boolean", description: "True se for uma receita básica, não ingrediente" },
                   pre_preparo: { type: "string" },
                   quantidade_g: { type: "number", description: "Quantidade em gramas ou ml" },
                   medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" }
@@ -212,6 +222,28 @@ IMPORTANTE:
             receita_id: receita.id,
             tipo: "grupo",
             titulo_grupo: ing.titulo_grupo,
+            ordem: i,
+          });
+          continue;
+        }
+
+        // Check if it's a receita básica
+        let matchedRecBasica = null;
+        if (ing.eh_receita_basica && ing.nome_banco) {
+          matchedRecBasica = receitasBasicas.find(
+            r => r.nome?.toUpperCase() === ing.nome_banco?.toUpperCase()
+          );
+        }
+
+        // If receita básica matched, create as subreceita
+        if (matchedRecBasica) {
+          const qtdPorPorcao = (ing.quantidade_g || 0) / (p.porcoes_base || 1);
+          await base44.entities.IngredienteReceita.create({
+            receita_id: receita.id,
+            tipo: "subreceita",
+            subreceita_id: matchedRecBasica.id,
+            subreceita_nome: matchedRecBasica.nome,
+            quantidade_por_porcao: qtdPorPorcao,
             ordem: i,
           });
           continue;
@@ -407,6 +439,7 @@ IMPORTANTE:
                     );
                   }
                   const found = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
+                  const isRecBasica = ing.eh_receita_basica && receitasBasicas.find(r => r.nome?.toUpperCase() === ing.nome_banco?.toUpperCase());
                   const isZero = (ing.quantidade_g || 0) === 0;
                   const sugs = similarSuggestions[idx] || [];
                   const hasSuggestion = !found && sugs.length > 0;
@@ -427,8 +460,9 @@ IMPORTANTE:
                       <div className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            {found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : hasSuggestion ? <AlertCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                            {isRecBasica ? <ChefHat className="w-3.5 h-3.5 text-green-600 shrink-0" /> : found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : hasSuggestion ? <AlertCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                             <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
+                            {isRecBasica && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1 bg-green-100 text-green-700">Receita</Badge>}
                           </div>
                           <div className="flex items-center gap-1 ml-5 mt-1">
                             {conv.displayText && (
@@ -482,7 +516,7 @@ IMPORTANTE:
                           )}
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
-                          {!found && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">{hasSuggestion ? "?" : "Novo"}</span>}
+                          {!found && !isRecBasica && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">{hasSuggestion ? "?" : "Novo"}</span>}
                           <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeIngrediente(idx)}>
                             <AlertCircle className="w-3 h-3" />
                           </Button>

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, FileText, Share2 } from "lucide-react";
+import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
 
@@ -29,6 +29,11 @@ export default function ExportarReceita() {
     queryFn: () => base44.entities.IngredienteReceita.filter({ receita_id: id }),
   });
 
+  const { data: todasReceitas = [] } = useQuery({
+    queryKey: ["todas-receitas"],
+    queryFn: () => base44.entities.Receita.list("-nome", 500),
+  });
+
   const { data: insumosReceita = [] } = useQuery({
     queryKey: ["insumos-receita", id],
     queryFn: () => base44.entities.InsumoReceita.filter({ receita_id: id }),
@@ -50,6 +55,12 @@ export default function ExportarReceita() {
     return map;
   }, [ingredientesDB]);
 
+  const recMap = useMemo(() => {
+    const map = {};
+    todasReceitas.forEach((r) => { map[r.id] = r; });
+    return map;
+  }, [todasReceitas]);
+
   if (!receita) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
   }
@@ -68,11 +79,19 @@ export default function ExportarReceita() {
   const itensFicha = itens
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
     .map((item) => {
+      if (item.tipo === "subreceita") {
+        const subRec = recMap[item.subreceita_id];
+        const qtd = item.quantidade_por_porcao * porcoesExport;
+        const custo = subRec && subRec.rendimento_total > 0
+          ? (qtd / subRec.rendimento_total) * (subRec.custo_total || 0)
+          : 0;
+        return { ...item, qtd, custo, isSubreceita: true, subreceitaNome: item.subreceita_nome || subRec?.nome };
+      }
       const ing = ingMap[item.ingrediente_id];
       const qtd = item.quantidade_por_porcao * porcoesExport;
       const fc = ing?.fator_correcao || 1;
       const custo = qtd * fc * (ing?.preco_por_g_rs || 0);
-      return { ...item, ing, qtd, custo };
+      return { ...item, ing, qtd, custo, isSubreceita: false };
     });
 
   const custoIngredientes = itensFicha.reduce((s, i) => s + i.custo, 0);
@@ -180,6 +199,22 @@ export default function ExportarReceita() {
               return (
                 <div key={item.id} className="font-bold text-xs uppercase tracking-wide bg-muted/50 py-1.5 px-1 my-1 rounded">
                   {item.titulo_grupo}
+                </div>
+              );
+            }
+            if (item.isSubreceita) {
+              return (
+                <div key={item.id} className="flex py-1 border-b border-border/50 px-1 items-center">
+                  <span className="flex-[4]">
+                    <span className="flex items-center gap-1">
+                      <ChefHat className="w-3.5 h-3.5 text-primary shrink-0" />
+                      {item.subreceitaNome}
+                    </span>
+                    <span className="text-xs text-muted-foreground italic"> (ver receita separada)</span>
+                  </span>
+                  <span className="flex-[2.5] text-muted-foreground"></span>
+                  <span className="flex-[1.5]">{formatWeight(item.qtd, receita.unidade_base)}</span>
+                  {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
                 </div>
               );
             }

@@ -47,6 +47,11 @@ export default function ListaCompras() {
     queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 2000),
   });
 
+  const { data: allReceitas = [] } = useQuery({
+    queryKey: ["all-receitas"],
+    queryFn: () => base44.entities.Receita.list("-nome", 500),
+  });
+
   // Auto-add recipe from URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -67,38 +72,66 @@ export default function ListaCompras() {
   const receitaMap = useMemo(() => {
     const map = {};
     receitas.forEach((r) => { map[r.id] = r; });
+    allReceitas.forEach((r) => { map[r.id] = r; });
     return map;
-  }, [receitas]);
+  }, [receitas, allReceitas]);
 
-  // Build shopping list
+  // Build shopping list (including sub-receita ingredients)
   const listaItems = useMemo(() => {
     const totals = {};
+    const addIngredient = (ingredienteId, nome, categoria, extra) => {
+      const ing = ingMap[ingredienteId];
+      if (!ing) return;
+      const qtd = extra.qtd * (ing.fator_correcao || 1);
+      const custo = qtd * (ing.preco_por_g_rs || 0);
+      const key = `${ingredienteId}_${extra.origem || ""}`;
+      const displayNome = extra.origem ? `${nome} · ${extra.origem}` : nome;
+      if (totals[key]) {
+        totals[key].quantidade += qtd;
+        totals[key].custo += custo;
+        if (extra.origem && !totals[key].origem) totals[key].origem = extra.origem;
+      } else {
+        totals[key] = {
+          ingrediente_id: ingredienteId,
+          nome: displayNome,
+          categoria: CATEGORIAS_COMPRA[ing.categoria] || "Diversos",
+          categoriaOriginal: ing.categoria,
+          quantidade: qtd,
+          unidade_compra: ing.unidade_compra,
+          peso_embalagem_g: ing.peso_embalagem_g,
+          custo,
+          origem: extra.origem || null,
+        };
+      }
+    };
+
     selectedReceitas.forEach((recId) => {
       const receita = receitaMap[recId];
       if (!receita) return;
       const porcoes = porcoesPorReceita[recId] || receita.porcoes_base || 1;
       const itens = allItens.filter((i) => i.receita_id === recId);
       itens.forEach((item) => {
-        const ing = ingMap[item.ingrediente_id];
-        if (!ing) return;
-        const qtd = item.quantidade_por_porcao * porcoes;
-        const fc = ing.fator_correcao || 1;
-        const qtdComprar = qtd * fc;
-        const custo = qtdComprar * (ing.preco_por_g_rs || 0);
-        if (totals[item.ingrediente_id]) {
-          totals[item.ingrediente_id].quantidade += qtdComprar;
-          totals[item.ingrediente_id].custo += custo;
+        if (item.tipo === "grupo") return;
+        if (item.tipo === "subreceita") {
+          // Include ingredients from sub-receita
+          const subRec = receitaMap[item.subreceita_id];
+          if (!subRec) return;
+          const subFator = porcoes / (receita.porcoes_base || 1);
+          const subQtd = (item.quantidade_por_porcao || 0) * porcoes;
+          const subItens = allItens.filter((i) => i.receita_id === item.subreceita_id);
+          subItens.forEach((si) => {
+            if (si.tipo === "grupo") return;
+            const siQtd = (si.quantidade_por_porcao || 0) * (subRec.porcoes_base || 1);
+            const scaleFactor = subRec.rendimento_total > 0 ? subQtd / subRec.rendimento_total : subFator;
+            addIngredient(si.ingrediente_id, ingMap[si.ingrediente_id]?.nome || si.ingrediente_nome, null, {
+              qtd: siQtd * scaleFactor,
+              origem: `do ${subRec.nome}`,
+            });
+          });
         } else {
-          totals[item.ingrediente_id] = {
-            ingrediente_id: item.ingrediente_id,
-            nome: ing.nome,
-            categoria: CATEGORIAS_COMPRA[ing.categoria] || "Diversos",
-            categoriaOriginal: ing.categoria,
-            quantidade: qtdComprar,
-            unidade_compra: ing.unidade_compra,
-            peso_embalagem_g: ing.peso_embalagem_g,
-            custo,
-          };
+          addIngredient(item.ingrediente_id, ingMap[item.ingrediente_id]?.nome || item.ingrediente_nome, null, {
+            qtd: item.quantidade_por_porcao * porcoes,
+          });
         }
       });
     });

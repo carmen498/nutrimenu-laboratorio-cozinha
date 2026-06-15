@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star
 } from "lucide-react";
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
@@ -453,6 +453,13 @@ REGRAS:
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-display text-xl font-bold flex-1 truncate">{receita.nome}</h1>
+        <button
+          onClick={() => base44.entities.Receita.update(id, { favorita: !receita.favorita }).then(() => qc.invalidateQueries({ queryKey: ["receita", id] }))}
+          className="p-1.5 rounded-full hover:bg-muted shrink-0"
+          title={receita.favorita ? "Remover das favoritas" : "Marcar como favorita"}
+        >
+          <Star className={`w-5 h-5 ${receita.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+        </button>
         <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
           <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
         </Button>

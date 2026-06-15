@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle, Star } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -68,6 +68,7 @@ export default function Receitas() {
   const [showImportCsv, setShowImportCsv] = useState(false);
   const [expandedCat, setExpandedCat] = useState(null);
   const [showRevisar, setShowRevisar] = useState(false);
+  const [showFavoritas, setShowFavoritas] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -124,6 +125,15 @@ export default function Receitas() {
     },
   });
 
+  const favoritarMut = useMutation({
+    mutationFn: async ({ id, favorita }) => {
+      await base44.entities.Receita.update(id, { favorita });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["receitas"] });
+    },
+  });
+
   const deleteMut = useMutation({
     mutationFn: async (id) => {
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: id });
@@ -139,6 +149,7 @@ export default function Receitas() {
 
   const filtered = receitas.filter((r) => {
     if (showRevisar) return r.revisar === true;
+    if (showFavoritas) return r.favorita === true;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = catFiltro === "todas" || r.categoria === catFiltro;
     return matchBusca && matchCat;
@@ -214,15 +225,24 @@ export default function Receitas() {
           />
         </div>
         <Button
+          variant={showFavoritas ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setCatFiltro("todas"); setBusca(""); }}
+          className={showFavoritas ? "bg-amber-500 hover:bg-amber-600" : ""}
+        >
+          <Star className={`w-4 h-4 mr-1 ${showFavoritas ? "fill-white" : ""}`} />
+          Favoritas
+        </Button>
+        <Button
           variant={showRevisar ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowRevisar(!showRevisar); setCatFiltro("todas"); setBusca(""); }}
+          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setCatFiltro("todas"); setBusca(""); }}
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
           Revisar
         </Button>
-        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); }}>
+        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); setShowFavoritas(false); }}>
         <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -272,6 +292,13 @@ export default function Receitas() {
                         )}
                       </div>
                     </div>
+                    <button
+                      className="p-1.5 rounded-full hover:bg-muted shrink-0"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
+                      title={r.favorita ? "Remover das favoritas" : "Marcar como favorita"}
+                    >
+                      <Star className={`w-4 h-4 ${r.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                    </button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1.5 rounded-full hover:bg-muted" onClick={(e) => e.preventDefault()}>
