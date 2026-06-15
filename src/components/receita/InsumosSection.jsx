@@ -330,12 +330,19 @@ export default function InsumosSection({ receitaId }) {
                         value={editingCusto}
                         onChange={(e) => setEditingCusto(e.target.value)}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") {
+                          if (e.key === "Enter" || e.key === "Tab") {
+                            e.preventDefault();
                             const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
                             updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
                           }
                           if (e.key === "Escape") setEditingId(null);
                         }}
+                        onBlur={() => setTimeout(() => {
+                          if (editingId === item.id) {
+                            const val = parseFloat(String(editingCusto).replace(",", ".")) || 0;
+                            updateCustoMut.mutate({ itemId: item.id, custo_unitario: val });
+                          }
+                        }, 150)}
                         autoFocus
                       />
                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
