@@ -32,20 +32,105 @@ REGRAS DE EXTRAÇÃO:
 
 2. CABEÇALHOS A IGNORAR: linhas como "Ingredientes", "Pré-preparo", "Qtd.", "Qtd. 1 porção", "Ingredientes Pré-preparo Qtd. 1 porção" são cabeçalhos de tabela — NÃO são ingredientes.
 
-3. SUB-TÍTULOS: linhas em CAIXA ALTA isoladas (ex: "FARINHAS DO EMPANADO"), linhas terminadas em ":" (ex: "Fritar:", "Misturar ao molho:", "SEPARADO:"), ou linhas curtas sem número no final e sem ser o nome da receita — tratar como sub-título de grupo (tipo: "grupo").
+3. SUB-TÍTULOS: linhas em CAIXA ALTA isoladas, linhas terminadas em ":", ou linhas curtas sem número no final e sem ser o nome da receita — tratar como sub-título de grupo (tipo: "grupo").
 
-4. LINHA DE INGREDIENTE: qualquer linha com um número no final. O número é a quantidade em gramas (substitua vírgula por ponto: "250,00" → 250, "5,00" → 5). O texto antes é o nome + pré-preparo opcional. Ex: "Farinha de trigo 250,00" → nome="Farinha de trigo", quantidade_g=250. Ex: "Cebola picada 150,00" → nome="Cebola", pre_preparo="picada", quantidade_g=150.
+4. LINHA DE INGREDIENTE: qualquer linha com um número no final. O número é a quantidade em gramas (substitua vírgula por ponto). O texto antes é o nome + pré-preparo opcional. Ex: "Farinha de trigo 250,00" → nome="Farinha de trigo", quantidade_g=250. Ex: "Cebola picada 150,00" → nome="Cebola", pre_preparo="picada", quantidade_g=150.
 
-5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão: uma ação por linha numerada, verbo no imperativo direto (Derreta, Acrescente, Bata, Asse), sem repetir ingredientes.
+5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão Carmen: uma ação por linha numerada, verbo no imperativo direto, sem repetir ingredientes.
 
-6. NORMALIZAÇÃO DE NOMES: "Nata" e "nata" devem ser mapeados para "Creme de leite fresco".
+6. NORMALIZAÇÃO DE NOMES DE INGREDIENTES (APLICAR SEMPRE):
+   - SEPARAR NOME DE PRÉ-PREPARO: texto após vírgula que indica forma/parte → mover para pre_preparo ou incorporar ao nome corretamente.
+     • "Limão, suco" → nome="Limão", pre_preparo="suco"
+     • "Ovo, gema" → nome="Gema de ovo", pre_preparo=""
+     • "Óleo, de soja" → nome="Óleo de soja"
+     • "Carne de peixe, bacalhau" → nome="Bacalhau"
+     • "Carne frutos mar, camarão" → nome="Camarão"
+     • "Milho verde cozido" → nome="Milho verde", pre_preparo="cozido"
+   - TRADUÇÕES E PADRONIZAÇÕES:
+     • "Nata" ou "nata" → "Creme de leite fresco"
+     • "Fines-herbes" ou "Fines herbes" → "Ervas finas"
+     • "Cheiro verde" → "Cheiro verde (salsinha + cebolinha)"
+     • "Pimenta moída" → "Pimenta-do-reino moída"
 
-7. QUANTIDADE: sempre em gramas, converta vírgula para ponto. Ex: "250,00" → 250, "0,01" → 0.01.
+7. QUANTIDADE: sempre em gramas, converta vírgula para ponto. Ex: "250,00" → 250.
 
-7. CATEGORIA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
+8. CATEGORIA DA RECEITA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
 
 CONTEÚDO:
 `;
+
+// ── NORMALIZATION HELPERS ──
+
+const normalizeIngredienteNome = (rawNome) => {
+  if (!rawNome) return { nome: "", pre_preparo: "" };
+  let nome = rawNome.trim();
+
+  // Translations
+  const translations = {
+    "nata": "Creme de leite fresco",
+    "fines-herbes": "Ervas finas",
+    "fines herbes": "Ervas finas",
+    "cheiro verde": "Cheiro verde (salsinha + cebolinha)",
+    "pimenta moída": "Pimenta-do-reino moída",
+    "pimenta moida": "Pimenta-do-reino moída",
+  };
+
+  const lower = nome.toLowerCase();
+  if (translations[lower]) return { nome: translations[lower], pre_preparo: "" };
+
+  // Split name from pré-preparo: handle patterns like "Nome, forma" or "Nome forma"
+  // Pattern: "Limão, suco" → "Limão" + "suco"
+  if (nome.includes(",")) {
+    const parts = nome.split(",");
+    const base = parts[0].trim();
+    const rest = parts.slice(1).join(" ").trim();
+    // If rest looks like a form/part, it's pré-preparo
+    const formKeywords = ["suco", "picado", "ralado", "moido", "moído", "cubos", "fatias", "rodelas",
+      "gema", "clara", "filé", "file", "peito", "coxa", "sobrecoxa", "lombo", "costela",
+      "de soja", "de milho", "de trigo", "de arroz", "de mandioca"];
+    const isForm = formKeywords.some(k => rest.toLowerCase().includes(k));
+    if (isForm) {
+      // Special case: "Ovo, gema" → "Gema de ovo"
+      if (base.toLowerCase() === "ovo" && rest.toLowerCase() === "gema") return { nome: "Gema de ovo", pre_preparo: "" };
+      if (base.toLowerCase() === "ovo" && rest.toLowerCase() === "clara") return { nome: "Clara de ovo", pre_preparo: "" };
+      // "Carne de peixe, bacalhau" → "Bacalhau"
+      if (base.toLowerCase().includes("carne") && (rest.toLowerCase() === "bacalhau" || rest.toLowerCase() === "camarão")) return { nome: rest, pre_preparo: "" };
+      if (base.toLowerCase().includes("carne") && rest.toLowerCase().includes("camar")) return { nome: "Camarão", pre_preparo: "" };
+      return { nome: base, pre_preparo: rest };
+    }
+    // "Óleo, de soja" → "Óleo de soja"
+    if (rest.startsWith("de ")) return { nome: base + " " + rest, pre_preparo: "" };
+    return { nome, pre_preparo: "" };
+  }
+
+  // "Milho verde cozido" → "Milho verde" + "cozido"
+  const cozidoMatch = nome.match(/^(.+?)\s+(cozido|cru|fresco|seco|defumado|curado)$/i);
+  if (cozidoMatch) return { nome: cozidoMatch[1], pre_preparo: cozidoMatch[2].toLowerCase() };
+
+  return { nome, pre_preparo: "" };
+};
+
+const autoCategoria = (nome) => {
+  const lower = (nome || "").toLowerCase();
+  if (/\b(bacalhau|camarão|camarão|peixe|salmão|atum|sardinha|lula|polvo|marisco|mexilhão)\b/.test(lower)) return "Peixes e Frutos do Mar";
+  if (/\b(azeitona|palmito|milho|ervilha)\b.*\b(conserva|enlatado)\b/.test(lower)) return "Conservas e Enlatados";
+  if (/\b(azeitona)\b/.test(lower) && !lower.includes("azeite")) return "Conservas e Enlatados";
+  if (/\b(palmito)\b/.test(lower)) return "Conservas e Enlatados";
+  if (/\b(páprica|pimenta|orégano|oregano|tomilho|alecrim|manjericão|manjericao|salsinha|cebolinha|coentro|louro|noz.moscada|canela|cravo|cominho|açafrão|acafrao|curry|gengibre|colorau|urucum|sal|ervas)\b/.test(lower)) return "Temperos e Ervas";
+  if (/\b(óleo|azeite|manteiga|margarina|banha|gordura)\b/.test(lower)) return "Óleos e Gorduras";
+  if (/\b(leite|queijo|creme|iogurte|nata|manteiga|requeijão|requeijao|ricota|catupiry|mascarpone)\b/.test(lower)) return "LATICÍNIOS";
+  if (/\b(ovo|gema|clara)\b/.test(lower)) return "Ovos";
+  if (/\b(caldo|bechamel|molho base|massa base|fundo)\b/.test(lower)) return "Receitas Básicas";
+  if (/\b(limão|limao|laranja|maçã|maca|banana|abacaxi|morango|uva|manga|maracujá|maracuja|pêssego|pessego|ameixa|coco|abacate|kiwi|melão|melao|melancia|framboesa|mirtilo|cereja)\b/.test(lower)) return "Frutas";
+  if (/\b(cebola|alho|cenoura|brócolis|brocolis|abobrinha|berinjela|pimentão|pimentao|tomate|pepino|beterraba|batata|mandioca|aipim|inhame|nabo|rabanete|rúcula|rucula|alface|espinafre|couve|repolho|acelga|agrião|agriao|quiabo|vagem|chuchu|abóbora|abobora)\b/.test(lower)) return "Legumes e Verduras";
+  return "A Revisar";
+};
+
+const compareNormalized = (a, b) => {
+  // Remove accents, punctuation, extra spaces, lowercase
+  const norm = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, "").replace(/\s+/g, " ").trim();
+  return norm(a) === norm(b);
+};
 
 export default function ImportarLoteDialog({ open, onClose }) {
   const [tab, setTab] = useState(TABS.PASTE);
@@ -331,29 +416,45 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           const ingNome = (ing.nome || "").trim();
           if (!ingNome) { ordem++; continue; }
 
-          const ingKey = ingNome.toLowerCase();
-          let ingId = ingredienteMap[ingKey]?.id;
+          // Normalize ingredient name
+          const normalized = normalizeIngredienteNome(ingNome);
+          const ingNomeFinal = normalized.nome;
+          const ingPrePreparoFinal = normalized.pre_preparo || ing.pre_preparo || "";
+          const ingCategoria = autoCategoria(ingNomeFinal);
+
+          // Check for similar existing ingredient
+          let ingId = null;
+          for (const key of Object.keys(ingredienteMap)) {
+            if (compareNormalized(key, ingNomeFinal)) {
+              ingId = ingredienteMap[key].id;
+              break;
+            }
+          }
+          // Also check by exact lowercase match (fallback)
+          if (!ingId) {
+            ingId = ingredienteMap[ingNomeFinal.toLowerCase()]?.id;
+          }
 
           if (!ingId) {
             const novoIng = await base44.entities.Ingrediente.create({
-              nome: ingNome,
-              categoria: "A Revisar",
+              nome: ingNomeFinal,
+              categoria: ingCategoria,
               unidade_compra: "KG",
-              peso_embalagem_g: 1000,
+              peso_embalagem_g: ingCategoria === "Receitas Básicas" ? 1000 : 1000,
               preco_embalagem_rs: 0,
               preco_por_g_rs: 0,
               fator_correcao: 1,
               revisar: false,
             });
             ingId = novoIng.id;
-            ingredienteMap[ingKey] = novoIng;
+            ingredienteMap[ingNomeFinal.toLowerCase()] = novoIng;
           }
 
           await base44.entities.IngredienteReceita.create({
             receita_id: receitaId,
             ingrediente_id: ingId,
-            ingrediente_nome: ingNome,
-            pre_preparo: ing.pre_preparo || "",
+            ingrediente_nome: ingNomeFinal,
+            pre_preparo: ingPrePreparoFinal,
             quantidade_por_porcao: ing.quantidade_g || 0,
             tipo: "ingrediente",
             ordem: ordem++,
