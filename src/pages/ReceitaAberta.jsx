@@ -472,9 +472,9 @@ REGRAS:
               onChange={(e) => handleQuantidadeChange(e.target.value)}
               className="text-center text-lg font-bold h-10 mt-1"
             />
-            {quantidadeTotal > 0 && quantidadeTotal >= 1000 && (
+            {quantidadeTotal > 0 && (
               <p className="text-xs text-muted-foreground mt-1 text-center">
-                = {(quantidadeTotal / 1000).toFixed(1).replace(".", ",")} kg
+                {quantidadeTotal.toLocaleString("pt-BR")}g = {parseFloat((quantidadeTotal / 1000).toFixed(3)).toString().replace(".", ",")} kg
               </p>
             )}
           </div>
