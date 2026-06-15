@@ -13,31 +13,7 @@ import CategoriaPicker, { CATEGORIAS } from "@/components/receita/CategoriaPicke
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { normalizarNome } from "@/lib/normalizarNome";
-
-// ── Measure conversion table ──
-const MEDIDAS_CASEIRAS = [
-  { pattern: /xícara.*chá.*farinha|farinha.*xícara/i, gPorUnidade: 120 },
-  { pattern: /xícara.*chá.*açúcar|açúcar.*xícara/i, gPorUnidade: 180 },
-  { pattern: /xícara.*chá.*(chocolate|cacau).*pó|xícara.*pó.*(chocolate|cacau)/i, gPorUnidade: 100 },
-  { pattern: /xícara.*chá.*(leite|água|óleo|azeite|creme|líquido|oleo)/i, gPorUnidade: 240 },
-  { pattern: /colher.*sopa.*farinha|farinha.*colher.*sopa/i, gPorUnidade: 10 },
-  { pattern: /colher.*sopa.*(manteiga|margarina)/i, gPorUnidade: 15 },
-  { pattern: /colher.*sopa.*açúcar|açúcar.*colher.*sopa/i, gPorUnidade: 12 },
-  { pattern: /colher.*sopa.*(leite|água|óleo|azeite|creme|líquido|oleo)/i, gPorUnidade: 15 },
-  { pattern: /colher.*chá/i, gPorUnidade: 5 },
-  { pattern: /unidade.*ovo.*grande|ovo.*grande.*unidade/i, gPorUnidade: 60 },
-  { pattern: /unidade.*ovo|ovo.*unidade/i, gPorUnidade: 50 },
-  { pattern: /xícara.*chá/i, gPorUnidade: 240 }, // generic cup → liquid default
-  { pattern: /colher.*sopa/i, gPorUnidade: 15 }, // generic tbsp → liquid default
-];
-
-const converterMedida = (texto) => {
-  if (!texto) return null;
-  for (const m of MEDIDAS_CASEIRAS) {
-    if (m.pattern.test(texto)) return m.gPorUnidade;
-  }
-  return null;
-};
+import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 
 // ── Auto-category from ingredients ──
 const categorizarPorIngredientes = (ingredientesNomes) => {
@@ -79,21 +55,19 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
     try {
       const ingNames = ingredientes.map(i => i.nome).join(", ");
 
+      const tabelaPrompt = gerarTabelaPrompt();
+
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Analise este texto de receita e extraia os dados estruturados.
 
-TABELA DE CONVERSÃO DE MEDIDAS CASEIRAS (use para converter para gramas):
-- 1 xícara de farinha = 120g
-- 1 xícara de açúcar = 180g
-- 1 xícara de chocolate/cacau em pó = 100g
-- 1 xícara de líquido (leite, água, óleo) = 240ml/240g
-- 1 colher de sopa de farinha = 10g
-- 1 colher de sopa de manteiga/margarina = 15g
-- 1 colher de sopa de açúcar = 12g
-- 1 colher de sopa de líquido = 15ml/15g
-- 1 colher de chá = 5g/5ml
-- 1 ovo médio = 50g
-- 1 ovo grande = 60g
+${tabelaPrompt}
+
+IMPORTANTE SOBRE CONVERSÃO:
+- Use a tabela acima para converter medidas caseiras para gramas
+- Priorize SEMPRE as conversões por ingrediente (se o ingrediente está na tabela, use o valor exato)
+- Se não houver conversão específica para o ingrediente, use a medida padrão como fallback
+- Para medidas marcadas com ⚠️, ainda assim converta usando o valor padrão (o ⚠️ é para revisão humana depois)
+- NÃO invente valores de conversão — use apenas os da tabela
         
 Ingredientes disponíveis no banco (use APENAS correspondência EXATA): ${ingNames}
 
@@ -435,7 +409,7 @@ IMPORTANTE:
                   const isZero = (ing.quantidade_g || 0) === 0;
                   const sugs = similarSuggestions[idx] || [];
                   const hasSuggestion = !found && sugs.length > 0;
-                  const gPorUnidade = converterMedida(ing.medida_original || "");
+                  const conv = converterMedida(ing.medida_original || "", ing.nome_banco || ing.nome_original || "");
                   
                   const acceptSimilar = (sugIng) => {
                     const novos = [...(parsed.ingredientes || [])];
@@ -456,9 +430,9 @@ IMPORTANTE:
                             <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
                           </div>
                           <div className="flex items-center gap-1 ml-5 mt-1">
-                            {ing.medida_original && (
-                              <span className="text-xs text-muted-foreground">
-                                {ing.medida_original}{gPorUnidade ? ` → ${gPorUnidade}g` : " →"} 
+                            {conv.displayText && (
+                              <span className={`text-xs ${conv.alerta ? "text-amber-600" : "text-muted-foreground"}`}>
+                                {conv.displayText}
                               </span>
                             )}
                             <div className="flex items-center gap-1">
