@@ -84,6 +84,20 @@ const converterMedidaCaseira = (medidaCaseira, ingredienteNome) => {
   if (!isNaN(plainNum) && /^[\d.]+$/.test(txt)) return null; // pure number, already grams
   if (/^[\d.]+\s*(g|ml|kg|l)\s*$/i.test(txt)) return null; // "200g", "8ml", etc — already converted
 
+  // Check if already mass/volume with extra text: "200 gramas de manteiga", "200 g de chocolate"
+  const massaPattern = /^([\d.,]+)\s*(g|gramas?|kg|kilos?|ml|litros?|l)\b/i;
+  const massaMatch = txt.match(massaPattern);
+  if (massaMatch) {
+    const valor = parseFloat(massaMatch[1].replace(',', '.'));
+    if (!isNaN(valor)) {
+      const unit = massaMatch[2].toLowerCase();
+      let totalG = valor;
+      if (unit === 'kg' || unit.startsWith('kilo')) totalG = valor * 1000;
+      if (unit === 'l' || unit.startsWith('litro')) totalG = valor * 1000;
+      return { totalG, gPorUnidade: totalG, tipo: "ja_em_gramas", display: `${medidaCaseira} → ${totalG}g (já em peso)` };
+    }
+  }
+
   // Parse quantity
   let quantidade = 1;
   const qMatch = txt.match(/^([\d/,.\s]+(?:e\s+)?[\d/]*)\s/);
@@ -95,19 +109,25 @@ const converterMedidaCaseira = (medidaCaseira, ingredienteNome) => {
 
   const medidaCanonica = normalizarMedida(txt);
 
+  // If canonical measure is still the raw text (no utensil matched), try "unidade"
+  let medidaFinal = medidaCanonica;
+  if (medidaCanonica === txt && /^\d+\s+\w+/.test(txt)) {
+    medidaFinal = "unidade";
+  }
+
   // Try ingredient-specific
-  const ingConv = buscarConversaoIngrediente(ingredienteNome || "", medidaCanonica);
+  const ingConv = buscarConversaoIngrediente(ingredienteNome || "", medidaFinal);
   if (ingConv) {
     return {
       totalG: quantidade * ingConv.g,
       gPorUnidade: ingConv.g,
       tipo: "exata",
-      display: `${quantidade} ${medidaCanonica} de ${ingConv.ingrediente} → ${(quantidade * ingConv.g).toFixed(1)}g`
+      display: `${quantidade} ${medidaFinal} de ${ingConv.ingrediente} → ${(quantidade * ingConv.g).toFixed(1)}g`
     };
   }
 
   // Fallback: utensílio base
-  const mlBase = buscarUtensilioBase(medidaCanonica);
+  const mlBase = buscarUtensilioBase(medidaFinal);
   if (mlBase !== null) {
     const isLiquid = pareceLiquido(ingredienteNome || "");
     const totalG = quantidade * mlBase;
@@ -115,7 +135,7 @@ const converterMedidaCaseira = (medidaCaseira, ingredienteNome) => {
       totalG,
       gPorUnidade: mlBase,
       tipo: isLiquid ? "liquido" : "solido_estimado",
-      display: `${quantidade} ${medidaCanonica} → ~${totalG.toFixed(1)}g${isLiquid ? " (ml≈g)" : " ⚠️"}`
+      display: `${quantidade} ${medidaFinal} → ~${totalG.toFixed(1)}g${isLiquid ? " (ml≈g)" : " ⚠️"}`
     };
   }
 
