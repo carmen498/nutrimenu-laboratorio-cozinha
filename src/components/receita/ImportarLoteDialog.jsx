@@ -451,12 +451,15 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         {!result && !error && (
           <>
             {tab === TABS.PASTE ? (
-              <Textarea
-                className="min-h-40 resize-y"
-                placeholder="Cole aqui uma ou várias receitas — do jeito que estiverem, como da internet ou suas anotações."
-                value={texto}
-                onChange={(e) => setTexto(e.target.value)}
-              />
+              <div className="space-y-1.5">
+                <Textarea
+                  className="min-h-40 resize-y"
+                  placeholder={"Cole aqui suas receitas — do jeito que estiverem, como da internet ou suas anotações.\nRecomendamos colar até 10 receitas por vez para melhor resultado."}
+                  value={texto}
+                  onChange={(e) => setTexto(e.target.value)}
+                />
+                <p className="text-[11px] text-muted-foreground">💡 Receitas muito longas ou complexas: prefira colar até 5 por vez.</p>
+              </div>
             ) : (
               <div
                 className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
