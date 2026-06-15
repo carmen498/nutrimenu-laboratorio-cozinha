@@ -117,19 +117,34 @@ export default function ExportarReceita() {
         <p className="text-sm text-muted-foreground mt-1">{receita.categoria} · {porcoesExport} porções</p>
 
         <h3 className="font-semibold mt-6 mb-2">Ingredientes</h3>
-        <div className="space-y-1">
-          {itensFicha.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm py-1 border-b border-border/50">
-              <span>
-                {item.ingrediente_nome || item.ing?.nome}
-                {item.pre_preparo && <span className="text-muted-foreground"> ({item.pre_preparo})</span>}
-              </span>
-              <div className="flex gap-4">
-                <span>{item.medida_caseira && `${item.medida_caseira} · `}{formatWeight(item.qtd, receita.unidade_base)}</span>
-                {!ocultarCustos && <span className="text-primary font-medium w-20 text-right">{formatCurrency(item.custo)}</span>}
+        <div className="text-sm">
+          {/* Cabeçalho da tabela */}
+          <div className="flex font-semibold text-xs uppercase tracking-wider text-muted-foreground border-b-2 border-border pb-1 mb-1 px-1">
+            <span className="flex-[4]">Ingrediente</span>
+            <span className="flex-[2.5]">Medida caseira</span>
+            <span className="flex-[1.5]">Qtd. (g)</span>
+            {!ocultarCustos && <span className="flex-[2] text-right">Custo</span>}
+          </div>
+          {itensFicha.map((item) => {
+            if (item.tipo === "grupo") {
+              return (
+                <div key={item.id} className="font-bold text-xs uppercase tracking-wide bg-muted/50 py-1.5 px-1 my-1 rounded">
+                  {item.titulo_grupo}
+                </div>
+              );
+            }
+            return (
+              <div key={item.id} className="flex py-1 border-b border-border/50 px-1 items-center">
+                <span className="flex-[4]">
+                  {item.ingrediente_nome || item.ing?.nome || item.subreceita_nome}
+                  {item.pre_preparo && <span className="text-muted-foreground"> ({item.pre_preparo})</span>}
+                </span>
+                <span className="flex-[2.5] text-muted-foreground">{item.medida_caseira || ""}</span>
+                <span className="flex-[1.5]">{formatWeight(item.qtd, receita.unidade_base)}</span>
+                {!ocultarCustos && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {!ocultarCustos && (
