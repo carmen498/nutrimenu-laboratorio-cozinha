@@ -14,6 +14,46 @@ import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { normalizarNome } from "@/lib/normalizarNome";
 
+// ── Measure conversion table ──
+const MEDIDAS_CASEIRAS = [
+  { pattern: /xícara.*chá.*farinha|farinha.*xícara/i, gPorUnidade: 120 },
+  { pattern: /xícara.*chá.*açúcar|açúcar.*xícara/i, gPorUnidade: 180 },
+  { pattern: /xícara.*chá.*(chocolate|cacau).*pó|xícara.*pó.*(chocolate|cacau)/i, gPorUnidade: 100 },
+  { pattern: /xícara.*chá.*(leite|água|óleo|azeite|creme|líquido|oleo)/i, gPorUnidade: 240 },
+  { pattern: /colher.*sopa.*farinha|farinha.*colher.*sopa/i, gPorUnidade: 10 },
+  { pattern: /colher.*sopa.*(manteiga|margarina)/i, gPorUnidade: 15 },
+  { pattern: /colher.*sopa.*açúcar|açúcar.*colher.*sopa/i, gPorUnidade: 12 },
+  { pattern: /colher.*sopa.*(leite|água|óleo|azeite|creme|líquido|oleo)/i, gPorUnidade: 15 },
+  { pattern: /colher.*chá/i, gPorUnidade: 5 },
+  { pattern: /unidade.*ovo.*grande|ovo.*grande.*unidade/i, gPorUnidade: 60 },
+  { pattern: /unidade.*ovo|ovo.*unidade/i, gPorUnidade: 50 },
+  { pattern: /xícara.*chá/i, gPorUnidade: 240 }, // generic cup → liquid default
+  { pattern: /colher.*sopa/i, gPorUnidade: 15 }, // generic tbsp → liquid default
+];
+
+const converterMedida = (texto) => {
+  if (!texto) return null;
+  for (const m of MEDIDAS_CASEIRAS) {
+    if (m.pattern.test(texto)) return m.gPorUnidade;
+  }
+  return null;
+};
+
+// ── Auto-category from ingredients ──
+const categorizarPorIngredientes = (ingredientesNomes) => {
+  const all = (ingredientesNomes || []).join(" ").toLowerCase();
+  if (!all) return "";
+  const has = (words) => words.some(w => all.includes(w));
+  if (has(["chocolate", "cacau", "açúcar", "acucar", "baunilha", "chantilly", "doce", "brigadeiro", "beijinho", "pavê", "pave", "mousse"])) return "Confeitaria, Sobremesas";
+  if (has(["farinha", "manteiga", "margarina", "fermento"]) && has(["açúcar", "acucar"])) return "Confeitaria, Sobremesas";
+  if (has(["bovin", "contrafilé", "contrafile", "picanha", "alcatra", "maminha", "patinho", "coxão", "coxao", "costela bovina", "fraldinha", "cupim", "músculo", "musculo"])) return "Carnes, Bovina";
+  if (has(["frango", "peru", "ave", "galinha", "chester"])) return "Carnes, Aves";
+  if (has(["bacalhau", "camarão", "camarao", "peixe", "salmão", "salmao", "atum", "sardinha", "lula", "polvo", "marisco", "mexilhão", "mexilhao"])) return "Carnes, Peixes";
+  if (has(["camarão", "camarao", "lula", "polvo", "marisco", "mexilhão", "mexilhao", "lagosta", "siri", "caranguejo"])) return "Carnes, Frutos do mar";
+  if (has(["arroz", "risoto"])) return "Acompanhamentos, Arroz e Risotos";
+  return "";
+};
+
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -26,15 +66,11 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [showAddGrupo, setShowAddGrupo] = useState(false);
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const navigate = useNavigate();
+  const [similarSuggestions, setSimilarSuggestions] = useState({});
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
-  });
-
-  const { data: medidas = [] } = useQuery({
-    queryKey: ["medidas"],
-    queryFn: () => base44.entities.MedidaCaseira.list("-nome", 200),
   });
 
   const handleParse = async () => {
@@ -42,12 +78,22 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
     setProcessing(true);
     try {
       const ingNames = ingredientes.map(i => i.nome).join(", ");
-      const medidasInfo = medidas.filter(m => !m.ingrediente_especifico).map(m =>
-        `${m.nome}: ${m.equivalencia_g}g / ${m.equivalencia_ml}ml`
-      ).join("; ");
 
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Analise este texto de receita e extraia os dados estruturados. Converta todas as medidas caseiras para gramas ou ml usando estas equivalências: ${medidasInfo}. 
+        prompt: `Analise este texto de receita e extraia os dados estruturados.
+
+TABELA DE CONVERSÃO DE MEDIDAS CASEIRAS (use para converter para gramas):
+- 1 xícara de farinha = 120g
+- 1 xícara de açúcar = 180g
+- 1 xícara de chocolate/cacau em pó = 100g
+- 1 xícara de líquido (leite, água, óleo) = 240ml/240g
+- 1 colher de sopa de farinha = 10g
+- 1 colher de sopa de manteiga/margarina = 15g
+- 1 colher de sopa de açúcar = 12g
+- 1 colher de sopa de líquido = 15ml/15g
+- 1 colher de chá = 5g/5ml
+- 1 ovo médio = 50g
+- 1 ovo grande = 60g
         
 Ingredientes disponíveis no banco (use APENAS correspondência EXATA): ${ingNames}
 
@@ -55,10 +101,11 @@ Texto da receita:
 ${texto}
 
 IMPORTANTE: 
-- Para cada ingrediente, busque correspondência EXATA no banco acima. Se não houver correspondência exata, deixe nome_banco VAZIO e marque o nome_original corretamente — o sistema criará o ingrediente novo.
+- Para cada ingrediente, busque correspondência EXATA no banco acima. Se não houver correspondência exata, deixe nome_banco VAZIO e marque o nome_original corretamente — o sistema fará busca por similaridade depois.
 - NUNCA substitua um ingrediente por outro parecido (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango")
-- Converta xícaras, colheres, unidades para gramas/ml
-- Se a receita não informar porções, sugira um valor razoável
+- Converta SEMPRE medidas caseiras para gramas usando a tabela acima
+- NÃO invente porções: se o texto mencionar explicitamente quantas porções rende, use esse valor. Se NÃO mencionar, deixe porcoes_base = 0 (zero).
+- NÃO invente categoria — a categoria será determinada pelo sistema com base nos ingredientes
 - O modo de preparo deve ser REWRITTEN seguindo ESTRITAMENTE este padrão:
   * Uma ação por linha, numerada
   * Verbo no imperativo direto (ex: "Derreta", "Acrescente", "Bata")
@@ -99,7 +146,32 @@ IMPORTANTE:
           }
         }
       });
+      // Auto-categorize based on ingredient names
+      const ingNomes = (result.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
+      const catAuto = categorizarPorIngredientes(ingNomes);
+      if (catAuto) result.categoria = catAuto;
+      
       setParsed(result);
+      
+      // Run similarity search for ingredients without exact match
+      const newSugs = {};
+      (result.ingredientes || []).forEach((ing, i) => {
+        if (ing.tipo === "grupo") return;
+        if (ing.nome_banco) return; // already matched
+        const busca = (ing.nome_original || "").toLowerCase();
+        if (!busca) return;
+        const palavras = busca.replace(/[,\/\(\)]/g, " ").split(/\s+/).filter(p => p.length >= 3 && !["com", "sem", "para", "dos", "das", "aos"].includes(p));
+        if (palavras.length > 0) {
+          const similares = ingredientes.filter(bi => {
+            const biNome = (bi.nome || "").toLowerCase();
+            return palavras.some(p => biNome.includes(p));
+          }).slice(0, 5);
+          if (similares.length > 0 && !similares.some(s => s.nome?.toLowerCase() === busca)) {
+            newSugs[i] = similares;
+          }
+        }
+      });
+      setSimilarSuggestions(newSugs);
     } catch (err) {
       toast.error("Erro ao processar: " + err.message);
     } finally {
@@ -135,15 +207,23 @@ IMPORTANTE:
       const passosFormatados = formatarModoPreparo(p.modo_preparo);
       const modoPreparoFinal = juntarPassos(passosFormatados);
 
-      const catFinal = p.categoria || "A Revisar";
+      // Calculate rendimento from ingredients
+      const rendimentoCalc = (p.ingredientes || []).reduce((acc, ing) => acc + (ing.tipo === "grupo" ? 0 : (ing.quantidade_g || 0)), 0);
+      
+      // Auto-categorize if not set
+      const ingNomes = (p.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
+      const catFinal = p.categoria || categorizarPorIngredientes(ingNomes) || "A Revisar";
+      
+      const porcoes = p.porcoes_base || 0;
+      
       const receita = await base44.entities.Receita.create({
         nome: p.nome?.toUpperCase(),
         categoria: catFinal,
         revisar: duplicateWarning != null,
-        porcoes_base: p.porcoes_base || 4,
+        porcoes_base: porcoes,
         unidade_base: p.unidade_base || "g",
         modo_preparo: modoPreparoFinal,
-        rendimento_total: 0,
+        rendimento_total: rendimentoCalc,
         custo_total: 0,
         custo_por_porcao: 0,
       });
@@ -189,7 +269,7 @@ IMPORTANTE:
             });
           }
         }
-        const qtdPorPorcao = (ing.quantidade_g || 0) / (p.porcoes_base || 4);
+        const qtdPorPorcao = (ing.quantidade_g || 0) / (p.porcoes_base || 1);
         await base44.entities.IngredienteReceita.create({
           receita_id: receita.id,
           ingrediente_id: matchedIng.id,
@@ -276,7 +356,12 @@ IMPORTANTE:
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Porções</Label>
-                <Input type="number" value={parsed.porcoes_base || 4} onChange={(e) => setParsed({ ...parsed, porcoes_base: parseInt(e.target.value) || 4 })} />
+                <Input 
+                  type="number" 
+                  value={parsed.porcoes_base || ""} 
+                  placeholder="<a definir>" 
+                  onChange={(e) => setParsed({ ...parsed, porcoes_base: parseInt(e.target.value) || 0 })} 
+                />
               </div>
               <div>
                 <Label>Unidade base</Label>
@@ -288,6 +373,16 @@ IMPORTANTE:
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="text-xs text-muted-foreground -mt-2">
+              {(() => {
+                const totalG = (parsed.ingredientes || []).reduce((acc, ing) => acc + (ing.tipo === "grupo" ? 0 : (ing.quantidade_g || 0)), 0);
+                return (
+                  <span>
+                    Rendimento estimado: <strong>{totalG}g</strong> · Porções: <strong>{parsed.porcoes_base ? parsed.porcoes_base : "<a definir>"}</strong>
+                  </span>
+                );
+              })()}
             </div>
 
             <div>
@@ -338,38 +433,85 @@ IMPORTANTE:
                   }
                   const found = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
                   const isZero = (ing.quantidade_g || 0) === 0;
+                  const sugs = similarSuggestions[idx] || [];
+                  const hasSuggestion = !found && sugs.length > 0;
+                  const gPorUnidade = converterMedida(ing.medida_original || "");
+                  
+                  const acceptSimilar = (sugIng) => {
+                    const novos = [...(parsed.ingredientes || [])];
+                    novos[idx] = { ...novos[idx], nome_banco: sugIng.nome };
+                    setParsed({ ...parsed, ingredientes: novos });
+                    // Clear suggestions for this index
+                    const newSugs = { ...similarSuggestions };
+                    delete newSugs[idx];
+                    setSimilarSuggestions(newSugs);
+                  };
+                  
                   return (
-                    <div key={idx} className={`flex items-center gap-2 p-2 rounded-lg border text-sm ${isZero ? "bg-amber-50 border-amber-300" : "bg-card"}`}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          {found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
-                          <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
-                        </div>
-                        <div className="flex items-center gap-1 ml-5 mt-1">
-                          <span className="text-xs text-muted-foreground">
-                            {ing.medida_original} →
-                          </span>
+                    <div key={idx} className={`p-2 rounded-lg border text-sm ${isZero ? "bg-amber-50 border-amber-300" : "bg-card"}`}>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              className={`h-6 w-20 text-xs text-center ${isZero ? "border-amber-400" : ""}`}
-                              value={ing.quantidade_g || ""}
-                              placeholder="0"
-                              onChange={(e) => updateIngrediente(idx, "quantidade_g", parseFloat(e.target.value) || 0)}
-                            />
-                            <span className="text-xs text-muted-foreground">g</span>
+                            {found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : hasSuggestion ? <AlertCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                            <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
                           </div>
-                          {isZero && (
-                            <span className="text-xs text-amber-600 font-medium">Informe a quantidade</span>
+                          <div className="flex items-center gap-1 ml-5 mt-1">
+                            {ing.medida_original && (
+                              <span className="text-xs text-muted-foreground">
+                                {ing.medida_original}{gPorUnidade ? ` → ${gPorUnidade}g` : " →"} 
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1">
+                              <Input
+                                type="number"
+                                className={`h-6 w-20 text-xs text-center ${isZero ? "border-amber-400" : ""}`}
+                                value={ing.quantidade_g || ""}
+                                placeholder="0"
+                                onChange={(e) => updateIngrediente(idx, "quantidade_g", parseFloat(e.target.value) || 0)}
+                              />
+                              <span className="text-xs text-muted-foreground">g</span>
+                            </div>
+                            {isZero && (
+                              <span className="text-xs text-amber-600 font-medium">Informe a quantidade</span>
+                            )}
+                            {ing.pre_preparo && <span className="text-xs text-muted-foreground">· {ing.pre_preparo}</span>}
+                          </div>
+                          {/* Similarity suggestion */}
+                          {hasSuggestion && (
+                            <div className="ml-5 mt-1.5 p-2 bg-blue-50 rounded border border-blue-200">
+                              <p className="text-xs text-blue-700 mb-1">
+                                Encontramos no banco. É esse?
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {sugs.map((sug, si) => (
+                                  <button
+                                    key={si}
+                                    className="text-xs px-2 py-1 rounded bg-white border border-blue-300 hover:bg-blue-100 text-blue-800 transition-colors"
+                                    onClick={() => acceptSimilar(sug)}
+                                  >
+                                    {sug.nome}
+                                  </button>
+                                ))}
+                                <button
+                                  className="text-xs px-2 py-1 rounded border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                  onClick={() => {
+                                    const newSugs = { ...similarSuggestions };
+                                    delete newSugs[idx];
+                                    setSimilarSuggestions(newSugs);
+                                  }}
+                                >
+                                  Cadastrar "{ing.nome_original}" novo
+                                </button>
+                              </div>
+                            </div>
                           )}
-                          {ing.pre_preparo && <span className="text-xs text-muted-foreground">· {ing.pre_preparo}</span>}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        {!found && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">Novo</span>}
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeIngrediente(idx)}>
-                          <AlertCircle className="w-3 h-3" />
-                        </Button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {!found && <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded">{hasSuggestion ? "?" : "Novo"}</span>}
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeIngrediente(idx)}>
+                            <AlertCircle className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   );
