@@ -14,6 +14,7 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
   const [resultados, setResultados] = useState([]);
   const [selected, setSelected] = useState({});
   const [atualizando, setAtualizando] = useState(false);
+  const [progresso, setProgresso] = useState({ atual: 0, total: 0 });
   const [filterDesatualizados, setFilterDesatualizados] = useState(true);
 
   useEffect(() => {
@@ -33,10 +34,34 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
     setStep("loading");
     try {
       const relevant = ingredientes.filter(i => i.preco_embalagem_rs > 0 || i.preco_por_g_rs > 0);
-      const response = await base44.functions.invoke("buscarPrecosIA", {
-        ingredientes: relevant.map(i => ({ id: i.id, nome: i.nome, preco_por_g_rs: i.preco_por_g_rs }))
-      });
-      setResultados(response.data.resultados || []);
+      const dados = relevant.map(i => ({ id: i.id, nome: i.nome, preco_por_g_rs: i.preco_por_g_rs }));
+
+      // Process in small chunks (10 at a time) to avoid backend timeout
+      const CHUNK = 10;
+      const todosResultados = [];
+      for (let i = 0; i < dados.length; i += CHUNK) {
+        setProgresso({ atual: i, total: dados.length });
+        const lote = dados.slice(i, i + CHUNK);
+        try {
+          const response = await base44.functions.invoke("buscarPrecosIA", { ingredientes: lote });
+          const res = response.data?.resultados || [];
+          todosResultados.push(...res);
+        } catch (e) {
+          // Mark as not found if chunk fails
+          lote.forEach(ing => todosResultados.push({
+            id: ing.id, nome: ing.nome,
+            preco_atual: ing.preco_por_g_rs ? parseFloat((ing.preco_por_g_rs * 1000).toFixed(3)) : 0,
+            preco_sugerido_por_kg: null, preco_sugerido_por_g: null,
+            encontrado: false, observacao: "Erro na busca (timeout)"
+          }));
+        }
+        // Delay between chunks to avoid rate limiting the LLM
+        if (i + CHUNK < dados.length) {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      setProgresso({ atual: dados.length, total: dados.length });
+      setResultados(todosResultados);
       setStep("results");
     } catch (err) {
       toast.error("Erro ao buscar preços: " + err.message);
@@ -217,13 +242,21 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
           <div className="flex flex-col items-center py-12">
             <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
             <p className="font-medium">Consultando preços na web...</p>
-            <p className="text-sm text-muted-foreground mt-1">Isso pode levar alguns segundos</p>
+            {progresso.total > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {progresso.atual} de {progresso.total} ingredientes processados
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">Processando em lotes de 10 — pode levar até 3 minutos para todos os ingredientes</p>
           </div>
         )}
 
         {/* Step: Results */}
         {step === "results" && (
           <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              {resultados.filter(r => r.encontrado).length} preços encontrados de {resultados.length} ingredientes
+            </p>
             {resultados.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>Nenhum resultado encontrado.</p>
