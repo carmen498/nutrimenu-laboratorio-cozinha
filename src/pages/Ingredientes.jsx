@@ -8,9 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2, AlertTriangle } from "lucide-react";
+import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2, AlertTriangle, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
+import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 
 const CATEGORIAS = [
   "CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS",
@@ -25,6 +26,8 @@ export default function Ingredientes() {
   const [showImport, setShowImport] = useState(false);
   const [expandedCat, setExpandedCat] = useState(null);
   const [showRevisar, setShowRevisar] = useState(false);
+  const [showDesatualizados, setShowDesatualizados] = useState(false);
+  const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
   const qc = useQueryClient();
 
   const { data: ingredientes = [], isLoading } = useQuery({
@@ -38,8 +41,35 @@ export default function Ingredientes() {
         ? data.preco_embalagem_rs / data.peso_embalagem_g
         : 0;
       const payload = { ...data, preco_por_g_rs: preco_por_g };
+
       if (data.id) {
         const { id, created_date, updated_date, created_by_id, ...rest } = payload;
+
+        // Record price history if price changed
+        if (data.preco_embalagem_rs !== data._preco_anterior || data.peso_embalagem_g !== data._peso_anterior) {
+          const precoAnteriorPorKg = (data._preco_anterior && data._peso_anterior > 0)
+            ? parseFloat(((data._preco_anterior / data._peso_anterior) * 1000).toFixed(2))
+            : 0;
+          const precoNovaPorKg = preco_por_g * 1000;
+          const variacao = precoAnteriorPorKg > 0
+            ? parseFloat((((precoNovaPorKg - precoAnteriorPorKg) / precoAnteriorPorKg) * 100).toFixed(1))
+            : 0;
+          const historico = [...(data.historico_precos || [])];
+          historico.unshift({
+            data: new Date().toISOString(),
+            preco_por_kg: parseFloat(precoNovaPorKg.toFixed(2)),
+            variacao_percentual: variacao,
+            fonte: data.fonte_preco || "Manual"
+          });
+          rest.historico_precos = historico.slice(0, 5);
+          rest.preco_atualizado_em = new Date().toISOString();
+          rest.fonte_preco = rest.fonte_preco || "Manual";
+          rest.variacao_percentual = variacao;
+        }
+
+        // remove internal tracking fields
+        delete rest._preco_anterior;
+        delete rest._peso_anterior;
         return base44.entities.Ingrediente.update(id, rest);
       }
       // Check for duplicate name
@@ -66,12 +96,29 @@ export default function Ingredientes() {
     },
   });
 
+  // Helpers for price freshness
+  const diasDesdeAtualizacao = (ing) => {
+    if (!ing.preco_atualizado_em) return null;
+    const atualizado = new Date(ing.preco_atualizado_em);
+    const agora = new Date();
+    return Math.floor((agora - atualizado) / (1000 * 60 * 60 * 24));
+  };
+
+  const isDesatualizado = (ing) => {
+    if (ing.preco_por_g_rs <= 0 || ing.preco_embalagem_rs <= 0) return false;
+    const dias = diasDesdeAtualizacao(ing);
+    return dias === null || dias > 90;
+  };
+
   const filtered = ingredientes.filter((i) => {
+    if (showDesatualizados) return isDesatualizado(i);
     if (showRevisar) return i.revisar === true;
     const matchBusca = !busca || i.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = catFiltro === "todas" || i.categoria === catFiltro;
     return matchBusca && matchCat;
   });
+
+  const countDesatualizados = ingredientes.filter(i => isDesatualizado(i)).length;
 
   // Group by category
   const grouped = {};
@@ -132,6 +179,9 @@ export default function Ingredientes() {
           <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowAtualizarPrecos(true)}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Atualizar preços
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
@@ -153,15 +203,24 @@ export default function Ingredientes() {
           />
         </div>
         <Button
+          variant={showDesatualizados ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setShowDesatualizados(!showDesatualizados); setShowRevisar(false); setCatFiltro("todas"); setBusca(""); }}
+          className={showDesatualizados ? "bg-red-600 hover:bg-red-700" : ""}
+        >
+          <Clock className="w-4 h-4 mr-1" />
+          Desatualizados
+        </Button>
+        <Button
           variant={showRevisar ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowRevisar(!showRevisar); setCatFiltro("todas"); setBusca(""); }}
+          onClick={() => { setShowRevisar(!showRevisar); setShowDesatualizados(false); setCatFiltro("todas"); setBusca(""); }}
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
           Revisar
         </Button>
-        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); }}>
+        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); setShowDesatualizados(false); }}>
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>
@@ -173,6 +232,21 @@ export default function Ingredientes() {
           </SelectContent>
         </Select>
       </div>
+
+      {/* Stale price alert banner */}
+      {!showDesatualizados && countDesatualizados > 0 && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+            <p className="text-sm text-red-800">
+              <strong>{countDesatualizados} ingredientes</strong> com preço desatualizado (90+ dias). Atualizar agora?
+            </p>
+          </div>
+          <Button size="sm" variant="outline" className="border-red-300 text-red-700 hover:bg-red-100 shrink-0" onClick={() => setShowAtualizarPrecos(true)}>
+            <RefreshCw className="w-4 h-4 mr-1" /> Atualizar
+          </Button>
+        </div>
+      )}
 
       {/* Ingredient list by category */}
       {isLoading ? (
@@ -207,6 +281,18 @@ export default function Ingredientes() {
                     <p className="text-xs text-muted-foreground">
                       {formatIngredientPrice(ing)}
                     </p>
+                    {ing.preco_atualizado_em ? (
+                      <p className={`text-[10px] mt-0.5 flex items-center gap-1 ${
+                        diasDesdeAtualizacao(ing) <= 30 ? "text-green-600" :
+                        diasDesdeAtualizacao(ing) <= 90 ? "text-amber-600" : "text-red-600"
+                      }`}>
+                        {diasDesdeAtualizacao(ing) <= 30 ? "🟢" : diasDesdeAtualizacao(ing) <= 90 ? "🟡" : "🔴"}
+                        Atualizado {new Date(ing.preco_atualizado_em).toLocaleDateString("pt-BR")}
+                        {diasDesdeAtualizacao(ing) > 90 && <Badge className="text-[9px] px-1 py-0 bg-red-100 text-red-700 border-red-200 ml-1">Desatualizado</Badge>}
+                      </p>
+                    ) : ing.preco_por_g_rs > 0 && (
+                      <p className="text-[10px] text-gray-400 mt-0.5">⚪ Sem data de atualização</p>
+                    )}
                   </div>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditItem(ing); setShowForm(true); }}>
@@ -243,6 +329,9 @@ export default function Ingredientes() {
 
       {/* Import Dialog */}
       <ImportDialog open={showImport} onClose={() => setShowImport(false)} />
+
+      {/* Update Prices Dialog */}
+      <AtualizarPrecosDialog open={showAtualizarPrecos} onClose={() => setShowAtualizarPrecos(false)} ingredientes={ingredientes} />
     </div>
   );
 }
@@ -252,7 +341,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
 
   const resetForm = () => {
     if (item) {
-      setForm({ ...item });
+      setForm({ ...item, _preco_anterior: item.preco_embalagem_rs, _peso_anterior: item.peso_embalagem_g });
     } else {
       setForm({ categoria: "A Revisar", nome: "", unidade_compra: "KG", peso_embalagem_g: 1000, preco_embalagem_rs: 0, fator_correcao: 1.0 });
     }
@@ -262,6 +351,8 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
     if (!form.nome?.trim()) { toast.error("Informe o nome do ingrediente"); return; }
     onSave(form);
   };
+
+  const formatCurrency = (v) => v != null ? "R$ " + v.toFixed(2).replace(".", ",") : "—";
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); else resetForm(); }}>
@@ -294,6 +385,24 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             initialPrecoTotal={form.preco_embalagem_rs || ""}
             onChange={({ peso_embalagem_g, preco_embalagem_rs }) => setForm({ ...form, peso_embalagem_g, preco_embalagem_rs })}
           />
+          {/* Price history */}
+          {item && (item.historico_precos || []).length > 0 && (
+            <div>
+              <Label className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> Histórico de preços</Label>
+              <div className="mt-2 space-y-1.5">
+                {(item.historico_precos || []).slice(0, 5).map((h, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs bg-muted/50 rounded p-1.5">
+                    <span className="text-muted-foreground">{new Date(h.data).toLocaleDateString("pt-BR")}</span>
+                    <span className="font-medium">{formatCurrency(h.preco_por_kg)}/kg</span>
+                    <span className={h.variacao_percentual > 0 ? "text-red-600" : h.variacao_percentual < 0 ? "text-green-600" : "text-gray-400"}>
+                      {h.variacao_percentual > 0 ? "+" : ""}{h.variacao_percentual}%
+                    </span>
+                    <Badge variant="secondary" className="text-[9px] px-1 py-0">{h.fonte}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Advanced: fator de correção */}
           <details className="text-sm">
             <summary className="cursor-pointer text-muted-foreground flex items-center gap-1">
