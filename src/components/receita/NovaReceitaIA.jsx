@@ -539,7 +539,7 @@ IMPORTANTE:
                             <button
                               className="text-xs px-1 py-0 rounded hover:bg-accent shrink-0 ml-auto"
                               onClick={() => updateIngrediente(idx, "proporcional", ing.proporcional !== false ? false : true)}
-                              title={ing.proporcional !== false ? "Estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "A gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}
+                              title={ing.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}
                             >
                               {ing.proporcional !== false ? <span className="text-green-600">🔗</span> : <span className="text-gray-400">📌</span>}
                             </button>

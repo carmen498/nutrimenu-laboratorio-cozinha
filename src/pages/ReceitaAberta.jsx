@@ -1019,7 +1019,7 @@ REGRAS:
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "A gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
                       {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
@@ -1111,7 +1111,7 @@ REGRAS:
                   )}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "A gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
                         {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
