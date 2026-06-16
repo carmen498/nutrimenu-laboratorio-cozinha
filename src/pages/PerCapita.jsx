@@ -4,31 +4,51 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Search, FileText } from "lucide-react";
-import { grupos, todosItens } from "@/lib/perCapitaData";
+import { percapitaData, todosItens, notaTecnica, referencias } from "@/lib/perCapitaData";
+
+const nomesGrupos = [...new Set(percapitaData.filter(i => i.tipo === "grupo").map(i => i.nome))];
 
 export default function PerCapita() {
   const [search, setSearch] = useState("");
   const [filtroGrupo, setFiltroGrupo] = useState("");
   const printRef = useRef();
 
-  const nomesGrupos = useMemo(() => [...new Set(grupos.map(g => g.grupo))], []);
-
   const itensFiltrados = useMemo(() => {
-    let results = todosItens;
-    if (filtroGrupo) {
-      results = results.filter(i => i.grupo === filtroGrupo);
-    }
-    if (search.trim()) {
-      const s = search.toLowerCase();
-      results = results.filter(i =>
-        i.prep.toLowerCase().includes(s) ||
-        i.cat.toLowerCase().includes(s) ||
-        i.medida.toLowerCase().includes(s) ||
-        i.grupo.toLowerCase().includes(s)
-      );
+    let currentGrupo = "";
+    const results = [];
+
+    for (const item of percapitaData) {
+      if (item.tipo === "grupo") {
+        currentGrupo = item.nome;
+        // Sempre inclui o cabeçalho do grupo, a menos que estejamos filtrando por outro grupo
+        if (!filtroGrupo || filtroGrupo === currentGrupo) {
+          results.push(item);
+        }
+      } else {
+        // Filtra por grupo
+        if (filtroGrupo && currentGrupo !== filtroGrupo) continue;
+        // Filtra por busca textual
+        if (search.trim()) {
+          const s = search.toLowerCase();
+          const match =
+            String(item.prep || "").toLowerCase().includes(s) ||
+            String(item.cat || "").toLowerCase().includes(s) ||
+            String(item.medida || "").toLowerCase().includes(s) ||
+            String(currentGrupo || "").toLowerCase().includes(s);
+          if (!match) continue;
+        }
+        // Garante que o cabeçalho do grupo apareça antes dos itens
+        const last = results[results.length - 1];
+        if (!last || last.tipo !== "grupo" || last.nome !== currentGrupo) {
+          results.push({ tipo: "grupo", nome: currentGrupo });
+        }
+        results.push(item);
+      }
     }
     return results;
   }, [search, filtroGrupo]);
+
+  const totalItens = todosItens.length;
 
   return (
     <div className="space-y-4 pb-24 md:pb-8" ref={printRef}>
@@ -41,7 +61,7 @@ export default function PerCapita() {
           Quantidade média por pessoa · preparação pronta para servir (g/pessoa) · Base: POF IBGE 2017-2018 + Calculadora Nutrimenu + Referências de UAN
         </p>
         <p className="text-[10px] text-muted-foreground italic">
-          Carmen S. Reinstein · Nutrimenu · Receita na Medida · 2026 — Estudo preliminar · valores a validar conforme tipo de evento e perfil dos comensais
+          Carmen S. Reinstein · Nutrimenu · Receita na Medida · 2026 — Estudo pioneiro · valores a validar conforme tipo de evento e perfil dos comensais
         </p>
       </div>
 
@@ -67,7 +87,7 @@ export default function PerCapita() {
           onChange={(e) => setFiltroGrupo(e.target.value)}
           className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
-          <option value="">Todos os grupos ({todosItens.length} itens)</option>
+          <option value="">Todos os grupos ({totalItens} itens)</option>
           {nomesGrupos.map(g => (
             <option key={g} value={g}>{g}</option>
           ))}
@@ -79,7 +99,7 @@ export default function PerCapita() {
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground no-print">
-        {itensFiltrados.length} {itensFiltrados.length === 1 ? "item" : "itens"} encontrado{itensFiltrados.length !== 1 ? "s" : ""}
+        {itensFiltrados.filter(i => i.tipo !== "grupo").length} itens encontrados
       </p>
 
       {/* Table */}
@@ -95,22 +115,40 @@ export default function PerCapita() {
             </tr>
           </thead>
           <tbody>
-            {itensFiltrados.map((item, idx) => (
-              <tr key={item.n} className={`border-b border-border/50 hover:bg-muted/30 ${idx % 2 === 0 ? "bg-white" : "bg-muted/20"} ${idx === 0 || itensFiltrados[idx-1]?.grupo !== item.grupo ? "border-t-2 border-t-primary/20" : ""}`}>
-                <td className="px-2 py-1.5 text-muted-foreground text-xs">{item.n}</td>
-                <td className="px-2 py-1.5 text-xs text-muted-foreground">{item.cat}</td>
-                <td className="px-2 py-1.5 font-medium text-xs">
-                  {(idx === 0 || itensFiltrados[idx-1]?.grupo !== item.grupo) && (
-                    <span className="block text-[10px] text-primary font-semibold uppercase tracking-wide mb-0.5">{item.grupo}</span>
-                  )}
-                  {item.prep}
-                </td>
-                <td className="px-2 py-1.5 text-right font-bold text-primary text-xs tabular-nums">{item.g}</td>
-                <td className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">{item.medida}</td>
-              </tr>
-            ))}
+            {itensFiltrados.map((item, idx) => {
+              if (item.tipo === "grupo") {
+                return (
+                  <tr key={`g-${item.nome}-${idx}`} className="bg-green-100 border-b border-green-200">
+                    <td colSpan={5} className="px-3 py-2">
+                      <span className="font-bold text-sm text-green-900 uppercase tracking-wide">{item.nome}</span>
+                    </td>
+                  </tr>
+                );
+              }
+
+              const isEven = idx % 2 === 0;
+              const displayG = typeof item.g === "number" ? item.g : item.g;
+
+              return (
+                <tr key={`i-${item.n || idx}-${item.prep}-${idx}`} className={`border-b border-border/40 ${isEven ? "bg-white" : "bg-green-50/50"} hover:bg-muted/40`}>
+                  <td className="px-2 py-1.5 text-muted-foreground text-xs">{item.n || "—"}</td>
+                  <td className="px-2 py-1.5 text-xs text-muted-foreground">{item.cat}</td>
+                  <td className="px-2 py-1.5 font-medium text-xs">{item.prep}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-primary text-xs tabular-nums">{displayG}</td>
+                  <td className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">{item.medida}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      </Card>
+
+      {/* Nota Técnica */}
+      <Card className="p-4 bg-blue-50 border-blue-200">
+        <div className="whitespace-pre-line text-sm text-blue-900 leading-relaxed">
+          <h3 className="font-bold text-primary text-base mb-2 font-display">NOTA TÉCNICA</h3>
+          {notaTecnica.replace(/^NOTA TÉCNICA[\s\S]*?\n\n/, "")}
+        </div>
       </Card>
 
       {/* Referências */}
@@ -118,13 +156,14 @@ export default function PerCapita() {
         <AccordionItem value="refs">
           <AccordionTrigger className="text-sm font-medium">Referências bibliográficas</AccordionTrigger>
           <AccordionContent>
-            <ol className="space-y-1 text-sm text-muted-foreground list-decimal list-inside">
-              <li>POF IBGE 2017-2018 · ibge.gov.br/pof2017-2018</li>
-              <li>Calculadora de Custos de Produção Nutrimenu · Carmen S. Reinstein · 2025</li>
-              <li>Instrução Normativa IN 75/2020 ANVISA · Anexo V</li>
-              <li>Abreu ES et al. · Gestão de UAN · Metha · 2016</li>
-              <li>CFN Resolução 600/2018</li>
-              <li>Carmen S. Reinstein · experiência profissional · 20+ anos</li>
+            <ol className="space-y-2 text-sm text-muted-foreground">
+              {referencias.map((ref, idx) => (
+                <li key={idx} className="list-inside" style={{ listStyleType: "none" }}>
+                  <span className="font-semibold text-primary mr-1">[{ref.n}]</span>
+                  <span className="font-medium">{ref.titulo}</span>
+                  {ref.texto && <span className="text-muted-foreground"> — {ref.texto}</span>}
+                </li>
+              ))}
             </ol>
           </AccordionContent>
         </AccordionItem>
