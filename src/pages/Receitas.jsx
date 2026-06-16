@@ -239,7 +239,7 @@ export default function Receitas() {
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
           <Button variant="outline" size="sm" onClick={handleClassificarLote} disabled={classifying}>
-            <Link2 className="w-4 h-4 mr-1" /> {classifying ? "..." : "🔗/📌"}
+            <Link2 className="w-4 h-4 mr-1" /> {classifying ? "..." : "Estrutural / A gosto"}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -462,19 +462,19 @@ export default function Receitas() {
         <Dialog open={true} onOpenChange={() => setShowClassificarLote(false)}>
           <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle className="font-display">Classificação 🔗/📌</DialogTitle>
+              <DialogTitle className="font-display">Classificação Estrutural / A gosto</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <Card className="p-3 text-center bg-green-50 border-green-200">
                   <span className="text-2xl">🔗</span>
                   <p className="text-2xl font-bold text-green-700">{classificarResult.proporcional}</p>
-                  <p className="text-xs text-green-600">Proporcionais</p>
+                  <p className="text-xs text-green-600">Estruturais</p>
                 </Card>
                 <Card className="p-3 text-center bg-gray-50 border-gray-200">
                   <span className="text-2xl">📌</span>
                   <p className="text-2xl font-bold text-gray-700">{classificarResult.fixo}</p>
-                  <p className="text-xs text-gray-500">Fixos</p>
+                  <p className="text-xs text-gray-500">A gosto</p>
                 </Card>
               </div>
               <div className="text-center">
@@ -486,7 +486,7 @@ export default function Receitas() {
                 </p>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                Ajustes manuais podem ser feitos em cada receita pelo toggle 🔗/📌.
+                Ajustes manuais podem ser feitos em cada receita pelo toggle Estrutural / A gosto.
               </p>
             </div>
             <div className="flex justify-end">

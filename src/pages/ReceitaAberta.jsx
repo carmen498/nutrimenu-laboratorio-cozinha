@@ -608,7 +608,7 @@ REGRAS:
         <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-sm text-amber-800">
-            Esta receita tem <strong>{countFixos} ingrediente(s) com quantidade fixa (📌)</strong>. Verifique se as quantidades fazem sentido para <strong>{porcoes} porções</strong>.
+            Esta receita tem <strong>{countFixos} ingredientes marcados como 'a gosto' (📌)</strong>. Verifique se as quantidades fazem sentido para <strong>{porcoes} porções</strong>.
           </p>
         </div>
       )}
@@ -1019,7 +1019,7 @@ REGRAS:
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita. Clique para fixar." : "Fixo — não escala com a receita. Clique para tornar proporcional."}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "A gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
                       {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
@@ -1037,7 +1037,7 @@ REGRAS:
                   </div>
                   {item.isFixo && fator !== 1 && (
                     <div className="col-span-12 text-right">
-                      <span className="text-[10px] text-muted-foreground">📌 Quantidade fixa — não escala</span>
+                      <span className="text-[10px] text-muted-foreground">📌 Ingrediente 'a gosto' — quantidade fixa, não escala.</span>
                     </div>
                   )}
                 </div>
@@ -1111,7 +1111,7 @@ REGRAS:
                   )}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita. Clique para fixar." : "Fixo — não escala com a receita. Clique para tornar proporcional."}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "A gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
                         {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
@@ -1129,7 +1129,7 @@ REGRAS:
                       </div>
                       </div>
                       {item.isFixo && fator !== 1 && (
-                      <div className="text-[10px] text-muted-foreground text-right">📌 Quantidade fixa — não escala</div>
+                      <div className="text-[10px] text-muted-foreground text-right">📌 Ingrediente 'a gosto' — não escala.</div>
                   )}
                   <div className="flex justify-between mt-2 text-xs items-center">
                     <span className="text-muted-foreground">Quantidade: </span>

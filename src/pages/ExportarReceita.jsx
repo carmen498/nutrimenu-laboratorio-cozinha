@@ -307,7 +307,7 @@ export default function ExportarReceita() {
         )}
 
         {itensFicha.some(i => i.proporcional === false) && aba !== "custos" && (
-          <p className="text-xs text-muted-foreground mt-3 italic">📌 Ingredientes com quantidade fixa — não variam com o escalonamento da receita</p>
+          <p className="text-xs text-muted-foreground mt-3 italic">📌 Ingredientes 'a gosto' — quantidade fixa, não variam com o escalonamento.</p>
         )}
         <p className="text-xs text-muted-foreground mt-6 text-center">
           Gerado por Receita na Medida · {new Date().toLocaleDateString("pt-BR")}
