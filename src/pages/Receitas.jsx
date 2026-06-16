@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle, Star } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle, Star, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -69,6 +69,8 @@ export default function Receitas() {
   const [expandedCat, setExpandedCat] = useState(null);
   const [showRevisar, setShowRevisar] = useState(false);
   const [showFavoritas, setShowFavoritas] = useState(false);
+  const [tagFilterIds, setTagFilterIds] = useState([]);
+  const [showTagPainel, setShowTagPainel] = useState(false);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -86,6 +88,26 @@ export default function Receitas() {
   });
 
   // DIAGNÓSTICO — Query dedicada ao contador
+  const { data: tags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: () => base44.entities.Tag.list("nome", 200),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: receitaTags = [] } = useQuery({
+    queryKey: ["receita-tags", tagFilterIds],
+    queryFn: async () => {
+      if (tagFilterIds.length === 0) return [];
+      const all = [];
+      for (const tid of tagFilterIds) {
+        const rts = await base44.entities.ReceitaTag.filter({ tag_id: tid }, "", 1000);
+        all.push(...rts);
+      }
+      return all;
+    },
+    enabled: tagFilterIds.length > 0,
+  });
+
   const { data: totalReceitas = 0 } = useQuery({
     queryKey: ["receitas-count-total"],
     queryFn: async () => {
@@ -152,6 +174,12 @@ export default function Receitas() {
     if (showFavoritas) return r.favorita === true;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = catFiltro === "todas" || r.categoria === catFiltro;
+    // Tag filter (AND logic)
+    if (tagFilterIds.length > 0 && receitaTags.length > 0) {
+      const tagsForReceita = receitaTags.filter(rt => rt.receita_id === r.id);
+      const matchTags = tagFilterIds.every(tid => tagsForReceita.some(rt => rt.tag_id === tid));
+      if (!matchTags) return false;
+    }
     return matchBusca && matchCat;
   });
 
@@ -253,7 +281,52 @@ export default function Receitas() {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant={tagFilterIds.length > 0 ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowTagPainel(!showTagPainel)}
+          className="gap-1"
+        >
+          <Tag className="w-4 h-4" /> Tags
+          {tagFilterIds.length > 0 && <Badge className="ml-1 h-4 px-1 text-[10px] bg-white text-primary">{tagFilterIds.length}</Badge>}
+        </Button>
       </div>
+
+      {/* Tag filter panel */}
+      {showTagPainel && (
+        <div className="p-3 bg-card border border-border rounded-xl space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filtrar por tags (AND)</span>
+            {tagFilterIds.length > 0 && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setTagFilterIds([])}>
+                <X className="w-3 h-3 mr-1" /> Limpar tags
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+            {tags.map(tag => {
+              const active = tagFilterIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background hover:bg-accent border-border"
+                  }`}
+                  onClick={() => {
+                    setTagFilterIds(prev =>
+                      active ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                    );
+                  }}
+                >
+                  {tag.nome}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recipe list by category */}
       {isLoading ? (

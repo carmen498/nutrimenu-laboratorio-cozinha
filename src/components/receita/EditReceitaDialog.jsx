@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -9,12 +9,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Sparkles, Loader2, Wand2 } from "lucide-react";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
+import TagSelector from "@/components/tags/TagSelector";
+import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 
 export default function EditReceitaDialog({ open, onClose, receita }) {
   const [form, setForm] = useState({ ...receita });
   const [saving, setSaving] = useState(false);
+  const [receitaTags, setReceitaTags] = useState([]);
+  const [allTags, setAllTags] = useState([]);
+
+  useEffect(() => {
+    if (!receita?.id || !open) return;
+    (async () => {
+      const [rt, at] = await Promise.all([
+        base44.entities.ReceitaTag.filter({ receita_id: receita.id }, "created_date", 200),
+        base44.entities.Tag.list("nome", 200),
+      ]);
+      setReceitaTags(rt || []);
+      setAllTags(at || []);
+    })();
+  }, [receita?.id, open]);
   const [generatingPhoto, setGeneratingPhoto] = useState(false);
   const [rewritingPrep, setRewritingPrep] = useState(false);
   const qc = useQueryClient();
@@ -153,6 +169,46 @@ ${form.modo_preparo}`,
             </div>
             <Textarea rows={5} value={form.modo_preparo || ""} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Descreva o passo a passo em etapas numeradas. Uma ação por linha. Ex:\n1. Derreta o chocolate em banho-maria.\n2. Acrescente a manteiga e mexa. Reserve.\n3. Bata os ovos com o açúcar até formar creme fofo."} />
           </div>
+          <div>
+            <Label>Tags</Label>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1 mb-2">
+              {receitaTags.map(rt => {
+                const tag = allTags.find(t => t.id === rt.tag_id);
+                if (!tag) return null;
+                return (
+                  <TagBadge
+                    key={rt.id}
+                    nome={tag.nome}
+                    cor={tag.cor}
+                    onClick={async () => {
+                      await base44.entities.ReceitaTag.delete(rt.id);
+                      setReceitaTags(prev => prev.filter(r => r.id !== rt.id));
+                    }}
+                  />
+                );
+              })}
+              <TagSelector
+                selectedIds={receitaTags.map(rt => rt.tag_id)}
+                onToggle={async (tag) => {
+                  const exists = receitaTags.find(rt => rt.tag_id === tag.id);
+                  if (exists) {
+                    await base44.entities.ReceitaTag.delete(exists.id);
+                    setReceitaTags(prev => prev.filter(r => r.id !== exists.id));
+                  } else {
+                    const novo = await base44.entities.ReceitaTag.create({
+                      receita_id: receita.id,
+                      tag_id: tag.id,
+                      tag_nome: tag.nome,
+                      tag_grupo: tag.grupo,
+                      tag_cor: tag.cor,
+                    });
+                    setReceitaTags(prev => [...prev, novo]);
+                  }
+                }}
+              />
+            </div>
+          </div>
+
           <div>
             <Label>Foto</Label>
             {form.foto_url && <img src={form.foto_url} alt="" className="w-full h-36 object-cover rounded-lg mb-2" />}

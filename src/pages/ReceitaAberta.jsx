@@ -21,6 +21,8 @@ import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
 import InsumosSection from "@/components/receita/InsumosSection";
 import IngredientesEsquecidos from "@/components/receita/IngredientesEsquecidos";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
+import TagBadge from "@/components/tags/TagBadge";
+import TagSelector from "@/components/tags/TagSelector";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 
 export default function ReceitaAberta() {
@@ -77,6 +79,17 @@ export default function ReceitaAberta() {
   const { data: esquecidos = [] } = useQuery({
     queryKey: ["esquecidos-receita", id],
     queryFn: () => base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: id }),
+  });
+
+  const { data: receitaTags = [] } = useQuery({
+    queryKey: ["receita-tags", id],
+    queryFn: () => base44.entities.ReceitaTag.filter({ receita_id: id }, "created_date", 200),
+  });
+
+  const { data: allTags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: () => base44.entities.Tag.list("nome", 200),
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -489,6 +502,43 @@ REGRAS:
           Base: {receita.porcoes_base} porções
           {receita.rendimento_total > 0 && ` · ${formatWeight(receita.rendimento_total, receita.unidade_base)}`}
         </span>
+      </div>
+
+      {/* Tags */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {receitaTags.map(rt => {
+          const tag = allTags.find(t => t.id === rt.tag_id);
+          if (!tag) return null;
+          return (
+            <TagBadge
+              key={rt.id}
+              nome={tag.nome}
+              cor={tag.cor}
+              onClick={async () => {
+                await base44.entities.ReceitaTag.delete(rt.id);
+                qc.invalidateQueries({ queryKey: ["receita-tags", id] });
+              }}
+            />
+          );
+        })}
+        <TagSelector
+          selectedIds={receitaTags.map(rt => rt.tag_id)}
+          onToggle={async (tag) => {
+            const exists = receitaTags.find(rt => rt.tag_id === tag.id);
+            if (exists) {
+              await base44.entities.ReceitaTag.delete(exists.id);
+            } else {
+              await base44.entities.ReceitaTag.create({
+                receita_id: id,
+                tag_id: tag.id,
+                tag_nome: tag.nome,
+                tag_grupo: tag.grupo,
+                tag_cor: tag.cor,
+              });
+            }
+            qc.invalidateQueries({ queryKey: ["receita-tags", id] });
+          }}
+        />
       </div>
 
       {/* Portion scaler */}

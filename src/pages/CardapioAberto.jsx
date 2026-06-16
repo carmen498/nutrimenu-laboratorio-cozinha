@@ -19,6 +19,8 @@ import {
   GlassWater, Sun, Sparkles, MapPin
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
+import TagBadge from "@/components/tags/TagBadge";
+import TagSelector from "@/components/tags/TagSelector";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -74,6 +76,8 @@ export default function CardapioAberto() {
 
   const [cardapio, setCardapio] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cardapioTags, setCardapioTags] = useState([]);
+  const [allTags, setAllTags] = useState([]);
   const [editandoNome, setEditandoNome] = useState(false);
   const [editNome, setEditNome] = useState("");
   const [favLocal, setFavLocal] = useState(false);
@@ -121,16 +125,20 @@ export default function CardapioAberto() {
       setShowVenda(!!c.markup_percentual);
       setFavLocal(!!c.favorito);
 
-      const [recs, ins, insGlobal, todasRec] = await Promise.all([
+      const [recs, ins, insGlobal, todasRec, tags, cTags] = await Promise.all([
         base44.entities.CardapioReceita.filter({ cardapio_id: id }, "ordem", 200),
         base44.entities.CardapioInsumo.filter({ cardapio_id: id }, "created_date", 200),
         base44.entities.Insumo.list("nome", 200),
         base44.entities.Receita.list("nome", 200),
+        base44.entities.Tag.list("nome", 200),
+        base44.entities.CardapioTag.filter({ cardapio_id: id }, "created_date", 200),
       ]);
       setReceitas(recs || []);
       setInsumos(ins || []);
       setInsumosGlobais(insGlobal || []);
       setTodasReceitas(todasRec || []);
+      setAllTags(tags || []);
+      setCardapioTags(cTags || []);
     } catch (e) { console.error(e); }
     setLoading(false);
   }, [id]);
@@ -425,6 +433,43 @@ export default function CardapioAberto() {
             Quantidade total: <strong>{num} kg</strong>
           </div>
         )}
+        {/* Tags */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t no-print">
+          {cardapioTags.map(ct => {
+            const tag = allTags.find(t => t.id === ct.tag_id);
+            if (!tag) return null;
+            return (
+              <TagBadge
+                key={ct.id}
+                nome={tag.nome}
+                cor={tag.cor}
+                onClick={async () => {
+                  await base44.entities.CardapioTag.delete(ct.id);
+                  setCardapioTags(prev => prev.filter(t => t.id !== ct.id));
+                }}
+              />
+            );
+          })}
+          <TagSelector
+            selectedIds={cardapioTags.map(ct => ct.tag_id)}
+            onToggle={async (tag) => {
+              const exists = cardapioTags.find(ct => ct.tag_id === tag.id);
+              if (exists) {
+                await base44.entities.CardapioTag.delete(exists.id);
+                setCardapioTags(prev => prev.filter(t => t.id !== tag.id));
+              } else {
+                const novo = await base44.entities.CardapioTag.create({
+                  cardapio_id: cardapio.id,
+                  tag_id: tag.id,
+                  tag_nome: tag.nome,
+                  tag_grupo: tag.grupo,
+                  tag_cor: tag.cor,
+                });
+                setCardapioTags(prev => [...prev, novo]);
+              }
+            }}
+          />
+        </div>
       </div>
 
       {/* BLOCO 2 — Receitas */}

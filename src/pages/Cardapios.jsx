@@ -13,7 +13,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper, GlassWater, Sun, Sparkles, MapPin } from "lucide-react";
+import { Plus, Search, Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper, GlassWater, Sun, Sparkles, MapPin, Tag, X } from "lucide-react";
 
 const TIPOS = [
   { key: "diario", label: "Diário", icon: Sun, emoji: "🏠", cor: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -40,6 +40,10 @@ export default function Cardapios() {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos"); // todos | favoritos | tipo_key
+  const [tagFilterIds, setTagFilterIds] = useState([]);
+  const [showTagPainel, setShowTagPainel] = useState(false);
+  const [tags, setTags] = useState([]);
+  const [cardapioTags, setCardapioTags] = useState([]);
   const [showNovo, setShowNovo] = useState(false);
   const [form, setForm] = useState({ nome: "", tipo: "", data: "", observacoes: "" });
   const [salvando, setSalvando] = useState(false);
@@ -48,13 +52,30 @@ export default function Cardapios() {
   const load = async () => {
     setLoading(true);
     try {
-      const lista = await base44.entities.Cardapio.list("-created_date", 100);
+      const [lista, todasTags] = await Promise.all([
+        base44.entities.Cardapio.list("-created_date", 100),
+        base44.entities.Tag.list("nome", 200),
+      ]);
       setCardapios(lista || []);
+      setTags(todasTags || []);
     } catch (e) { console.error(e); }
     setLoading(false);
   };
 
   useEffect(() => { load(); }, []);
+
+  // Load cardapio tags when filter is active
+  useEffect(() => {
+    if (tagFilterIds.length === 0) { setCardapioTags([]); return; }
+    (async () => {
+      const all = [];
+      for (const tid of tagFilterIds) {
+        const cts = await base44.entities.CardapioTag.filter({ tag_id: tid }, "", 1000);
+        all.push(...cts);
+      }
+      setCardapioTags(all);
+    })();
+  }, [tagFilterIds]);
 
   const getNum = (c) => c.num_unidades || c.num_pessoas_ou_unidades || 1;
 
@@ -66,8 +87,15 @@ export default function Cardapios() {
       const q = busca.toLowerCase();
       lista = lista.filter(c => (c.nome || "").toLowerCase().includes(q));
     }
+    // Tag filter (AND logic)
+    if (tagFilterIds.length > 0 && cardapioTags.length > 0) {
+      lista = lista.filter(c => {
+        const tagsForC = cardapioTags.filter(ct => ct.cardapio_id === c.id);
+        return tagFilterIds.every(tid => tagsForC.some(ct => ct.tag_id === tid));
+      });
+    }
     return lista;
-  }, [cardapios, busca, filtroTipo]);
+  }, [cardapios, busca, filtroTipo, tagFilterIds, cardapioTags]);
 
   const handleNovo = async () => {
     if (!form.nome.trim() || !form.tipo) return;
@@ -201,7 +229,52 @@ export default function Cardapios() {
             {t.emoji}
           </Button>
         ))}
+        <Button
+          variant={tagFilterIds.length > 0 ? "default" : "outline"}
+          size="sm"
+          className="gap-1"
+          onClick={() => setShowTagPainel(!showTagPainel)}
+        >
+          <Tag className="w-3.5 h-3.5" /> Tags
+          {tagFilterIds.length > 0 && <Badge className="ml-1 h-4 px-1 text-[10px] bg-white text-primary">{tagFilterIds.length}</Badge>}
+        </Button>
       </div>
+
+      {/* Tag filter panel */}
+      {showTagPainel && (
+        <div className="p-3 bg-card border border-border rounded-xl space-y-2 mb-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filtrar por tags</span>
+            {tagFilterIds.length > 0 && (
+              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setTagFilterIds([])}>
+                <X className="w-3 h-3 mr-1" /> Limpar tags
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
+            {tags.map(tag => {
+              const active = tagFilterIds.includes(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                    active
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background hover:bg-accent border-border"
+                  }`}
+                  onClick={() => {
+                    setTagFilterIds(prev =>
+                      active ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                    );
+                  }}
+                >
+                  {tag.nome}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Busca */}
       <div className="relative mb-4">

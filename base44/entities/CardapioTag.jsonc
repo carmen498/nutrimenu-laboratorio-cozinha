@@ -1,0 +1,30 @@
+{
+  "name": "CardapioTag",
+  "type": "object",
+  "properties": {
+    "cardapio_id": {
+      "type": "string",
+      "description": "ID do card\u00e1pio"
+    },
+    "tag_id": {
+      "type": "string",
+      "description": "ID da tag"
+    },
+    "tag_nome": {
+      "type": "string",
+      "description": "Nome da tag (cache)"
+    },
+    "tag_grupo": {
+      "type": "string",
+      "description": "Grupo da tag (cache)"
+    },
+    "tag_cor": {
+      "type": "string",
+      "description": "Cor da tag (cache)"
+    }
+  },
+  "required": [
+    "cardapio_id",
+    "tag_id"
+  ]
+}

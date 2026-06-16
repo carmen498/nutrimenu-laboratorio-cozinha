@@ -1,0 +1,30 @@
+{
+  "name": "ReceitaTag",
+  "type": "object",
+  "properties": {
+    "receita_id": {
+      "type": "string",
+      "description": "ID da receita"
+    },
+    "tag_id": {
+      "type": "string",
+      "description": "ID da tag"
+    },
+    "tag_nome": {
+      "type": "string",
+      "description": "Nome da tag (cache)"
+    },
+    "tag_grupo": {
+      "type": "string",
+      "description": "Grupo da tag (cache)"
+    },
+    "tag_cor": {
+      "type": "string",
+      "description": "Cor da tag (cache)"
+    }
+  },
+  "required": [
+    "receita_id",
+    "tag_id"
+  ]
+}

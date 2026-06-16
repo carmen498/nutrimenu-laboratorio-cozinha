@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Loader2, Check, X, AlertCircle, Plus, AlertTriangle, ChefHat } from "lucide-react";
 import CategoriaPicker, { CATEGORIAS } from "@/components/receita/CategoriaPicker";
+import TagSelector from "@/components/tags/TagSelector";
+import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { normalizarNome } from "@/lib/normalizarNome";
@@ -40,6 +42,7 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const parsedRef = useRef(null);
   parsedRef.current = parsed;
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [showAddGrupo, setShowAddGrupo] = useState(false);
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const navigate = useNavigate();
@@ -129,6 +132,11 @@ IMPORTANTE:
                   medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" }
                 }
               }
+            },
+            tags_sugeridas: {
+              type: "array",
+              items: { type: "string" },
+              description: "Tags sugeridas para a receita. Use APENAS tags desta lista: 'Molho vermelho','Molho branco','Molho escuro','Molho agridoce','Molho de manteiga','Sem molho','Carne moída','Carne desfiada','Frango desfiado','Ovo','Prato único','Vegetariana','Vegana','Funcional','Low carb','Proteica','Integral','Sem glúten','Sem lactose','Sem pimentão','Sem pimenta','Sem alho','Sem cebola','Sem ovos','Sem açúcar','Air Fryer','Forno','Vapor','Grelhado','Frito','Cozido','Sem fogo / Cru','Freezer','Rende muito','Rápido — até 30 min','Para criança','Para dieta','Para festa','Comfort food'. Regras: se tem vegetais sem carne → 'Vegetariana'. Se menciona 'air fryer' → 'Air Fryer'. Se menciona 'forno'/'assar' → 'Forno'. Se não tem farinha de trigo/farinha comum → 'Sem glúten'. Se o tempo total ≤ 30 min → 'Rápido — até 30 min'. Se tem carne moída → 'Carne moída'."
             }
           }
         }
@@ -150,6 +158,16 @@ IMPORTANTE:
       });
 
       setParsed(result);
+      
+      // Match suggested tags to actual tag IDs
+      const allTags = await base44.entities.Tag.list("nome", 200);
+      const sugestoes = result.tags_sugeridas || [];
+      const matchedIds = [];
+      for (const nome of sugestoes) {
+        const tag = allTags.find(t => t.nome === nome);
+        if (tag) matchedIds.push(tag.id);
+      }
+      setSelectedTagIds(matchedIds);
       
       // Run similarity search for ingredients AND receitas básicas without exact match
       const newSugs = {};
@@ -235,6 +253,20 @@ IMPORTANTE:
         custo_total: 0,
         custo_por_porcao: 0,
       });
+
+      // Save tags
+      for (const tagId of selectedTagIds) {
+        const tag = await base44.entities.Tag.get(tagId);
+        if (tag) {
+          await base44.entities.ReceitaTag.create({
+            receita_id: receita.id,
+            tag_id: tag.id,
+            tag_nome: tag.nome,
+            tag_grupo: tag.grupo,
+            tag_cor: tag.cor,
+          });
+        }
+      }
 
       // Link ingredients
       for (let i = 0; i < (p.ingredientes || []).length; i++) {
@@ -580,6 +612,22 @@ IMPORTANTE:
                   );
                 })}
               </div>
+            </div>
+
+            <div>
+              <Label>Tags sugeridas</Label>
+              <TagSelector
+                selectedIds={selectedTagIds}
+                onToggle={(tag) => {
+                  setSelectedTagIds(prev =>
+                    prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                  );
+                }}
+                triggerLabel="Adicionar/editar tags"
+              />
+              {selectedTagIds.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">{selectedTagIds.length} tag(s) selecionada(s)</p>
+              )}
             </div>
 
             <div>

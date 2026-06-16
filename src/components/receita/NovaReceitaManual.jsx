@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
+import TagSelector from "@/components/tags/TagSelector";
 import { normalizarNome } from "@/lib/normalizarNome";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
@@ -33,6 +34,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [showNovoIng, setShowNovoIng] = useState(false);
   const [novoIngNome, setNovoIngNome] = useState("");
   const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [showAddGrupo, setShowAddGrupo] = useState(false);
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const [editingGrupoIdx, setEditingGrupoIdx] = useState(null);
@@ -143,6 +145,20 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
         custo_por_porcao: 0,
         revisar: duplicateWarning != null,
       });
+
+      // Save tags
+      for (const tagId of selectedTagIds) {
+        const tag = await base44.entities.Tag.get(tagId);
+        if (tag) {
+          await base44.entities.ReceitaTag.create({
+            receita_id: receita.id,
+            tag_id: tag.id,
+            tag_nome: tag.nome,
+            tag_grupo: tag.grupo,
+            tag_cor: tag.cor,
+          });
+        }
+      }
 
       for (let i = 0; i < addedIngs.length; i++) {
         const ing = addedIngs[i];
@@ -473,6 +489,18 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                 </Button>
               </div>
             </div>
+          </div>
+
+          <div>
+            <Label>Tags</Label>
+            <TagSelector
+              selectedIds={selectedTagIds}
+              onToggle={(tag) => {
+                setSelectedTagIds(prev =>
+                  prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                );
+              }}
+            />
           </div>
 
           <div>
