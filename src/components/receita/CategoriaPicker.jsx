@@ -41,7 +41,6 @@ export const CATEGORIAS = [
   "Receitas, Low Carb",
   "Receitas, Proteicas",
   "Receitas, Vegetarianas",
-  "Receitas, Marmitas e Refeições Completas",
   "Receitas, Fitness",
   "Receitas, Internacionais",
   "Receitas, Pastosa",

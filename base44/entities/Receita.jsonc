@@ -45,13 +45,13 @@
         "Receitas, Low Carb",
         "Receitas, Proteicas",
         "Receitas, Vegetarianas",
-        "Receitas, Marmitas e Refei\u00e7\u00f5es Completas",
         "Receitas, Fitness",
         "Receitas, Internacionais",
         "Receitas, Pastosa",
         "Receitas, Regionais",
         "Receitas, Veganas",
-        "Receitas B\u00e1sicas"
+        "Receitas B\u00e1sicas",
+        "A Revisar"
       ],
       "description": "Categoria da receita no formato Grupo, Subcategoria"
     },
