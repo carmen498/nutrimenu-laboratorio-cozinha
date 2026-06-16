@@ -194,6 +194,8 @@ export default function Cardapios() {
             variant={filtroTipo === t.key ? "default" : "outline"}
             size="sm"
             className="gap-1"
+            title={t.label}
+            aria-label={t.label}
             onClick={() => setFiltroTipo(filtroTipo === t.key ? "todos" : t.key)}
           >
             {t.emoji}
