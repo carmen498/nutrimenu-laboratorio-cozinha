@@ -52,14 +52,14 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
       : resultados.filter(r => r.encontrado && selected[r.id]).map(r => r.id);
 
     let atualizados = 0;
+    let erros = 0;
     const receitasAfetadas = new Set();
 
-    // Process ingredient updates in batches of 10 with 300ms delay between batches
+    // Process ingredient updates ONE AT A TIME to avoid rate limiting
     const toUpdate = resultados.filter(r => idsToUpdate.includes(r.id) && r.encontrado && r.preco_sugerido_por_g);
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
-      const batch = toUpdate.slice(i, i + BATCH_SIZE);
-      await Promise.all(batch.map(async (res) => {
+
+    for (const res of toUpdate) {
+      try {
         const variacao = res.preco_atual > 0
           ? parseFloat((((res.preco_sugerido_por_kg - res.preco_atual) / res.preco_atual) * 100).toFixed(1))
           : 0;
@@ -84,12 +84,15 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
           variacao_percentual: variacao,
           historico_precos: historico.slice(0, 5)
         });
-      }));
-      atualizados += batch.length;
-
-      // Pause between batches to avoid rate limiting
-      if (i + BATCH_SIZE < toUpdate.length) {
-        await new Promise(r => setTimeout(r, 300));
+        atualizados++;
+        // Small delay between each update to respect rate limits
+        await new Promise(r => setTimeout(r, 250));
+      } catch (err) {
+        erros++;
+        if (err.message?.includes("ate limit")) {
+          // On rate limit, pause longer then skip to next
+          await new Promise(r => setTimeout(r, 2000));
+        }
       }
     }
 
@@ -113,43 +116,38 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
       const ingMap = {};
       allIngs.forEach(i => { ingMap[i.id] = i; });
 
-      // Process recipes in smaller batches
-      const recsArr = [...receitasAfetadas];
-      for (let i = 0; i < recsArr.length; i += BATCH_SIZE) {
-        const batch = recsArr.slice(i, i + BATCH_SIZE);
-        await Promise.all(batch.map(async (recId) => {
-          try {
-            const receitas = await base44.entities.Receita.filter({ id: recId });
-            const receita = receitas[0];
-            if (!receita) return;
-            const recItens = await base44.entities.IngredienteReceita.filter({ receita_id: recId });
+      // Process recipes one at a time
+      for (const recId of receitasAfetadas) {
+        try {
+          const receitas = await base44.entities.Receita.filter({ id: recId });
+          const receita = receitas[0];
+          if (!receita) continue;
+          const recItens = await base44.entities.IngredienteReceita.filter({ receita_id: recId });
 
-            let custoIng = 0;
-            for (const item of recItens) {
-              if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
-              const ing = ingMap[item.ingrediente_id];
-              const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
-              custoIng += qtd * (ing?.preco_por_g_rs || 0);
-            }
-            const custoInsumos = receita.custo_insumos || 0;
-            const custoTotal = custoIng + custoInsumos;
-            const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
+          let custoIng = 0;
+          for (const item of recItens) {
+            if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
+            const ing = ingMap[item.ingrediente_id];
+            const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
+            custoIng += qtd * (ing?.preco_por_g_rs || 0);
+          }
+          const custoInsumos = receita.custo_insumos || 0;
+          const custoTotal = custoIng + custoInsumos;
+          const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
 
-            await base44.entities.Receita.update(recId, {
-              custo_total: parseFloat(custoTotal.toFixed(2)),
-              custo_por_porcao: parseFloat(custoPorcao.toFixed(2))
-            });
-          } catch {}
-        }));
-
-        if (i + BATCH_SIZE < recsArr.length) {
-          await new Promise(r => setTimeout(r, 200));
-        }
+          await base44.entities.Receita.update(recId, {
+            custo_total: parseFloat(custoTotal.toFixed(2)),
+            custo_por_porcao: parseFloat(custoPorcao.toFixed(2))
+          });
+          await new Promise(r => setTimeout(r, 150));
+        } catch {}
       }
     }
 
     qc.invalidateQueries({ queryKey: ["ingredientes"] });
-    toast.success(`${atualizados} ingredientes atualizados · ${receitasAfetadas.size} receitas recalculadas`);
+    const msg = `${atualizados} ingredientes atualizados · ${receitasAfetadas.size} receitas recalculadas`;
+    if (erros > 0) toast.warning(msg + ` · ${erros} falhas (limite de requisições)`);
+    else toast.success(msg);
     setAtualizando(false);
     onClose();
   };
