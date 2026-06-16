@@ -553,14 +553,14 @@ REGRAS:
         {receita.foto_url ? (
           <button
             onClick={() => setShowLightbox(true)}
-            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[200px] rounded-lg overflow-hidden bg-muted shadow-sm hover:opacity-90 transition-opacity"
+            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg overflow-hidden bg-muted shadow-sm hover:opacity-90 transition-opacity"
           >
             <img src={receita.foto_url} alt={receita.nome} className="w-full h-full object-cover" />
           </button>
         ) : (
           <button
             onClick={() => setShowEdit(true)}
-            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[200px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors"
+            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors"
             title="Adicionar foto"
           >
             <Camera className="w-8 h-8 text-muted-foreground/60" />
