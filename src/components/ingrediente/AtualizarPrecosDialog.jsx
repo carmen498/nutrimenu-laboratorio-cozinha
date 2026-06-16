@@ -54,37 +54,46 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
     let atualizados = 0;
     const receitasAfetadas = new Set();
 
-    for (const res of resultados) {
-      if (!idsToUpdate.includes(res.id) || !res.encontrado || !res.preco_sugerido_por_g) continue;
+    // Process ingredient updates in batches of 10 with 300ms delay between batches
+    const toUpdate = resultados.filter(r => idsToUpdate.includes(r.id) && r.encontrado && r.preco_sugerido_por_g);
+    const BATCH_SIZE = 10;
+    for (let i = 0; i < toUpdate.length; i += BATCH_SIZE) {
+      const batch = toUpdate.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(async (res) => {
+        const variacao = res.preco_atual > 0
+          ? parseFloat((((res.preco_sugerido_por_kg - res.preco_atual) / res.preco_atual) * 100).toFixed(1))
+          : 0;
 
-      const variacao = res.preco_atual > 0
-        ? parseFloat((((res.preco_sugerido_por_kg - res.preco_atual) / res.preco_atual) * 100).toFixed(1))
-        : 0;
+        const ing = ingredientes.find(ing => ing.id === res.id);
+        const preco_embalagem_rs = parseFloat((res.preco_sugerido_por_g * (ing?.peso_embalagem_g || 1000)).toFixed(2));
 
-      const preco_embalagem_rs = parseFloat((res.preco_sugerido_por_g * (ingredientes.find(i => i.id === res.id)?.peso_embalagem_g || 1000)).toFixed(2));
+        const historico = [...(ing?.historico_precos || [])];
+        historico.unshift({
+          data: now,
+          preco_por_kg: parseFloat(res.preco_sugerido_por_kg.toFixed(2)),
+          variacao_percentual: variacao,
+          fonte: "IA web"
+        });
 
-      const ing = ingredientes.find(i => i.id === res.id);
-      const historico = [...(ing?.historico_precos || [])];
-      historico.unshift({
-        data: now,
-        preco_por_kg: parseFloat(res.preco_sugerido_por_kg.toFixed(2)),
-        variacao_percentual: variacao,
-        fonte: "IA web"
-      });
+        await base44.entities.Ingrediente.update(res.id, {
+          preco_embalagem_rs,
+          preco_por_g_rs: res.preco_sugerido_por_g,
+          preco_atualizado_em: now,
+          fonte_preco: "IA web",
+          preco_medio_nacional: res.preco_sugerido_por_kg,
+          variacao_percentual: variacao,
+          historico_precos: historico.slice(0, 5)
+        });
+      }));
+      atualizados += batch.length;
 
-      await base44.entities.Ingrediente.update(res.id, {
-        preco_embalagem_rs,
-        preco_por_g_rs: res.preco_sugerido_por_g,
-        preco_atualizado_em: now,
-        fonte_preco: "IA web",
-        preco_medio_nacional: res.preco_sugerido_por_kg,
-        variacao_percentual: variacao,
-        historico_precos: historico.slice(0, 5)
-      });
-      atualizados++;
+      // Pause between batches to avoid rate limiting
+      if (i + BATCH_SIZE < toUpdate.length) {
+        await new Promise(r => setTimeout(r, 300));
+      }
     }
 
-    // Find affected recipes and recalculate
+    // Find affected recipes and recalculate — fetch data once, then process
     if (atualizados > 0) {
       const idsSet = new Set(idsToUpdate);
       const allItens = [];
@@ -99,32 +108,43 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
         if (idsSet.has(item.ingrediente_id)) receitasAfetadas.add(item.receita_id);
       }
 
-      for (const recId of receitasAfetadas) {
-        try {
-          const receitas = await base44.entities.Receita.filter({ id: recId });
-          const receita = receitas[0];
-          if (!receita) continue;
-          const recItens = await base44.entities.IngredienteReceita.filter({ receita_id: recId });
-          const allIngs = await base44.entities.Ingrediente.list("-nome", 500);
-          const ingMap = {};
-          allIngs.forEach(i => { ingMap[i.id] = i; });
+      // Fetch all ingredients once
+      const allIngs = await base44.entities.Ingrediente.list("-nome", 500);
+      const ingMap = {};
+      allIngs.forEach(i => { ingMap[i.id] = i; });
 
-          let custoIng = 0;
-          for (const item of recItens) {
-            if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
-            const ing = ingMap[item.ingrediente_id];
-            const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
-            custoIng += qtd * (ing?.preco_por_g_rs || 0);
-          }
-          const custoInsumos = receita.custo_insumos || 0;
-          const custoTotal = custoIng + custoInsumos;
-          const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
+      // Process recipes in smaller batches
+      const recsArr = [...receitasAfetadas];
+      for (let i = 0; i < recsArr.length; i += BATCH_SIZE) {
+        const batch = recsArr.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(async (recId) => {
+          try {
+            const receitas = await base44.entities.Receita.filter({ id: recId });
+            const receita = receitas[0];
+            if (!receita) return;
+            const recItens = await base44.entities.IngredienteReceita.filter({ receita_id: recId });
 
-          await base44.entities.Receita.update(recId, {
-            custo_total: parseFloat(custoTotal.toFixed(2)),
-            custo_por_porcao: parseFloat(custoPorcao.toFixed(2))
-          });
-        } catch {}
+            let custoIng = 0;
+            for (const item of recItens) {
+              if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
+              const ing = ingMap[item.ingrediente_id];
+              const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
+              custoIng += qtd * (ing?.preco_por_g_rs || 0);
+            }
+            const custoInsumos = receita.custo_insumos || 0;
+            const custoTotal = custoIng + custoInsumos;
+            const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
+
+            await base44.entities.Receita.update(recId, {
+              custo_total: parseFloat(custoTotal.toFixed(2)),
+              custo_por_porcao: parseFloat(custoPorcao.toFixed(2))
+            });
+          } catch {}
+        }));
+
+        if (i + BATCH_SIZE < recsArr.length) {
+          await new Promise(r => setTimeout(r, 200));
+        }
       }
     }
 
