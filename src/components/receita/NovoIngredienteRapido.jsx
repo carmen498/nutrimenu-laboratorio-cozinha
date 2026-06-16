@@ -46,6 +46,7 @@ export default function NovoIngredienteRapido({ open, onClose, nomeSugerido, onC
         preco_por_g_rs: preco_por_g,
         fator_correcao: fc,
         revisar: existing.length > 0,
+        ...(preco_por_g > 0 ? { preco_atualizado_em: new Date().toISOString(), fonte_preco: "Manual" } : {}),
       });
 
       qc.invalidateQueries({ queryKey: ["ingredientes"] });

@@ -72,6 +72,11 @@ export default function Ingredientes() {
         delete rest._peso_anterior;
         return base44.entities.Ingrediente.update(id, rest);
       }
+      // Auto-set price date for new ingredients with price
+      if (preco_por_g > 0) {
+        payload.preco_atualizado_em = new Date().toISOString();
+        payload.fonte_preco = "Manual";
+      }
       // Check for duplicate name
       const existing = await base44.entities.Ingrediente.filter({ nome: data.nome });
       if (existing.length > 0) {
@@ -471,6 +476,10 @@ function ImportDialog({ open, onClose }) {
             preco_por_g_rs: preco_por_g,
             fator_correcao: item.fator_correcao || 1.0
           };
+          if (preco_por_g > 0) {
+            payload.preco_atualizado_em = new Date().toISOString();
+            payload.fonte_preco = "Manual";
+          }
           const existingItem = existingMap[item.nome.toLowerCase()];
           if (existingItem) {
             const { id, created_date, updated_date, created_by_id, nome, ...rest } = payload;
