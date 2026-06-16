@@ -211,18 +211,22 @@ ${form.modo_preparo}`,
 
           <div>
             <Label>Foto</Label>
-            {form.foto_url && <img src={form.foto_url} alt="" className="w-full h-36 object-cover rounded-lg mb-2" />}
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <label className="cursor-pointer">
-                  <Camera className="w-4 h-4 mr-1" /> Enviar
-                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadPhoto} />
-                </label>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleGeneratePhoto} disabled={generatingPhoto}>
-                {generatingPhoto ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
-                Gerar IA
-              </Button>
+            <div className="flex items-center gap-3 mt-1">
+              {form.foto_url && (
+                <img src={form.foto_url} alt="" className="w-[60px] h-[60px] object-cover rounded-lg shadow-sm shrink-0" />
+              )}
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <label className="cursor-pointer">
+                    <Camera className="w-4 h-4 mr-1" /> Enviar
+                    <input type="file" accept="image/*" className="hidden" onChange={handleUploadPhoto} />
+                  </label>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleGeneratePhoto} disabled={generatingPhoto}>
+                  {generatingPhoto ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
+                  Gerar IA
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -48,7 +48,7 @@ export default function ReceitaAberta() {
   const [convertingNAId, setConvertingNAId] = useState(null);
   const [convertingNATitulo, setConvertingNATitulo] = useState("");
   const [localFavoritando, setLocalFavoritando] = useState(false);
-  // showAddGrupo / novoGrupoTitulo removidos — substituídos por pendingGrupo inline
+  const [showLightbox, setShowLightbox] = useState(false);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -473,40 +473,53 @@ REGRAS:
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate("/receitas")}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <h1 className="font-display text-xl font-bold flex-1 truncate">{receita.nome}</h1>
-        <button
-          onClick={async () => {
-            if (localFavoritando) return;
-            setLocalFavoritando(true);
-            try {
-              await base44.entities.Receita.update(id, { favorita: !receita.favorita });
-              qc.invalidateQueries({ queryKey: ["receita", id] });
-            } finally {
-              setLocalFavoritando(false);
-            }
-          }}
-          disabled={localFavoritando}
-          className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${localFavoritando ? "opacity-50" : ""}`}
-          title={receita.favorita ? "Remover das favoritas" : "Marcar como favorita"}
-        >
-          <Star className={`w-5 h-5 ${receita.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
-        </button>
-        <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
-          <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
-        </Button>
-      </div>
-
-      {/* Photo */}
-      {receita.foto_url && (
-        <div className="rounded-xl overflow-hidden aspect-video bg-muted">
-          <img src={receita.foto_url} alt={receita.nome} className="w-full h-full object-cover" />
+      {/* Header + Photo */}
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/receitas")}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="font-display text-xl font-bold truncate">{receita.nome}</h1>
+            <button
+              onClick={async () => {
+                if (localFavoritando) return;
+                setLocalFavoritando(true);
+                try {
+                  await base44.entities.Receita.update(id, { favorita: !receita.favorita });
+                  qc.invalidateQueries({ queryKey: ["receita", id] });
+                } finally {
+                  setLocalFavoritando(false);
+                }
+              }}
+              disabled={localFavoritando}
+              className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${localFavoritando ? "opacity-50" : ""}`}
+              title={receita.favorita ? "Remover das favoritas" : "Marcar como favorita"}
+            >
+              <Star className={`w-5 h-5 ${receita.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+            </button>
+            <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
+              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+            </Button>
+          </div>
         </div>
-      )}
+        {receita.foto_url ? (
+          <button
+            onClick={() => setShowLightbox(true)}
+            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[200px] rounded-lg overflow-hidden bg-muted shadow-sm hover:opacity-90 transition-opacity"
+          >
+            <img src={receita.foto_url} alt={receita.nome} className="w-full h-full object-cover" />
+          </button>
+        ) : (
+          <button
+            onClick={() => setShowEdit(true)}
+            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[200px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors"
+            title="Adicionar foto"
+          >
+            <Camera className="w-8 h-8 text-muted-foreground/60" />
+          </button>
+        )}
+      </div>
 
       <div className="flex items-center gap-2">
         <Badge variant="secondary">{receita.categoria}</Badge>
@@ -1317,6 +1330,40 @@ REGRAS:
           onSave={(data) => updatePriceMut.mutate(data)}
           saving={updatePriceMut.isPending}
         />
+      )}
+
+      {/* Lightbox */}
+      {showLightbox && receita.foto_url && (
+        <Dialog open={true} onOpenChange={() => setShowLightbox(false)}>
+          <DialogContent className="max-w-3xl p-2 bg-black/95 border-none">
+            <img src={receita.foto_url} alt={receita.nome} className="w-full max-h-[80vh] object-contain rounded" />
+            <div className="flex justify-center gap-3 mt-3">
+              <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" asChild>
+                <label className="cursor-pointer">
+                  <Camera className="w-4 h-4 mr-1" /> Trocar foto
+                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    try {
+                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                      await base44.entities.Receita.update(id, { foto_url: file_url });
+                      qc.invalidateQueries({ queryKey: ["receita", id] });
+                      toast.success("Foto atualizada!");
+                    } catch { toast.error("Erro ao enviar foto"); }
+                  }} />
+                </label>
+              </Button>
+              <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" onClick={async () => {
+                await base44.entities.Receita.update(id, { foto_url: "" });
+                qc.invalidateQueries({ queryKey: ["receita", id] });
+                setShowLightbox(false);
+                toast.success("Foto removida");
+              }}>
+                <Trash2 className="w-4 h-4 mr-1" /> Remover foto
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
