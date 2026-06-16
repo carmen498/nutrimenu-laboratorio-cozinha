@@ -13,7 +13,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Users, Package, Scale, Calendar, Coffee, Heart, PartyPopper, GlassWater, Sun, Sparkles, MapPin } from "lucide-react";
+import { Plus, Search, Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper, GlassWater, Sun, Sparkles, MapPin } from "lucide-react";
 
 const TIPOS = [
   { key: "diario", label: "Diário", icon: Sun, emoji: "🏠", cor: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -157,8 +157,6 @@ export default function Cardapios() {
     return `${dia}/${mes}/${ano}`;
   };
 
-  const DIAS_SEMANA = { diario: true, semanal: true, fim_de_semana: true };
-
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -224,7 +222,7 @@ export default function Cardapios() {
       ) : (
         <div className="space-y-3">
           {filtrados.map(c => {
-            const cfg = TIPO_MAP[c.tipo] || TIPO_MAP.evento;
+            const cfg = TIPO_MAP[c.tipo] || TIPO_MAP.diario;
             const Icon = cfg.icon;
             const num = getNum(c);
             const custoPorUnid = num > 0 && c.custo_total > 0 ? c.custo_total / num : 0;

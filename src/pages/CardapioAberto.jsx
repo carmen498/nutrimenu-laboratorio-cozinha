@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, ShoppingCart, Download,
-  Star, MoreHorizontal, Users, Package, Scale, Calendar, Coffee, PartyPopper,
+  Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
   GlassWater, Sun, Sparkles, MapPin
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
