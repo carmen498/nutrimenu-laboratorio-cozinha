@@ -686,16 +686,16 @@ REGRAS:
                       ) : (
                         <>
                           <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
                             <ArrowUp className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                             <ArrowDown className="w-3 h-3" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
                             <Pencil className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover sub-título">
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
                         </>
@@ -742,13 +742,13 @@ REGRAS:
                           </Button>
                         </>
                       )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
                         <ArrowUp className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                         <ArrowDown className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
@@ -809,16 +809,16 @@ REGRAS:
                         <span className="text-sm font-semibold text-primary">{formatCurrency(item.custo)}</span>
                       </div>
                       <div className="col-span-3 flex justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
                           <Pencil className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
                           <ArrowUp className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                           <ArrowDown className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -834,23 +834,23 @@ REGRAS:
                       </div>
                       <div className="flex items-start justify-between">
                         <div className="flex gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
                             <Pencil className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
                             <ArrowUp className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                             <ArrowDown className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
-                        </div>
-                      </div>
-                      <div className="flex justify-between mt-2 text-xs items-center">
-                        <span className="text-muted-foreground">Quantidade: </span>
-                        {editingQtdId === item.id ? (
+                          </div>
+                          </div>
+                          <div className="flex justify-between mt-2 text-xs items-center">
+                          <span className="text-muted-foreground">Quantidade: </span>
+                          {editingQtdId === item.id ? (
                           <div className="flex items-center gap-1">
                             <Input
                               type="number"
@@ -1019,19 +1019,19 @@ REGRAS:
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita" : "Fixo — não escala com a receita"}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita. Clique para fixar." : "Fixo — não escala com a receita. Clique para tornar proporcional."}>
                       {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir ingrediente">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
                       <Pencil className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
                       <ArrowUp className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                       <ArrowDown className="w-3 h-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -1111,25 +1111,25 @@ REGRAS:
                   )}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita" : "Fixo — não escala com a receita"}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita. Clique para fixar." : "Fixo — não escala com a receita. Clique para tornar proporcional."}>
                         {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir ingrediente">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
                         <Pencil className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Subir">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
                         <ArrowUp className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Descer">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                         <ArrowDown className="w-3 h-3" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
-                    </div>
-                  </div>
-                  {item.isFixo && fator !== 1 && (
-                    <div className="text-[10px] text-muted-foreground text-right">📌 Quantidade fixa — não escala</div>
+                      </div>
+                      </div>
+                      {item.isFixo && fator !== 1 && (
+                      <div className="text-[10px] text-muted-foreground text-right">📌 Quantidade fixa — não escala</div>
                   )}
                   <div className="flex justify-between mt-2 text-xs items-center">
                     <span className="text-muted-foreground">Quantidade: </span>
