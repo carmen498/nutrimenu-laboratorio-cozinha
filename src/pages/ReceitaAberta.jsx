@@ -474,8 +474,10 @@ REGRAS:
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       {/* Header + Photo */}
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0">
+      <div className="flex items-start gap-0">
+        {/* Left block */}
+        <div className="flex-1 min-w-0 space-y-2 pr-3">
+          {/* Line 1: Name + actions */}
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate("/receitas")}>
               <ArrowLeft className="w-5 h-5" />
@@ -502,7 +504,52 @@ REGRAS:
               <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
             </Button>
           </div>
+          {/* Line 2: Category + base info */}
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{receita.categoria}</Badge>
+            <span className="text-sm text-muted-foreground">
+              Base: {receita.porcoes_base} porções
+              {receita.rendimento_total > 0 && ` · ${formatWeight(receita.rendimento_total, receita.unidade_base)}`}
+            </span>
+          </div>
+          {/* Line 3: Tags */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {receitaTags.map(rt => {
+              const tag = allTags.find(t => t.id === rt.tag_id);
+              if (!tag) return null;
+              return (
+                <TagBadge
+                  key={rt.id}
+                  nome={tag.nome}
+                  cor={tag.cor}
+                  onClick={async () => {
+                    await base44.entities.ReceitaTag.delete(rt.id);
+                    qc.invalidateQueries({ queryKey: ["receita-tags", id] });
+                  }}
+                />
+              );
+            })}
+            <TagSelector
+              selectedIds={receitaTags.map(rt => rt.tag_id)}
+              onToggle={async (tag) => {
+                const exists = receitaTags.find(rt => rt.tag_id === tag.id);
+                if (exists) {
+                  await base44.entities.ReceitaTag.delete(exists.id);
+                } else {
+                  await base44.entities.ReceitaTag.create({
+                    receita_id: id,
+                    tag_id: tag.id,
+                    tag_nome: tag.nome,
+                    tag_grupo: tag.grupo,
+                    tag_cor: tag.cor,
+                  });
+                }
+                qc.invalidateQueries({ queryKey: ["receita-tags", id] });
+              }}
+            />
+          </div>
         </div>
+        {/* Right block: Photo */}
         {receita.foto_url ? (
           <button
             onClick={() => setShowLightbox(true)}
@@ -519,51 +566,6 @@ REGRAS:
             <Camera className="w-8 h-8 text-muted-foreground/60" />
           </button>
         )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Badge variant="secondary">{receita.categoria}</Badge>
-        <span className="text-sm text-muted-foreground">
-          Base: {receita.porcoes_base} porções
-          {receita.rendimento_total > 0 && ` · ${formatWeight(receita.rendimento_total, receita.unidade_base)}`}
-        </span>
-      </div>
-
-      {/* Tags */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {receitaTags.map(rt => {
-          const tag = allTags.find(t => t.id === rt.tag_id);
-          if (!tag) return null;
-          return (
-            <TagBadge
-              key={rt.id}
-              nome={tag.nome}
-              cor={tag.cor}
-              onClick={async () => {
-                await base44.entities.ReceitaTag.delete(rt.id);
-                qc.invalidateQueries({ queryKey: ["receita-tags", id] });
-              }}
-            />
-          );
-        })}
-        <TagSelector
-          selectedIds={receitaTags.map(rt => rt.tag_id)}
-          onToggle={async (tag) => {
-            const exists = receitaTags.find(rt => rt.tag_id === tag.id);
-            if (exists) {
-              await base44.entities.ReceitaTag.delete(exists.id);
-            } else {
-              await base44.entities.ReceitaTag.create({
-                receita_id: id,
-                tag_id: tag.id,
-                tag_nome: tag.nome,
-                tag_grupo: tag.grupo,
-                tag_cor: tag.cor,
-              });
-            }
-            qc.invalidateQueries({ queryKey: ["receita-tags", id] });
-          }}
-        />
       </div>
 
       {/* Portion scaler */}
