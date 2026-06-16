@@ -9,10 +9,14 @@
     "tipo": {
       "type": "string",
       "enum": [
-        "evento",
+        "diario",
+        "semanal",
+        "fim_de_semana",
+        "especial",
+        "comemoracao",
         "marmitas",
         "buffet",
-        "semanal"
+        "happy_hour"
       ],
       "description": "Tipo do card\u00e1pio"
     },
@@ -25,9 +29,14 @@
       "type": "string",
       "description": "Observa\u00e7\u00f5es gerais"
     },
-    "num_pessoas_ou_unidades": {
+    "num_unidades": {
       "type": "number",
-      "description": "N\u00famero de pessoas (evento/buffet) ou unidades (marmitas)"
+      "description": "N\u00famero de pessoas, unidades ou kg conforme o tipo"
+    },
+    "favorito": {
+      "type": "boolean",
+      "default": false,
+      "description": "Card\u00e1pio favorito"
     },
     "custo_total": {
       "type": "number",
@@ -35,7 +44,7 @@
     },
     "custo_por_unidade": {
       "type": "number",
-      "description": "Custo por pessoa/unidade"
+      "description": "Custo por pessoa/unidade/kg"
     },
     "markup_percentual": {
       "type": "number",

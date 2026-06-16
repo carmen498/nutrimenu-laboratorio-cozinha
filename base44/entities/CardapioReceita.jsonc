@@ -20,11 +20,11 @@
     },
     "per_capita_g": {
       "type": "number",
-      "description": "Quantidade per capita em gramas"
+      "description": "Quantidade per capita em gramas (ou kg para buffet)"
     },
     "quantidade_total_g": {
       "type": "number",
-      "description": "Quantidade total calculada em gramas"
+      "description": "Quantidade total calculada (g ou kg conforme tipo)"
     },
     "custo_total": {
       "type": "number",
@@ -45,7 +45,7 @@
         "sabado",
         "domingo"
       ],
-      "description": "Dia da semana (tipo semanal)"
+      "description": "Dia da semana (tipos semanal, diario, fim_de_semana)"
     },
     "refeicao": {
       "type": "string",
@@ -55,7 +55,7 @@
         "lanche",
         "jantar"
       ],
-      "description": "Refei\u00e7\u00e3o (tipo semanal)"
+      "description": "Refei\u00e7\u00e3o (tipos semanal, diario, fim_de_semana)"
     }
   },
   "required": [
