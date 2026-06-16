@@ -186,6 +186,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             quantidade_por_porcao: ing.quantidade_por_porcao,
             pre_preparo: ing.pre_preparo || "",
             ordem: i * 10,
+            proporcional: true,
           });
         }
       }

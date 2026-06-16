@@ -51,6 +51,11 @@
     "subreceita_nome": {
       "type": "string",
       "description": "Nome da sub-receita (cache)"
+    },
+    "proporcional": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indica se o ingrediente escala proporcionalmente com a receita (true) ou tem quantidade fixa (false)"
     }
   },
   "required": [

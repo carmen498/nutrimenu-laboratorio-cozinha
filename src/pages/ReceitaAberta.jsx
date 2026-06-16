@@ -172,12 +172,13 @@ export default function ReceitaAberta() {
         }
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
-        const qtdNova = item.quantidade_por_porcao * (receita?.porcoes_base || 1) * fator;
+        const isFixo = item.proporcional === false;
+        const qtdNova = isFixo ? qtdOriginal : qtdOriginal * fator;
         const fc = ing?.fator_correcao || 1;
         const qtdComprar = qtdNova * fc;
         const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
         const isNA = !!(item.ingrediente_nome && item.ingrediente_nome.toUpperCase() === "N/A");
-        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA };
+        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA, isFixo };
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
@@ -218,6 +219,15 @@ export default function ReceitaAberta() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingQtdId(null);
+    },
+  });
+
+  const toggleProporcionalMut = useMutation({
+    mutationFn: async ({ itemId, proporcional }) => {
+      await base44.entities.IngredienteReceita.update(itemId, { proporcional });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     },
   });
 
@@ -441,6 +451,8 @@ REGRAS:
   };
 
   const temFatorCorrecao = itensFicha.some(i => (i.ing?.fator_correcao || 1) !== 1);
+  const countFixos = itensFicha.filter(i => i.isFixo).length;
+  const showAlertaFixos = (fator > 3 || fator < 0.5) && countFixos > 0;
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatWeight = (g, unit) => {
@@ -590,6 +602,16 @@ REGRAS:
           </div>
         </div>
       </Card>
+
+      {/* Alerta de escalonamento extremo com fixos */}
+      {showAlertaFixos && (
+        <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-800">
+            Esta receita tem <strong>{countFixos} ingrediente(s) com quantidade fixa (📌)</strong>. Verifique se as quantidades fazem sentido para <strong>{porcoes} porções</strong>.
+          </p>
+        </div>
+      )}
 
       {/* Ingredients table */}
       <div>
@@ -997,6 +1019,9 @@ REGRAS:
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita" : "Fixo — não escala com a receita"}>
+                      {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir ingrediente">
                       <Pencil className="w-3 h-3" />
                     </Button>
@@ -1010,6 +1035,11 @@ REGRAS:
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
+                  {item.isFixo && fator !== 1 && (
+                    <div className="col-span-12 text-right">
+                      <span className="text-[10px] text-muted-foreground">📌 Quantidade fixa — não escala</span>
+                    </div>
+                  )}
                 </div>
                 {/* Mobile */}
                 <div className="md:hidden">
@@ -1081,6 +1111,9 @@ REGRAS:
                   )}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Proporcional — escala com a receita" : "Fixo — não escala com a receita"}>
+                        {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
+                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Substituir ingrediente">
                         <Pencil className="w-3 h-3" />
                       </Button>
@@ -1095,6 +1128,9 @@ REGRAS:
                       </Button>
                     </div>
                   </div>
+                  {item.isFixo && fator !== 1 && (
+                    <div className="text-[10px] text-muted-foreground text-right">📌 Quantidade fixa — não escala</div>
+                  )}
                   <div className="flex justify-between mt-2 text-xs items-center">
                     <span className="text-muted-foreground">Quantidade: </span>
                     {editingQtdId === item.id ? (

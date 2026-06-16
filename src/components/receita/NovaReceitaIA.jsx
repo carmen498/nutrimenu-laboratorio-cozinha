@@ -110,7 +110,10 @@ IMPORTANTE:
   6. Despeje em forma untada e polvilhada com cacau em pó.
   7. Asse a 180°C por 20 minutos.
   8. Retire do forno e aguarde esfriar para cortar.
-- ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.`,
+- ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.
+- CLASSIFIQUE cada ingrediente como proporcional (true=escala) ou fixo (false=independente):
+  * PROPORCIONAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata quando ingrediente principal.
+  * FIXO (false): temperos e condimentos (sal, pimenta, colorau, páprica, orégano, ervas, alho, cebola quando tempero), finalizadores (azeite para finalizar, flor de sal, ervas frescas para decorar), ingredientes opcionais/complementares (creme de leite quando complemento, queijo para gratinar, azeitonas, alcaparras), líquidos de ajuste (água para ajustar consistência, caldo para deglaçar).`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -129,7 +132,8 @@ IMPORTANTE:
                   eh_receita_basica: { type: "boolean", description: "True se for uma receita básica, não ingrediente" },
                   pre_preparo: { type: "string" },
                   quantidade_g: { type: "number", description: "Quantidade em gramas ou ml" },
-                  medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" }
+                  medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" },
+                  proporcional: { type: "boolean", description: "Classificação de proporcionalidade (true=escala, false=fixo). Ver regras no prompt." }
                 }
               }
             },
@@ -340,6 +344,7 @@ IMPORTANTE:
           quantidade_por_porcao: qtdPorPorcao,
           medida_caseira: ing.medida_original || "",
           ordem: i,
+          proporcional: ing.proporcional !== false,
         });
       }
 
@@ -452,6 +457,7 @@ IMPORTANTE:
               <div className="flex items-center justify-between mb-2">
                 <Label>Ingredientes identificados</Label>
                 <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">🔗 Proporcional = escala · 📌 Fixo = independente</span>
                   {temZero && (
                     <span className="text-xs text-amber-600 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> Preencha as quantidades faltantes
@@ -530,6 +536,13 @@ IMPORTANTE:
                             {isRecBasica ? <ChefHat className="w-3.5 h-3.5 text-green-600 shrink-0" /> : found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : hasSuggestion ? <AlertCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                             <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
                             {isRecBasica && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1 bg-green-100 text-green-700">Receita</Badge>}
+                            <button
+                              className="text-xs px-1 py-0 rounded hover:bg-accent shrink-0 ml-auto"
+                              onClick={() => updateIngrediente(idx, "proporcional", ing.proporcional !== false ? false : true)}
+                              title={ing.proporcional !== false ? "Proporcional — escala com a receita" : "Fixo — não escala com a receita"}
+                            >
+                              {ing.proporcional !== false ? <span className="text-green-600">🔗</span> : <span className="text-gray-400">📌</span>}
+                            </button>
                           </div>
                           <div className="flex items-center gap-1 ml-5 mt-1">
                             {conv.displayText && (

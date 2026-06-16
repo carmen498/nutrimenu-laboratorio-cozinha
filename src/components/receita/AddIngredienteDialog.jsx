@@ -71,6 +71,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           subreceita_nome: selected.nome,
           quantidade_por_porcao: qtdPorPorcao,
           ordem: existingItems.length,
+          proporcional: true,
         });
         toast.success(`Sub-receita ${selected.nome} adicionada!`);
       } else {
@@ -84,6 +85,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           quantidade_por_porcao: qtdPorPorcao,
           medida_caseira: medidaSel !== "g" && medidaSel !== "ml" ? `${quantidade} ${medidaSel}` : "",
           ordem: existingItems.length,
+          proporcional: true,
         });
         toast.success(`${selected.nome} adicionado!`);
       }

@@ -223,6 +223,7 @@ export default function ExportarReceita() {
                 <span className="flex-[4]">
                   {item.ingrediente_nome || item.ing?.nome || item.subreceita_nome}
                   {item.pre_preparo && <span className="text-muted-foreground"> ({item.pre_preparo})</span>}
+                  {item.proporcional === false && <span className="text-muted-foreground ml-1">📌</span>}
                 </span>
                 <span className="flex-[2.5] text-muted-foreground">{item.medida_caseira || ""}</span>
                 <span className="flex-[1.5]">{formatWeight(item.qtd, receita.unidade_base)}</span>
@@ -305,6 +306,9 @@ export default function ExportarReceita() {
           </>
         )}
 
+        {itensFicha.some(i => i.proporcional === false) && aba !== "custos" && (
+          <p className="text-xs text-muted-foreground mt-3 italic">📌 Ingredientes com quantidade fixa — não variam com o escalonamento da receita</p>
+        )}
         <p className="text-xs text-muted-foreground mt-6 text-center">
           Gerado por Receita na Medida · {new Date().toLocaleDateString("pt-BR")}
         </p>

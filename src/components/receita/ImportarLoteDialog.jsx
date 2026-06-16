@@ -56,6 +56,10 @@ REGRAS DE EXTRAÇÃO:
 
 8. CATEGORIA DA RECEITA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
 
+9. CLASSIFICAÇÃO DE PROPORCIONALIDADE (proporcional: true/false):
+   - PROPORCIONAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata (quando ingrediente principal).
+   - FIXO (false): temperos e condimentos (sal, pimenta, colorau, páprica, orégano, ervas, alho, cebola quando tempero), finalizadores (azeite para finalizar, flor de sal, ervas frescas para decorar), ingredientes opcionais/complementares (creme de leite quando complemento, queijo para gratinar, azeitonas, alcaparras), líquidos de ajuste (água para ajustar consistência, caldo para deglaçar).
+
 CONTEÚDO:
 `;
 
@@ -194,7 +198,8 @@ export default function ImportarLoteDialog({ open, onClose }) {
                   nome: { type: "string" },
                   pre_preparo: { type: "string" },
                   quantidade_g: { type: "number" },
-                  tipo: { type: "string", enum: ["ingrediente", "grupo"] }
+                  tipo: { type: "string", enum: ["ingrediente", "grupo"] },
+                  proporcional: { type: "boolean" }
                 }
               }
             }
@@ -458,6 +463,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
             quantidade_por_porcao: ing.quantidade_g || 0,
             tipo: "ingrediente",
             ordem: ordem++,
+            proporcional: ing.proporcional !== false,
           });
         }
       }
