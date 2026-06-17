@@ -40,7 +40,7 @@ export default function Ingredientes() {
   const { data: ultimoLog } = useQuery({
     queryKey: ["ultimo-log-precos"],
     queryFn: async () => {
-      const logs = await base44.entities.LogAtualizacaoPrecos.list("-data_execucao", 1);
+      const logs = await base44.entities.LogAtualizacaoPrecos.filter({ tipo: "automático" }, "-data_execucao", 1);
       return logs[0] || null;
     },
     staleTime: 5 * 60 * 1000,
@@ -48,7 +48,7 @@ export default function Ingredientes() {
 
   const { data: historicoLogs = [] } = useQuery({
     queryKey: ["historico-log-precos"],
-    queryFn: () => base44.entities.LogAtualizacaoPrecos.list("-data_execucao", 10),
+    queryFn: () => base44.entities.LogAtualizacaoPrecos.filter({ tipo: "automático" }, "-data_execucao", 10),
     enabled: showHistorico,
   });
 
@@ -213,17 +213,25 @@ export default function Ingredientes() {
         </div>
       </div>
 
-      {/* Última atualização automática */}
-      {ultimoLog && (
-        <button
-          onClick={() => setShowHistorico(true)}
-          className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-        >
-          <History className="w-3 h-3" />
-          Última atualização automática: {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
-          <span className="underline ml-0.5">Ver histórico</span>
-        </button>
-      )}
+      {/* Status da atualização automática */}
+      <button
+        onClick={() => setShowHistorico(true)}
+        className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+      >
+        <History className="w-3 h-3" />
+        {ultimoLog ? (
+          <>
+            Atualização automática: toda segunda às 3h · Última execução:{" "}
+            {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
+            {" "}às{" "}
+            {new Date(ultimoLog.data_execucao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+            {" · "}{ultimoLog.total_atualizado} ingredientes atualizados
+          </>
+        ) : (
+          "Atualização automática: toda segunda às 3h · Ainda não executada"
+        )}
+        <span className="underline ml-0.5">Ver histórico</span>
+      </button>
 
       {/* Filters */}
       <div className="flex gap-2">
