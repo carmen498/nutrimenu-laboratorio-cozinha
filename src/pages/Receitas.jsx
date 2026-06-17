@@ -142,9 +142,13 @@ export default function Receitas() {
     },
   });
 
+  // Accordion aberto sem subcategoria → lista vazia (aguarda seleção)
+  const aguardandoSub = accordionAberto && !subcategoriaSelecionada;
+
   const filtered = receitas.filter((r) => {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
+    if (aguardandoSub) return false;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchSub = !subcategoriaSelecionada || r.categoria === subcategoriaSelecionada;
     // Tag filter (AND logic)
@@ -474,8 +478,17 @@ export default function Receitas() {
       {!isLoading && filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ChefHat className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-          <p className="text-lg font-medium">Nenhuma receita encontrada</p>
-          <p className="text-sm mt-1">Crie uma receita ou importe via CSV.</p>
+          {aguardandoSub ? (
+            <>
+              <p className="text-lg font-medium">Selecione uma subcategoria acima</p>
+              <p className="text-sm mt-1">Escolha uma subcategoria no grupo aberto para ver as receitas.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium">Nenhuma receita encontrada</p>
+              <p className="text-sm mt-1">Crie uma receita ou importe via CSV.</p>
+            </>
+          )}
         </div>
       )}
 
