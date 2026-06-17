@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, ChefHat } from "lucide-react";
+import { Search, Plus, ChefHat, Star } from "lucide-react";
 import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 
@@ -41,6 +41,9 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
   const filteredIng = ingredientes.filter(
     (i) => !busca || i.nome?.toLowerCase().includes(busca.toLowerCase())
   );
+
+  const favoritos = !busca ? ingredientes.filter(i => i.favorito).slice(0, 8) : [];
+  const outros = !busca ? filteredIng.filter(i => !i.favorito) : filteredIng;
 
   const filteredRec = receitasBasicas.filter(
     (r) => !busca || r.nome?.toUpperCase().includes(busca.toUpperCase())
@@ -130,7 +133,30 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
                 <Input placeholder="Buscar ingrediente ou sub-receita..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1">
-                {filteredIng.slice(0, 20).map((ing) => (
+                {/* Favoritos — quick suggestions when no search */}
+                {favoritos.length > 0 && (
+                  <>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 pt-1 pb-0.5 tracking-wide flex items-center gap-1">
+                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> Sugestões rápidas (favoritos)
+                    </p>
+                    {favoritos.map((ing) => (
+                      <button
+                        key={`fav-${ing.id}`}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
+                        onClick={() => { setSelected(ing); setSelectedType("ingrediente"); }}
+                      >
+                        <span className="font-medium flex items-center gap-1.5">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+                          {ing.nome}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{ing.categoria}</span>
+                      </button>
+                    ))}
+                    <div className="border-t border-border mx-3 my-1" />
+                  </>
+                )}
+                {/* Todos os ingredientes */}
+                {(busca ? filteredIng : outros).slice(0, 20).map((ing) => (
                   <button
                     key={`ing-${ing.id}`}
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"

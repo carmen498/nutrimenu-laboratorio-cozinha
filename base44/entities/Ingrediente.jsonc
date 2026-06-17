@@ -55,6 +55,11 @@
       "type": "boolean",
       "description": "Flag: Duplicado \u2014 revisar"
     },
+    "favorito": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ingrediente marcado como favorito"
+    },
     "preco_atualizado_em": {
       "type": "string",
       "format": "date-time",
