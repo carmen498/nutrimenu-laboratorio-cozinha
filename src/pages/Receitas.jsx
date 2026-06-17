@@ -214,7 +214,7 @@ export default function Receitas() {
           <Input
             placeholder="Buscar receita..."
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) => { setBusca(e.target.value); setSubcategoriaSelecionada(null); }}
             className="pl-9"
           />
         </div>
@@ -249,7 +249,7 @@ export default function Receitas() {
 
       {/* Todas button + Accordion grid */}
       <button
-        onClick={() => { setAccordionAberto(null); setSubcategoriaSelecionada(null); setShowRevisar(false); setShowFavoritas(false); }}
+        onClick={() => { setAccordionAberto(null); setSubcategoriaSelecionada(null); setBusca(""); setShowRevisar(false); setShowFavoritas(false); }}
         className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
           !accordionAberto && !subcategoriaSelecionada
             ? "border-primary bg-primary/10 text-primary"
@@ -298,6 +298,7 @@ export default function Receitas() {
                     <button
                       key={`${g.nome}-${sub}`}
                       onClick={() => {
+                        setBusca("");
                         if (selecionada) {
                           setSubcategoriaSelecionada(null);
                         } else {
