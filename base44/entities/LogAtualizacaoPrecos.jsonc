@@ -1,0 +1,75 @@
+{
+  "name": "LogAtualizacaoPrecos",
+  "type": "object",
+  "properties": {
+    "data_execucao": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da execu\u00e7\u00e3o"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "autom\u00e1tico",
+        "manual"
+      ],
+      "description": "Tipo de execu\u00e7\u00e3o"
+    },
+    "total_processado": {
+      "type": "number",
+      "description": "Total de ingredientes processados"
+    },
+    "total_atualizado": {
+      "type": "number",
+      "description": "Total de ingredientes atualizados (varia\u00e7\u00e3o > 5%)"
+    },
+    "total_mantido": {
+      "type": "number",
+      "description": "Total de ingredientes mantidos (varia\u00e7\u00e3o \u2264 5%)"
+    },
+    "categorias_processadas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Categorias processadas"
+    },
+    "duracao_segundos": {
+      "type": "number",
+      "description": "Dura\u00e7\u00e3o da execu\u00e7\u00e3o em segundos"
+    },
+    "maiores_altas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "variacao": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Top ingredientes com maior alta"
+    },
+    "maiores_baixas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "variacao": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Top ingredientes com maior baixa"
+    }
+  },
+  "required": [
+    "data_execucao"
+  ]
+}

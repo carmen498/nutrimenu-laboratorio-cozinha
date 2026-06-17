@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2, AlertTriangle, RefreshCw, Clock } from "lucide-react";
+import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, ChevronUp, Settings2, AlertTriangle, RefreshCw, Clock, History } from "lucide-react";
 import { toast } from "sonner";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
+import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtualizacoesDialog";
 
 const CATEGORIAS = [
   "CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS",
@@ -28,11 +29,27 @@ export default function Ingredientes() {
   const [showRevisar, setShowRevisar] = useState(false);
   const [showDesatualizados, setShowDesatualizados] = useState(false);
   const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
+  const [showHistorico, setShowHistorico] = useState(false);
   const qc = useQueryClient();
 
   const { data: ingredientes = [], isLoading } = useQuery({
     queryKey: ["ingredientes"],
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+  });
+
+  const { data: ultimoLog } = useQuery({
+    queryKey: ["ultimo-log-precos"],
+    queryFn: async () => {
+      const logs = await base44.entities.LogAtualizacaoPrecos.list("-data_execucao", 1);
+      return logs[0] || null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: historicoLogs = [] } = useQuery({
+    queryKey: ["historico-log-precos"],
+    queryFn: () => base44.entities.LogAtualizacaoPrecos.list("-data_execucao", 10),
+    enabled: showHistorico,
   });
 
   const saveMut = useMutation({
@@ -196,6 +213,18 @@ export default function Ingredientes() {
         </div>
       </div>
 
+      {/* Última atualização automática */}
+      {ultimoLog && (
+        <button
+          onClick={() => setShowHistorico(true)}
+          className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+        >
+          <History className="w-3 h-3" />
+          Última atualização automática: {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
+          <span className="underline ml-0.5">Ver histórico</span>
+        </button>
+      )}
+
       {/* Filters */}
       <div className="flex gap-2">
         <div className="relative flex-1">
@@ -337,6 +366,13 @@ export default function Ingredientes() {
 
       {/* Update Prices Dialog */}
       <AtualizarPrecosDialog open={showAtualizarPrecos} onClose={() => setShowAtualizarPrecos(false)} ingredientes={ingredientes} />
+
+      {/* Histórico de atualizações automáticas */}
+      <HistoricoAtualizacoesDialog
+        open={showHistorico}
+        onClose={() => setShowHistorico(false)}
+        logs={historicoLogs}
+      />
     </div>
   );
 }
