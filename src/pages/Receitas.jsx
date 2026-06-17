@@ -6,17 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle, Star, Tag, X, Link2, Pin } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle, Star, Tag, X, Link2, Pin, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
+import { CATEGORIAS as CATEGORIAS_RECEITA, GRUPOS, getGrupoFromCategoria, getGrupoStyle } from "@/components/receita/CategoriaPicker";
 
-const CATEGORIAS_RECEITA = [
+// Categorias importadas de @/components/receita/CategoriaPicker
+// (array antigo removido — usar CATEGORIAS_RECEITA do CategoriaPicker)
+
+const ___removed___ = [
   "Entradas, Frias",
   "Entradas, Quentes",
   "Saladas",
@@ -64,6 +67,7 @@ const CATEGORIAS_RECEITA = [
 export default function Receitas() {
   const [busca, setBusca] = useState("");
   const [catFiltro, setCatFiltro] = useState("todas");
+  const [grupoSelecionado, setGrupoSelecionado] = useState(null);
   const [showNew, setShowNew] = useState(null);
   const [showImportCsv, setShowImportCsv] = useState(false);
   const [showClassificarLote, setShowClassificarLote] = useState(false);
@@ -192,13 +196,14 @@ export default function Receitas() {
     if (showFavoritas) return r.favorita === true;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = catFiltro === "todas" || r.categoria === catFiltro;
+    const matchGrupo = !grupoSelecionado || getGrupoFromCategoria(r.categoria) === grupoSelecionado;
     // Tag filter (AND logic)
     if (tagFilterIds.length > 0 && receitaTags.length > 0) {
       const tagsForReceita = receitaTags.filter(rt => rt.receita_id === r.id);
       const matchTags = tagFilterIds.every(tid => tagsForReceita.some(rt => rt.tag_id === tid));
       if (!matchTags) return false;
     }
-    return matchBusca && matchCat;
+    return matchBusca && matchCat && matchGrupo;
   });
 
   // Group by category and sort
@@ -262,7 +267,7 @@ export default function Receitas() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Search + quick filters */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -276,7 +281,7 @@ export default function Receitas() {
         <Button
           variant={showFavoritas ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setCatFiltro("todas"); setBusca(""); }}
+          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setGrupoSelecionado(null); setBusca(""); }}
           className={showFavoritas ? "bg-amber-500 hover:bg-amber-600" : ""}
         >
           <Star className={`w-4 h-4 mr-1 ${showFavoritas ? "fill-white" : ""}`} />
@@ -285,23 +290,12 @@ export default function Receitas() {
         <Button
           variant={showRevisar ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setCatFiltro("todas"); setBusca(""); }}
+          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setGrupoSelecionado(null); setBusca(""); }}
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
           Revisar
         </Button>
-        <Select value={catFiltro} onValueChange={(v) => { setCatFiltro(v); setShowRevisar(false); setShowFavoritas(false); }}>
-        <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas</SelectItem>
-            {CATEGORIAS_RECEITA.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
         <Button
           variant={tagFilterIds.length > 0 ? "default" : "outline"}
           size="sm"
@@ -311,6 +305,41 @@ export default function Receitas() {
           <Tag className="w-4 h-4" /> Tags
           {tagFilterIds.length > 0 && <Badge className="ml-1 h-4 px-1 text-[10px] bg-white text-primary">{tagFilterIds.length}</Badge>}
         </Button>
+      </div>
+
+      {/* Group buttons */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+        <button
+          onClick={() => { setGrupoSelecionado(null); setCatFiltro("todas"); }}
+          className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all border-2 ${
+            !grupoSelecionado && catFiltro === "todas"
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-transparent bg-muted hover:bg-accent text-muted-foreground"
+          }`}
+        >
+          <LayoutGrid className="w-5 h-5" />
+          <span>Todas</span>
+        </button>
+        {GRUPOS.map((g) => {
+          const count = receitas.filter(r => getGrupoFromCategoria(r.categoria) === g.nome).length;
+          const active = grupoSelecionado === g.nome;
+          return (
+            <button
+              key={g.nome}
+              onClick={() => { setGrupoSelecionado(g.nome); setShowRevisar(false); setShowFavoritas(false); setCatFiltro("todas"); }}
+              className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all border-2"
+              style={{
+                backgroundColor: active ? g.cor : undefined,
+                borderColor: active ? g.corTexto : "transparent",
+                color: active ? g.corTexto : undefined,
+              }}
+            >
+              <span className="text-lg leading-none">{g.icone}</span>
+              <span className="text-center leading-tight">{g.nome}</span>
+              {count > 0 && <span className="text-[10px] font-bold opacity-60">{count}</span>}
+            </button>
+          );
+        })}
       </div>
 
       {/* Tag filter panel */}
@@ -361,7 +390,14 @@ export default function Receitas() {
             onClick={() => setExpandedCat(expandedCat === cat ? null : cat)}
           >
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">{cat}</Badge>
+              {(() => {
+                const style = getGrupoStyle(cat);
+                return (
+                  <Badge className="text-xs border-0" style={{ backgroundColor: style.cor, color: style.corTexto }}>
+                    {style.icone} {cat}
+                  </Badge>
+                );
+              })()}
               <span className="text-xs text-muted-foreground">{grouped[cat].length} itens</span>
             </div>
             {expandedCat === cat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
