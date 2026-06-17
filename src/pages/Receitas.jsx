@@ -367,39 +367,94 @@ export default function Receitas() {
         </div>
       </div>
 
-      {/* Tag filter panel */}
+      {/* Active tag pills */}
+      {tagFilterIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {tagFilterIds.map(tid => {
+            const tag = tags.find(t => t.id === tid);
+            return tag ? (
+              <button
+                key={tid}
+                className="text-xs px-2.5 py-1 rounded-full border inline-flex items-center gap-1 hover:opacity-80"
+                style={{
+                  backgroundColor: (() => {
+                    const CORES = {
+                      restricao: "#FFEBEE", metodo: "#E3F2FD", perfil: "#E8F5E9",
+                      contexto: "#F3E5F5", ingrediente: "#FFF3E0", molho: "#FCE4EC"
+                    };
+                    return CORES[tag.grupo] || "#F5F5F5";
+                  })(),
+                  color: (() => {
+                    const CORES = {
+                      restricao: "#C62828", metodo: "#1565C0", perfil: "#2E7D32",
+                      contexto: "#6A1B9A", ingrediente: "#E65100", molho: "#880E4F"
+                    };
+                    return CORES[tag.grupo] || "#616161";
+                  })(),
+                  borderColor: "transparent",
+                  fontWeight: 600,
+                }}
+                onClick={() => setTagFilterIds(prev => prev.filter(id => id !== tid))}
+              >
+                {tag.nome} <X className="w-3 h-3" />
+              </button>
+            ) : null;
+          })}
+          <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground" onClick={() => setTagFilterIds([])}>
+            Limpar todos
+          </Button>
+        </div>
+      )}
+
+      {/* Tag filter panel — organized by groups */}
       {showTagPainel && (
-        <div className="p-3 bg-card border border-border rounded-xl space-y-2">
+        <div className="p-3 bg-card border border-border rounded-xl space-y-3 max-h-80 overflow-y-auto">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filtrar por tags (AND)</span>
-            {tagFilterIds.length > 0 && (
-              <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => setTagFilterIds([])}>
-                <X className="w-3 h-3 mr-1" /> Limpar tags
-              </Button>
-            )}
           </div>
-          <div className="flex flex-wrap gap-1 max-h-32 overflow-y-auto">
-            {tags.map(tag => {
-              const active = tagFilterIds.includes(tag.id);
+          {(() => {
+            const ORDEM_GRUPOS = [
+              { key: "restricao", label: "RESTRIÇÃO", cor: "#C62828", bg: "#FFEBEE" },
+              { key: "metodo", label: "MÉTODO", cor: "#1565C0", bg: "#E3F2FD" },
+              { key: "perfil", label: "PERFIL", cor: "#2E7D32", bg: "#E8F5E9" },
+              { key: "contexto", label: "CONTEXTO", cor: "#6A1B9A", bg: "#F3E5F5" },
+              { key: "ingrediente", label: "INGREDIENTE", cor: "#E65100", bg: "#FFF3E0" },
+              { key: "molho", label: "MOLHO", cor: "#880E4F", bg: "#FCE4EC" },
+            ];
+            return ORDEM_GRUPOS.map(g => {
+              const groupTags = tags.filter(t => t.grupo === g.key);
+              if (groupTags.length === 0) return null;
               return (
-                <button
-                  key={tag.id}
-                  className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background hover:bg-accent border-border"
-                  }`}
-                  onClick={() => {
-                    setTagFilterIds(prev =>
-                      active ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
-                    );
-                  }}
-                >
-                  {tag.nome}
-                </button>
+                <div key={g.key}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: g.cor }}>{g.label}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {groupTags.map(tag => {
+                      const active = tagFilterIds.includes(tag.id);
+                      return (
+                        <button
+                          key={tag.id}
+                          className="text-xs px-2.5 py-1 rounded-full border transition-all"
+                          style={{
+                            backgroundColor: active ? g.cor : g.bg,
+                            color: active ? "#fff" : g.cor,
+                            borderColor: active ? g.cor : "transparent",
+                            fontWeight: active ? 600 : 400,
+                          }}
+                          onClick={() => {
+                            setTagFilterIds(prev =>
+                              active ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                            );
+                          }}
+                        >
+                          {tag.nome}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               );
-            })}
-          </div>
+            });
+          })()}
         </div>
       )}
 
