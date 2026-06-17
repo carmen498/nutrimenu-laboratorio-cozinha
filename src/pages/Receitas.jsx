@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -284,6 +284,10 @@ export default function Receitas() {
                 >
                   {totalGrupo}
                 </Badge>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`}
+                  style={{ opacity: 0.6 }}
+                />
               </button>
               {aberto && (
                 <div className="p-2 flex flex-wrap gap-1.5">
@@ -301,12 +305,15 @@ export default function Receitas() {
                             setSubcategoriaSelecionada(catNome);
                           }
                         }}
-                        className="text-xs px-2.5 py-1 rounded-full border transition-all"
+                        className="text-xs px-2.5 py-1 rounded-full transition-all"
                         style={{
-                          backgroundColor: selecionada ? g.corPill : g.corSub,
-                          borderColor: selecionada ? g.corPillTexto : "transparent",
-                          color: selecionada ? g.corPillTexto : g.corTexto,
-                          fontWeight: selecionada ? 700 : 400,
+                          backgroundColor: g.corPill,
+                          borderColor: selecionada ? g.corPillTexto : g.corPill,
+                          borderWidth: "1px",
+                          borderStyle: "solid",
+                          color: g.corPillTexto,
+                          fontWeight: selecionada ? 700 : 500,
+                          boxShadow: selecionada ? `0 0 0 1px ${g.corPillTexto}` : "none",
                         }}
                       >
                         {sub}
