@@ -289,40 +289,38 @@ export default function Receitas() {
                   style={{ opacity: 0.6 }}
                 />
               </button>
-              {aberto && (
-                <div className="p-2 flex flex-wrap gap-1.5">
-                  {g.subcats.map(sub => {
-                    const catNome = `${g.nome}, ${sub}`;
-                    const count = receitas.filter(r => r.categoria === catNome).length;
-                    const selecionada = subcategoriaSelecionada === catNome;
-                    return (
-                      <button
-                        key={sub}
-                        onClick={() => {
-                          if (selecionada) {
-                            setSubcategoriaSelecionada(null);
-                          } else {
-                            setSubcategoriaSelecionada(catNome);
-                          }
-                        }}
-                        className="text-xs px-2.5 py-1 rounded-full transition-all"
-                        style={{
-                          backgroundColor: g.corPill,
-                          borderColor: selecionada ? g.corPillTexto : g.corPill,
-                          borderWidth: "1px",
-                          borderStyle: "solid",
-                          color: g.corPillTexto,
-                          fontWeight: selecionada ? 700 : 500,
-                          boxShadow: selecionada ? `0 0 0 1px ${g.corPillTexto}` : "none",
-                        }}
-                      >
-                        {sub}
-                        {count > 0 && <span className="ml-1 opacity-60" style={{ fontWeight: 400 }}>{count}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <div className={`p-2 flex flex-wrap gap-1.5 ${aberto ? "" : "hidden"}`}>
+                {g.subcats.map(sub => {
+                  const catNome = `${g.nome}, ${sub}`;
+                  const count = receitas.filter(r => r.categoria === catNome).length;
+                  const selecionada = subcategoriaSelecionada === catNome;
+                  return (
+                    <button
+                      key={`${g.nome}-${sub}`}
+                      onClick={() => {
+                        if (selecionada) {
+                          setSubcategoriaSelecionada(null);
+                        } else {
+                          setSubcategoriaSelecionada(catNome);
+                        }
+                      }}
+                      className="text-xs px-2.5 py-1 rounded-full transition-all inline-flex items-center"
+                      style={{
+                        backgroundColor: g.corPill,
+                        borderColor: selecionada ? g.corPillTexto : "transparent",
+                        borderWidth: "1.5px",
+                        borderStyle: "solid",
+                        color: g.corPillTexto,
+                        fontWeight: selecionada ? 700 : 500,
+                        boxShadow: selecionada ? `0 0 0 1px ${g.corPillTexto}` : "none",
+                      }}
+                    >
+                      {sub}
+                      {count > 0 && <span className="ml-1 opacity-60" style={{ fontWeight: 400 }}>{count}</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
