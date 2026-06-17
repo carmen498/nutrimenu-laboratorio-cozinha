@@ -15,24 +15,25 @@ import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialo
 import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtualizacoesDialog";
 
 const GRUPOS_INGREDIENTES = [
-  { nome: "Carnes",              icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["CARNES"] },
-  { nome: "Peixes e Frutos do Mar", icone: "🐟", cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1", match: ["Peixes e Frutos do Mar"] },
-  { nome: "Laticínios",          icone: "🥛", cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C", match: ["LATICÍNIOS"] },
-  { nome: "Ovos",                icone: "🥚", cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100", match: ["Ovos"] },
-  { nome: "Cereais & Secos",     icone: "🌾", cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723", match: ["CEREAIS & SECOS"] },
-  { nome: "Grãos e Sementes",    icone: "🫘", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20", match: ["GRÃOS E SEMENTES"] },
-  { nome: "Vegetais",            icone: "🥦", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20", match: ["VEGETAIS"] },
-  { nome: "Legumes e Verduras",  icone: "🥕", cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C", match: ["Legumes e Verduras"] },
-  { nome: "Frutas",              icone: "🍎", cor: "#FCE4EC", corTexto: "#880E4F", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["Frutas"] },
-  { nome: "Óleos e Gorduras",    icone: "🫒", cor: "#FFFDE7", corTexto: "#F9A825", corPill: "#FFF176", corPillTexto: "#F57F17", match: ["Óleos e Gorduras"] },
-  { nome: "Temperos",            icone: "🌶️", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["TEMPEROS"] },
-  { nome: "Temperos e Ervas",    icone: "🌿", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20", match: ["Temperos e Ervas"] },
-  { nome: "Doces",               icone: "🍬", cor: "#FCE4EC", corTexto: "#880E4F", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["DOCES"] },
-  { nome: "Conservas e Enlatados",icone:"🥫", cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C", match: ["ENLATADOS", "Conservas e Enlatados"] },
-  { nome: "Refrigerados",        icone: "❄️", cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1", match: ["REFRIGERADOS"] },
-  { nome: "Receitas Básicas",    icone: "🍳", cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E", match: ["Receitas Básicas"] },
-  { nome: "Diversos",            icone: "📦", cor: "#F5F5F5", corTexto: "#424242", corPill: "#E0E0E0", corPillTexto: "#212121", match: ["DIVERSOS"] },
-  { nome: "A Revisar",           icone: "⚠️", cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100", match: ["A Revisar"] },
+  // Reordenado para intercalar famílias de cor — sem cores similares adjacentes
+  { nome: "Carnes",                   icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["CARNES"] },
+  { nome: "Peixes e Frutos do Mar",   icone: "🐟", cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1", match: ["Peixes e Frutos do Mar"] },
+  { nome: "Laticínios",               icone: "🥛", cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C", match: ["LATICÍNIOS"] },
+  { nome: "Ovos",                     icone: "🥚", cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100", match: ["Ovos"] },
+  { nome: "Cereais & Secos",          icone: "🌾", cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723", match: ["CEREAIS & SECOS"] },
+  { nome: "Grãos e Sementes",         icone: "🫘", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20", match: ["GRÃOS E SEMENTES"] },
+  { nome: "Legumes e Verduras",       icone: "🥕", cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C", match: ["Legumes e Verduras"] },
+  { nome: "Doces",                    icone: "🍬", cor: "#FCE4EC", corTexto: "#AD1457", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["DOCES"] },
+  { nome: "Óleos e Gorduras",         icone: "🫒", cor: "#FFFDE7", corTexto: "#F9A825", corPill: "#FFF176", corPillTexto: "#F57F17", match: ["Óleos e Gorduras"] },
+  { nome: "Refrigerados",             icone: "❄️", cor: "#E1F5FE", corTexto: "#0277BD", corPill: "#B3E5FC", corPillTexto: "#01579B", match: ["REFRIGERADOS"] },
+  { nome: "Vegetais",                 icone: "🥦", cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E", match: ["VEGETAIS"] },
+  { nome: "Temperos",                 icone: "🌶️", cor: "#FBE9E7", corTexto: "#BF360C", corPill: "#FFCCBC", corPillTexto: "#A3150B", match: ["TEMPEROS"] },
+  { nome: "Temperos e Ervas",         icone: "🌿", cor: "#E0F2F1", corTexto: "#00695C", corPill: "#B2DFDB", corPillTexto: "#004D40", match: ["Temperos e Ervas"] },
+  { nome: "Frutas",                   icone: "🍎", cor: "#FCE4EC", corTexto: "#880E4F", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["Frutas"] },
+  { nome: "Conservas e Enlatados",    icone: "🥫", cor: "#FFF9C4", corTexto: "#F57F17", corPill: "#FFF176", corPillTexto: "#E65100", match: ["ENLATADOS", "Conservas e Enlatados"] },
+  { nome: "Receitas Básicas",         icone: "🍳", cor: "#F9FBE7", corTexto: "#827717", corPill: "#F0F4C3", corPillTexto: "#33691E", match: ["Receitas Básicas"] },
+  { nome: "Diversos",                 icone: "📦", cor: "#F5F5F5", corTexto: "#424242", corPill: "#E0E0E0", corPillTexto: "#212121", match: ["DIVERSOS"] },
+  { nome: "A Revisar",                icone: "⚠️", cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100", match: ["A Revisar"] },
 ];
 
 const getGrupoFromCategoria = (cat) => {
@@ -352,15 +353,15 @@ export default function Ingredientes() {
                   style={{ backgroundColor: g.cor }}
                 >
                   <button
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors"
-                    style={{ backgroundColor: g.corTexto, color: "#fff" }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:brightness-95"
+                    style={{ backgroundColor: g.cor, color: g.corTexto }}
                     onClick={() => setAccordionAberto(aberto ? null : g.nome)}
                   >
                     <span className="text-lg">{g.icone}</span>
                     <span className="flex-1 text-sm font-semibold">{g.nome}</span>
                     <Badge
                       className="text-[10px] h-5 px-1.5 font-bold border-0"
-                      style={{ backgroundColor: "rgba(255,255,255,0.25)", color: "#fff" }}
+                      style={{ backgroundColor: g.corPill, color: g.corPillTexto }}
                     >
                       {count}
                     </Badge>
