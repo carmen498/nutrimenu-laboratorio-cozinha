@@ -22,6 +22,7 @@ import InsumosSection from "@/components/receita/InsumosSection";
 import IngredientesEsquecidos from "@/components/receita/IngredientesEsquecidos";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import TagBadge from "@/components/tags/TagBadge";
+import TagList from "@/components/tags/TagList";
 import TagSelector from "@/components/tags/TagSelector";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 
@@ -513,22 +514,15 @@ REGRAS:
             </span>
           </div>
           {/* Line 3: Tags */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            {receitaTags.map(rt => {
-              const tag = allTags.find(t => t.id === rt.tag_id);
-              if (!tag) return null;
-              return (
-                <TagBadge
-                  key={rt.id}
-                  nome={tag.nome}
-                  cor={tag.cor}
-                  onClick={async () => {
-                    await base44.entities.ReceitaTag.delete(rt.id);
-                    qc.invalidateQueries({ queryKey: ["receita-tags", id] });
-                  }}
-                />
-              );
-            })}
+          <TagList
+            receitaTags={receitaTags}
+            allTags={allTags}
+            onRemove={async (rt) => {
+              await base44.entities.ReceitaTag.delete(rt.id);
+              qc.invalidateQueries({ queryKey: ["receita-tags", id] });
+            }}
+          />
+          <div className="flex items-center gap-1.5">
             <TagSelector
               selectedIds={receitaTags.map(rt => rt.tag_id)}
               onToggle={async (tag) => {

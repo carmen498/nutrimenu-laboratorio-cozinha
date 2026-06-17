@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Sparkles, Loader2, Wand2 } from "lucide-react";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import TagSelector from "@/components/tags/TagSelector";
+import TagList from "@/components/tags/TagList";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
@@ -171,22 +172,17 @@ ${form.modo_preparo}`,
           </div>
           <div>
             <Label>Tags</Label>
-            <div className="flex flex-wrap items-center gap-1.5 mt-1 mb-2">
-              {receitaTags.map(rt => {
-                const tag = allTags.find(t => t.id === rt.tag_id);
-                if (!tag) return null;
-                return (
-                  <TagBadge
-                    key={rt.id}
-                    nome={tag.nome}
-                    cor={tag.cor}
-                    onClick={async () => {
-                      await base44.entities.ReceitaTag.delete(rt.id);
-                      setReceitaTags(prev => prev.filter(r => r.id !== rt.id));
-                    }}
-                  />
-                );
-              })}
+            <div className="mt-1 mb-2">
+              <TagList
+                receitaTags={receitaTags}
+                allTags={allTags}
+                onRemove={async (rt) => {
+                  await base44.entities.ReceitaTag.delete(rt.id);
+                  setReceitaTags(prev => prev.filter(r => r.id !== rt.id));
+                }}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
               <TagSelector
                 selectedIds={receitaTags.map(rt => rt.tag_id)}
                 onToggle={async (tag) => {
