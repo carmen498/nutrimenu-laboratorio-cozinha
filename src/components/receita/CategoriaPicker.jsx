@@ -63,18 +63,90 @@ export const CATEGORIAS = [
 ];
 
 export const GRUPOS = [
-  { nome: "Acompanhamentos", icone: "🥗", cor: "#E8F5E9", corTexto: "#2E7D32" },
-  { nome: "Carnes",          icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828" },
-  { nome: "Massas",          icone: "🍝", cor: "#FFF8E1", corTexto: "#F57F17" },
-  { nome: "Entradas",        icone: "🥣", cor: "#FFF3E0", corTexto: "#E65100" },
-  { nome: "Lanches",         icone: "🥪", cor: "#FFFDE7", corTexto: "#F9A825" },
-  { nome: "Panificação",     icone: "🍞", cor: "#EFEBE9", corTexto: "#4E342E" },
-  { nome: "Confeitaria",     icone: "🍰", cor: "#FCE4EC", corTexto: "#880E4F" },
-  { nome: "Especialidades",  icone: "⭐", cor: "#F3E5F5", corTexto: "#6A1B9A" },
-  { nome: "Sorvetes e Gelados", icone: "🍦", cor: "#E3F2FD", corTexto: "#1565C0" },
-  { nome: "Bebidas",         icone: "🥤", cor: "#E0F7FA", corTexto: "#006064" },
-  { nome: "Receitas Básicas",icone: "🍳", cor: "#F1F8E9", corTexto: "#558B2F" },
-  { nome: "A Revisar",       icone: "⚠️", cor: "#FFF8E1", corTexto: "#F57F17" },
+  {
+    nome: "Acompanhamentos", icone: "🥗",
+    corHeader: "#E8F5E9", corTexto: "#2E7D32",
+    corPill: "#C8E6C9", corPillTexto: "#1B5E20",
+    corSub: "#F1FBF2",
+    subcats: ["Arroz e Risotos","Legumes e Hortaliças","Grãos e Leguminosas","Complementos","Molhos"]
+  },
+  {
+    nome: "Carnes", icone: "🥩",
+    corHeader: "#FFEBEE", corTexto: "#C62828",
+    corPill: "#FFCDD2", corPillTexto: "#B71C1C",
+    corSub: "#FFF5F5",
+    subcats: ["Aves","Bovina","Suína","Frutos do mar","Peixes","Bacalhau"]
+  },
+  {
+    nome: "Massas", icone: "🍝",
+    corHeader: "#FFF8E1", corTexto: "#F57F17",
+    corPill: "#FFE082", corPillTexto: "#E65100",
+    corSub: "#FFFDF0",
+    subcats: ["Macarrão","Panquecas e Crepes","Pastelão e Quiches"]
+  },
+  {
+    nome: "Entradas", icone: "🥣",
+    corHeader: "#FFF3E0", corTexto: "#E65100",
+    corPill: "#FFD180", corPillTexto: "#BF360C",
+    corSub: "#FFFAF5",
+    subcats: ["Saladas","Sopas, Cremes e Caldos","Aperitivos e Petiscos","Quentes","Mousses, Terrines e Patês"]
+  },
+  {
+    nome: "Lanches", icone: "🥪",
+    corHeader: "#FFFDE7", corTexto: "#F9A825",
+    corPill: "#FFF176", corPillTexto: "#F57F17",
+    corSub: "#FFFFF0",
+    subcats: ["Sanduíches","Pizza","Pastel","Lanche"]
+  },
+  {
+    nome: "Panificação", icone: "🍞",
+    corHeader: "#EFEBE9", corTexto: "#4E342E",
+    corPill: "#D7CCC8", corPillTexto: "#3E2723",
+    corSub: "#F5F0EE",
+    subcats: ["Bolos e Cakes","Pães e Panificação","Salgados e Salgadinhos"]
+  },
+  {
+    nome: "Confeitaria", icone: "🍰",
+    corHeader: "#FCE4EC", corTexto: "#880E4F",
+    corPill: "#F8BBD0", corPillTexto: "#880E4F",
+    corSub: "#FFF0F5",
+    subcats: ["Sobremesas","Tortas","Doces e Docinhos","Chocolates e Trufas","Geléias, Conservas e Compotas"]
+  },
+  {
+    nome: "Especialidades", icone: "⭐",
+    corHeader: "#F3E5F5", corTexto: "#6A1B9A",
+    corPill: "#E1BEE7", corPillTexto: "#4A148C",
+    corSub: "#FAF5FF",
+    subcats: ["Funcionais","Vegetarianas","Veganas","Low Carb","Proteicas","Integrais","Fitness","Internacionais","Regionais","Pastosa"]
+  },
+  {
+    nome: "Sorvetes e Gelados", icone: "🍦",
+    corHeader: "#E3F2FD", corTexto: "#1565C0",
+    corPill: "#BBDEFB", corPillTexto: "#0D47A1",
+    corSub: "#F0F8FF",
+    subcats: ["Sorvetes e Gelados"]
+  },
+  {
+    nome: "Bebidas", icone: "🥤",
+    corHeader: "#E0F7FA", corTexto: "#006064",
+    corPill: "#B2EBF2", corPillTexto: "#006064",
+    corSub: "#F0FFFE",
+    subcats: ["Sucos e Drinks"]
+  },
+  {
+    nome: "Receitas Básicas", icone: "🍳",
+    corHeader: "#F1F8E9", corTexto: "#558B2F",
+    corPill: "#DCEDC8", corPillTexto: "#33691E",
+    corSub: "#F8FFF0",
+    subcats: ["Receitas Básicas"]
+  },
+  {
+    nome: "A Revisar", icone: "⚠️",
+    corHeader: "#FFF8E1", corTexto: "#F57F17",
+    corPill: "#FFE082", corPillTexto: "#E65100",
+    corSub: "#FFFFF0",
+    subcats: ["A Revisar"]
+  },
 ];
 
 /** Extrai o nome do grupo a partir de uma categoria (ex: "Carnes, Aves" → "Carnes") */
@@ -91,7 +163,7 @@ export function getGrupoFromCategoria(cat) {
 export function getGrupoStyle(cat) {
   const grupoNome = getGrupoFromCategoria(cat);
   const grupo = GRUPOS.find(g => g.nome === grupoNome);
-  return grupo || { cor: "#F5F5F5", corTexto: "#616161", icone: "📋" };
+  return grupo ? { cor: grupo.corHeader, corTexto: grupo.corTexto, icone: grupo.icone } : { cor: "#F5F5F5", corTexto: "#616161", icone: "📋" };
 }
 
 export default function CategoriaPicker({ value, onChange }) {
@@ -156,12 +228,12 @@ export default function CategoriaPicker({ value, onChange }) {
           ) : (
             // Grouped mode
             Object.entries(groupedCategories).map(([grupoNome, cats]) => {
-              const style = GRUPOS.find(g => g.nome === grupoNome) || { icone: "📋", cor: "#F5F5F5", corTexto: "#616161" };
+              const style = GRUPOS.find(g => g.nome === grupoNome) || { icone: "📋", corHeader: "#F5F5F5", corTexto: "#616161" };
               return (
                 <div key={grupoNome}>
                   <div
                     className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide flex items-center gap-2 sticky top-0 z-10"
-                    style={{ backgroundColor: style.cor, color: style.corTexto }}
+                    style={{ backgroundColor: style.corHeader, color: style.corTexto }}
                   >
                     <span>{style.icone}</span> {grupoNome}
                   </div>

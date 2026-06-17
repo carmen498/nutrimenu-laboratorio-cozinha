@@ -9,71 +9,22 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, ChevronDown, ChevronUp, AlertTriangle, Star, Tag, X, Link2, Pin, LayoutGrid } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
 import { CATEGORIAS as CATEGORIAS_RECEITA, GRUPOS, getGrupoFromCategoria, getGrupoStyle } from "@/components/receita/CategoriaPicker";
 
-// Categorias importadas de @/components/receita/CategoriaPicker
-// (array antigo removido — usar CATEGORIAS_RECEITA do CategoriaPicker)
-
-const ___removed___ = [
-  "Entradas, Frias",
-  "Entradas, Quentes",
-  "Saladas",
-  "Sopas, Cremes e Caldos",
-  "Carnes, Bovina",
-  "Carnes, Suína",
-  "Carnes, Aves",
-  "Carnes, Peixes",
-  "Carnes, Frutos do mar",
-  "Carnes, Bacalhau",
-  "Acompanhamentos, Arroz e Risotos",
-  "Acompanhamentos, Legumes e Hortaliças",
-  "Acompanhamentos, Grãos e Leguminosas",
-  "Acompanhamentos, Complementos",
-  "Molhos",
-  "Massas",
-  "Tortas e Quiches",
-  "Panquecas e Crepes",
-  "Sanduíches e Lanches",
-  "Petiscos e aperitivos",
-  "Pães e Panificação",
-  "Sorvetos e Gelados",
-  "Bebidas, Sucos e Drinks",
-  "Padaria, Pães e Panificação",
-  "Padaria, Bolos e Cakes",
-  "Padaria, Salgados e Salgadinhos",
-  "Confeitaria, Chocolates e Trufas",
-  "Confeitaria, Doces e Docinhos",
-  "Confeitaria, Geléias, Conservas e Compotas",
-  "Confeitaria, Sobremesas",
-  "Confeitaria, Tortas",
-  "Receitas, Funcionais",
-  "Receitas, Integrais",
-  "Receitas, Low Carb",
-  "Receitas, Proteicas",
-  "Receitas, Vegetarianas",
-  "Receitas, Marmitas e Refeições Completas",
-  "Receitas, Fitness",
-  "Receitas, Internacionais",
-  "Receitas, Pastosa",
-  "Receitas, Regionais",
-  "Receitas, Veganas"
-];
-
 export default function Receitas() {
   const [busca, setBusca] = useState("");
-  const [catFiltro, setCatFiltro] = useState("todas");
-  const [grupoSelecionado, setGrupoSelecionado] = useState(null);
+  const [accordionAberto, setAccordionAberto] = useState(null);
+  const [subcategoriaSelecionada, setSubcategoriaSelecionada] = useState(null);
   const [showNew, setShowNew] = useState(null);
   const [showImportCsv, setShowImportCsv] = useState(false);
   const [showClassificarLote, setShowClassificarLote] = useState(false);
   const [classificarResult, setClassificarResult] = useState(null);
   const [classifying, setClassifying] = useState(false);
-  const [expandedCat, setExpandedCat] = useState(null);
   const [showRevisar, setShowRevisar] = useState(false);
   const [showFavoritas, setShowFavoritas] = useState(false);
   const [tagFilterIds, setTagFilterIds] = useState([]);
@@ -195,15 +146,14 @@ export default function Receitas() {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
-    const matchCat = catFiltro === "todas" || r.categoria === catFiltro;
-    const matchGrupo = !grupoSelecionado || getGrupoFromCategoria(r.categoria) === grupoSelecionado;
+    const matchSub = !subcategoriaSelecionada || r.categoria === subcategoriaSelecionada;
     // Tag filter (AND logic)
     if (tagFilterIds.length > 0 && receitaTags.length > 0) {
       const tagsForReceita = receitaTags.filter(rt => rt.receita_id === r.id);
       const matchTags = tagFilterIds.every(tid => tagsForReceita.some(rt => rt.tag_id === tid));
       if (!matchTags) return false;
     }
-    return matchBusca && matchCat && matchGrupo;
+    return matchBusca && matchSub;
   });
 
   // Group by category and sort
@@ -213,16 +163,6 @@ export default function Receitas() {
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(r);
   });
-
-  // Auto-expand categories when searching
-  useEffect(() => {
-    if (busca) {
-      const catsWithResults = Object.keys(grouped);
-      if (catsWithResults.length === 1) {
-        setExpandedCat(catsWithResults[0]);
-      }
-    }
-  }, [busca]);
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "";
 
@@ -281,7 +221,7 @@ export default function Receitas() {
         <Button
           variant={showFavoritas ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setGrupoSelecionado(null); setBusca(""); }}
+          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setAccordionAberto(null); setSubcategoriaSelecionada(null); setBusca(""); }}
           className={showFavoritas ? "bg-amber-500 hover:bg-amber-600" : ""}
         >
           <Star className={`w-4 h-4 mr-1 ${showFavoritas ? "fill-white" : ""}`} />
@@ -290,7 +230,7 @@ export default function Receitas() {
         <Button
           variant={showRevisar ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setGrupoSelecionado(null); setBusca(""); }}
+          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setAccordionAberto(null); setSubcategoriaSelecionada(null); setBusca(""); }}
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
@@ -307,39 +247,114 @@ export default function Receitas() {
         </Button>
       </div>
 
-      {/* Group buttons */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-        <button
-          onClick={() => { setGrupoSelecionado(null); setCatFiltro("todas"); }}
-          className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all border-2 ${
-            !grupoSelecionado && catFiltro === "todas"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-transparent bg-muted hover:bg-accent text-muted-foreground"
-          }`}
-        >
-          <LayoutGrid className="w-5 h-5" />
-          <span>Todas</span>
-        </button>
-        {GRUPOS.map((g) => {
-          const count = receitas.filter(r => getGrupoFromCategoria(r.categoria) === g.nome).length;
-          const active = grupoSelecionado === g.nome;
+      {/* Todas button + Accordion grid */}
+      <button
+        onClick={() => { setAccordionAberto(null); setSubcategoriaSelecionada(null); setShowRevisar(false); setShowFavoritas(false); }}
+        className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
+          !accordionAberto && !subcategoriaSelecionada
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-transparent bg-muted hover:bg-accent text-muted-foreground"
+        }`}
+      >
+        <LayoutGrid className="w-4 h-4" />
+        Todas as receitas
+        <Badge className="text-[10px] bg-primary/20 text-primary">{totalReceitas}</Badge>
+      </button>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+        {GRUPOS.filter(g => g.subcats.length > 1 || (g.nome !== "Receitas Básicas" && g.nome !== "A Revisar")).map((g) => {
+          const totalGrupo = receitas.filter(r => getGrupoFromCategoria(r.categoria) === g.nome).length;
+          const aberto = accordionAberto === g.nome;
           return (
-            <button
+            <div
               key={g.nome}
-              onClick={() => { setGrupoSelecionado(g.nome); setShowRevisar(false); setShowFavoritas(false); setCatFiltro("todas"); }}
-              className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-xs font-semibold transition-all border-2"
-              style={{
-                backgroundColor: active ? g.cor : undefined,
-                borderColor: active ? g.corTexto : "transparent",
-                color: active ? g.corTexto : undefined,
-              }}
+              className="rounded-xl overflow-hidden border border-border transition-all"
+              style={{ backgroundColor: g.corSub }}
             >
-              <span className="text-lg leading-none">{g.icone}</span>
-              <span className="text-center leading-tight">{g.nome}</span>
-              {count > 0 && <span className="text-[10px] font-bold opacity-60">{count}</span>}
-            </button>
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors"
+                style={{ backgroundColor: g.corHeader, color: g.corTexto }}
+                onClick={() => { setAccordionAberto(aberto ? null : g.nome); setSubcategoriaSelecionada(null); }}
+              >
+                <span className="text-lg">{g.icone}</span>
+                <span className="flex-1 text-sm font-semibold">{g.nome}</span>
+                <Badge
+                  className="text-[10px] h-5 px-1.5 font-bold border-0"
+                  style={{ backgroundColor: g.corPillTexto, color: g.corHeader }}
+                >
+                  {totalGrupo}
+                </Badge>
+              </button>
+              {aberto && (
+                <div className="p-2 flex flex-wrap gap-1.5">
+                  {g.subcats.map(sub => {
+                    const catNome = `${g.nome}, ${sub}`;
+                    const count = receitas.filter(r => r.categoria === catNome).length;
+                    const selecionada = subcategoriaSelecionada === catNome;
+                    return (
+                      <button
+                        key={sub}
+                        onClick={() => {
+                          if (selecionada) {
+                            setSubcategoriaSelecionada(null);
+                          } else {
+                            setSubcategoriaSelecionada(catNome);
+                          }
+                        }}
+                        className="text-xs px-2.5 py-1 rounded-full border transition-all"
+                        style={{
+                          backgroundColor: selecionada ? g.corPill : g.corSub,
+                          borderColor: selecionada ? g.corPillTexto : "transparent",
+                          color: selecionada ? g.corPillTexto : g.corTexto,
+                          fontWeight: selecionada ? 700 : 400,
+                        }}
+                      >
+                        {sub}
+                        {count > 0 && <span className="ml-1 opacity-60" style={{ fontWeight: 400 }}>{count}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
+        {/* Receitas Básicas + A Revisar: half-width cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", gridColumn: "1 / -1" }}>
+          {GRUPOS.filter(g => g.nome === "Receitas Básicas" || g.nome === "A Revisar").map((g) => {
+            const totalGrupo = receitas.filter(r => getGrupoFromCategoria(r.categoria) === g.nome).length;
+            const catNome = `${g.nome}, ${g.subcats[0]}`;
+            const selecionada = subcategoriaSelecionada === catNome;
+            return (
+              <button
+                key={g.nome}
+                className="rounded-xl px-3 py-2.5 text-left transition-all border-2 flex items-center gap-2"
+                style={{
+                  backgroundColor: selecionada ? g.corPill : g.corHeader,
+                  borderColor: selecionada ? g.corPillTexto : "transparent",
+                  color: selecionada ? g.corPillTexto : g.corTexto,
+                }}
+                onClick={() => {
+                  setAccordionAberto(null);
+                  if (selecionada) {
+                    setSubcategoriaSelecionada(null);
+                  } else {
+                    setSubcategoriaSelecionada(catNome);
+                  }
+                }}
+              >
+                <span className="text-base">{g.icone}</span>
+                <span className="flex-1 text-xs font-semibold">{g.nome}</span>
+                <Badge
+                  className="text-[10px] h-5 px-1.5 font-bold border-0"
+                  style={{ backgroundColor: selecionada ? g.corPillTexto : g.corHeader, color: selecionada ? g.corPill : g.corTexto, opacity: 0.8 }}
+                >
+                  {totalGrupo}
+                </Badge>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Tag filter panel */}
@@ -378,83 +393,75 @@ export default function Receitas() {
         </div>
       )}
 
-      {/* Recipe list by category */}
+      {/* Recipe list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
       ) : Object.keys(grouped).sort().map((cat) => (
         <div key={cat}>
-          <button
-            className="w-full flex items-center justify-between py-2 px-1 text-left"
-            onClick={() => setExpandedCat(expandedCat === cat ? null : cat)}
-          >
-            <div className="flex items-center gap-2">
-              {(() => {
-                const style = getGrupoStyle(cat);
-                return (
-                  <Badge className="text-xs border-0" style={{ backgroundColor: style.cor, color: style.corTexto }}>
-                    {style.icone} {cat}
-                  </Badge>
-                );
-              })()}
-              <span className="text-xs text-muted-foreground">{grouped[cat].length} itens</span>
-            </div>
-            {expandedCat === cat ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          {expandedCat === cat && (
-            <div className="space-y-1.5 mb-4">
-              {grouped[cat].sort((a, b) => a.nome?.localeCompare(b.nome)).map((r) => (
-                <Link key={r.id} to={`/receita/${r.id}`}>
-                  <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate">{r.nome}</p>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
-                          <span className="text-xs font-bold text-primary">
-                            {formatCurrency(r.custo_por_porcao)} /porção
-                          </span>
-                        )}
-                        {formatYield(r) && (
-                          <span className="text-xs text-muted-foreground">
-                            Rende {formatYield(r)}
-                          </span>
-                        )}
-                      </div>
+          <div className="flex items-center gap-2 py-2 px-1">
+            {(() => {
+              const style = getGrupoStyle(cat);
+              return (
+                <Badge className="text-xs border-0" style={{ backgroundColor: style.cor, color: style.corTexto }}>
+                  {style.icone} {cat}
+                </Badge>
+              );
+            })()}
+            <span className="text-xs text-muted-foreground">{grouped[cat].length} itens</span>
+          </div>
+          <div className="space-y-1.5 mb-4">
+            {grouped[cat].sort((a, b) => a.nome?.localeCompare(b.nome)).map((r) => (
+              <Link key={r.id} to={`/receita/${r.id}`}>
+                <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate">{r.nome}</p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
+                        <span className="text-xs font-bold text-primary">
+                          {formatCurrency(r.custo_por_porcao)} /porção
+                        </span>
+                      )}
+                      {formatYield(r) && (
+                        <span className="text-xs text-muted-foreground">
+                          Rende {formatYield(r)}
+                        </span>
+                      )}
                     </div>
-                    <button
-                      className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
-                      disabled={favoritarMut.isPending}
-                      title={r.favorita ? "Remover das favoritas" : "Marcar como favorita"}
-                    >
-                      <Star className={`w-4 h-4 ${r.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
-                    </button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="p-1.5 rounded-full hover:bg-muted" onClick={(e) => e.preventDefault()}>
-                          <MoreVertical className="w-4 h-4" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
-                          <BookOpen className="w-4 h-4 mr-2" /> Abrir
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
-                          <Copy className="w-4 h-4 mr-2" /> Duplicar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => {
-                          if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
-                        }}>
-                          <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
+                  </div>
+                  <button
+                    className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
+                    disabled={favoritarMut.isPending}
+                    title={r.favorita ? "Remover das favoritas" : "Marcar como favorita"}
+                  >
+                    <Star className={`w-4 h-4 ${r.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="p-1.5 rounded-full hover:bg-muted" onClick={(e) => e.preventDefault()}>
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
+                        <BookOpen className="w-4 h-4 mr-2" /> Abrir
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
+                        <Copy className="w-4 h-4 mr-2" /> Duplicar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => {
+                        if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
+                      }}>
+                        <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
       ))}
 
