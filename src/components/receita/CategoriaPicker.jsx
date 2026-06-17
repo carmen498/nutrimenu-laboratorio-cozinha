@@ -79,9 +79,9 @@ export const GRUPOS = [
   },
   {
     nome: "Massas", icone: "🍝",
-    corHeader: "#FFF8E1", corTexto: "#F57F17",
-    corPill: "#FFE082", corPillTexto: "#E65100",
-    corSub: "#FFFDF0",
+    corHeader: "#E2DCDC", corTexto: "#5D4037",
+    corPill: "#CFC7C7", corPillTexto: "#5D4037",
+    corSub: "#F7F5F5",
     subcats: ["Macarrão","Panquecas e Crepes","Pastelão e Quiches"]
   },
   {
@@ -128,9 +128,9 @@ export const GRUPOS = [
   },
   {
     nome: "Bebidas", icone: "🥤",
-    corHeader: "#E0F7FA", corTexto: "#006064",
-    corPill: "#B2EBF2", corPillTexto: "#006064",
-    corSub: "#F0FFFE",
+    corHeader: "#C0F2C8", corTexto: "#1B5E20",
+    corPill: "#A5E8AE", corPillTexto: "#1B5E20",
+    corSub: "#F0FFF0",
     subcats: ["Sucos e Drinks"]
   },
   {
