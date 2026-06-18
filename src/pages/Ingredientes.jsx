@@ -3,16 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, Pencil, Trash2, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid } from "lucide-react";
+import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtualizacoesDialog";
+import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
 
 const GRUPOS_INGREDIENTES = [
   // Reordenado para intercalar famílias de cor — sem cores similares adjacentes
@@ -55,6 +55,7 @@ export default function Ingredientes() {
   const [showFavoritos, setShowFavoritos] = useState(false);
   const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
   const [showHistorico, setShowHistorico] = useState(false);
+  const [buscaInterna, setBuscaInterna] = useState("");
   const qc = useQueryClient();
 
   const { data: ingredientes = [], isLoading } = useQuery({
@@ -175,17 +176,6 @@ export default function Ingredientes() {
   }, [ingredientes, showDesatualizados, showRevisar, showFavoritos, busca, accordionAberto]);
 
   const countDesatualizados = useMemo(() => ingredientes.filter(i => isDesatualizado(i)).length, [ingredientes]);
-
-  // Group by grupo for accordion display
-  const groupedByGrupo = useMemo(() => {
-    const map = {};
-    filtered.forEach((i) => {
-      const g = getGrupoFromCategoria(i.categoria);
-      if (!map[g]) map[g] = [];
-      map[g].push(i);
-    });
-    return map;
-  }, [filtered]);
 
   const formatPrice = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "—";
 
@@ -345,17 +335,22 @@ export default function Ingredientes() {
             {GRUPOS_INGREDIENTES.map((g) => {
               const count = ingredientes.filter(i => getGrupoFromCategoria(i.categoria) === g.nome).length;
               const aberto = accordionAberto === g.nome;
-              const items = groupedByGrupo[g.nome] || [];
               return (
                 <div
                   key={g.nome}
-                  className="rounded-xl overflow-hidden border border-border transition-all"
-                  style={{ backgroundColor: g.cor }}
+                  className="rounded-xl overflow-hidden transition-all"
+                  style={{
+                    backgroundColor: g.cor,
+                    border: aberto ? `2px solid ${g.corTexto}` : "1px solid hsl(var(--border))",
+                  }}
                 >
                   <button
                     className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:brightness-95"
                     style={{ backgroundColor: g.cor, color: g.corTexto }}
-                    onClick={() => setAccordionAberto(aberto ? null : g.nome)}
+                    onClick={() => {
+                      setAccordionAberto(aberto ? null : g.nome);
+                      setBuscaInterna("");
+                    }}
                   >
                     <span className="text-lg">{g.icone}</span>
                     <span className="flex-1 text-sm font-semibold">{g.nome}</span>
@@ -367,77 +362,27 @@ export default function Ingredientes() {
                     </Badge>
                     <ChevronDown
                       className={`w-4 h-4 shrink-0 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`}
-                      style={{ opacity: 0.7 }}
+                      style={{ opacity: aberto ? 1 : 0.5 }}
                     />
                   </button>
-                  <div className={aberto ? "" : "hidden"}>
-                    {aberto && items.length > 0 ? (
-                      <div className="p-2 space-y-1.5 max-h-96 overflow-y-auto">
-                        {items.sort((a, b) => a.nome?.localeCompare(b.nome)).map((ing) => (
-                          <Card key={ing.id} className="p-3 flex items-center justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-sm truncate">
-                                {ing.nome}
-                                {(ing.fator_correcao && ing.fator_correcao !== 1.0) && (
-                                  <span className="ml-1.5 text-xs text-muted-foreground font-normal">
-                                    FC {String(ing.fator_correcao).replace(".", ",")}
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatIngredientPrice(ing)}
-                              </p>
-                              {ing.preco_atualizado_em ? (
-                                <p className={`text-[10px] mt-0.5 flex items-center gap-1 ${
-                                  diasDesdeAtualizacao(ing) <= 30 ? "text-green-600" :
-                                  diasDesdeAtualizacao(ing) <= 90 ? "text-amber-600" : "text-red-600"
-                                }`}>
-                                  {diasDesdeAtualizacao(ing) <= 30 ? "🟢" : diasDesdeAtualizacao(ing) <= 90 ? "🟡" : "🔴"}
-                                  Atualizado {new Date(ing.preco_atualizado_em).toLocaleDateString("pt-BR")}
-                                  {diasDesdeAtualizacao(ing) > 90 && <Badge className="text-[9px] px-1 py-0 bg-red-100 text-red-700 border-red-200 ml-1">Desatualizado</Badge>}
-                                </p>
-                              ) : ing.preco_por_g_rs > 0 && (
-                                <p className="text-[10px] text-gray-400 mt-0.5">⚪ Sem data de atualização</p>
-                              )}
-                            </div>
-                            <div className="flex gap-1 items-center">
-                              <button
-                                className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
-                                onClick={(e) => { e.stopPropagation(); favoritarMut.mutate({ id: ing.id, favorito: !ing.favorito }); }}
-                                disabled={favoritarMut.isPending}
-                                title={ing.favorito ? "Remover dos favoritos" : "Marcar como favorito"}
-                              >
-                                <Star className={`w-3.5 h-3.5 ${ing.favorito ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
-                              </button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditItem(ing); setShowForm(true); }}>
-                                <Pencil className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => {
-                                if (confirm("Excluir " + ing.nome + "?")) delMut.mutate(ing.id);
-                              }}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : aberto ? (
-                      <div className="p-6 text-center text-sm text-muted-foreground">
-                        Nenhum ingrediente nesta categoria.
-                      </div>
-                    ) : null}
-                  </div>
                 </div>
               );
             })}
           </div>
 
-          {filtered.length === 0 && !accordionAberto && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-lg font-medium">Nenhum ingrediente encontrado</p>
-              <p className="text-sm mt-1">Importe um CSV ou cadastre manualmente.</p>
-            </div>
-          )}
+          {/* Listagem compacta abaixo do grid */}
+          <ListaIngredientes
+            ingredientes={filtered}
+            accordionAberto={accordionAberto}
+            buscaInterna={buscaInterna}
+            setBuscaInterna={setBuscaInterna}
+            diasDesdeAtualizacao={diasDesdeAtualizacao}
+            formatIngredientPrice={formatIngredientPrice}
+            favoritarMut={favoritarMut}
+            delMut={delMut}
+            setEditItem={setEditItem}
+            setShowForm={setShowForm}
+          />
         </>
       )}
 
