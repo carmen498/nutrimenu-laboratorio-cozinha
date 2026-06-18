@@ -8,7 +8,8 @@ const ORDEM_GRUPO = {
   contexto: 2,
   ingrediente: 3,
   molho: 4,
-  restricao: 5,
+  outras: 5,
+  restricao: 6,
 };
 
 const MAX_RESTRICOES = 3;
