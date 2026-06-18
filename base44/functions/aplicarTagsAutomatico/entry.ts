@@ -6,13 +6,11 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Carregar tudo em memória
     const receitas = await base44.asServiceRole.entities.Receita.list('-nome', 2000);
     const tags = await base44.asServiceRole.entities.Tag.list('nome', 200);
     const tagMap = {};
     tags.forEach(t => { tagMap[t.nome] = t; });
 
-    // Buscar todos os ingredientes de receita
     let allIngs = [];
     let skip = 0;
     while (true) {
@@ -24,7 +22,6 @@ Deno.serve(async (req) => {
       await new Promise(r => setTimeout(r, 200));
     }
 
-    // Buscar todas as tags de receita existentes
     let allRts = [];
     skip = 0;
     while (true) {
@@ -36,7 +33,6 @@ Deno.serve(async (req) => {
       await new Promise(r => setTimeout(r, 200));
     }
 
-    // Indexar por receita_id
     const ingsByReceita = {};
     allIngs.forEach(ing => {
       if (!ingsByReceita[ing.receita_id]) ingsByReceita[ing.receita_id] = [];
@@ -63,57 +59,83 @@ Deno.serve(async (req) => {
       const categoria = receita.categoria || '';
 
       const existingTagNames = new Set((tagsByReceita[receita.id] || []).map(rt => rt.tag_nome));
-
       const tagsToAdd = new Set();
 
-      // --- INGREDIENT RULES ---
+      // --- DETECÇÃO DE CARNES ---
       const carnes = ['frango', 'peru', 'chester', 'carne', 'bovina', 'suína', 'porco', 'bacon', 'presunto',
         'peixe', 'salmão', 'tilápia', 'bacalhau', 'camarão', 'atum', 'sardinha',
         'linguiça', 'calabresa', 'mortadela', 'salame', 'lombo', 'picanha', 'alcatra', 'coxão',
         'filé mignon', 'costela', 'cupim', 'fraldinha', 'maminha', 'pato', 'cordeiro', 'cabrito'];
       const hasCarne = carnes.some(c => todosNomes.includes(c));
-      if (!hasCarne && !existingTagNames.has('Vegetariana')) tagsToAdd.add('Vegetariana');
 
+      // --- DETECÇÃO DE LATICÍNIOS ---
       const laticinios = ['leite', 'queijo', 'creme de leite', 'manteiga', 'iogurte', 'nata',
         'requeijão', 'cream cheese', 'ricota', 'mozarela', 'parmesão', 'gorgonzola', 'catupiry',
         'coalhada', 'doce de leite', 'leite condensado'];
       const hasLaticinio = laticinios.some(l => todosNomes.includes(l));
       const hasOvo = todosNomes.includes('ovo') || todosNomes.includes('ovos');
 
-      if (!hasLaticinio && !existingTagNames.has('Sem lactose')) tagsToAdd.add('Sem lactose');
-
-      const gluten = ['farinha de trigo', 'macarrão', 'pão', 'farinha de rosca', 'panco'];
+      // --- DETECÇÃO DE GLÚTEN ---
+      const gluten = ['farinha de trigo', 'macarrão', 'pão', 'farinha de rosca', 'panco', 'farinha'];
       const hasGluten = gluten.some(g => todosNomes.includes(g));
-      if (!hasGluten && !existingTagNames.has('Sem glúten')) tagsToAdd.add('Sem glúten');
 
-      if (!todosNomes.includes('cebola') && !todosNomes.includes('cebolinha') && !existingTagNames.has('Sem cebola')) tagsToAdd.add('Sem cebola');
-      if (!todosNomes.includes('alho') && !existingTagNames.has('Sem alho')) tagsToAdd.add('Sem alho');
-      if (!todosNomes.includes('pimentão') && !existingTagNames.has('Sem pimentão')) tagsToAdd.add('Sem pimentão');
-      if (!todosNomes.includes('pimenta') && !existingTagNames.has('Sem pimenta')) tagsToAdd.add('Sem pimenta');
-      if (!hasOvo && !existingTagNames.has('Sem ovos')) tagsToAdd.add('Sem ovos');
+      // --- DETECÇÃO DE MOLHOS ---
+      const hasTomate = todosNomes.includes('tomate') || todosNomes.includes('molho de tomate') ||
+        todosNomes.includes('extrato de tomate') || todosNomes.includes('passata');
+      const hasCreme = todosNomes.includes('creme de leite') || todosNomes.includes('leite') || todosNomes.includes('manteiga');
+      const hasShoyu = todosNomes.includes('shoyu') || todosNomes.includes('molho de soja');
+      const hasCacau = todosNomes.includes('cacau') || todosNomes.includes('chocolate') ||
+        todosNomes.includes('café') || todosNomes.includes('vinho tinto');
+
+      // --- REGRAS DE TAGS ---
+
+      // Molhos
+      if (hasTomate && !existingTagNames.has('Molho vermelho')) tagsToAdd.add('Molho vermelho');
+      if (!hasTomate && hasCreme && !existingTagNames.has('Molho branco')) tagsToAdd.add('Molho branco');
+      if (hasShoyu || hasCacau) {
+        if (!existingTagNames.has('Molho escuro')) tagsToAdd.add('Molho escuro');
+      }
+
+      // Ingrediente principal
+      if (todosNomes.includes('carne moída') && !existingTagNames.has('Carne moída')) tagsToAdd.add('Carne moída');
+
+      // Restrições
+      if (!hasCarne && !existingTagNames.has('Vegetariana')) tagsToAdd.add('Vegetariana');
+      if (!hasGluten && !existingTagNames.has('Sem glúten')) tagsToAdd.add('Sem glúten');
+      if (!hasLaticinio && !existingTagNames.has('Sem lactose')) tagsToAdd.add('Sem lactose');
 
       const hasAcucar = todosNomes.includes('açúcar') || todosNomes.includes('acucar') ||
         todosNomes.includes('mel') || todosNomes.includes('adoçante');
       if (!hasAcucar && !existingTagNames.has('Sem açúcar')) tagsToAdd.add('Sem açúcar');
+      if (!hasOvo && !existingTagNames.has('Sem ovos')) tagsToAdd.add('Sem ovos');
+      if (!todosNomes.includes('pimenta') && !existingTagNames.has('Sem pimenta')) tagsToAdd.add('Sem pimenta');
 
-      // --- MODO PREPARO RULES ---
-      if (modoPrepFull.includes('air fryer') && !existingTagNames.has('Air Fryer')) tagsToAdd.add('Air Fryer');
+      // Fit = sem açúcar + sem farinha de trigo + categoria fitness/funcional/low carb
+      if (!hasAcucar && !hasGluten && 
+          (categoria.includes('Fitness') || categoria.includes('Funcionais') || categoria.includes('Low Carb')) &&
+          !existingTagNames.has('Fit')) {
+        tagsToAdd.add('Fit');
+      }
+
+      // Para diabéticos = sem açúcar + sem farinha de trigo
+      if (!hasAcucar && !hasGluten && !existingTagNames.has('Para diabéticos')) {
+        tagsToAdd.add('Para diabéticos');
+      }
+
+      // Vegana (categoria)
+      if (categoria.includes('Veganas') && !existingTagNames.has('Vegana')) tagsToAdd.add('Vegana');
+      if (categoria.includes('Low Carb') && !existingTagNames.has('Low carb')) tagsToAdd.add('Low carb');
+
+      // Método de cocção
       if (modoPrepFull.includes('forno') && !existingTagNames.has('Forno')) tagsToAdd.add('Forno');
-      if ((modoPrepFull.includes('vapor') || modoPrepFull.includes('cozinhar no vapor')) && !existingTagNames.has('Vapor')) tagsToAdd.add('Vapor');
       if (modoPrepFull.includes('grelh') && !existingTagNames.has('Grelhado')) tagsToAdd.add('Grelhado');
-      if (modoPrepFull.includes('frit') && !existingTagNames.has('Frito')) tagsToAdd.add('Frito');
-      const hasCozido = !modoPrepFull.includes('forno') && !modoPrepFull.includes('vapor') && !modoPrepFull.includes('grelh');
-      if ((modoPrepFull.includes('cozinhar') || modoPrepFull.includes('cozido')) && hasCozido && !existingTagNames.has('Cozido')) {
+      if ((modoPrepFull.includes('cozinhar') || modoPrepFull.includes('cozido')) &&
+          !modoPrepFull.includes('forno') && !modoPrepFull.includes('grelh') &&
+          !existingTagNames.has('Cozido')) {
         tagsToAdd.add('Cozido');
       }
 
-      // --- CATEGORIA RULES ---
-      if (categoria.includes('Funcionais') && !existingTagNames.has('Funcional')) tagsToAdd.add('Funcional');
-      if (categoria.includes('Low Carb') && !existingTagNames.has('Low carb')) tagsToAdd.add('Low carb');
-      if (categoria.includes('Proteicas') && !existingTagNames.has('Proteica')) tagsToAdd.add('Proteica');
-      if (categoria.includes('Integrais') && !existingTagNames.has('Integral')) tagsToAdd.add('Integral');
-      if (categoria.includes('Vegetarianas') && !existingTagNames.has('Vegetariana')) tagsToAdd.add('Vegetariana');
-      if (categoria.includes('Veganas') && !existingTagNames.has('Vegana')) tagsToAdd.add('Vegana');
+      // Outras categorias
       if (categoria.includes('Fitness') && !existingTagNames.has('Fitness')) tagsToAdd.add('Fitness');
 
       for (const tagNome of tagsToAdd) {
@@ -130,13 +152,13 @@ Deno.serve(async (req) => {
       if (tagsToAdd.size > 0) receitasMarcadas++;
     }
 
-    // Bulk create em lotes
+    // Bulk create em lotes com pausa
     let totalTagsAdded = 0;
     for (let i = 0; i < toCreate.length; i += 50) {
       const batch = toCreate.slice(i, i + 50);
       await base44.asServiceRole.entities.ReceitaTag.bulkCreate(batch);
       totalTagsAdded += batch.length;
-      if (i + 50 < toCreate.length) await new Promise(r => setTimeout(r, 500));
+      if (i + 50 < toCreate.length) await new Promise(r => setTimeout(r, 800));
     }
 
     return Response.json({

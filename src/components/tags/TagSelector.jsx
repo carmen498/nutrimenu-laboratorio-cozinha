@@ -21,6 +21,9 @@ const GRUPO_ORDER = ["molho", "ingrediente", "perfil", "metodo", "restricao", "c
 export default function TagSelector({ selectedIds, onToggle, triggerLabel = "Adicionar tag" }) {
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState("");
+  const [novaTag, setNovaTag] = useState("");
+  const [criando, setCriando] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: allTags = [] } = useQuery({
     queryKey: ["tags"],
@@ -44,6 +47,29 @@ export default function TagSelector({ selectedIds, onToggle, triggerLabel = "Adi
   const selectedTags = useMemo(() => {
     return allTags.filter(t => selectedIds.includes(t.id));
   }, [allTags, selectedIds]);
+
+  const criarTag = async () => {
+    const nome = novaTag.trim();
+    if (!nome || criando) return;
+    setCriando(true);
+    try {
+      const criada = await base44.entities.Tag.create({ nome, grupo: "outras" });
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
+      onToggle(criada);
+      setNovaTag("");
+    } catch (e) {
+      // ignora duplicatas
+    } finally {
+      setCriando(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      criarTag();
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -97,6 +123,24 @@ export default function TagSelector({ selectedIds, onToggle, triggerLabel = "Adi
             {Object.keys(grouped).length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-4">Nenhuma tag encontrada</p>
             )}
+            <div className="border-t pt-2 mt-1">
+              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 px-1">
+                Outras (digite livremente)
+              </p>
+              <div className="flex gap-1">
+                <Input
+                  placeholder="Nova tag..."
+                  value={novaTag}
+                  onChange={e => setNovaTag(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className="h-8 text-xs"
+                  disabled={criando}
+                />
+                <Button size="sm" className="h-8 text-xs shrink-0" onClick={criarTag} disabled={!novaTag.trim() || criando}>
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         </PopoverContent>
       </Popover>
