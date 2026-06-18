@@ -15,14 +15,16 @@ export default function PerCapita() {
 
   const itensFiltrados = useMemo(() => {
     let currentGrupo = "";
+    let grupoJaAdicionado = false;
     const results = [];
 
     for (const item of percapitaData) {
       if (item.tipo === "grupo") {
         currentGrupo = item.nome;
-        // Inclui o cabeçalho se não houver filtro de grupo ou se for o grupo selecionado
+        grupoJaAdicionado = false;
         if (!filtroGrupo || filtroGrupo === currentGrupo) {
           results.push(item);
+          grupoJaAdicionado = true;
         }
         continue;
       }
@@ -35,16 +37,15 @@ export default function PerCapita() {
         const s = search.toLowerCase();
         const match =
           String(item.prep || "").toLowerCase().includes(s) ||
-          String(item.cat || "").toLowerCase().includes(s) ||
           String(item.medida || "").toLowerCase().includes(s) ||
           String(currentGrupo || "").toLowerCase().includes(s);
         if (!match) continue;
       }
 
       // Garante que o cabeçalho do grupo apareça uma única vez antes dos itens
-      const last = results[results.length - 1];
-      if (!last || last.tipo !== "grupo" || last.nome !== currentGrupo) {
+      if (!grupoJaAdicionado) {
         results.push({ tipo: "grupo", nome: currentGrupo });
+        grupoJaAdicionado = true;
       }
 
       results.push(item);
