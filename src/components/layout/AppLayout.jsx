@@ -23,7 +23,7 @@ export default function AppLayout() {
       <header className="sticky top-0 z-50 bg-primary text-primary-foreground">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
-            <span className="font-display text-lg font-bold tracking-tight">Receita na Medida</span>
+            <span className="font-display text-lg font-bold tracking-tight">Laboratório de Cozinha</span>
           </Link>
           <div className="flex items-center gap-2">
             {/* Desktop nav */}

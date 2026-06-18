@@ -205,9 +205,9 @@ Acesse o app para revisar.`;
           try {
             await base44.asServiceRole.integrations.Core.SendEmail({
               to: admin.email,
-              subject: `Receita na Medida · Atualização automática de preços — ${dataFormatada}`,
+              subject: `Laboratório de Cozinha · Atualização automática de preços — ${dataFormatada}`,
               body: emailBody,
-              from_name: "Receita na Medida"
+              from_name: "Laboratório de Cozinha"
             });
           } catch (e) {
             // Skip email errors

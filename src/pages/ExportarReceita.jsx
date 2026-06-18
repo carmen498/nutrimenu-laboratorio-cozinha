@@ -310,7 +310,7 @@ export default function ExportarReceita() {
           <p className="text-xs text-muted-foreground mt-3 italic">📌 Ingredientes 'a gosto' — quantidade fixa, não variam com o escalonamento.</p>
         )}
         <p className="text-xs text-muted-foreground mt-6 text-center">
-          Gerado por Receita na Medida · {new Date().toLocaleDateString("pt-BR")}
+          Gerado por Laboratório de Cozinha · Gastronomia Planejada · {new Date().toLocaleDateString("pt-BR")}
         </p>
       </Card>
 
