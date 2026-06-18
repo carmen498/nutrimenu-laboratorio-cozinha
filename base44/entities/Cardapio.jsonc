@@ -16,7 +16,8 @@
         "comemoracao",
         "marmitas",
         "buffet",
-        "happy_hour"
+        "happy_hour",
+        "personalizado"
       ],
       "description": "Tipo do card\u00e1pio"
     },

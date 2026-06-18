@@ -24,6 +24,7 @@ const TIPOS_CARDAPIO = [
   { nome: "Marmitas",      key: "marmitas",      icone: "📦", cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723" },
   { nome: "Buffet",        key: "buffet",        icone: "⚖️", cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C" },
   { nome: "Happy Hour",    key: "happy_hour",    icone: "🍹", cor: "#E0F7FA", corTexto: "#006064", corPill: "#B2DFDB", corPillTexto: "#004D40" },
+  { nome: "Personalizado", key: "personalizado", icone: "✏️", cor: "#F5F5F5", corTexto: "#424242", corPill: "#E0E0E0", corPillTexto: "#424242" },
 ];
 
 const TIPO_MAP = Object.fromEntries(TIPOS_CARDAPIO.map(t => [t.key, t]));
@@ -31,7 +32,7 @@ const TIPO_MAP = Object.fromEntries(TIPOS_CARDAPIO.map(t => [t.key, t]));
 const LABEL_UNIDADE = {
   diario: "pessoas", semanal: "pessoas", fim_de_semana: "pessoas",
   especial: "pessoas", comemoracao: "convidados", marmitas: "marmitas",
-  buffet: "kg", happy_hour: "pessoas",
+  buffet: "kg", happy_hour: "pessoas", personalizado: "unidades",
 };
 
 export default function Cardapios() {
