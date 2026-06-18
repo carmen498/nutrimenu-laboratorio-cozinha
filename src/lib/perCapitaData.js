@@ -234,8 +234,71 @@ for (const item of percapitaDataRaw) {
   }
 }
 
-/** Sugere per capita (g) com base no nome da receita e/ou categoria */
+// ── Mapa de vínculo categoria → per capita ──
+// Referência: Tabela Nutrimenu · Carmen S. Reinstein · Receita na Medida · 2026
+export const PERCAPITA_POR_CATEGORIA = {
+  "Acompanhamentos, Arroz e Risotos":      { g: 150, medida: "4 colheres de sopa" },
+  "Acompanhamentos, Legumes e Hortaliças": { g: 120, medida: "3 colheres de sopa cheia" },
+  "Acompanhamentos, Grãos e Leguminosas":  { g: 120, medida: "1 concha média" },
+  "Acompanhamentos, Complementos":         { g: 50,  medida: "2 colheres de sopa" },
+  "Acompanhamentos, Molhos":               { g: 50,  medida: "3 colheres de sopa" },
+  "Carnes, Aves":                          { g: 150, medida: "1 peça ou filé" },
+  "Carnes, Bacalhau":                      { g: 200, medida: "4 colheres de mesa" },
+  "Carnes, Bovina":                        { g: 150, medida: "1 unidade média" },
+  "Carnes, Frutos do mar":                 { g: 200, medida: "4 colheres de mesa" },
+  "Carnes, Peixes":                        { g: 150, medida: "1 filé médio" },
+  "Carnes, Suína":                         { g: 150, medida: "1 unidade média" },
+  "Massas, Macarrão":                      { g: 250, medida: "2 xícaras médias" },
+  "Massas, Panquecas e Crepes":            { g: 250, medida: "2 unidades médias" },
+  "Massas, Pastelão e Quiches":            { g: 200, medida: "1 fatia média" },
+  "Entradas, Mousses, Terrines e Patês":   { g: 120, medida: "1 prato de entrada" },
+  "Entradas, Quentes":                     { g: 120, medida: "1 concha pequena" },
+  "Entradas, Saladas":                     { g: 120, medida: "1 prato cheio" },
+  "Entradas, Sopas, Cremes e Caldos":      { g: 150, medida: "1 concha pequena" },
+  "Entradas, Aperitivos e Petiscos":       { g: 25,  medida: "3 a 5 unidades" },
+  "Lanches, Sanduíches":                   { g: 150, medida: "1 unidade comercial" },
+  "Lanches, Pizza":                        { g: 200, medida: "2 fatias" },
+  "Lanches, Pastel":                       { g: 35,  medida: "1 unidade" },
+  "Lanches, Lanche":                       { g: 150, medida: "1 unidade" },
+  "Panificação, Bolos e Cakes":            { g: 80,  medida: "1 fatia" },
+  "Panificação, Pães e Panificação":       { g: 50,  medida: "1 unidade" },
+  "Panificação, Salgados e Salgadinhos":   { g: 35,  medida: "1 unidade" },
+  "Confeitaria, Chocolates e Trufas":      { g: 20,  medida: "1 unidade" },
+  "Confeitaria, Doces e Docinhos":         { g: 15,  medida: "1 unidade" },
+  "Confeitaria, Geléias, Conservas e Compotas": { g: 30, medida: "1 colher de sopa" },
+  "Confeitaria, Sobremesas":               { g: 120, medida: "1 taça ou prato" },
+  "Confeitaria, Tortas":                   { g: 120, medida: "1 fatia média" },
+  "Especialidades, Funcionais":            { g: 150, medida: "1 porção" },
+  "Especialidades, Integrais":             { g: 150, medida: "1 porção" },
+  "Especialidades, Low Carb":              { g: 200, medida: "1 porção" },
+  "Especialidades, Proteicas":             { g: 200, medida: "1 porção" },
+  "Especialidades, Vegetarianas":          { g: 150, medida: "1 porção" },
+  "Especialidades, Fitness":              { g: 150, medida: "1 porção" },
+  "Especialidades, Internacionais":        { g: 200, medida: "1 porção" },
+  "Especialidades, Pastosa":              { g: 150, medida: "1 porção" },
+  "Especialidades, Regionais":             { g: 200, medida: "1 porção" },
+  "Especialidades, Veganas":              { g: 150, medida: "1 porção" },
+  "Sorvetes e Gelados":                    { g: 150, medida: "1 pote de sobremesa" },
+  "Bebidas, Sucos e Drinks":              { g: 200, medida: "1 copo (200ml)" },
+  "Receitas Básicas":                      { g: 150, medida: "conforme receita" },
+  "A Revisar":                             { g: 150, medida: "a revisar" },
+};
+
+/** Sugere per capita (g) com base na categoria exata ou nome da receita */
 export function sugerirPerCapita(nome, categoria = "") {
+  // 1) Match exato por categoria
+  if (categoria && PERCAPITA_POR_CATEGORIA[categoria]) {
+    return PERCAPITA_POR_CATEGORIA[categoria].g;
+  }
+
+  // 2) Match parcial — categoria contém uma chave do mapa
+  if (categoria) {
+    for (const [chave, valor] of Object.entries(PERCAPITA_POR_CATEGORIA)) {
+      if (categoria.includes(chave) || chave.includes(categoria)) {
+        return valor.g;
+      }
+    }
+  }
   const busca = (nome || "").toLowerCase();
   const cat = (categoria || "").toLowerCase();
 
@@ -268,4 +331,16 @@ export function sugerirPerCapita(nome, categoria = "") {
   if (cat.includes("bebida") || cat.includes("suco")) return 200;
 
   return 200; // default genérico
+}
+
+/** Retorna { g, medida } da tabela por categoria, ou null */
+export function getPerCapitaInfo(categoria) {
+  if (!categoria) return null;
+  // Match exato
+  if (PERCAPITA_POR_CATEGORIA[categoria]) return PERCAPITA_POR_CATEGORIA[categoria];
+  // Match parcial
+  for (const [chave, valor] of Object.entries(PERCAPITA_POR_CATEGORIA)) {
+    if (categoria.includes(chave) || chave.includes(categoria)) return valor;
+  }
+  return null;
 }

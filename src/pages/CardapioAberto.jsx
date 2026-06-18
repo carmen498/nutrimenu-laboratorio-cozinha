@@ -18,7 +18,7 @@ import {
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
   GlassWater, Sun, Sparkles, MapPin
 } from "lucide-react";
-import { sugerirPerCapita } from "@/lib/perCapitaData";
+import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
 
@@ -544,7 +544,13 @@ export default function CardapioAberto() {
                       placeholder={isBuffet ? "kg/un" : "g/pessoa"}
                     />
                     <span className="text-[10px] text-muted-foreground">
-                      {isBuffet ? "kg/un" : `g/${cardapio.tipo === "marmitas" ? "marm" : "pessoa"}`}
+                      {(() => {
+                        const info = getPerCapitaInfo(rec.receita_categoria || "");
+                        if (info) {
+                          return <span className="italic">Sugestão Nutrimenu · {info.g}g · {info.medida}</span>;
+                        }
+                        return isBuffet ? "kg/un" : `g/${cardapio.tipo === "marmitas" ? "marm" : "pessoa"}`;
+                      })()}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground w-16 text-right">
