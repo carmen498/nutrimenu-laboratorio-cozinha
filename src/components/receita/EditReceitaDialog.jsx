@@ -137,7 +137,7 @@ ${form.modo_preparo}`,
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <CategoriaPicker value={form.categoria} onChange={(v) => setForm({ ...form, categoria: v })} />
+              <CategoriaPicker value={form.categorias || []} onChange={(v) => setForm({ ...form, categorias: v })} />
             </div>
             <div>
               <Label>Porções base</Label>

@@ -19,7 +19,7 @@ import { normalizarNome } from "@/lib/normalizarNome";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
-    nome: "", categoria: "", porcoes_base: "", rendimento_total: 0,
+    nome: "", categorias: [], porcoes_base: "", rendimento_total: 0,
     unidade_base: "g", modo_preparo: "", foto_url: ""
   });
   const [saving, setSaving] = useState(false);
@@ -264,7 +264,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Categoria</Label>
-              <CategoriaPicker value={form.categoria} onChange={(v) => setForm({ ...form, categoria: v })} />
+              <CategoriaPicker value={form.categorias || []} onChange={(v) => setForm({ ...form, categorias: v })} />
             </div>
             <div>
               <Label>Porções base</Label>

@@ -9,17 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid, ChevronDown } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
-import { CATEGORIAS as CATEGORIAS_RECEITA, GRUPOS, getGrupoFromCategoria, getGrupoStyle } from "@/components/receita/CategoriaPicker";
+import { CATEGORIAS as CATEGORIAS_RECEITA } from "@/components/receita/CategoriaPicker";
+import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 
 export default function Receitas() {
   const [busca, setBusca] = useState("");
-  const [accordionAberto, setAccordionAberto] = useState(null);
-  const [subcategoriaSelecionada, setSubcategoriaSelecionada] = useState(null);
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [showNew, setShowNew] = useState(null);
   const [showImportCsv, setShowImportCsv] = useState(false);
   const [showClassificarLote, setShowClassificarLote] = useState(false);
@@ -45,7 +45,6 @@ export default function Receitas() {
     refetchOnMount: "always",
   });
 
-  // DIAGNÓSTICO — Query dedicada ao contador
   const { data: tags = [] } = useQuery({
     queryKey: ["tags"],
     queryFn: () => base44.entities.Tag.list("nome", 200),
@@ -69,18 +68,9 @@ export default function Receitas() {
   const { data: totalReceitas = 0 } = useQuery({
     queryKey: ["receitas-count-total"],
     queryFn: async () => {
-      // Teste 1: list sem limite
       const t1 = await base44.entities.Receita.list();
-      console.log("list() sem parâmetro:", t1.length);
-
-      // Teste 2: filter vazio
       const t2 = await base44.entities.Receita.filter({});
-      console.log("filter({}):", t2.length);
-
-      // Teste 3: list com limite alto
       const t3 = await base44.entities.Receita.list("", 9999);
-      console.log("list('', 9999):", t3.length);
-
       return Math.max(t1.length, t2.length, t3.length);
     },
     staleTime: 0,
@@ -142,30 +132,17 @@ export default function Receitas() {
     },
   });
 
-  // Accordion aberto sem subcategoria → lista vazia (aguarda seleção)
-  const aguardandoSub = accordionAberto && !subcategoriaSelecionada;
-
   const filtered = receitas.filter((r) => {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
-    if (aguardandoSub) return false;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
-    const matchSub = !subcategoriaSelecionada || r.categoria === subcategoriaSelecionada;
-    // Tag filter (AND logic)
+    const matchCat = !categoriaSelecionada || hasCategoria(r, categoriaSelecionada);
     if (tagFilterIds.length > 0 && receitaTags.length > 0) {
       const tagsForReceita = receitaTags.filter(rt => rt.receita_id === r.id);
       const matchTags = tagFilterIds.every(tid => tagsForReceita.some(rt => rt.tag_id === tid));
       if (!matchTags) return false;
     }
-    return matchBusca && matchSub;
-  });
-
-  // Group by category and sort
-  const grouped = {};
-  filtered.forEach((r) => {
-    const cat = r.categoria || "A Revisar";
-    if (!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(r);
+    return matchBusca && matchCat;
   });
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "";
@@ -218,14 +195,14 @@ export default function Receitas() {
           <Input
             placeholder="Buscar receita..."
             value={busca}
-            onChange={(e) => { setBusca(e.target.value); setSubcategoriaSelecionada(null); }}
+            onChange={(e) => { setBusca(e.target.value); setCategoriaSelecionada(null); }}
             className="pl-9"
           />
         </div>
         <Button
           variant={showFavoritas ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setAccordionAberto(null); setSubcategoriaSelecionada(null); setBusca(""); }}
+          onClick={() => { setShowFavoritas(!showFavoritas); setShowRevisar(false); setCategoriaSelecionada(null); setBusca(""); }}
           className={showFavoritas ? "bg-amber-500 hover:bg-amber-600" : ""}
         >
           <Star className={`w-4 h-4 mr-1 ${showFavoritas ? "fill-white" : ""}`} />
@@ -234,7 +211,7 @@ export default function Receitas() {
         <Button
           variant={showRevisar ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setAccordionAberto(null); setSubcategoriaSelecionada(null); setBusca(""); }}
+          onClick={() => { setShowRevisar(!showRevisar); setShowFavoritas(false); setCategoriaSelecionada(null); setBusca(""); }}
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
@@ -251,11 +228,11 @@ export default function Receitas() {
         </Button>
       </div>
 
-      {/* Todas button + Accordion grid */}
+      {/* "Todas" button + Category filter buttons */}
       <button
-        onClick={() => { setAccordionAberto(null); setSubcategoriaSelecionada(null); setBusca(""); setShowRevisar(false); setShowFavoritas(false); }}
+        onClick={() => { setCategoriaSelecionada(null); setBusca(""); setShowRevisar(false); setShowFavoritas(false); }}
         className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
-          !accordionAberto && !subcategoriaSelecionada
+          !categoriaSelecionada
             ? "border-primary bg-primary/10 text-primary"
             : "border-transparent bg-muted hover:bg-accent text-muted-foreground"
         }`}
@@ -265,106 +242,32 @@ export default function Receitas() {
         <Badge className="text-[10px] bg-primary/20 text-primary">{totalReceitas}</Badge>
       </button>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
-        {GRUPOS.filter(g => g.subcats.length > 1 || (g.nome !== "Receitas Básicas" && g.nome !== "A Revisar")).map((g) => {
-          const totalGrupo = receitas.filter(r => getGrupoFromCategoria(r.categoria) === g.nome).length;
-          const aberto = accordionAberto === g.nome;
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIAS_RECEITA.map(cat => {
+          const count = receitas.filter(r => hasCategoria(r, cat)).length;
+          const selecionada = categoriaSelecionada === cat;
           return (
-            <div
-              key={g.nome}
-              className="rounded-xl overflow-hidden border border-border transition-all"
-              style={{ backgroundColor: g.corSub }}
+            <button
+              key={cat}
+              onClick={() => {
+                setBusca("");
+                setCategoriaSelecionada(selecionada ? null : cat);
+              }}
+              className={`text-xs px-3 py-1.5 rounded-full transition-all inline-flex items-center gap-1.5 border ${
+                selecionada
+                  ? "bg-primary text-primary-foreground border-primary font-semibold"
+                  : "bg-muted hover:bg-accent border-transparent text-muted-foreground"
+              }`}
             >
-              <button
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors"
-                style={{ backgroundColor: g.corHeader, color: g.corTexto }}
-                onClick={() => { setAccordionAberto(aberto ? null : g.nome); setSubcategoriaSelecionada(null); }}
-              >
-                <span className="text-lg">{g.icone}</span>
-                <span className="flex-1 text-sm font-semibold">{g.nome}</span>
-                <Badge
-                  className="text-[10px] h-5 px-1.5 font-bold border-0"
-                  style={{ backgroundColor: g.corPillTexto, color: g.corHeader }}
-                >
-                  {totalGrupo}
+              {cat}
+              {count > 0 && (
+                <Badge className={`text-[10px] h-4 px-1 ${selecionada ? "bg-white/30 text-white" : "bg-primary/20 text-primary"}`}>
+                  {count}
                 </Badge>
-                <ChevronDown
-                  className={`w-4 h-4 shrink-0 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`}
-                  style={{ opacity: 0.6 }}
-                />
-              </button>
-              <div className={`p-2 flex flex-wrap gap-1.5 ${aberto ? "" : "hidden"}`}>
-                {g.subcats.map(sub => {
-                  const catNome = `${g.nome}, ${sub}`;
-                  const count = receitas.filter(r => r.categoria === catNome).length;
-                  const selecionada = subcategoriaSelecionada === catNome;
-                  return (
-                    <button
-                      key={`${g.nome}-${sub}`}
-                      onClick={() => {
-                        setBusca("");
-                        if (selecionada) {
-                          setSubcategoriaSelecionada(null);
-                        } else {
-                          setSubcategoriaSelecionada(catNome);
-                        }
-                      }}
-                      className="text-xs px-2.5 py-1 rounded-full transition-all inline-flex items-center"
-                      style={{
-                        backgroundColor: g.corPill,
-                        borderColor: selecionada ? g.corPillTexto : "transparent",
-                        borderWidth: "1.5px",
-                        borderStyle: "solid",
-                        color: g.corPillTexto,
-                        fontWeight: selecionada ? 700 : 500,
-                        boxShadow: selecionada ? `0 0 0 1px ${g.corPillTexto}` : "none",
-                      }}
-                    >
-                      {sub}
-                      {count > 0 && <span className="ml-1 opacity-60" style={{ fontWeight: 400 }}>{count}</span>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              )}
+            </button>
           );
         })}
-        {/* Receitas Básicas + A Revisar: half-width cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", gridColumn: "1 / -1" }}>
-          {GRUPOS.filter(g => g.nome === "Receitas Básicas" || g.nome === "A Revisar").map((g) => {
-            const totalGrupo = receitas.filter(r => getGrupoFromCategoria(r.categoria) === g.nome).length;
-            const catNome = `${g.nome}, ${g.subcats[0]}`;
-            const selecionada = subcategoriaSelecionada === catNome;
-            return (
-              <button
-                key={g.nome}
-                className="rounded-xl px-3 py-2.5 text-left transition-all border-2 flex items-center gap-2"
-                style={{
-                  backgroundColor: selecionada ? g.corPill : g.corHeader,
-                  borderColor: selecionada ? g.corPillTexto : "transparent",
-                  color: selecionada ? g.corPillTexto : g.corTexto,
-                }}
-                onClick={() => {
-                  setAccordionAberto(null);
-                  if (selecionada) {
-                    setSubcategoriaSelecionada(null);
-                  } else {
-                    setSubcategoriaSelecionada(catNome);
-                  }
-                }}
-              >
-                <span className="text-base">{g.icone}</span>
-                <span className="flex-1 text-xs font-semibold">{g.nome}</span>
-                <Badge
-                  className="text-[10px] h-5 px-1.5 font-bold border-0"
-                  style={{ backgroundColor: selecionada ? g.corPillTexto : g.corHeader, color: selecionada ? g.corPill : g.corTexto, opacity: 0.8 }}
-                >
-                  {totalGrupo}
-                </Badge>
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Active tag pills */}
@@ -406,7 +309,7 @@ export default function Receitas() {
         </div>
       )}
 
-      {/* Tag filter panel — organized by groups */}
+      {/* Tag filter panel */}
       {showTagPainel && (
         <div className="p-3 bg-card border border-border rounded-xl space-y-3 max-h-80 overflow-y-auto">
           <div className="flex items-center justify-between">
@@ -463,87 +366,70 @@ export default function Receitas() {
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
-      ) : Object.keys(grouped).sort().map((cat) => (
-        <div key={cat}>
-          <div className="flex items-center gap-2 py-2 px-1">
-            {(() => {
-              const style = getGrupoStyle(cat);
-              return (
-                <Badge className="text-xs border-0" style={{ backgroundColor: style.cor, color: style.corTexto }}>
-                  {style.icone} {cat}
-                </Badge>
-              );
-            })()}
-            <span className="text-xs text-muted-foreground">{grouped[cat].length} itens</span>
-          </div>
-          <div className="space-y-1.5 mb-4">
-            {grouped[cat].sort((a, b) => a.nome?.localeCompare(b.nome)).map((r) => (
-              <Link key={r.id} to={`/receita/${r.id}`}>
-                <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm truncate">{r.nome}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
-                        <span className="text-xs font-bold text-primary">
-                          {formatCurrency(r.custo_por_porcao)} /porção
-                        </span>
-                      )}
-                      {formatYield(r) && (
-                        <span className="text-xs text-muted-foreground">
-                          Rende {formatYield(r)}
-                        </span>
-                      )}
-                    </div>
+      ) : (
+        <div className="space-y-1.5">
+          {filtered.sort((a, b) => a.nome?.localeCompare(b.nome)).map((r) => (
+            <Link key={r.id} to={`/receita/${r.id}`}>
+              <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{r.nome}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {getCategorias(r).length > 0 && (
+                      <span className="text-[11px] text-muted-foreground">{getCategorias(r).join(", ")}</span>
+                    )}
                   </div>
-                  <button
-                    className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
-                    disabled={favoritarMut.isPending}
-                    title={r.favorita ? "Remover das favoritas" : "Marcar como favorita"}
-                  >
-                    <Star className={`w-4 h-4 ${r.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
-                  </button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button className="p-1.5 rounded-full hover:bg-muted" onClick={(e) => e.preventDefault()}>
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
-                        <BookOpen className="w-4 h-4 mr-2" /> Abrir
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
-                        <Copy className="w-4 h-4 mr-2" /> Duplicar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => {
-                        if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
-                      }}>
-                        <Trash2 className="w-4 h-4 mr-2" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                  <div className="flex items-center gap-3 mt-0.5">
+                    {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
+                      <span className="text-xs font-bold text-primary">
+                        {formatCurrency(r.custo_por_porcao)} /porção
+                      </span>
+                    )}
+                    {formatYield(r) && (
+                      <span className="text-xs text-muted-foreground">
+                        Rende {formatYield(r)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
+                  disabled={favoritarMut.isPending}
+                  title={r.favorita ? "Remover das favoritas" : "Marcar como favorita"}
+                >
+                  <Star className={`w-4 h-4 ${r.favorita ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="p-1.5 rounded-full hover:bg-muted" onClick={(e) => e.preventDefault()}>
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
+                      <BookOpen className="w-4 h-4 mr-2" /> Abrir
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
+                      <Copy className="w-4 h-4 mr-2" /> Duplicar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive" onClick={() => {
+                      if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
+                    }}>
+                      <Trash2 className="w-4 h-4 mr-2" /> Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </Card>
+            </Link>
+          ))}
         </div>
-      ))}
+      )}
 
       {!isLoading && filtered.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <ChefHat className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-          {aguardandoSub ? (
-            <>
-              <p className="text-lg font-medium">Selecione uma subcategoria acima</p>
-              <p className="text-sm mt-1">Escolha uma subcategoria no grupo aberto para ver as receitas.</p>
-            </>
-          ) : (
-            <>
-              <p className="text-lg font-medium">Nenhuma receita encontrada</p>
-              <p className="text-sm mt-1">Crie uma receita ou importe via CSV.</p>
-            </>
-          )}
+          <p className="text-lg font-medium">Nenhuma receita encontrada</p>
+          <p className="text-sm mt-1">Crie uma receita ou importe via CSV.</p>
         </div>
       )}
 
@@ -634,7 +520,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
             type: "object",
             properties: {
               nome_receita: { type: "string" },
-              categoria: { type: "string" },
+              categorias: { type: "string" },
               porcoes_base: { type: "number" },
               rendimento_g: { type: "number" },
               modo_preparo: { type: "string" },
@@ -653,9 +539,13 @@ function ImportReceitasCsvDialog({ open, onClose }) {
         for (const item of items) {
           const nome = (item.nome_receita || "").trim();
           if (!nome) { skipped++; continue; }
+          const catsRaw = item.categorias || item.categoria || "";
+          const categorias = typeof catsRaw === "string"
+            ? catsRaw.split(/[,;]/).map(c => c.trim()).filter(Boolean)
+            : (Array.isArray(catsRaw) ? catsRaw : []);
           const payload = {
             nome: nome.toUpperCase(),
-            categoria: item.categoria || "",
+            categorias,
             porcoes_base: item.porcoes_base || 1,
             rendimento_total: item.rendimento_g || 0,
             unidade_base: "g",
@@ -663,8 +553,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           };
           const existingItem = existingMap[nome.toLowerCase()];
           if (existingItem) {
-            const { id, created_date, updated_date, created_by_id, ...rest } = payload;
-            await base44.entities.Receita.update(existingItem.id, { ...rest, revisar: true });
+            await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: true });
             updated++;
           } else {
             await base44.entities.Receita.create({ ...payload, revisar: false });
@@ -692,10 +581,10 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           <DialogTitle className="font-display">Importar Receitas via CSV</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Selecione o arquivo CSV com as colunas: <strong>nome_receita, categoria, porcoes_base, rendimento_g, modo_preparo</strong>
+          Selecione o arquivo CSV com as colunas: <strong>nome_receita, categorias, porcoes_base, rendimento_g, modo_preparo</strong>
         </p>
         <p className="text-xs text-muted-foreground">
-          Receitas com mesmo nome serão atualizadas. Categorias no formato "Grupo, Subcategoria".
+          Receitas com mesmo nome serão atualizadas. Categorias separadas por vírgula.
         </p>
         <Label>Arquivo</Label>
         <Input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files[0])} />

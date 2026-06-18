@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       const prepPreparos = ings.map(i => (i.pre_preparo || '').toLowerCase()).join(' ');
       const modoPrep = (receita.modo_preparo || '').toLowerCase();
       const modoPrepFull = modoPrep + ' ' + prepPreparos;
-      const categoria = receita.categoria || '';
+      const categorias = receita.categorias || [];
 
       const existingTagNames = new Set((tagsByReceita[receita.id] || []).map(rt => rt.tag_nome));
       const tagsToAdd = new Set();
@@ -110,33 +110,7 @@ Deno.serve(async (req) => {
       if (!hasOvo && !existingTagNames.has('Sem ovos')) tagsToAdd.add('Sem ovos');
       if (!todosNomes.includes('pimenta') && !existingTagNames.has('Sem pimenta')) tagsToAdd.add('Sem pimenta');
 
-      // Fit = sem açúcar + sem farinha de trigo + categoria fitness/funcional/low carb
-      if (!hasAcucar && !hasGluten && 
-          (categoria.includes('Fitness') || categoria.includes('Funcionais') || categoria.includes('Low Carb')) &&
-          !existingTagNames.has('Fit')) {
-        tagsToAdd.add('Fit');
-      }
-
-      // Para diabéticos = sem açúcar + sem farinha de trigo
-      if (!hasAcucar && !hasGluten && !existingTagNames.has('Para diabéticos')) {
-        tagsToAdd.add('Para diabéticos');
-      }
-
-      // Vegana (categoria)
-      if (categoria.includes('Veganas') && !existingTagNames.has('Vegana')) tagsToAdd.add('Vegana');
-      if (categoria.includes('Low Carb') && !existingTagNames.has('Low carb')) tagsToAdd.add('Low carb');
-
-      // Método de cocção
-      if (modoPrepFull.includes('forno') && !existingTagNames.has('Forno')) tagsToAdd.add('Forno');
-      if (modoPrepFull.includes('grelh') && !existingTagNames.has('Grelhado')) tagsToAdd.add('Grelhado');
-      if ((modoPrepFull.includes('cozinhar') || modoPrepFull.includes('cozido')) &&
-          !modoPrepFull.includes('forno') && !modoPrepFull.includes('grelh') &&
-          !existingTagNames.has('Cozido')) {
-        tagsToAdd.add('Cozido');
-      }
-
-      // Outras categorias
-      if (categoria.includes('Fitness') && !existingTagNames.has('Fitness')) tagsToAdd.add('Fitness');
+      // Categoria-based tags (not used anymore — categories are now flat, non-hierarchical)
 
       for (const tagNome of tagsToAdd) {
         const tag = tagMap[tagNome];

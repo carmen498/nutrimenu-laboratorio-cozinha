@@ -170,7 +170,7 @@ export default function ExportarReceita() {
         )}
         <h2 className="font-display text-2xl font-bold">{receita.nome}</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {receita.categoria} · Base: {receita.porcoes_base} porções
+          {(receita.categorias || []).join(", ") || "Sem categoria"} · Base: {receita.porcoes_base} porções
           {receita.rendimento_total > 0 && ` · ${receita.rendimento_total.toLocaleString("pt-BR")} ${receita.unidade_base}`}
         </p>
 

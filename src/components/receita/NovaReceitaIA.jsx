@@ -118,7 +118,7 @@ IMPORTANTE:
           type: "object",
           properties: {
             nome: { type: "string", description: "Nome da receita" },
-            categoria: { type: "string", enum: CATEGORIAS },
+            categorias: { type: "array", items: { type: "string" }, description: "Categorias sugeridas: Carnes, Aves, Peixes e Frutos do Mar, Ovos, Massas, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães, Sobremesas, Molhos e Bases, Acompanhamento, Prato Principal, Prato Único, Entrada, Petisco, Lanche" },
             porcoes_base: { type: "number" },
             unidade_base: { type: "string", enum: ["g", "ml"] },
             modo_preparo: { type: "string" },
@@ -242,13 +242,13 @@ IMPORTANTE:
       
       // Auto-categorize if not set
       const ingNomes = (p.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
-      const catFinal = p.categoria || categorizarPorIngredientes(ingNomes) || "A Revisar";
+      const catAuto = p.categorias?.length > 0 ? p.categorias : (categorizarPorIngredientes(ingNomes) ? [categorizarPorIngredientes(ingNomes)] : []);
       
       const porcoes = p.porcoes_base || 0;
       
       const receita = await base44.entities.Receita.create({
         nome: p.nome?.toUpperCase(),
-        categoria: catFinal,
+        categoria: catAuto,
         revisar: duplicateWarning != null,
         porcoes_base: porcoes,
         unidade_base: p.unidade_base || "g",
@@ -418,7 +418,7 @@ IMPORTANTE:
               </div>
               <div>
                 <Label>Categoria</Label>
-                <CategoriaPicker value={parsed.categoria} onChange={(v) => setParsed({ ...parsed, categoria: v })} />
+                <CategoriaPicker value={parsed.categorias || []} onChange={(v) => setParsed({ ...parsed, categorias: v })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

@@ -505,9 +505,15 @@ REGRAS:
               <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
             </Button>
           </div>
-          {/* Line 2: Category + base info */}
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary">{receita.categoria}</Badge>
+          {/* Line 2: Categories + base info */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {(receita.categorias || []).length > 0 ? (
+              receita.categorias.map(cat => (
+                <Badge key={cat} variant="secondary" className="text-xs">{cat}</Badge>
+              ))
+            ) : receita.categoria ? (
+              <Badge variant="secondary">{receita.categoria}</Badge>
+            ) : null}
             <span className="text-sm text-muted-foreground">
               Base: {receita.porcoes_base} porções
               {receita.rendimento_total > 0 && ` · ${formatWeight(receita.rendimento_total, receita.unidade_base)}`}
