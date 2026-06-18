@@ -9,13 +9,14 @@ import { Plus, Search, X } from "lucide-react";
 const GRUPO_LABELS = {
   molho: "Molhos",
   ingrediente: "Ingrediente principal",
-  perfil: "Perfil da receita",
-  restricao: "Restrições",
+  perfil: "Perfil",
+  restricao: "Restrições alimentares",
   metodo: "Método de cocção",
   contexto: "Contexto de uso",
+  outras: "Outras",
 };
 
-const GRUPO_ORDER = ["molho", "ingrediente", "perfil", "restricao", "metodo", "contexto"];
+const GRUPO_ORDER = ["molho", "ingrediente", "perfil", "metodo", "restricao", "contexto", "outras"];
 
 export default function TagSelector({ selectedIds, onToggle, triggerLabel = "Adicionar tag" }) {
   const [open, setOpen] = useState(false);
