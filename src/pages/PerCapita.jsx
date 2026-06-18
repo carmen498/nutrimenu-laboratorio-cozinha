@@ -20,31 +20,36 @@ export default function PerCapita() {
     for (const item of percapitaData) {
       if (item.tipo === "grupo") {
         currentGrupo = item.nome;
-        // Sempre inclui o cabeçalho do grupo, a menos que estejamos filtrando por outro grupo
+        // Inclui o cabeçalho se não houver filtro de grupo ou se for o grupo selecionado
         if (!filtroGrupo || filtroGrupo === currentGrupo) {
           results.push(item);
         }
-      } else {
-        // Filtra por grupo
-        if (filtroGrupo && currentGrupo !== filtroGrupo) continue;
-        // Filtra por busca textual
-        if (search.trim()) {
-          const s = search.toLowerCase();
-          const match =
-            String(item.prep || "").toLowerCase().includes(s) ||
-            String(item.cat || "").toLowerCase().includes(s) ||
-            String(item.medida || "").toLowerCase().includes(s) ||
-            String(currentGrupo || "").toLowerCase().includes(s);
-          if (!match) continue;
-        }
-        // Garante que o cabeçalho do grupo apareça antes dos itens
-        const last = results[results.length - 1];
-        if (!last || last.tipo !== "grupo" || last.nome !== currentGrupo) {
-          results.push({ tipo: "grupo", nome: currentGrupo });
-        }
-        results.push(item);
+        continue;
       }
+
+      // Filtra por grupo
+      if (filtroGrupo && currentGrupo !== filtroGrupo) continue;
+
+      // Filtra por busca textual
+      if (search.trim()) {
+        const s = search.toLowerCase();
+        const match =
+          String(item.prep || "").toLowerCase().includes(s) ||
+          String(item.cat || "").toLowerCase().includes(s) ||
+          String(item.medida || "").toLowerCase().includes(s) ||
+          String(currentGrupo || "").toLowerCase().includes(s);
+        if (!match) continue;
+      }
+
+      // Garante que o cabeçalho do grupo apareça uma única vez antes dos itens
+      const last = results[results.length - 1];
+      if (!last || last.tipo !== "grupo" || last.nome !== currentGrupo) {
+        results.push({ tipo: "grupo", nome: currentGrupo });
+      }
+
+      results.push(item);
     }
+
     return results;
   }, [search, filtroGrupo]);
 
@@ -76,7 +81,7 @@ export default function PerCapita() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome, categoria ou medida..."
+            placeholder="Buscar por nome ou medida..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -107,8 +112,6 @@ export default function PerCapita() {
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="border-b-2 border-border">
-              <th className="text-left px-2 py-2 font-semibold text-xs w-10">Nº</th>
-              <th className="text-left px-2 py-2 font-semibold text-xs">Categoria</th>
               <th className="text-left px-2 py-2 font-semibold text-xs">Preparação / Alimento</th>
               <th className="text-right px-2 py-2 font-semibold text-xs w-28">Per capita médio (g)</th>
               <th className="text-left px-2 py-2 font-semibold text-xs hidden md:table-cell">Medida caseira de referência</th>
@@ -119,7 +122,7 @@ export default function PerCapita() {
               if (item.tipo === "grupo") {
                 return (
                   <tr key={`g-${item.nome}-${idx}`} className="bg-green-100 border-b border-green-200">
-                    <td colSpan={5} className="px-3 py-2">
+                    <td colSpan={3} className="px-3 py-2">
                       <span className="font-bold text-sm text-green-900 uppercase tracking-wide">{item.nome}</span>
                     </td>
                   </tr>
@@ -131,10 +134,8 @@ export default function PerCapita() {
 
               return (
                 <tr key={`i-${item.n || idx}-${item.prep}-${idx}`} className={`border-b border-border/40 ${isEven ? "bg-white" : "bg-green-50/50"} hover:bg-muted/40`}>
-                  <td className="px-2 py-1.5 text-muted-foreground text-xs">{item.n || "—"}</td>
-                  <td className="px-2 py-1.5 text-xs text-muted-foreground">{item.cat}</td>
                   <td className="px-2 py-1.5 font-medium text-xs">{item.prep}</td>
-                  <td className="px-2 py-1.5 text-right font-bold text-primary text-xs tabular-nums">{displayG}</td>
+                  <td className="px-2 py-1.5 text-right font-bold text-base tabular-nums" style={{ color: "#1B4332" }}>{displayG}g</td>
                   <td className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">{item.medida}</td>
                 </tr>
               );
