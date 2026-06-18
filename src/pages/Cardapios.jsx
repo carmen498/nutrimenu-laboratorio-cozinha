@@ -13,20 +13,20 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper, GlassWater, Sun, Sparkles, MapPin, Tag, X } from "lucide-react";
+import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown } from "lucide-react";
 
-const TIPOS = [
-  { key: "diario", label: "Diário", icon: Sun, emoji: "🏠", cor: "bg-amber-100 text-amber-700 border-amber-200" },
-  { key: "semanal", label: "Semanal", icon: Calendar, emoji: "📅", cor: "bg-green-100 text-green-700 border-green-200" },
-  { key: "fim_de_semana", label: "Fim de semana", icon: MapPin, emoji: "🌅", cor: "bg-sky-100 text-sky-700 border-sky-200" },
-  { key: "especial", label: "Especial", icon: Sparkles, emoji: "⭐", cor: "bg-violet-100 text-violet-700 border-violet-200" },
-  { key: "comemoracao", label: "Comemoração", icon: PartyPopper, emoji: "🎉", cor: "bg-pink-100 text-pink-700 border-pink-200" },
-  { key: "marmitas", label: "Marmitas", icon: Package, emoji: "📦", cor: "bg-orange-100 text-orange-700 border-orange-200" },
-  { key: "buffet", label: "Buffet", icon: Scale, emoji: "⚖️", cor: "bg-blue-100 text-blue-700 border-blue-200" },
-  { key: "happy_hour", label: "Happy Hour", icon: GlassWater, emoji: "🍹", cor: "bg-rose-100 text-rose-700 border-rose-200" },
+const TIPOS_CARDAPIO = [
+  { nome: "Diário",        key: "diario",        icone: "🏠", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
+  { nome: "Semanal",       key: "semanal",       icone: "📅", cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1" },
+  { nome: "Fim de semana", key: "fim_de_semana", icone: "🌅", cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C" },
+  { nome: "Especial",      key: "especial",      icone: "⭐", cor: "#FFF9C4", corTexto: "#F9A825", corPill: "#FFF176", corPillTexto: "#E65100" },
+  { nome: "Comemoração",   key: "comemoracao",   icone: "🎉", cor: "#FCE4EC", corTexto: "#880E4F", corPill: "#F8BBD0", corPillTexto: "#880E4F" },
+  { nome: "Marmitas",      key: "marmitas",      icone: "📦", cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723" },
+  { nome: "Buffet",        key: "buffet",        icone: "⚖️", cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C" },
+  { nome: "Happy Hour",    key: "happy_hour",    icone: "🍹", cor: "#E0F7FA", corTexto: "#006064", corPill: "#B2DFDB", corPillTexto: "#004D40" },
 ];
 
-const TIPO_MAP = Object.fromEntries(TIPOS.map(t => [t.key, t]));
+const TIPO_MAP = Object.fromEntries(TIPOS_CARDAPIO.map(t => [t.key, t]));
 
 const LABEL_UNIDADE = {
   diario: "pessoas", semanal: "pessoas", fim_de_semana: "pessoas",
@@ -199,45 +199,70 @@ export default function Cardapios() {
         </Button>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      {/* Filter row */}
+      <div className="flex gap-2">
         <Button
-          variant={filtroTipo === "todos" ? "default" : "outline"}
+          variant={filtroTipo === "todos" && tagFilterIds.length === 0 ? "default" : "outline"}
           size="sm"
-          onClick={() => setFiltroTipo("todos")}
+          onClick={() => { setFiltroTipo("todos"); setTagFilterIds([]); }}
         >
-          Todos
+          Todos <Badge className="ml-1.5 text-[10px] bg-primary/20 text-primary">{cardapios.length}</Badge>
         </Button>
         <Button
           variant={filtroTipo === "favoritos" ? "default" : "outline"}
           size="sm"
-          className="gap-1"
-          onClick={() => setFiltroTipo("favoritos")}
+          onClick={() => setFiltroTipo(filtroTipo === "favoritos" ? "todos" : "favoritos")}
+          className={filtroTipo === "favoritos" ? "bg-amber-500 hover:bg-amber-600" : ""}
         >
-          <Star className="w-3.5 h-3.5" /> Favoritos
+          <Star className={`w-4 h-4 mr-1 ${filtroTipo === "favoritos" ? "fill-white" : ""}`} />
+          Favoritos
         </Button>
-        {TIPOS.map(t => (
-          <Button
-            key={t.key}
-            variant={filtroTipo === t.key ? "default" : "outline"}
-            size="sm"
-            className="gap-1"
-            title={t.label}
-            aria-label={t.label}
-            onClick={() => setFiltroTipo(filtroTipo === t.key ? "todos" : t.key)}
-          >
-            {t.emoji}
-          </Button>
-        ))}
         <Button
           variant={tagFilterIds.length > 0 ? "default" : "outline"}
           size="sm"
-          className="gap-1"
           onClick={() => setShowTagPainel(!showTagPainel)}
+          className="gap-1"
         >
-          <Tag className="w-3.5 h-3.5" /> Tags
+          <Tag className="w-4 h-4" /> Tags
           {tagFilterIds.length > 0 && <Badge className="ml-1 h-4 px-1 text-[10px] bg-white text-primary">{tagFilterIds.length}</Badge>}
         </Button>
+      </div>
+
+      {/* Type cards grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+        {TIPOS_CARDAPIO.map((t) => {
+          const count = cardapios.filter(c => c.tipo === t.key).length;
+          const ativo = filtroTipo === t.key;
+          return (
+            <div
+              key={t.key}
+              className="rounded-xl overflow-hidden transition-all"
+              style={{
+                backgroundColor: t.cor,
+                border: ativo ? `2px solid ${t.corTexto}` : "1px solid hsl(var(--border))",
+              }}
+            >
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:brightness-95"
+                style={{ backgroundColor: t.cor, color: t.corTexto }}
+                onClick={() => setFiltroTipo(ativo ? "todos" : t.key)}
+              >
+                <span className="text-lg">{t.icone}</span>
+                <span className="flex-1 text-sm font-semibold">{t.nome}</span>
+                <Badge
+                  className="text-[10px] h-5 px-1.5 font-bold border-0"
+                  style={{ backgroundColor: t.corPill, color: t.corPillTexto }}
+                >
+                  {count}
+                </Badge>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 transition-transform duration-200 ${ativo ? "rotate-180" : ""}`}
+                  style={{ opacity: ativo ? 1 : 0.5 }}
+                />
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Tag filter panel */}
@@ -292,13 +317,12 @@ export default function Cardapios() {
         <div className="text-center py-12 text-muted-foreground">Carregando...</div>
       ) : filtrados.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          {busca || filtroTipo !== "todos" ? "Nenhum cardápio encontrado." : "Nenhum cardápio criado ainda."}
+          {busca || filtroTipo !== "todos" || tagFilterIds.length > 0 ? "Nenhum cardápio encontrado." : "Nenhum cardápio criado ainda."}
         </div>
       ) : (
         <div className="space-y-3">
           {filtrados.map(c => {
             const cfg = TIPO_MAP[c.tipo] || TIPO_MAP.diario;
-            const Icon = cfg.icon;
             const num = getNum(c);
             const custoPorUnid = num > 0 && c.custo_total > 0 ? c.custo_total / num : 0;
             return (
@@ -322,8 +346,8 @@ export default function Cardapios() {
                       {c.nome?.toUpperCase?.() || c.nome}
                     </h3>
                     <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mt-0.5">
-                      <Badge variant="outline" className={`text-xs ${cfg.cor}`}>
-                        {cfg.emoji} {cfg.label}
+                      <Badge className="text-xs border-0" style={{ backgroundColor: cfg.corPill, color: cfg.corPillTexto }}>
+                        {cfg.icone} {cfg.nome}
                       </Badge>
                       {c.data && <span>{formatarData(c.data)}</span>}
                       <span>{num} {LABEL_UNIDADE[c.tipo] || "unidades"}</span>
@@ -393,8 +417,8 @@ export default function Cardapios() {
                   <SelectValue placeholder="Selecionar tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS.map(t => (
-                    <SelectItem key={t.key} value={t.key}>{t.emoji} {t.label}</SelectItem>
+                  {TIPOS_CARDAPIO.map(t => (
+                    <SelectItem key={t.key} value={t.key}>{t.icone} {t.nome}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

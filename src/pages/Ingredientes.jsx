@@ -455,6 +455,11 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             <Label>Unidade de compra</Label>
             <Input value={form.unidade_compra || ""} onChange={(e) => setForm({ ...form, unidade_compra: e.target.value })} placeholder="KG, LT, UN..." />
           </div>
+          <div>
+            <Label>Fator de correção</Label>
+            <Input type="number" step="0.01" value={form.fator_correcao ?? 1.0} onChange={(e) => setForm({ ...form, fator_correcao: parseFloat(e.target.value) || 1.0 })} />
+            <p className="text-xs text-muted-foreground mt-1">Padrão: 1.0. Ajuste para ingredientes com perda (cascas, ossos, etc.)</p>
+          </div>
           <CalculadoraCusto
             initialQuantidade={form.peso_embalagem_g || ""}
             initialPrecoTotal={form.preco_embalagem_rs || ""}
@@ -478,17 +483,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
               </div>
             </div>
           )}
-          {/* Advanced: fator de correção */}
-          <details className="text-sm">
-            <summary className="cursor-pointer text-muted-foreground flex items-center gap-1">
-              <Settings2 className="w-3.5 h-3.5" /> Ajustes avançados
-            </summary>
-            <div className="mt-2">
-              <Label>Fator de correção</Label>
-              <Input type="number" step="0.01" value={form.fator_correcao ?? 1.0} onChange={(e) => setForm({ ...form, fator_correcao: parseFloat(e.target.value) || 1.0 })} />
-              <p className="text-xs text-muted-foreground mt-1">Padrão: 1.0. Ajuste para ingredientes com perda (cascas, ossos, etc.)</p>
-            </div>
-          </details>
+          {/* Ajustes avançados — reservado para campos futuros */}
         </div>
         <div className="flex gap-2 justify-end mt-4">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
