@@ -130,7 +130,7 @@ export default function Home() {
         {/* Nova Receita — verde escuro destaque */}
         <Link to="/receitas?nova=manual">
           <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center"
-            style={{ background: CORES.verdeEscuro }}>
+            style={{ background: "#8B3A52" }}>
             <Plus className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
             <span className="font-semibold text-sm">➕ Nova Receita</span>
           </Card>
