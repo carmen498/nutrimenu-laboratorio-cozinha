@@ -66,14 +66,14 @@ export default function PerCapita() {
           Quantidade média por pessoa · preparação pronta para servir (g/pessoa) · Base: POF IBGE 2017-2018 + Calculadora Nutrimenu + Referências de UAN
         </p>
         <p className="text-[10px] text-muted-foreground italic">
-          Carmen S. Reinstein · Nutrimenu · Receita na Medida · 2026 — Estudo pioneiro · valores a validar conforme tipo de evento e perfil dos comensais
+          Carmen S. Reinstein · Laboratório de Cozinha · Gastronomia Planejada · 2026
         </p>
       </div>
 
       {/* Print header */}
       <div className="hidden print:block text-center mb-4">
         <h1 className="font-display text-lg font-bold">TABELA DE REFERÊNCIA · PER CAPITA DE PREPARAÇÕES PRONTAS</h1>
-        <p className="text-xs text-muted-foreground">Carmen S. Reinstein · Nutrimenu · Receita na Medida · 2026</p>
+        <p className="text-xs text-muted-foreground">Carmen S. Reinstein · Laboratório de Cozinha · 2026</p>
       </div>
 
       {/* Controls */}
@@ -173,7 +173,7 @@ export default function PerCapita() {
       {/* Rodapé */}
       <footer className="text-center space-y-3 pt-4">
         <p className="text-xs text-muted-foreground italic max-w-2xl mx-auto leading-relaxed">
-          "Não existe norma técnica brasileira específica de per capita para preparações prontas para servir. O Anexo V da IN 75/2020 (ANVISA) trata de porções para rotulagem nutricional — não de serviço. Esta tabela é estudo pioneiro. Carmen S. Reinstein / Nutrimenu / Receita na Medida · 2026."
+          "Os per capitas são médias de referência. Ajustar conforme: perfil dos comensais · tipo e duração do evento · clima · horário · tipo de serviço (empratado vs bufê) · margem de segurança 10-15%. Não existe norma técnica brasileira de per capita para preparações prontas para servir. Carmen S. Reinstein · Laboratório de Cozinha · 2026."
         </p>
       </footer>
     </div>
