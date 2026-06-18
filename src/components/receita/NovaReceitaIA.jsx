@@ -21,16 +21,19 @@ import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 // ── Auto-category from ingredients ──
 const categorizarPorIngredientes = (ingredientesNomes) => {
   const all = (ingredientesNomes || []).join(" ").toLowerCase();
-  if (!all) return "";
+  if (!all) return [];
   const has = (words) => words.some(w => all.includes(w));
-  if (has(["chocolate", "cacau", "açúcar", "acucar", "baunilha", "chantilly", "doce", "brigadeiro", "beijinho", "pavê", "pave", "mousse"])) return "Confeitaria, Sobremesas";
-  if (has(["farinha", "manteiga", "margarina", "fermento"]) && has(["açúcar", "acucar"])) return "Confeitaria, Sobremesas";
-  if (has(["bovin", "contrafilé", "contrafile", "picanha", "alcatra", "maminha", "patinho", "coxão", "coxao", "costela bovina", "fraldinha", "cupim", "músculo", "musculo"])) return "Carnes, Bovina";
-  if (has(["frango", "peru", "ave", "galinha", "chester"])) return "Carnes, Aves";
-  if (has(["bacalhau", "camarão", "camarao", "peixe", "salmão", "salmao", "atum", "sardinha", "lula", "polvo", "marisco", "mexilhão", "mexilhao"])) return "Carnes, Peixes";
-  if (has(["camarão", "camarao", "lula", "polvo", "marisco", "mexilhão", "mexilhao", "lagosta", "siri", "caranguejo"])) return "Carnes, Frutos do mar";
-  if (has(["arroz", "risoto"])) return "Acompanhamentos, Arroz e Risotos";
-  return "";
+  const cats = [];
+  if (has(["chocolate", "cacau", "açúcar", "acucar", "baunilha", "chantilly", "doce", "brigadeiro", "beijinho", "pavê", "pave", "mousse"])) cats.push("Sobremesas");
+  if (has(["farinha", "manteiga", "margarina", "fermento"]) && has(["açúcar", "acucar"])) cats.push("Sobremesas");
+  if (has(["bovin", "contrafilé", "contrafile", "picanha", "alcatra", "maminha", "patinho", "coxão", "coxao", "costela bovina", "fraldinha", "cupim", "músculo", "musculo"])) cats.push("Carnes");
+  if (has(["frango", "peru", "ave", "galinha", "chester"])) cats.push("Aves");
+  if (has(["peixe", "salmão", "salmao", "atum", "sardinha", "bacalhau"])) cats.push("Peixes e Frutos do Mar");
+  if (has(["camarão", "camarao", "lula", "polvo", "marisco", "mexilhão", "mexilhao", "lagosta", "siri", "caranguejo"])) cats.push("Peixes e Frutos do Mar");
+  if (has(["arroz", "risoto"])) cats.push("Arroz e Risoto");
+  if (has(["macarrão", "macarrao", "espaguete", "penne", "fusilli", "talharim", "nhoque"])) cats.push("Massas");
+  if (has(["pão", "pizza", "sanduíche"])) cats.push("Lanche");
+  return [...new Set(cats)];
 };
 
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
@@ -55,7 +58,7 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+    queryFn: () => base44.entities.Receita.list("-nome", 200),
   });
 
   const handleParse = async () => {
@@ -148,7 +151,7 @@ IMPORTANTE:
       // Auto-categorize based on ingredient names
       const ingNomes = (result.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
       const catAuto = categorizarPorIngredientes(ingNomes);
-      if (catAuto) result.categoria = catAuto;
+      if (catAuto.length > 0 && (!result.categorias || result.categorias.length === 0)) result.categorias = catAuto;
       
       // Post-process: check if any nome_banco matches a receita básica even without the flag
       (result.ingredientes || []).forEach((ing, i) => {
@@ -242,7 +245,7 @@ IMPORTANTE:
       
       // Auto-categorize if not set
       const ingNomes = (p.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
-      const catAuto = p.categorias?.length > 0 ? p.categorias : (categorizarPorIngredientes(ingNomes) ? [categorizarPorIngredientes(ingNomes)] : []);
+      const catAuto = p.categorias?.length > 0 ? p.categorias : categorizarPorIngredientes(ingNomes);
       
       const porcoes = p.porcoes_base || 0;
       

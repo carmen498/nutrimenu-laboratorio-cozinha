@@ -69,7 +69,7 @@ export default function ReceitaAberta() {
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+    queryFn: () => base44.entities.Receita.list("-nome", 200),
   });
 
   const { data: insumosReceita = [] } = useQuery({
