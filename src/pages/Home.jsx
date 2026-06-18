@@ -60,7 +60,7 @@ export default function Home() {
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "1.5rem 1rem 0" }}>
       {/* Hero */}
       <div className="text-center pt-8 pb-4">
-        <div className="inline-flex items-center justify-center w-28 h-28 rounded-full bg-[#F9F6F0] mb-5 shadow-lg"
+        <div className="inline-flex items-center justify-center w-[120px] h-[120px] rounded-full bg-[#F9F6F0] mb-5 shadow-lg"
           style={{ border: "3px solid #B8860B" }}>
           {imgError ? (
             <ChefHat className="w-14 h-14" style={{ color: CORES.verdeEscuro }} />
@@ -68,7 +68,7 @@ export default function Home() {
             <img
               src="/IMAGEM_lABORATORIO_DE_COZINHA.png"
               alt="Laboratório de Cozinha"
-              className="w-24 h-24 rounded-full object-cover"
+              className="w-[112px] h-[112px] rounded-full object-cover"
               onError={() => setImgError(true)}
             />
           )}
@@ -88,10 +88,10 @@ export default function Home() {
 
       {/* Grid 3×2 de módulos */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {/* Receitas — verde escuro */}
+        {/* Receitas — verde médio */}
         <Link to="/receitas">
           <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full"
-            style={{ background: CORES.verdeEscuro }}>
+            style={{ background: "#2D6A4F" }}>
             <BookOpen className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform" />
             <span className="font-semibold text-sm">🍳 Receitas</span>
           </Card>
@@ -106,13 +106,13 @@ export default function Home() {
           </Card>
         </Link>
 
-        {/* Lista de Compras — branco com borda */}
+        {/* Lista de Compras — cinza claro */}
         <Link to="/lista-compras">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/30 group h-full bg-white"
-            style={{ borderColor: "#D4C9B8" }}>
+          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border group h-full"
+            style={{ background: "#F5F5F5", borderColor: "#E0E0E0" }}>
             <ShoppingCart className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform"
-              style={{ color: CORES.verdeEscuro }} />
-            <span className="font-semibold text-sm" style={{ color: CORES.verdeEscuro }}>🛒 Lista de Compras</span>
+              style={{ color: "#333333" }} />
+            <span className="font-semibold text-sm" style={{ color: "#333333" }}>🛒 Lista de Compras</span>
           </Card>
         </Link>
 
