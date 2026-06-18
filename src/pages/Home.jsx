@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Plus, ShoppingCart, Apple, ChefHat, CalendarDays, Gauge, ArrowRight, AlertTriangle, Clock } from "lucide-react";
-import { useState } from "react";
+import { BookOpen, Plus, ShoppingCart, Apple, CalendarDays, Gauge, ArrowRight, AlertTriangle, Clock } from "lucide-react";
+
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -36,7 +36,6 @@ function formatarProximaAtualizacao() {
 }
 
 export default function Home() {
-  const [imgError, setImgError] = useState(false);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas-recentes-home"],
@@ -60,18 +59,12 @@ export default function Home() {
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "1.5rem 1rem 0" }}>
       {/* Hero */}
       <div className="text-center pt-8 pb-4">
-        <div className="inline-flex items-center justify-center w-[120px] h-[120px] rounded-full bg-[#F9F6F0] mb-5 shadow-lg"
-          style={{ border: "3px solid #B8860B" }}>
-          {imgError ? (
-            <ChefHat className="w-14 h-14" style={{ color: CORES.verdeEscuro }} />
-          ) : (
-            <img
-              src="/IMAGEM_lABORATORIO_DE_COZINHA.png"
-              alt="Laboratório de Cozinha"
-              className="w-[112px] h-[112px] rounded-full object-cover"
-              onError={() => setImgError(true)}
-            />
-          )}
+        <div className="inline-flex items-center justify-center mb-5">
+          <img
+            src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/a5c36b28a_IMAGEMlABORATORIODECOZINHA.png"
+            alt="Laboratório de Cozinha"
+            className="w-[160px] h-[160px] rounded-full object-cover shadow-lg"
+          />
         </div>
         <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight"
           style={{ color: CORES.verdeEscuro }}>
