@@ -1231,9 +1231,6 @@ REGRAS:
       {/* Ingredientes Esquecidos */}
       <IngredientesEsquecidos receitaId={id} fator={fator} />
 
-      {/* Insumos e Embalagens */}
-      <InsumosSection receitaId={id} />
-
       {/* Mode of preparation */}
       {passos.length > 0 && (
         <div>
@@ -1247,6 +1244,9 @@ REGRAS:
           </Card>
         </div>
       )}
+
+      {/* Insumos e Embalagens */}
+      <InsumosSection receitaId={id} />
 
       {/* Cost summary */}
       <Card className="p-4">
