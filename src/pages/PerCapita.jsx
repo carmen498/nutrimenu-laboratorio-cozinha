@@ -286,12 +286,12 @@ export default function PerCapita() {
           className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         >
           <option value="">Todos os grupos ({totalItens} itens)</option>
-          {temPersonalizados && (
-            <option value="__personalizados__">⭐ Personalizados por mim ({sobreposicoes.length})</option>
-          )}
           {nomesGrupos.map(g => (
             <option key={g} value={g}>{g}</option>
           ))}
+          {temPersonalizados && (
+            <option value="__personalizados__">⭐ Personalizados por mim ({sobreposicoes.length})</option>
+          )}
         </select>
         <Button variant="outline" onClick={() => window.print()}>
           <FileText className="w-4 h-4 mr-1" /> Exportar PDF
@@ -359,6 +359,16 @@ export default function PerCapita() {
       <p className="text-sm text-muted-foreground no-print">
         {itensFiltrados.filter(i => i.tipo !== "grupo").length} itens encontrados
       </p>
+
+      {/* Empty state for personalizados */}
+      {filtroGrupo === "__personalizados__" && itensFiltrados.filter(i => i.tipo !== "grupo").length === 0 && (
+        <Card className="p-8 text-center border-amber-200 bg-amber-50/40">
+          <p className="text-muted-foreground text-sm">Você ainda não personalizou nenhum item.</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Edite o valor per capita de qualquer preparação ou adicione um novo item para vê-lo aqui.
+          </p>
+        </Card>
+      )}
 
       {/* Table */}
       <Card className="overflow-x-auto">
