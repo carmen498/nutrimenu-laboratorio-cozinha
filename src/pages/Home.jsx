@@ -81,58 +81,58 @@ export default function Home() {
 
       {/* Grid 3×2 de módulos */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {/* Receitas — verde médio */}
+        {/* Receitas — dark green */}
         <Link to="/receitas">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full"
-            style={{ background: "#2D6A4F" }}>
-            <BookOpen className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform" />
-            <span className="font-semibold text-sm">🍳 Receitas</span>
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#1B4332", minHeight: 130 }}>
+            <BookOpen className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-base text-center">Receitas</span>
           </Card>
         </Link>
 
-        {/* Cardápios — verde médio */}
+        {/* Cardápios — medium green */}
         <Link to="/cardapios">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full"
-            style={{ background: CORES.verdeMedio }}>
-            <CalendarDays className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform" />
-            <span className="font-semibold text-sm">📅 Cardápios</span>
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#40916C", minHeight: 130 }}>
+            <CalendarDays className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-base text-center">Cardápios</span>
           </Card>
         </Link>
 
-        {/* Lista de Compras — cinza claro */}
+        {/* Lista de Compras — light gray */}
         <Link to="/lista-compras">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border group h-full"
-            style={{ background: "#F5F5F5", borderColor: "#E0E0E0" }}>
-            <ShoppingCart className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform"
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border group h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#F5F5F5", borderColor: "#E0E0E0", minHeight: 130 }}>
+            <ShoppingCart className="w-10 h-10 group-hover:scale-110 transition-transform"
               style={{ color: "#333333" }} />
-            <span className="font-semibold text-sm" style={{ color: "#333333" }}>🛒 Lista de Compras</span>
+            <span className="font-bold text-base text-center" style={{ color: "#333333" }}>Lista de Compras</span>
           </Card>
         </Link>
 
-        {/* Ingredientes — laranja suave */}
+        {/* Ingredientes — orange */}
         <Link to="/ingredientes">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full"
-            style={{ background: CORES.laranjaSuave }}>
-            <Apple className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform" />
-            <span className="font-semibold text-sm">🧅 Ingredientes</span>
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#F4A261", minHeight: 130 }}>
+            <Apple className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-base text-center">Ingredientes</span>
           </Card>
         </Link>
 
-        {/* Per Capita — azul suave */}
+        {/* Per Capita — blue */}
         <Link to="/percapita">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full"
-            style={{ background: CORES.azulSuave }}>
-            <Gauge className="w-7 h-7 mb-3 group-hover:scale-110 transition-transform" />
-            <span className="font-semibold text-sm">📊 Per Capita</span>
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#457B9D", minHeight: 130 }}>
+            <Gauge className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-base text-center">Per Capita</span>
           </Card>
         </Link>
 
-        {/* Nova Receita — verde escuro destaque */}
+        {/* Nova Receita — wine #8B3A52 */}
         <Link to="/receitas?nova=manual">
-          <Card className="p-5 hover:shadow-lg transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center"
-            style={{ background: "#8B3A52" }}>
-            <Plus className="w-8 h-8 mb-2 group-hover:scale-110 transition-transform" />
-            <span className="font-semibold text-sm">➕ Nova Receita</span>
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#8B3A52", minHeight: 130 }}>
+            <Plus className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-base text-center">Nova Receita</span>
           </Card>
         </Link>
       </div>
