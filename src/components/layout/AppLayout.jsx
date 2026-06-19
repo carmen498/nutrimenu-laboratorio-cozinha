@@ -117,7 +117,21 @@ export default function AppLayout() {
         </div>
       </nav>
 
-      <HelpPanel />
+      <HelpPanel screenName={
+        (() => {
+          const p = location.pathname;
+          if (p === "/") return "Início";
+          if (p.startsWith("/receita/")) return "Receita";
+          if (p === "/receitas") return "Receitas";
+          if (p.startsWith("/cardapio/")) return "Cardápio";
+          if (p === "/cardapios") return "Cardápios";
+          if (p === "/ingredientes") return "Ingredientes";
+          if (p === "/lista-compras") return "Lista de Compras";
+          if (p === "/percapita") return "Per Capita";
+          if (p.startsWith("/exportar/")) return "Exportar Receita";
+          return "";
+        })()
+      } />
     </div>
   );
 }

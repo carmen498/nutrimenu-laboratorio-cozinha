@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { HelpCircle, X, ChevronDown } from "lucide-react";
+import { HelpCircle, X, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { base44 } from "@/api/base44Client";
 
 const faqs = [
   {
@@ -29,17 +30,37 @@ const faqs = [
   },
 ];
 
-export default function HelpPanel() {
+export default function HelpPanel({ screenName = "" }) {
   const [open, setOpen] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleAsk = async () => {
+    if (!question.trim() || loading) return;
+    setLoading(true);
+    setAnswer("");
+    try {
+      const systemPrompt = `Você é a assistente do app Laboratório de Cozinha. O usuário está na tela ${screenName || "do app"}. Responda em português brasileiro de forma direta e prática.`;
+      const res = await base44.integrations.Core.InvokeLLM({
+        prompt: `[System: ${systemPrompt}]\n\nPergunta do usuário: ${question}`,
+        model: "claude_sonnet_4_6",
+      });
+      setAnswer(res || "Não foi possível obter uma resposta.");
+    } catch {
+      setAnswer("Ocorreu um erro ao consultar o assistente. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       {/* Floating button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:opacity-90 transition-all"
+        className="fixed bottom-6 md:bottom-6 right-6 z-50 w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:opacity-90 transition-all mb-14 md:mb-0"
         style={{ backgroundColor: "#1B4332" }}
         title="Ajuda"
       >
@@ -105,6 +126,14 @@ export default function HelpPanel() {
               ))}
             </div>
           </div>
+
+          {/* Answer */}
+          {answer && (
+            <div className="bg-muted/50 rounded-lg p-3 border border-border">
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Resposta</p>
+              <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{answer}</p>
+            </div>
+          )}
         </div>
 
         {/* Ask question */}
@@ -119,9 +148,10 @@ export default function HelpPanel() {
           <Button
             className="w-full mt-2 gap-1"
             style={{ backgroundColor: "#1B4332" }}
-            disabled={!question.trim()}
+            disabled={!question.trim() || loading}
+            onClick={handleAsk}
           >
-            Perguntar
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Pensando...</> : "Perguntar"}
           </Button>
         </div>
       </div>
