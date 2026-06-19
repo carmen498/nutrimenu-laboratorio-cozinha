@@ -3,6 +3,7 @@ import { Home, BookOpen, ShoppingCart, Apple, Menu, X, LogOut, Gauge, CalendarDa
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
+import HelpPanel from "@/components/HelpPanel";
 
 const navItems = [
   { path: "/", label: "Início", icon: Home },
@@ -115,6 +116,8 @@ export default function AppLayout() {
           })}
         </div>
       </nav>
+
+      <HelpPanel />
     </div>
   );
 }
