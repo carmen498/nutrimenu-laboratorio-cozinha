@@ -26,12 +26,12 @@ const categorizarPorIngredientes = (ingredientesNomes) => {
   const cats = [];
   if (has(["chocolate", "cacau", "açúcar", "acucar", "baunilha", "chantilly", "doce", "brigadeiro", "beijinho", "pavê", "pave", "mousse"])) cats.push("Sobremesas");
   if (has(["farinha", "manteiga", "margarina", "fermento"]) && has(["açúcar", "acucar"])) cats.push("Sobremesas");
-  if (has(["bovin", "contrafilé", "contrafile", "picanha", "alcatra", "maminha", "patinho", "coxão", "coxao", "costela bovina", "fraldinha", "cupim", "músculo", "musculo"])) cats.push("Carnes");
+  if (has(["bovin", "contrafilé", "contrafile", "picanha", "alcatra", "maminha", "patinho", "coxão", "coxao", "costela bovina", "fraldinha", "cupim", "músculo", "musculo"])) cats.push("Carne Bovina");
   if (has(["frango", "peru", "ave", "galinha", "chester"])) cats.push("Aves");
   if (has(["peixe", "salmão", "salmao", "atum", "sardinha", "bacalhau"])) cats.push("Peixes e Frutos do Mar");
   if (has(["camarão", "camarao", "lula", "polvo", "marisco", "mexilhão", "mexilhao", "lagosta", "siri", "caranguejo"])) cats.push("Peixes e Frutos do Mar");
   if (has(["arroz", "risoto"])) cats.push("Arroz e Risoto");
-  if (has(["macarrão", "macarrao", "espaguete", "penne", "fusilli", "talharim", "nhoque"])) cats.push("Massas");
+  if (has(["macarrão", "macarrao", "espaguete", "penne", "fusilli", "talharim", "nhoque"])) cats.push("Massas, Pastelão e Quiches");
   if (has(["pão", "pizza", "sanduíche"])) cats.push("Lanche");
   return [...new Set(cats)];
 };
@@ -121,7 +121,7 @@ IMPORTANTE:
           type: "object",
           properties: {
             nome: { type: "string", description: "Nome da receita" },
-            categorias: { type: "array", items: { type: "string" }, description: "Categorias sugeridas: Carnes, Aves, Peixes e Frutos do Mar, Ovos, Massas, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães, Sobremesas, Molhos e Bases, Acompanhamento, Prato Principal, Prato Único, Entrada, Petisco, Lanche" },
+            categorias: { type: "array", items: { type: "string" }, description: "Categorias sugeridas: Carne Bovina, Aves, Peixes e Frutos do Mar, Ovos, Massas Pastelão e Quiches, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães e Bolos, Sobremesas, Molhos, Acompanhamento, Prato Principal, Prato Único, Entradas, Petiscos, Lanche, Receitas Base" },
             porcoes_base: { type: "number" },
             unidade_base: { type: "string", enum: ["g", "ml"] },
             modo_preparo: { type: "string" },

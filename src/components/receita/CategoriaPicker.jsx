@@ -6,19 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ChevronDown, X } from "lucide-react";
 
 export const CATEGORIAS = [
-  "Carnes", "Aves", "Peixes e Frutos do Mar", "Ovos",
-  "Massas", "Arroz e Risoto", "Sopas e Caldos", "Leguminosas",
-  "Salgadinhos", "Pães", "Sobremesas", "Molhos e Bases",
+  "Carne Bovina", "Aves", "Peixes e Frutos do Mar", "Ovos",
+  "Massas, Pastelão e Quiches", "Arroz e Risoto", "Sopas e Caldos", "Leguminosas",
+  "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos",
   "Acompanhamento", "Prato Principal", "Prato Único",
-  "Entrada", "Petisco", "Lanche"
+  "Entradas", "Petiscos", "Lanche", "Receitas Base"
 ];
 
 export const ICONE_CATEGORIA = {
-  "Carnes": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
-  "Massas": "🍝", "Arroz e Risoto": "🍚", "Sopas e Caldos": "🥣", "Leguminosas": "🫘",
-  "Salgadinhos": "🥟", "Pães": "🍞", "Sobremesas": "🍰", "Molhos e Bases": "🫙",
+  "Carne Bovina": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
+  "Massas, Pastelão e Quiches": "🍝", "Arroz e Risoto": "🍚", "Sopas e Caldos": "🥣", "Leguminosas": "🫘",
+  "Salgadinhos": "🥟", "Pães e Bolos": "🍞", "Sobremesas": "🍰", "Molhos": "🫙",
   "Acompanhamento": "🥗", "Prato Principal": "🍽️", "Prato Único": "🍲",
-  "Entrada": "🥄", "Petisco": "🍢", "Lanche": "🥪"
+  "Entradas": "🥄", "Petiscos": "🍢", "Lanche": "🥪", "Receitas Base": "📖"
 };
 
 export default function CategoriaPicker({ value = [], onChange }) {

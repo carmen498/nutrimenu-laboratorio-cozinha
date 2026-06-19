@@ -11,24 +11,25 @@
       "items": {
         "type": "string",
         "enum": [
-          "Carnes",
+          "Carne Bovina",
           "Aves",
           "Peixes e Frutos do Mar",
           "Ovos",
-          "Massas",
+          "Massas, Pastel\u00e3o e Quiches",
           "Arroz e Risoto",
           "Sopas e Caldos",
           "Leguminosas",
           "Salgadinhos",
-          "P\u00e3es",
+          "P\u00e3es e Bolos",
           "Sobremesas",
-          "Molhos e Bases",
+          "Molhos",
           "Acompanhamento",
           "Prato Principal",
           "Prato \u00danico",
-          "Entrada",
-          "Petisco",
-          "Lanche"
+          "Entradas",
+          "Petiscos",
+          "Lanche",
+          "Receitas Base"
         ]
       },
       "default": [],
