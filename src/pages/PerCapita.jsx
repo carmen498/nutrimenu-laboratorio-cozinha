@@ -4,18 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, FileText, Pencil, RotateCcw, Check, X } from "lucide-react";
+import { Search, FileText, Pencil, RotateCcw, Check, X, Plus, Trash2 } from "lucide-react";
 import { percapitaData, todosItens, notaTecnica, referencias } from "@/lib/perCapitaData";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 const nomesGrupos = [...new Set(percapitaData.filter(i => i.tipo === "grupo").map(i => i.nome))];
+const prepSet = new Set(todosItens.map(i => i.prep));
 
 export default function PerCapita() {
   const [search, setSearch] = useState("");
   const [filtroGrupo, setFiltroGrupo] = useState("");
-  const [editando, setEditando] = useState(null); // prep nome sendo editado
+  const [editando, setEditando] = useState(null); // "prep_nome" sendo editado (sobreposição ou user-item)
   const [valorEdit, setValorEdit] = useState("");
+  const [medidaEdit, setMedidaEdit] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addPrep, setAddPrep] = useState("");
+  const [addG, setAddG] = useState("");
+  const [addMedida, setAddMedida] = useState("");
+  const [addGrupo, setAddGrupo] = useState(nomesGrupos[0] || "");
   const printRef = useRef();
   const queryClient = useQueryClient();
 
@@ -32,6 +39,15 @@ export default function PerCapita() {
     return map;
   }, [sobreposicoes]);
 
+  // User-created items (not in original percapitaData)
+  const userItems = useMemo(() => {
+    return sobreposicoes.filter(s => !prepSet.has(s.prep_nome));
+  }, [sobreposicoes]);
+
+  const getUserItemsByGrupo = useCallback((grupo) => {
+    return userItems.filter(s => s.grupo === grupo);
+  }, [userItems]);
+
   const temPersonalizados = sobreposicoes.length > 0;
 
   const itensFiltrados = useMemo(() => {
@@ -43,88 +59,141 @@ export default function PerCapita() {
       if (item.tipo === "grupo") {
         currentGrupo = item.nome;
         grupoJaAdicionado = false;
-
-        // Filtro "personalizados": só inclui grupo se tiver algum item personalizado nele
-        if (filtroGrupo === "__personalizados__") {
-          // Verifica se há itens personalizados neste grupo
-          const temItemPersonalizado = percapitaData.some(
-            i => i.tipo !== "grupo" && i.prep && sobreposicaoMap[i.prep] &&
-            // Checa se o item pertence a este grupo atual
-            percapitaData.indexOf(i) > percapitaData.indexOf(item)
-          );
-          // Não é eficiente, vamos usar outra abordagem
-          continue;
-        }
-
-        if (!filtroGrupo || filtroGrupo === currentGrupo) {
-          results.push(item);
-          grupoJaAdicionado = true;
-        }
         continue;
       }
 
-      // Filtro "personalizados"
+      let origMatches = false;
+
+      // "Personalizados" filter: only show items with overrides or user-created
       if (filtroGrupo === "__personalizados__") {
-        if (!sobreposicaoMap[item.prep]) continue;
+        const isOverride = sobreposicaoMap[item.prep];
+        const userInGroup = getUserItemsByGrupo(currentGrupo);
+        const anyUserMatch = userInGroup.some(ui => {
+          if (search.trim()) {
+            const s = search.toLowerCase();
+            return String(ui.prep_nome || "").toLowerCase().includes(s) ||
+                   String(ui.medida || "").toLowerCase().includes(s);
+          }
+          return true;
+        });
+        if (!isOverride && !anyUserMatch) continue;
+        if (search.trim() && isOverride) {
+          const s = search.toLowerCase();
+          if (!String(item.prep || "").toLowerCase().includes(s) &&
+              !String(item.medida || "").toLowerCase().includes(s)) continue;
+        }
       } else {
-        // Filtra por grupo
-        if (filtroGrupo && currentGrupo !== filtroGrupo) continue;
+        // Filter by search across original items + user items in this group
+        let shouldIncludeGrupo = false;
+
+        // Check original item matches
+        origMatches = true;
+        if (filtroGrupo && currentGrupo !== filtroGrupo) origMatches = false;
+        if (search.trim()) {
+          const s = search.toLowerCase();
+          const match =
+            String(item.prep || "").toLowerCase().includes(s) ||
+            String(item.medida || "").toLowerCase().includes(s) ||
+            String(currentGrupo || "").toLowerCase().includes(s);
+          if (!match) origMatches = false;
+        }
+
+        // Check user items in this group match
+        const userInGroup = getUserItemsByGrupo(currentGrupo);
+        const userMatch = userInGroup.some(ui => {
+          if (filtroGrupo && currentGrupo !== filtroGrupo) return false;
+          if (search.trim()) {
+            const s = search.toLowerCase();
+            return String(ui.prep_nome || "").toLowerCase().includes(s) ||
+                   String(ui.medida || "").toLowerCase().includes(s) ||
+                   String(currentGrupo || "").toLowerCase().includes(s);
+          }
+          return true;
+        });
+
+        if (origMatches || userMatch) shouldIncludeGrupo = true;
+        if (!shouldIncludeGrupo) continue;
       }
 
-      // Filtra por busca textual
-      if (search.trim()) {
-        const s = search.toLowerCase();
-        const match =
-          String(item.prep || "").toLowerCase().includes(s) ||
-          String(item.medida || "").toLowerCase().includes(s) ||
-          String(currentGrupo || "").toLowerCase().includes(s);
-        if (!match) continue;
-      }
-
-      // Garante que o cabeçalho do grupo apareça uma única vez antes dos itens
+      // Add group header once
       if (!grupoJaAdicionado) {
         results.push({ tipo: "grupo", nome: currentGrupo });
         grupoJaAdicionado = true;
       }
 
-      results.push(item);
+      // Add original item if it matches (or is an override in personalizados mode)
+      if (filtroGrupo === "__personalizados__") {
+        if (sobreposicaoMap[item.prep]) results.push(item);
+      } else if (origMatches) {
+        results.push(item);
+      }
+
+      // Add matching user items
+      const userInGroupNow = getUserItemsByGrupo(currentGrupo);
+      for (const ui of userInGroupNow) {
+        let uiMatches = true;
+        if (filtroGrupo && filtroGrupo !== "__personalizados__" && currentGrupo !== filtroGrupo) uiMatches = false;
+        if (search.trim()) {
+          const s = search.toLowerCase();
+          uiMatches = String(ui.prep_nome || "").toLowerCase().includes(s) ||
+                      String(ui.medida || "").toLowerCase().includes(s) ||
+                      String(currentGrupo || "").toLowerCase().includes(s);
+        }
+        if (uiMatches) results.push({ tipo: "user", data: ui, grupo: currentGrupo });
+      }
     }
 
     return results;
-  }, [search, filtroGrupo, sobreposicaoMap]);
+  }, [search, filtroGrupo, userItems, getUserItemsByGrupo]);
 
-  const iniciarEdicao = useCallback((item) => {
-    const sob = sobreposicaoMap[item.prep];
-    setEditando(item.prep);
-    setValorEdit(String(sob ? sob.per_capita_g : item.g));
+  const iniciarEdicao = useCallback((item, isUserItem) => {
+    if (isUserItem) {
+      setEditando("user:" + item.data.id);
+      setValorEdit(String(item.data.per_capita_g));
+      setMedidaEdit(item.data.medida || "");
+    } else {
+      const sob = sobreposicaoMap[item.prep];
+      setEditando(item.prep);
+      setValorEdit(String(sob ? sob.per_capita_g : item.g));
+    }
   }, [sobreposicaoMap]);
 
   const cancelarEdicao = useCallback(() => {
     setEditando(null);
     setValorEdit("");
+    setMedidaEdit("");
   }, []);
 
   const salvarEdicao = useCallback(async (item) => {
-    const novoG = parseFloat(valorEdit);
-    if (isNaN(novoG) || novoG <= 0) return;
-    const existente = sobreposicaoMap[item.prep];
+    const isUserItem = typeof item.data !== "undefined";
 
-    if (existente) {
-      await base44.entities.PerCapitaUsuario.update(existente.id, {
+    if (isUserItem) {
+      const novoG = parseFloat(valorEdit);
+      if (isNaN(novoG) || novoG <= 0) return;
+      await base44.entities.PerCapitaUsuario.update(item.data.id, {
         per_capita_g: novoG,
+        medida: medidaEdit,
       });
     } else {
-      await base44.entities.PerCapitaUsuario.create({
-        prep_nome: item.prep,
-        per_capita_g: novoG,
-        original_g: item.g,
-      });
+      const novoG = parseFloat(valorEdit);
+      if (isNaN(novoG) || novoG <= 0) return;
+      const existente = sobreposicaoMap[item.prep];
+      if (existente) {
+        await base44.entities.PerCapitaUsuario.update(existente.id, { per_capita_g: novoG });
+      } else {
+        await base44.entities.PerCapitaUsuario.create({
+          prep_nome: item.prep,
+          per_capita_g: novoG,
+          original_g: item.g,
+        });
+      }
     }
 
     queryClient.invalidateQueries({ queryKey: ["percapita-usuario"] });
     setEditando(null);
     setValorEdit("");
-  }, [valorEdit, sobreposicaoMap, queryClient]);
+    setMedidaEdit("");
+  }, [valorEdit, medidaEdit, sobreposicaoMap, queryClient]);
 
   const resetarValor = useCallback(async (item) => {
     const sob = sobreposicaoMap[item.prep];
@@ -133,19 +202,46 @@ export default function PerCapita() {
     queryClient.invalidateQueries({ queryKey: ["percapita-usuario"] });
   }, [sobreposicaoMap, queryClient]);
 
+  const deletarUserItem = useCallback(async (item) => {
+    if (!confirm(`Excluir "${item.data.prep_nome}"?`)) return;
+    await base44.entities.PerCapitaUsuario.delete(item.data.id);
+    queryClient.invalidateQueries({ queryKey: ["percapita-usuario"] });
+  }, [queryClient]);
+
+  const handleAddItem = useCallback(async () => {
+    const g = parseFloat(addG);
+    if (!addPrep.trim() || isNaN(g) || g <= 0 || !addGrupo) return;
+    await base44.entities.PerCapitaUsuario.create({
+      prep_nome: addPrep.trim(),
+      per_capita_g: g,
+      original_g: 0,
+      medida: addMedida.trim(),
+      grupo: addGrupo,
+    });
+    queryClient.invalidateQueries({ queryKey: ["percapita-usuario"] });
+    setAddPrep("");
+    setAddG("");
+    setAddMedida("");
+    setAddGrupo(nomesGrupos[0] || "");
+    setShowAddForm(false);
+  }, [addPrep, addG, addMedida, addGrupo, queryClient]);
+
   const getDisplayG = (item) => {
+    if (item.tipo === "user") return item.data.per_capita_g;
     const sob = sobreposicaoMap[item.prep];
     return sob ? sob.per_capita_g : item.g;
   };
 
-  const isPersonalizado = (item) => !!sobreposicaoMap[item.prep];
+  const isPersonalizado = (item) => {
+    if (item.tipo === "user") return true;
+    return !!sobreposicaoMap[item.prep];
+  };
 
-  const totalItens = todosItens.length;
+  const totalItens = todosItens.length + userItems.length;
 
-  // Para PDF: itens personalizados com asterisco
   const itensPersonalizados = useMemo(() => {
-    return itensFiltrados.filter(i => i.tipo !== "grupo" && sobreposicaoMap[i.prep]);
-  }, [itensFiltrados, sobreposicaoMap]);
+    return itensFiltrados.filter(i => i.tipo !== "grupo" && isPersonalizado(i));
+  }, [itensFiltrados]);
 
   return (
     <div className="space-y-4 pb-24 md:pb-8" ref={printRef}>
@@ -200,7 +296,64 @@ export default function PerCapita() {
         <Button variant="outline" onClick={() => window.print()}>
           <FileText className="w-4 h-4 mr-1" /> Exportar PDF
         </Button>
+        <Button variant="default" onClick={() => setShowAddForm(!showAddForm)} className="gap-1">
+          <Plus className="w-4 h-4" /> Adicionar Item
+        </Button>
       </div>
+
+      {/* Add item inline form */}
+      {showAddForm && (
+        <Card className="p-4 border-amber-300 bg-amber-50/60 no-print">
+          <p className="text-sm font-semibold text-amber-800 mb-3">Novo item personalizado</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Preparação</label>
+              <Input
+                placeholder="Ex: Strogonoff de frango"
+                value={addPrep}
+                onChange={(e) => setAddPrep(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Per capita (g)</label>
+              <Input
+                type="number"
+                placeholder="200"
+                value={addG}
+                onChange={(e) => setAddG(e.target.value)}
+                className="h-8 text-sm"
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddItem(); }}
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Medida caseira</label>
+              <Input
+                placeholder="Ex: 1 concha média"
+                value={addMedida}
+                onChange={(e) => setAddMedida(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Grupo</label>
+              <select
+                value={addGrupo}
+                onChange={(e) => setAddGrupo(e.target.value)}
+                className="w-full h-8 rounded-md border border-input bg-transparent px-2 text-sm"
+              >
+                {nomesGrupos.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-3">
+            <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>Cancelar</Button>
+            <Button size="sm" onClick={handleAddItem} disabled={!addPrep.trim() || !addG || !addGrupo}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Salvar
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground no-print">
@@ -213,7 +366,7 @@ export default function PerCapita() {
           <thead className="bg-muted/50">
             <tr className="border-b-2 border-border">
               <th className="text-left px-2 py-2 font-semibold text-xs">Preparação / Alimento</th>
-              <th className="text-right px-2 py-2 font-semibold text-xs w-36">Per capita médio (g)</th>
+              <th className="text-right px-2 py-2 font-semibold text-xs w-44">Per capita médio (g)</th>
               <th className="text-left px-2 py-2 font-semibold text-xs hidden md:table-cell">Medida caseira de referência</th>
             </tr>
           </thead>
@@ -229,30 +382,32 @@ export default function PerCapita() {
                 );
               }
 
+              const userItem = item.tipo === "user";
+              const prepNome = userItem ? item.data.prep_nome : item.prep;
+              const medida = userItem ? (item.data.medida || "—") : item.medida;
               const personalizado = isPersonalizado(item);
               const displayG = getDisplayG(item);
               const isEven = idx % 2 === 0;
-              const editandoEste = editando === item.prep;
+              const editKey = userItem ? "user:" + item.data.id : item.prep;
+              const editandoEste = editando === editKey;
 
               return (
-                <tr key={`i-${item.prep}-${idx}`} className={`border-b border-border/40 ${isEven ? "bg-white" : "bg-green-50/50"} hover:bg-muted/40`}>
+                <tr key={`i-${prepNome}-${idx}`} className={`border-b border-border/40 ${isEven ? "bg-white" : "bg-green-50/50"} hover:bg-muted/40`}>
                   <td className="px-2 py-1.5 font-medium text-xs">
-                    <span>{item.prep}</span>
+                    <span>{prepNome}</span>
                     {personalizado && (
                       <Badge
                         className="ml-2 text-[10px] px-1.5 py-0 no-print"
                         style={{ background: "#FEF3C7", color: "#B45309", border: "1px solid #F59E0B" }}
                       >
-                        <span className="hidden print:inline">*</span>
                         <span className="print:hidden">Personalizado</span>
                       </Badge>
                     )}
-                    {/* Print asterisk */}
                     {personalizado && <span className="hidden print:inline text-[#B45309] ml-0.5">*</span>}
                   </td>
                   <td className="px-2 py-1.5 text-right tabular-nums">
                     {editandoEste ? (
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
                         <Input
                           type="number"
                           value={valorEdit}
@@ -264,6 +419,14 @@ export default function PerCapita() {
                             if (e.key === "Escape") cancelarEdicao();
                           }}
                         />
+                        {userItem && (
+                          <Input
+                            placeholder="Medida"
+                            value={medidaEdit}
+                            onChange={(e) => setMedidaEdit(e.target.value)}
+                            className="w-28 h-7 text-xs"
+                          />
+                        )}
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => salvarEdicao(item)}>
                           <Check className="w-3.5 h-3.5 text-green-600" />
                         </Button>
@@ -276,12 +439,12 @@ export default function PerCapita() {
                         <span className="font-bold text-base" style={{ color: "#1B4332" }}>{displayG}g</span>
                         <button
                           className="no-print p-0.5 rounded hover:bg-muted transition-colors"
-                          onClick={() => iniciarEdicao(item)}
+                          onClick={() => iniciarEdicao(item, userItem)}
                           title="Editar valor"
                         >
                           <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
                         </button>
-                        {personalizado && (
+                        {personalizado && !userItem && (
                           <button
                             className="no-print p-0.5 rounded hover:bg-red-50 transition-colors"
                             onClick={() => resetarValor(item)}
@@ -290,10 +453,19 @@ export default function PerCapita() {
                             <RotateCcw className="w-3.5 h-3.5 text-amber-600 hover:text-red-500" />
                           </button>
                         )}
+                        {userItem && (
+                          <button
+                            className="no-print p-0.5 rounded hover:bg-red-50 transition-colors"
+                            onClick={() => deletarUserItem(item)}
+                            title="Excluir item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
-                  <td className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">{item.medida}</td>
+                  <td className="px-2 py-1.5 text-xs text-muted-foreground hidden md:table-cell">{medida}</td>
                 </tr>
               );
             })}
@@ -308,6 +480,14 @@ export default function PerCapita() {
             * Valores personalizados (original entre parênteses):
             {" "}
             {itensPersonalizados.map((item, i) => {
+              if (item.tipo === "user") {
+                return (
+                  <span key={item.data.id}>
+                    {item.data.prep_nome}: {item.data.per_capita_g}g (item adicionado)
+                    {i < itensPersonalizados.length - 1 ? " · " : ""}
+                  </span>
+                );
+              }
               const sob = sobreposicaoMap[item.prep];
               return (
                 <span key={item.prep}>
