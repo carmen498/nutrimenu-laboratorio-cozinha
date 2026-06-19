@@ -539,7 +539,12 @@ export default function Receitas() {
 function ImportReceitasCsvDialog({ open, onClose }) {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [summary, setSummary] = useState(null);
   const qc = useQueryClient();
+
+  const reset = () => { setFile(null); setSummary(null); };
+
+  const handleClose = () => { reset(); onClose(); };
 
   const handleImport = async () => {
     if (!file) return;
@@ -569,42 +574,55 @@ function ImportReceitasCsvDialog({ open, onClose }) {
         const existingMap = {};
         existing.forEach((r) => { existingMap[r.nome?.toLowerCase().trim()] = r; });
 
-        let created = 0, updated = 0, skipped = 0;
+        let created = 0, updated = 0, skippedDuplicate = 0, errors = 0;
+        const duplicateNames = [];
+        const errorNames = [];
         const processedNames = new Set();
+        const importedCount = () => created + updated;
+
         for (const item of items) {
           const nome = (item.nome_receita || "").trim();
-          if (!nome) { skipped++; continue; }
+          if (!nome) continue;
 
           const nomeKey = nome.toLowerCase();
           // Skip intra-batch duplicates (case-insensitive, trimmed)
-          if (processedNames.has(nomeKey)) { skipped++; continue; }
+          if (processedNames.has(nomeKey)) {
+            skippedDuplicate++;
+            duplicateNames.push(nome);
+            continue;
+          }
           processedNames.add(nomeKey);
 
-          const catsRaw = item.categorias || item.categoria || "";
-          const categorias = typeof catsRaw === "string"
-            ? catsRaw.split(/[,;]/).map(c => c.trim()).filter(Boolean)
-            : (Array.isArray(catsRaw) ? catsRaw : []);
-          const payload = {
-            nome: nome.toUpperCase(),
-            categorias,
-            porcoes_base: item.porcoes_base || 1,
-            rendimento_total: item.rendimento_g || 0,
-            unidade_base: "g",
-            modo_preparo: item.modo_preparo || "",
-          };
-          const existingItem = existingMap[nomeKey];
-          if (existingItem) {
-            await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: true });
-            updated++;
-          } else {
-            await base44.entities.Receita.create({ ...payload, revisar: false });
-            created++;
+          try {
+            const catsRaw = item.categorias || item.categoria || "";
+            const categorias = typeof catsRaw === "string"
+              ? catsRaw.split(/[,;]/).map(c => c.trim()).filter(Boolean)
+              : (Array.isArray(catsRaw) ? catsRaw : []);
+            const payload = {
+              nome: nome.toUpperCase(),
+              categorias,
+              porcoes_base: item.porcoes_base || 1,
+              rendimento_total: item.rendimento_g || 0,
+              unidade_base: "g",
+              modo_preparo: item.modo_preparo || "",
+            };
+            const existingItem = existingMap[nomeKey];
+            if (existingItem) {
+              await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: true });
+              updated++;
+            } else {
+              await base44.entities.Receita.create({ ...payload, revisar: false });
+              created++;
+            }
+          } catch {
+            errors++;
+            errorNames.push(nome);
           }
         }
-        toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.`);
+
+        setSummary({ created, updated, skippedDuplicate, errors, duplicateNames, errorNames });
         qc.invalidateQueries({ queryKey: ["receitas"] });
         qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
-        onClose();
       } else {
         toast.error("Erro ao processar arquivo: " + (result.details || "formato inválido"));
       }
@@ -615,8 +633,65 @@ function ImportReceitasCsvDialog({ open, onClose }) {
     }
   };
 
+  if (summary) {
+    const total = summary.created + summary.updated;
+    return (
+      <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-display">Relatório da Importação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <Card className="p-3 text-center bg-green-50 border-green-200">
+                <span className="text-xl">✅</span>
+                <p className="text-2xl font-bold text-green-700">{total}</p>
+                <p className="text-xs text-green-600">Importadas</p>
+              </Card>
+              <Card className="p-3 text-center bg-amber-50 border-amber-200">
+                <span className="text-xl">⚠️</span>
+                <p className="text-2xl font-bold text-amber-700">{summary.skippedDuplicate}</p>
+                <p className="text-xs text-amber-600">Duplicadas</p>
+              </Card>
+              <Card className="p-3 text-center bg-red-50 border-red-200">
+                <span className="text-xl">❌</span>
+                <p className="text-2xl font-bold text-red-700">{summary.errors}</p>
+                <p className="text-xs text-red-600">Erros</p>
+              </Card>
+            </div>
+
+            {summary.duplicateNames.length > 0 && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">Nomes duplicados ignorados:</p>
+                {summary.duplicateNames.map((n, i) => (
+                  <p key={i} className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded">{n}</p>
+                ))}
+              </div>
+            )}
+
+            {summary.errorNames.length > 0 && (
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p className="font-medium">Falhas ao importar:</p>
+                {summary.errorNames.map((n, i) => (
+                  <p key={i} className="text-red-700 bg-red-50 px-2 py-0.5 rounded">{n}</p>
+                ))}
+              </div>
+            )}
+
+            {summary.duplicateNames.length === 0 && summary.errors === 0 && (
+              <p className="text-sm text-muted-foreground text-center">Todas as receitas foram importadas com sucesso.</p>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={handleClose}>Concluir</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display">Importar Receitas via CSV</DialogTitle>
@@ -630,7 +705,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
         <Label>Arquivo</Label>
         <Input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files[0])} />
         <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
           <Button onClick={handleImport} disabled={!file || importing}>
             {importing ? "Importando..." : "Importar"}
           </Button>
