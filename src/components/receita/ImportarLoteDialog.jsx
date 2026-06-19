@@ -367,10 +367,16 @@ ${RECIPE_EXTRACTION_PROMPT}`,
       existingReceitas.forEach(r => { receitaMap[r.nome?.toLowerCase().trim()] = r; });
 
       let created = 0, updated = 0, skipped = 0;
+      const processedNames = new Set();
 
       for (const item of result.receitas) {
         const nome = (item.nome || "").trim();
         if (!nome) { skipped++; continue; }
+
+        const nomeKey = nome.toLowerCase();
+        // Skip intra-batch duplicates (case-insensitive, trimmed)
+        if (processedNames.has(nomeKey)) { skipped++; continue; }
+        processedNames.add(nomeKey);
 
         const modoPreparo = item.modo_preparo
           ? juntarPassos(formatarModoPreparo(item.modo_preparo))
@@ -387,7 +393,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         };
 
         let receitaId;
-        const existingReceita = receitaMap[nome.toLowerCase()];
+        const existingReceita = receitaMap[nomeKey];
         if (existingReceita) {
           receitaId = existingReceita.id;
           await base44.entities.Receita.update(receitaId, { ...payload, revisar: true });

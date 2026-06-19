@@ -570,9 +570,16 @@ function ImportReceitasCsvDialog({ open, onClose }) {
         existing.forEach((r) => { existingMap[r.nome?.toLowerCase().trim()] = r; });
 
         let created = 0, updated = 0, skipped = 0;
+        const processedNames = new Set();
         for (const item of items) {
           const nome = (item.nome_receita || "").trim();
           if (!nome) { skipped++; continue; }
+
+          const nomeKey = nome.toLowerCase();
+          // Skip intra-batch duplicates (case-insensitive, trimmed)
+          if (processedNames.has(nomeKey)) { skipped++; continue; }
+          processedNames.add(nomeKey);
+
           const catsRaw = item.categorias || item.categoria || "";
           const categorias = typeof catsRaw === "string"
             ? catsRaw.split(/[,;]/).map(c => c.trim()).filter(Boolean)
@@ -585,7 +592,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
             unidade_base: "g",
             modo_preparo: item.modo_preparo || "",
           };
-          const existingItem = existingMap[nome.toLowerCase()];
+          const existingItem = existingMap[nomeKey];
           if (existingItem) {
             await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: true });
             updated++;
