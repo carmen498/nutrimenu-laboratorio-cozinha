@@ -13,7 +13,7 @@ export const CATEGORIAS = [
   "Entrada", "Petisco", "Lanche"
 ];
 
-const ICONE_CATEGORIA = {
+export const ICONE_CATEGORIA = {
   "Carnes": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
   "Massas": "🍝", "Arroz e Risoto": "🍚", "Sopas e Caldos": "🥣", "Leguminosas": "🫘",
   "Salgadinhos": "🥟", "Pães": "🍞", "Sobremesas": "🍰", "Molhos e Bases": "🫙",

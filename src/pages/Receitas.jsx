@@ -9,13 +9,34 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
-import { CATEGORIAS as CATEGORIAS_RECEITA } from "@/components/receita/CategoriaPicker";
+import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
+
+const CORES_CATEGORIA = {
+  "Carnes":                   { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
+  "Aves":                     { cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C" },
+  "Peixes e Frutos do Mar":   { cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1" },
+  "Ovos":                     { cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100" },
+  "Massas":                   { cor: "#FBE9E7", corTexto: "#BF360C", corPill: "#FFCCBC", corPillTexto: "#A3150B" },
+  "Arroz e Risoto":           { cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723" },
+  "Sopas e Caldos":           { cor: "#E0F2F1", corTexto: "#00695C", corPill: "#B2DFDB", corPillTexto: "#004D40" },
+  "Leguminosas":              { cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
+  "Salgadinhos":              { cor: "#FCE4EC", corTexto: "#AD1457", corPill: "#F8BBD0", corPillTexto: "#880E4F" },
+  "Pães":                     { cor: "#FFFDE7", corTexto: "#F9A825", corPill: "#FFF176", corPillTexto: "#F57F17" },
+  "Sobremesas":               { cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C" },
+  "Molhos e Bases":           { cor: "#EDE7F6", corTexto: "#4527A0", corPill: "#D1C4E9", corPillTexto: "#311B92" },
+  "Acompanhamento":           { cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E" },
+  "Prato Principal":          { cor: "#FFEBEE", corTexto: "#B71C1C", corPill: "#FFCDD2", corPillTexto: "#8B0000" },
+  "Prato Único":              { cor: "#FFF8E1", corTexto: "#E65100", corPill: "#FFE082", corPillTexto: "#BF360C" },
+  "Entrada":                  { cor: "#ECEFF1", corTexto: "#455A64", corPill: "#CFD8DC", corPillTexto: "#263238" },
+  "Petisco":                  { cor: "#FBE9E7", corTexto: "#D84315", corPill: "#FFCCBC", corPillTexto: "#BF360C" },
+  "Lanche":                   { cor: "#F9FBE7", corTexto: "#827717", corPill: "#F0F4C3", corPillTexto: "#33691E" },
+};
 
 export default function Receitas() {
   const [busca, setBusca] = useState("");
@@ -242,30 +263,43 @@ export default function Receitas() {
         <Badge className="text-[10px] bg-primary/20 text-primary">{totalReceitas}</Badge>
       </button>
 
-      <div className="flex flex-wrap gap-2">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
         {CATEGORIAS_RECEITA.map(cat => {
           const count = receitas.filter(r => hasCategoria(r, cat)).length;
           const selecionada = categoriaSelecionada === cat;
+          const icone = ICONE_CATEGORIA[cat] || "📋";
+          const cores = CORES_CATEGORIA[cat] || { cor: "#F5F5F5", corTexto: "#424242", corPill: "#E0E0E0", corPillTexto: "#212121" };
           return (
-            <button
+            <div
               key={cat}
-              onClick={() => {
-                setBusca("");
-                setCategoriaSelecionada(selecionada ? null : cat);
+              className="rounded-xl overflow-hidden transition-all"
+              style={{
+                backgroundColor: cores.cor,
+                border: selecionada ? `2px solid ${cores.corTexto}` : "1px solid hsl(var(--border))",
               }}
-              className={`text-xs px-3 py-1.5 rounded-full transition-all inline-flex items-center gap-1.5 border ${
-                selecionada
-                  ? "bg-primary text-primary-foreground border-primary font-semibold"
-                  : "bg-muted hover:bg-accent border-transparent text-muted-foreground"
-              }`}
             >
-              {cat}
-              {count > 0 && (
-                <Badge className={`text-[10px] h-4 px-1 ${selecionada ? "bg-white/30 text-white" : "bg-primary/20 text-primary"}`}>
+              <button
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:brightness-95"
+                style={{ backgroundColor: cores.cor, color: cores.corTexto }}
+                onClick={() => {
+                  setBusca("");
+                  setCategoriaSelecionada(selecionada ? null : cat);
+                }}
+              >
+                <span className="text-lg">{icone}</span>
+                <span className="flex-1 text-sm font-semibold">{cat}</span>
+                <Badge
+                  className="text-[10px] h-5 px-1.5 font-bold border-0"
+                  style={{ backgroundColor: cores.corPill, color: cores.corPillTexto }}
+                >
                   {count}
                 </Badge>
-              )}
-            </button>
+                <ChevronDown
+                  className={`w-4 h-4 shrink-0 transition-transform duration-200 ${selecionada ? "rotate-180" : ""}`}
+                  style={{ opacity: selecionada ? 1 : 0.5 }}
+                />
+              </button>
+            </div>
           );
         })}
       </div>
