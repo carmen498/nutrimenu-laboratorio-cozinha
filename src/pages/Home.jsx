@@ -70,6 +70,7 @@ export default function Home() {
           style={{ color: CORES.verdeEscuro }}>
           Laboratório de Cozinha
         </h1>
+        <p className="mt-1 text-base font-semibold" style={{ color: CORES.dourado }}>Cozinha que se Multiplica</p>
         <p className="mt-2 text-sm font-medium italic"
           style={{ color: CORES.dourado }}>
           Gastronomia Planejada · por Carmen Reinstein
