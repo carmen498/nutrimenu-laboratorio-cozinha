@@ -99,20 +99,21 @@ IMPORTANTE:
 - NÃO invente porções: se o texto mencionar explicitamente quantas porções rende, use esse valor. Se NÃO mencionar, deixe porcoes_base = 0 (zero).
 - NÃO invente categoria — a categoria será determinada pelo sistema com base nos ingredientes
 - O modo de preparo deve ser REWRITTEN seguindo ESTRITAMENTE este padrão:
-  * Uma ação por linha, numerada
-  * Verbo no imperativo direto (ex: "Derreta", "Acrescente", "Bata")
-  * Sem repetir ingredientes desnecessariamente
+  * Lista numerada (1. 2. 3.)
+  * Cada passo COMEÇA com verbo no INFINITIVO (Derreter, Bater, Acrescentar, Assar, Reservar, etc.)
+  * NUNCA use imperativo (Derreta, Bata, Acrescente) — apenas infinitivo
+  * Sem repetir ingredientes já mencionados
+  * Sem marcas de equipamentos (nada de "Batedeira KitchenAid", "Processador X", etc.)
+  * Sem texto narrativo, dicas ou explicações óbvias
   * Temperatura, tempo e ponto crítico na mesma linha da ação
-  * Sem explicações óbvias ou instruções alternativas extensas — quando houver alternativa, usar parênteses curtos: (ou microondas)
   Exemplo correto:
-  1. Derreta o chocolate picado em banho-maria ou microondas.
-  2. Acrescente a manteiga (ou margarina), mexa. Reserve.
-  3. Bata os ovos e o açúcar até formar creme fofo e esbranquiçado.
-  4. Adicione o chocolate derretido até homogeneizar.
-  5. Acrescente a farinha de trigo por último.
-  6. Despeje em forma untada e polvilhada com cacau em pó.
-  7. Asse a 180°C por 20 minutos.
-  8. Retire do forno e aguarde esfriar para cortar.
+  1. Derreter o chocolate picado em banho-maria com a manteiga. Reservar.
+  2. Bater os ovos com o açúcar até formar creme fofo e esbranquiçado.
+  3. Adicionar o chocolate derretido e mexer até homogeneizar.
+  4. Acrescentar a farinha de trigo peneirada e misturar delicadamente.
+  5. Despejar em forma untada e polvilhada com cacau em pó.
+  6. Assar a 180 °C por 20 minutos.
+  7. Retirar do forno e aguardar esfriar para cortar.
 - ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.
 - CLASSIFIQUE cada ingrediente como estrutural (true=escala) ou 'a gosto' (false=independente):
   * ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata quando ingrediente principal.
@@ -648,7 +649,7 @@ IMPORTANTE:
 
             <div>
               <Label>Modo de preparo</Label>
-              <Textarea rows={4} value={parsed.modo_preparo || ""} onChange={(e) => setParsed({ ...parsed, modo_preparo: e.target.value })} />
+              <Textarea rows={4} value={parsed.modo_preparo || ""} onChange={(e) => setParsed({ ...parsed, modo_preparo: e.target.value })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. Derreter o chocolate em banho-maria. Reservar.\n2. Bater os ovos com o açúcar até formar creme fofo.\n3. Assar a 180 °C por 25 minutos."} />
             </div>
 
             <div className="flex gap-2 justify-end">

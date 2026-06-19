@@ -86,22 +86,30 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
     setRewritingPrep(true);
     try {
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Reescreva este modo de preparo seguindo ESTRITAMENTE este padrão:
-- Uma ação por linha, numerada
-- Verbo no imperativo direto (ex: "Derreta", "Acrescente", "Bata")
-- Sem repetir ingredientes desnecessariamente
-- Temperatura, tempo e ponto crítico na mesma linha da ação
-- Sem explicações óbvias ou instruções alternativas extensas — quando houver alternativa, usar parênteses curtos: (ou microondas)
+        prompt: `Reescreva este modo de preparo seguindo ESTRITAMENTE estas regras:
 
-Exemplo:
-1. Derreta o chocolate picado em banho-maria ou microondas.
-2. Acrescente a manteiga (ou margarina), mexa. Reserve.
-3. Bata os ovos e o açúcar até formar creme fofo e esbranquiçado.
-4. Adicione o chocolate derretido até homogeneizar.
-5. Acrescente a farinha de trigo por último.
-6. Despeje em forma untada e polvilhada com cacau em pó.
-7. Asse a 180°C por 20 minutos.
-8. Retire do forno e aguarde esfriar para cortar.
+FORMATO:
+- Lista numerada (1. 2. 3.), um passo por linha.
+- Cada passo COMEÇA com verbo no INFINITIVO (Derreter, Bater, Acrescentar, Assar, Reservar, Levar, Retirar, Mexer, etc.).
+- Ações consecutivas na mesma linha são permitidas se curtas (ex: "Reservar.").
+
+PROIBIDO:
+- Verbos no imperativo (Derreta, Bata, Acrescente) — use SEMPRE infinitivo.
+- Repetir ingredientes já mencionados.
+- Marcas de equipamentos (Batedeira KitchenAid, Processador X, etc.).
+- Texto narrativo ou descritivo (ex: "Este passo é importante porque...").
+- Dicas ou sugestões (ex: "Se preferir, use...").
+- Explicações óbvias (ex: "Cuidado para não queimar").
+- Instruções alternativas extensas — se necessário, use parênteses curtos: (ou micro-ondas).
+
+EXEMPLO CORRETO:
+1. Derreter o chocolate picado em banho-maria com a manteiga. Reservar.
+2. Bater os ovos com o açúcar até formar creme fofo e esbranquiçado.
+3. Adicionar o chocolate derretido e mexer até homogeneizar.
+4. Acrescentar a farinha de trigo peneirada e misturar delicadamente.
+5. Despejar em forma untada e polvilhada com cacau em pó.
+6. Assar a 180 °C por 20 minutos.
+7. Retirar do forno e aguardar esfriar para cortar.
 
 Texto original:
 ${form.modo_preparo}`,
@@ -168,7 +176,7 @@ ${form.modo_preparo}`,
                 Reescrever com IA
               </Button>
             </div>
-            <Textarea rows={5} value={form.modo_preparo || ""} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Descreva o passo a passo em etapas numeradas. Uma ação por linha. Ex:\n1. Derreta o chocolate em banho-maria.\n2. Acrescente a manteiga e mexa. Reserve.\n3. Bata os ovos com o açúcar até formar creme fofo."} />
+            <Textarea rows={5} value={form.modo_preparo || ""} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. Derreter o chocolate em banho-maria com a manteiga. Reservar.\n2. Bater os ovos com o açúcar até formar creme fofo.\n3. Acrescentar a farinha e mexer até homogeneizar.\n4. Assar a 180 °C por 25 minutos."} />
           </div>
           <div>
             <Label>Tags</Label>

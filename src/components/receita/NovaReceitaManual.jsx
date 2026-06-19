@@ -506,7 +506,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
           <div>
             <Label>Modo de preparo</Label>
-            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Descreva o passo a passo em etapas numeradas. Uma ação por linha. Ex:\n1. Derreta o chocolate em banho-maria.\n2. Acrescente a manteiga e mexa. Reserve.\n3. Bata os ovos com o açúcar até formar creme fofo."} />
+            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. Derreter o chocolate em banho-maria com a manteiga. Reservar.\n2. Bater os ovos com o açúcar até formar creme fofo.\n3. Acrescentar a farinha e mexer até homogeneizar.\n4. Assar a 180 °C por 25 minutos."} />
           </div>
 
           {/* Photo */}
