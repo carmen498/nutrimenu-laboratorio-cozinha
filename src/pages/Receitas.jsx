@@ -409,7 +409,7 @@ export default function Receitas() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm truncate">{r.nome}</p>
-                    {r.revisar && <Badge className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
+                    {r.revisar && <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
                   </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {getCategorias(r).length > 0 && (
