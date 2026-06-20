@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, ShoppingCart, Apple, Menu, X, LogOut, Gauge, CalendarDays } from "lucide-react";
+import { Home, BookOpen, ShoppingCart, Apple, Menu, X, LogOut, Gauge, CalendarDays, PieChart } from "lucide-react";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/ingredientes", label: "Ingredientes", icon: Apple },
   { path: "/lista-compras", label: "Lista de Compras", icon: ShoppingCart },
   { path: "/percapita", label: "Per Capita", icon: Gauge },
+  { path: "/relatorio-categorias", label: "Relatório", icon: PieChart },
 ];
 
 export default function AppLayout() {
@@ -128,6 +129,7 @@ export default function AppLayout() {
           if (p === "/ingredientes") return "Ingredientes";
           if (p === "/lista-compras") return "Lista de Compras";
           if (p === "/percapita") return "Per Capita";
+          if (p === "/relatorio-categorias") return "Relatório de Categorias";
           if (p.startsWith("/exportar/")) return "Exportar Receita";
           return "";
         })()

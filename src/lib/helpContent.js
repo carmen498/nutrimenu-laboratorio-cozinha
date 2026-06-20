@@ -191,6 +191,25 @@ export const helpContent = {
     ],
   },
 
+  "Relatório de Categorias": {
+    context:
+      "Relatório que agrupa todas as receitas por categoria, mostrando a contagem e a lista de nomes em cada uma. Permite exportar os dados em CSV para análise externa.",
+    faqs: [
+      {
+        q: "O que este relatório mostra?",
+        a: "Mostra todas as suas receitas organizadas por categoria (Carne Bovina, Aves, Sobremesas, etc.), com o total de receitas em cada categoria e a lista completa de nomes.",
+      },
+      {
+        q: "Como exportar para CSV?",
+        a: "Clique no botão 'Exportar CSV' no topo da página. O arquivo gerado tem três colunas: Categoria, Quantidade de Receitas e Nomes das Receitas. Pode ser aberto no Excel ou Google Sheets.",
+      },
+      {
+        q: "Receitas com mais de uma categoria aparecem repetidas?",
+        a: "Sim. Uma receita que está em 'Prato Principal' e 'Carne Bovina' aparece nas duas categorias. Isso ajuda a ter uma visão completa de cada categoria.",
+      },
+    ],
+  },
+
   "Exportar Receita": {
     context:
       "Esta tela gera um PDF profissional da receita para impressão ou compartilhamento. O documento inclui ficha técnica completa com rendimento, ingredientes, custos, modo de preparo e informações nutricionais estimadas, tudo com a identidade visual do Laboratório de Cozinha.",
