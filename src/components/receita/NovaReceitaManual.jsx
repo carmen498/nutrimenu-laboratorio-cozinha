@@ -257,31 +257,19 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
             <Label>Nome da receita</Label>
             <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Bolo de Cenoura" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Categoria</Label>
-              <CategoriaPicker value={form.categorias || []} onChange={(v) => setForm({ ...form, categorias: v })} />
-            </div>
-            <div>
-              <Label>Porções base</Label>
-              <Input type="number" min={0} value={form.porcoes_base} onChange={(e) => setForm({ ...form, porcoes_base: e.target.value })} placeholder="&lt;opcional&gt;" />
-            </div>
+          <div>
+            <Label>Categoria</Label>
+            <CategoriaPicker value={form.categorias || []} onChange={(v) => setForm({ ...form, categorias: v })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Rendimento total</Label>
-              <Input type="number" value={form.rendimento_total || ""} onChange={(e) => setForm({ ...form, rendimento_total: parseFloat(e.target.value) || 0 })} placeholder="Opcional" />
-            </div>
-            <div>
-              <Label>Unidade base</Label>
-              <Select value={form.unidade_base} onValueChange={(v) => setForm({ ...form, unidade_base: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="g">Gramas (sólidos)</SelectItem>
-                  <SelectItem value="ml">Mililitros (líquidos)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label>Unidade base</Label>
+            <Select value={form.unidade_base} onValueChange={(v) => setForm({ ...form, unidade_base: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="g">Gramas (sólidos)</SelectItem>
+                <SelectItem value="ml">Mililitros (líquidos)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           {/* Ingredients section */}
           <div className="pt-2 border-t">
