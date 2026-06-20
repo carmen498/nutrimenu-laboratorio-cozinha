@@ -55,7 +55,7 @@ REGRAS DE EXTRAÇÃO:
 
 7. QUANTIDADE: sempre em gramas, converta vírgula para ponto. Ex: "250,00" → 250.
 
-8. CATEGORIA DA RECEITA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
+8. CATEGORIA DA RECEITA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia. IMPORTANTE: se a receita tiver MAIS DE 2 ingredientes claramente da categoria DOCES (chocolate, cacau, açúcar, baunilha, chantilly, doce de leite, leite condensado, glucose, mel, gelatina, coco ralado, goiabada, frutas cristalizadas, etc.), sugira APENAS "Sobremesas" ou "Pães e Bolos" — NUNCA "Prato Principal", "Acompanhamento", "Entradas", "Carnes, Bovina" ou qualquer outra categoria que não seja doce.
 
 9. INGREDIENTES AMBÍGUOS ("X ou Y"): se um ingrediente estiver escrito como "X ou Y" (ex: "manteiga ou margarina"), NÃO escolha um — transcreva o nome COMPLETO "X ou Y" como nome. O sistema detectará e pedirá que o usuário escolha.
 

@@ -101,7 +101,7 @@ IMPORTANTE:
 - Se o ingrediente parecer ser uma RECEITA BÁSICA (ex: "Molho Bechamel", "Massa de pizza", "Calda de chocolate"), marque eh_receita_basica=true e coloque o nome da receita em nome_banco MESMO que não seja uma correspondência exata — o sistema confirmará depois.
 - Converta SEMPRE medidas caseiras para gramas usando a tabela acima
 - NÃO invente porções: se o texto mencionar explicitamente quantas porções rende, use esse valor. Se NÃO mencionar, deixe porcoes_base = 0 (zero).
-- NÃO invente categoria — a categoria será determinada pelo sistema com base nos ingredientes
+- NÃO invente categoria — a categoria será determinada pelo sistema com base nos ingredientes. Se a receita tiver MAIS DE 2 ingredientes da categoria DOCES (chocolate, cacau, açúcar, baunilha, chantilly, doce de leite, leite condensado, glucose, mel, gelatina, coco ralado, goiabada, etc.), sugira APENAS "Sobremesas" e/ou "Pães e Bolos" — NUNCA "Prato Principal", "Acompanhamento", "Entradas" ou qualquer outra categoria.
 - O modo de preparo deve ser REWRITTEN seguindo ESTRITAMENTE este padrão:
   * Lista numerada (1. 2. 3.)
   * UM verbo de ação por item, no INFINITIVO (Derreter, Bater, Acrescentar, Assar, Reservar)
@@ -233,6 +233,13 @@ IMPORTANTE:
         const dbIng = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
         return dbIng?.categoria === "DOCES";
       }).length;
+      if (docesCount > 2) {
+        // Restrict categories to only Sobremesas/Pães e Bolos — never Prato Principal, etc.
+        const docesCats = ["Sobremesas", "Pães e Bolos"];
+        result.categorias = (result.categorias || []).filter(c => docesCats.includes(c));
+        if (result.categorias.length === 0) result.categorias = [];
+        setParsed({ ...result });
+      }
       setDocesAmbiguo(docesCount > 2);
     } catch (err) {
       toast.error("Erro ao processar: " + err.message);
