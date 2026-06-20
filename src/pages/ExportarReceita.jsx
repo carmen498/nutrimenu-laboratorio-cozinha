@@ -298,11 +298,15 @@ export default function ExportarReceita() {
         {aba === "preparo" && passos.length > 0 && (
           <>
             <h3 className="font-semibold mt-6 mb-2">Modo de Preparo</h3>
-            <ol className="space-y-1.5 list-decimal list-inside">
-              {passos.map((passo, idx) => (
-                <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
-              ))}
-            </ol>
+            {passos.length === 1 ? (
+              <p className="text-sm leading-relaxed whitespace-pre-line">{passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
+            ) : (
+              <ol className="space-y-1.5 list-decimal list-inside">
+                {passos.map((passo, idx) => (
+                  <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
+                ))}
+              </ol>
+            )}
           </>
         )}
 

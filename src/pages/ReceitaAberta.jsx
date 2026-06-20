@@ -1236,11 +1236,15 @@ REGRAS:
         <div>
           <h2 className="font-display text-lg font-bold mb-2">Modo de Preparo</h2>
           <Card className="p-4">
-            <ol className="space-y-2 list-decimal list-inside">
-              {passos.map((passo, idx) => (
-                <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
-              ))}
-            </ol>
+            {passos.length === 1 ? (
+              <p className="text-sm leading-relaxed whitespace-pre-line">{passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
+            ) : (
+              <ol className="space-y-2 list-decimal list-inside">
+                {passos.map((passo, idx) => (
+                  <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
+                ))}
+              </ol>
+            )}
           </Card>
         </div>
       )}
