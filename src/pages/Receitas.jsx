@@ -600,7 +600,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
             const categorias = typeof catsRaw === "string"
               ? catsRaw.split(/[,;]/).map(c => c.trim()).filter(Boolean)
               : (Array.isArray(catsRaw) ? catsRaw : []);
-            const payload = { nome };
+            const payload = { nome: nome.toUpperCase() };
             if (categorias.length > 0) payload.categorias = categorias;
             if (item.porcoes_base != null) payload.porcoes_base = item.porcoes_base;
             if (item.rendimento_g != null) payload.rendimento_total = item.rendimento_g;
