@@ -52,6 +52,11 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const navigate = useNavigate();
   const [similarSuggestions, setSimilarSuggestions] = useState({});
   const [docesAmbiguo, setDocesAmbiguo] = useState(false);
+  const [showVariations, setShowVariations] = useState(false);
+  const [variationsQty, setVariationsQty] = useState(3);
+  const [generatingVariations, setGeneratingVariations] = useState(false);
+  const [variationResults, setVariationResults] = useState(null);
+  const receitaSalvaRef = useRef(null);
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -442,7 +447,8 @@ IMPORTANTE:
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
       if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
       else toast.success("Receita importada com sucesso!");
-      onCreated(receita.id);
+      receitaSalvaRef.current = receita;
+      setShowVariations(true);
     } catch (err) {
       toast.error("Erro ao salvar: " + err.message);
     } finally {
@@ -464,6 +470,149 @@ IMPORTANTE:
       setDuplicateWarning(fuzzy.receita);
     } else {
       doSave();
+    }
+  };
+
+  const handleGenerateVariations = async () => {
+    const receita = receitaSalvaRef.current;
+    const p = parsedRef.current;
+    if (!receita || !p) return;
+    setGeneratingVariations(true);
+    try {
+      const ingsList = (p.ingredientes || []).filter(i => i.tipo !== "grupo");
+      const ingsPrompt = ingsList.map((ing, j) =>
+        `${j}. ${ing.nome_banco || ing.nome_original} (${ing.quantidade_g || 0}g, ${ing.proporcional !== false ? "estrutural" : "a gosto"})`
+      ).join("\n");
+
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Receita original: "${p.nome}"
+
+Ingredientes (índice, nome, quantidade, tipo):
+${ingsPrompt}
+
+Sugira ${variationsQty} variações temáticas trocando APENAS o ingrediente principal (proteína ou elemento central) por alternativas culinárias coerentes. O restante (base, modo de preparo, temperos) permanece igual.
+
+Para cada variação, retorne:
+- novo_nome: nome completo da receita com o ingrediente trocado. Ex: "PASTELÃO DE FRANGO" → "PASTELÃO DE CARNE MOÍDA", "PASTELÃO DE LEGUMES"
+- indice_ingrediente: índice numérico (0-based) do ingrediente principal a ser trocado na lista acima
+- novo_ingrediente: nome do ingrediente substituto (use nomes que já existam no banco ou nomes comuns de mercado)
+- nova_categoria: uma categoria do sistema que melhor se encaixa (ex: "Carne Bovina", "Aves", "Peixes e Frutos do Mar", "Leguminosas", "Massas, Pastelão e Quiches", "Acompanhamento")`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            variacoes: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  novo_nome: { type: "string" },
+                  indice_ingrediente: { type: "number" },
+                  novo_ingrediente: { type: "string" },
+                  nova_categoria: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      setVariationResults(result.variacoes || []);
+    } catch (err) {
+      toast.error("Erro ao gerar variações: " + err.message);
+      setShowVariations(false);
+    } finally {
+      setGeneratingVariations(false);
+    }
+  };
+
+  const handleSaveVariations = async () => {
+    if (!variationResults?.length) return;
+    const p = parsedRef.current;
+    if (!p) return;
+    setGeneratingVariations(true);
+    try {
+      const ingsOriginal = (p.ingredientes || []).filter(i => i.tipo !== "grupo");
+      const modoPreparoFinal = juntarPassos(formatarModoPreparo(p.modo_preparo));
+
+      let criadas = 0;
+      for (const variacao of variationResults) {
+        if (!variacao.novo_nome) continue;
+
+        // Build ingredients: copy original, swap the target ingredient
+        const novosIngredientes = ingsOriginal.map((ing, j) => {
+          if (j === variacao.indice_ingrediente) {
+            return { ...ing, nome_banco: variacao.novo_ingrediente, nome_original: variacao.novo_ingrediente };
+          }
+          return { ...ing };
+        });
+
+        // Match new ingredient in DB or create it
+        const ingNomesFinais = [];
+        for (const ing of novosIngredientes) {
+          const nomeBusca = ing.nome_banco || ing.nome_original;
+          if (!nomeBusca) continue;
+          let found = ingredientes.find(bi => bi.nome?.toLowerCase() === nomeBusca.toLowerCase());
+          if (!found) {
+            const existente = await base44.entities.Ingrediente.filter({ nome: nomeBusca });
+            if (existente.length > 0) {
+              found = existente[0];
+            } else {
+              const unidade = sugerirUnidadeCompra(nomeBusca);
+              found = await base44.entities.Ingrediente.create({
+                nome: nomeBusca,
+                categoria: "A Revisar",
+                unidade_compra: unidade.unidade_compra,
+                peso_embalagem_g: unidade.peso_embalagem_g,
+                preco_embalagem_rs: 0,
+                preco_por_g_rs: 0,
+                fator_correcao: 1.0,
+                preco_estimado: true,
+              });
+            }
+          }
+          ingNomesFinais.push({ ...ing, matched: found });
+        }
+
+        const rendimentoCalc = novosIngredientes.reduce((acc, ing) => acc + (ing.quantidade_g || 0), 0);
+        const novaReceita = await base44.entities.Receita.create({
+          nome: variacao.novo_nome.toUpperCase(),
+          categorias: variacao.nova_categoria ? [variacao.nova_categoria] : (p.categorias || []),
+          revisar: true,
+          porcoes_base: p.porcoes_base || 0,
+          unidade_base: p.unidade_base || "g",
+          modo_preparo: modoPreparoFinal,
+          rendimento_total: rendimentoCalc,
+          custo_total: 0,
+          custo_por_porcao: 0,
+        });
+
+        for (let i = 0; i < ingNomesFinais.length; i++) {
+          const ing = ingNomesFinais[i];
+          if (!ing.matched) continue;
+          await base44.entities.IngredienteReceita.create({
+            receita_id: novaReceita.id,
+            ingrediente_id: ing.matched.id,
+            ingrediente_nome: ing.matched.nome,
+            pre_preparo: ing.pre_preparo || "",
+            quantidade_por_porcao: (ing.quantidade_g || 0) / (p.porcoes_base || 1),
+            medida_caseira: ing.medida_original || "",
+            ordem: i,
+            proporcional: ing.proporcional !== false,
+            tipo: "ingrediente",
+          });
+        }
+        criadas++;
+      }
+
+      qc.invalidateQueries({ queryKey: ["receitas"] });
+      qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      toast.success(`${criadas} variações criadas como rascunho "A revisar"`);
+    } catch (err) {
+      toast.error("Erro ao salvar variações: " + err.message);
+    } finally {
+      setGeneratingVariations(false);
+      setShowVariations(false);
+      if (receitaSalvaRef.current) onCreated(receitaSalvaRef.current.id);
     }
   };
 
@@ -821,6 +970,75 @@ IMPORTANTE:
                 Salvar mesmo assim
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showVariations && (
+        <Dialog open={true} onOpenChange={() => { setShowVariations(false); onCreated(receitaSalvaRef.current?.id); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-display text-lg flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" /> Criar variações temáticas
+              </DialogTitle>
+              <DialogDescription className="text-sm">
+                A receita <strong>"{receitaSalvaRef.current?.nome}"</strong> foi salva. Quer gerar variações trocando o ingrediente principal?
+              </DialogDescription>
+            </DialogHeader>
+
+            {!variationResults ? (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <Label className="shrink-0">Quantas variações?</Label>
+                  <div className="flex gap-1.5">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button
+                        key={n}
+                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                          variationsQty === n
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-accent"
+                        }`}
+                        onClick={() => setVariationsQty(n)}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" onClick={() => { setShowVariations(false); onCreated(receitaSalvaRef.current?.id); }}>
+                    Pular
+                  </Button>
+                  <Button onClick={handleGenerateVariations} disabled={generatingVariations}>
+                    {generatingVariations ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Sparkles className="w-4 h-4 mr-1" /> Gerar {variationsQty} variações</>}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  {variationResults.length} variações sugeridas. Todas serão salvas como rascunho <strong>"A revisar"</strong>:
+                </p>
+                <div className="max-h-48 overflow-y-auto space-y-1.5">
+                  {variationResults.map((v, i) => (
+                    <div key={i} className="flex items-center gap-2 p-2 bg-muted/50 rounded text-sm">
+                      <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="font-medium truncate">{v.novo_nome?.toUpperCase() || `Variação ${i + 1}`}</span>
+                      <span className="text-xs text-muted-foreground ml-auto shrink-0">↳ {v.novo_ingrediente}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="ghost" onClick={() => { setShowVariations(false); onCreated(receitaSalvaRef.current?.id); }}>
+                    Pular
+                  </Button>
+                  <Button onClick={handleSaveVariations} disabled={generatingVariations}>
+                    {generatingVariations ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Salvando...</> : <>Salvar {variationResults.length} variações</>}
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       )}
