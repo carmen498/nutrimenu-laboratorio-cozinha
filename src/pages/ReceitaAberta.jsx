@@ -567,10 +567,11 @@ REGRAS:
             ) : receita.categoria ? (
               <Badge variant="secondary">{receita.categoria}</Badge>
             ) : null}
-            <span className="text-sm text-muted-foreground">
-              Base: {receita.porcoes_base} porções
-              {receita.rendimento_total > 0 && ` · ${formatWeight(receita.rendimento_total, receita.unidade_base)}`}
-            </span>
+            {receita.rendimento_total > 0 && (
+              <span className="text-sm text-muted-foreground">
+                Rendimento (PDP): {formatWeight(receita.rendimento_total, receita.unidade_base)}
+              </span>
+            )}
           </div>
           {/* Line 3: Tags */}
           <TagList
