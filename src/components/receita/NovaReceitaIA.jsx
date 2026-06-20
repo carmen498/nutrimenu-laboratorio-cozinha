@@ -82,6 +82,7 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [generatingVariations, setGeneratingVariations] = useState(false);
   const [variationResults, setVariationResults] = useState(null);
   const receitaSalvaRef = useRef(null);
+  const [validacaoErro, setValidacaoErro] = useState("");
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -94,9 +95,9 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   });
 
   const handleParse = async () => {
-    if (!texto.trim()) { toast.error("Cole o texto da receita"); return; }
+    if (!texto.trim()) { setValidacaoErro("Cole o texto da receita para continuar."); return; }
     if (!isRecipeText(texto)) {
-      toast.error("O texto colado não parece ser uma receita. Certifique-se de incluir a lista de ingredientes e/ou o modo de preparo.", { duration: 6000 });
+      setValidacaoErro("Este texto não parece ser uma receita. Cole os ingredientes e o modo de preparo para que a IA possa estruturar.");
       return;
     }
     setProcessing(true);
@@ -662,10 +663,16 @@ Para cada variação, retorne:
             <Textarea
               rows={10}
               value={texto}
-              onChange={(e) => setTexto(e.target.value)}
+              onChange={(e) => { setTexto(e.target.value); setValidacaoErro(""); }}
               placeholder="Cole aqui o texto da receita..."
-              className="text-sm"
+              className={`text-sm ${validacaoErro ? "border-red-400 focus-visible:ring-red-400" : ""}`}
             />
+            {validacaoErro && (
+              <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+                <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{validacaoErro}</span>
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button onClick={handleParse} disabled={processing}>

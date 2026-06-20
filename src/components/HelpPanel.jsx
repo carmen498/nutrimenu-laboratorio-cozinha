@@ -10,6 +10,7 @@ export default function HelpPanel({ screenName = "" }) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [questionError, setQuestionError] = useState("");
 
   const content = useMemo(() => {
     const exact = helpContent[screenName];
@@ -24,7 +25,10 @@ export default function HelpPanel({ screenName = "" }) {
   }, [screenName]);
 
   const handleAsk = async () => {
-    if (!question.trim() || loading) return;
+    if (!question.trim()) { setQuestionError("Escreva sua dúvida para continuar."); return; }
+    if (question.trim().length < 10) { setQuestionError("Descreva sua dúvida com mais detalhes para eu conseguir ajudar."); return; }
+    if (loading) return;
+    setQuestionError("");
     setLoading(true);
     setAnswer("");
     try {
@@ -128,10 +132,13 @@ export default function HelpPanel({ screenName = "" }) {
           <textarea
             placeholder="Tem alguma dúvida? Escreva aqui..."
             value={question}
-            onChange={(e) => setQuestion(e.target.value)}
+            onChange={(e) => { setQuestion(e.target.value); setQuestionError(""); }}
             rows={3}
-            className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+            className={`w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 resize-none ${questionError ? "border-red-400 focus-visible:ring-red-400" : "border-input focus-visible:ring-ring"}`}
           />
+          {questionError && (
+            <p className="text-xs text-red-600 mt-1">{questionError}</p>
+          )}
           <Button
             className="w-full mt-2 gap-1"
             style={{ backgroundColor: "#1B4332", opacity: !question.trim() || loading ? 0.5 : 1 }}
