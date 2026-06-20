@@ -50,6 +50,8 @@ export default function ReceitaAberta() {
   const [convertingNATitulo, setConvertingNATitulo] = useState("");
   const [localFavoritando, setLocalFavoritando] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
+  const [editingPDP, setEditingPDP] = useState(false);
+  const [pdpValue, setPdpValue] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -98,6 +100,24 @@ export default function ReceitaAberta() {
       setPorcoes(receita.porcoes_base || 1);
     }
   }, [receita]);
+
+  useEffect(() => {
+    if (receita && receita.rendimento_total > 0 && pdpValue === "") {
+      setPdpValue(String(receita.rendimento_total));
+    }
+  }, [receita]);
+
+  const handleSavePDP = async () => {
+    const val = parseFloat(pdpValue);
+    if (!isNaN(val) && val > 0) {
+      await base44.entities.Receita.update(id, { rendimento_total: val });
+      qc.invalidateQueries({ queryKey: ["receita", id] });
+      setEditingPDP(false);
+      toast.success("Rendimento atualizado!");
+    } else {
+      setEditingPDP(false);
+    }
+  };
 
   const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
 
@@ -1253,19 +1273,51 @@ REGRAS:
       {/* Insumos e Embalagens */}
       <InsumosSection receitaId={id} />
 
-      {/* Cost summary */}
+      {/* Pesos */}
       <Card className="p-4">
-        <h3 className="font-display text-sm font-bold mb-3">Pesos e Custos</h3>
+        <h3 className="font-display text-sm font-bold mb-3">Pesos</h3>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Peso Bruto (g)</span>
             <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Rendimento (PDP)</span>
-            <span className="font-medium">{(receita.rendimento_total || 0).toLocaleString("pt-BR")} g</span>
+            {editingPDP ? (
+              <div className="flex items-center gap-1">
+                <Input
+                  type="number"
+                  className="h-7 w-24 text-sm text-right"
+                  value={pdpValue}
+                  onChange={(e) => setPdpValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleSavePDP(); if (e.key === "Escape") setEditingPDP(false); }}
+                  autoFocus
+                />
+                <span className="text-xs text-muted-foreground">g</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleSavePDP}>
+                  <Check className="w-3 h-3 text-green-600" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingPDP(false)}>
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                className="font-medium hover:underline hover:text-primary transition-colors"
+                onClick={() => { setPdpValue(String(receita.rendimento_total || pesoBruto || "")); setEditingPDP(true); }}
+                title="Clique para editar o rendimento após preparo"
+              >
+                {(receita.rendimento_total || 0).toLocaleString("pt-BR")} g
+              </button>
+            )}
           </div>
-          <Separator />
+        </div>
+      </Card>
+
+      {/* Custos */}
+      <Card className="p-4">
+        <h3 className="font-display text-sm font-bold mb-3">Custos</h3>
+        <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Ingredientes</span>
             <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
