@@ -406,6 +406,10 @@ IMPORTANTE:
           });
           (resultado.precos || []).forEach(pe => {
             if (pe.nome && pe.preco_embalagem_rs > 0) {
+              // Normalize key: strip parenthetical text to match against nomeCriar lookup
+              const key = pe.nome.toLowerCase().replace(/\s*\([^)]*\)/g, "").trim();
+              precosEstimados[key] = pe;
+              // Also store with the original name as fallback
               precosEstimados[pe.nome.toLowerCase()] = pe;
             }
           });
@@ -465,7 +469,9 @@ IMPORTANTE:
             matchedIng = existente[0];
           } else {
             const unidade = sugerirUnidadeCompra(nomeCriar);
-            const estimado = precosEstimados[nomeCriar.toLowerCase()];
+            // Normalize lookup key: strip parenthetical text for matching
+            const lookupKey = nomeCriar.toLowerCase().replace(/\s*\([^)]*\)/g, "").trim();
+            const estimado = precosEstimados[lookupKey] || precosEstimados[nomeCriar.toLowerCase()];
             const precoEmb = estimado?.preco_embalagem_rs || 0;
             const pesoEmb = estimado?.peso_embalagem_g || unidade.peso_embalagem_g;
             const precoPorG = pesoEmb > 0 ? precoEmb / pesoEmb : 0;
