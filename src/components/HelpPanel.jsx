@@ -32,10 +32,10 @@ export default function HelpPanel({ screenName = "" }) {
       const systemPrompt = `Você é a assistente do app Laboratório de Cozinha. O usuário está na tela ${screenName || "do app"}. ${ctxInfo} Responda em português brasileiro de forma direta e prática. REGRA: apenas oriente o usuário a criar uma receita quando ele mencionar explicitamente o nome de uma receita para cadastrar — nunca sugira criar receitas de forma proativa.`;
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `[System: ${systemPrompt}]\n\nPergunta do usuário: ${question}`,
-        model: "claude_sonnet_4_6",
       });
       setAnswer(res || "Não foi possível obter uma resposta.");
-    } catch {
+    } catch (err) {
+      console.error("HelpPanel ask error:", err);
       setAnswer("Ocorreu um erro ao consultar o assistente. Tente novamente.");
     } finally {
       setLoading(false);
@@ -134,7 +134,7 @@ export default function HelpPanel({ screenName = "" }) {
           />
           <Button
             className="w-full mt-2 gap-1"
-            style={{ backgroundColor: "#1B4332" }}
+            style={{ backgroundColor: "#1B4332", opacity: !question.trim() || loading ? 0.5 : 1 }}
             disabled={!question.trim() || loading}
             onClick={handleAsk}
           >
