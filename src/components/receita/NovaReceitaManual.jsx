@@ -15,7 +15,7 @@ import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import TagSelector from "@/components/tags/TagSelector";
-import { normalizarNome, buscarFuzzy } from "@/lib/normalizarNome";
+import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -55,10 +55,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
   const filteredIngs = useMemo(() => {
     if (!ingBusca.trim()) return { ings: [], recs: [] };
-    const term = ingBusca.toLowerCase();
-    const ings = ingredientesDB
-      .filter(i => i.nome?.toLowerCase().includes(term))
-      .slice(0, 20);
+    const ings = buscarIngredientesRanqueado(ingBusca, ingredientesDB, 20);
     const recs = receitasBasicas
       .filter(r => r.nome?.toUpperCase().includes(ingBusca.toUpperCase()))
       .slice(0, 10);

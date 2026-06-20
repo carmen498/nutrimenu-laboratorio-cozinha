@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, ChefHat, Star } from "lucide-react";
 import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
+import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes, unidadeBase }) {
   const [busca, setBusca] = useState("");
@@ -38,9 +39,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
     queryFn: () => base44.entities.MedidaCaseira.list("-nome", 200),
   });
 
-  const filteredIng = ingredientes.filter(
-    (i) => !busca || i.nome?.toLowerCase().includes(busca.toLowerCase())
-  );
+  const filteredIng = buscarIngredientesRanqueado(busca, ingredientes, 20);
 
   const favoritos = !busca ? ingredientes.filter(i => i.favorito).slice(0, 8) : [];
   const outros = !busca ? filteredIng.filter(i => !i.favorito) : filteredIng;

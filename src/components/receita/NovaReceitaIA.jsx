@@ -15,7 +15,7 @@ import TagSelector from "@/components/tags/TagSelector";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
-import { normalizarNome, buscarFuzzy } from "@/lib/normalizarNome";
+import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 
@@ -239,17 +239,14 @@ IMPORTANTE:
         if (ing.nome_banco) return; // already matched
         const busca = (ing.nome_original || "").toLowerCase();
         if (!busca) return;
+        // Search ingredients (ranked: exact > startsWith > whole word > contains)
+        const similares = buscarIngredientesRanqueado(busca, ingredientes, 5);
+        if (similares.length > 0 && !similares.some(s => s.nome?.toLowerCase() === busca)) {
+          newSugs[i] = similares;
+        }
+        // Search receitas básicas too
         const palavras = busca.replace(/[,\/\(\)]/g, " ").split(/\s+/).filter(p => p.length >= 3 && !["com", "sem", "para", "dos", "das", "aos", "de"].includes(p));
         if (palavras.length > 0) {
-          // Search ingredients
-          const similares = ingredientes.filter(bi => {
-            const biNome = (bi.nome || "").toLowerCase();
-            return palavras.some(p => biNome.includes(p));
-          }).slice(0, 5);
-          if (similares.length > 0 && !similares.some(s => s.nome?.toLowerCase() === busca)) {
-            newSugs[i] = similares;
-          }
-          // Search receitas básicas too
           const recSimilares = receitasBasicas.filter(r => {
             const rNome = (r.nome || "").toLowerCase();
             return palavras.some(p => rNome.includes(p));

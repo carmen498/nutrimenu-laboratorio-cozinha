@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
+import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtualizacoesDialog";
@@ -165,14 +166,18 @@ export default function Ingredientes() {
   };
 
   const filtered = useMemo(() => {
-    return ingredientes.filter((i) => {
-      if (showDesatualizados) return isDesatualizado(i);
-      if (showRevisar) return i.revisar === true;
-      if (showFavoritos) return i.favorito === true;
-      const matchBusca = !busca || i.nome?.toLowerCase().includes(busca.toLowerCase());
-      const matchCat = !accordionAberto || getGrupoFromCategoria(i.categoria) === accordionAberto;
-      return matchBusca && matchCat;
-    });
+    if (showDesatualizados) return ingredientes.filter(i => isDesatualizado(i));
+    if (showRevisar) return ingredientes.filter(i => i.revisar === true);
+    if (showFavoritos) return ingredientes.filter(i => i.favorito === true);
+    if (!busca && !accordionAberto) return ingredientes;
+    let result = ingredientes;
+    if (busca) {
+      result = buscarIngredientesRanqueado(busca, result, 500);
+    }
+    if (accordionAberto) {
+      result = result.filter(i => getGrupoFromCategoria(i.categoria) === accordionAberto);
+    }
+    return result;
   }, [ingredientes, showDesatualizados, showRevisar, showFavoritos, busca, accordionAberto]);
 
   const countDesatualizados = useMemo(() => ingredientes.filter(i => isDesatualizado(i)).length, [ingredientes]);
