@@ -263,11 +263,12 @@ IMPORTANTE:
       const catAuto = p.categorias?.length > 0 ? p.categorias : categorizarPorIngredientes(ingNomes);
       
       const porcoes = p.porcoes_base || 0;
+      const semCategoria = !catAuto || catAuto.length === 0;
       
       const receita = await base44.entities.Receita.create({
         nome: p.nome?.toUpperCase(),
-        categoria: catAuto,
-        revisar: duplicateWarning != null,
+        categorias: semCategoria ? [] : catAuto,
+        revisar: duplicateWarning != null || semCategoria,
         porcoes_base: porcoes,
         unidade_base: p.unidade_base || "g",
         modo_preparo: modoPreparoFinal,

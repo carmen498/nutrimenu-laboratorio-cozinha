@@ -385,14 +385,15 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           ? juntarPassos(formatarModoPreparo(item.modo_preparo))
           : "";
 
+        const semCategoria = !item.categoria || item.categoria.trim() === "";
         const payload = {
           nome: nome.toUpperCase(),
-          categoria: item.categoria || "",
+          categorias: semCategoria ? [] : [item.categoria],
           porcoes_base: item.porcoes_base || 1,
           rendimento_total: item.rendimento_g || 0,
           unidade_base: "g",
           modo_preparo: modoPreparo,
-          revisar: false,
+          revisar: semCategoria,
         };
 
         let receitaId;
