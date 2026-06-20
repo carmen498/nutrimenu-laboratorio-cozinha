@@ -407,7 +407,10 @@ export default function Receitas() {
             <Link key={r.id} to={`/receita/${r.id}`}>
               <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-sm truncate">{r.nome}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm truncate">{r.nome}</p>
+                    {r.revisar && <Badge className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
+                  </div>
                   <div className="flex items-center gap-2 mt-0.5">
                     {getCategorias(r).length > 0 && (
                       <span className="text-[11px] text-muted-foreground">{getCategorias(r).join(", ")}</span>
