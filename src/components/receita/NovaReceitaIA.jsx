@@ -51,6 +51,7 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const navigate = useNavigate();
   const [similarSuggestions, setSimilarSuggestions] = useState({});
+  const [docesAmbiguo, setDocesAmbiguo] = useState(false);
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -65,6 +66,7 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const handleParse = async () => {
     if (!texto.trim()) { toast.error("Cole o texto da receita"); return; }
     setProcessing(true);
+    setDocesAmbiguo(false);
     try {
       const ingNames = ingredientes.map(i => i.nome).join(", ");
       const recBasicasNomes = receitasBasicas.map(r => r.nome).join(", ");
@@ -219,6 +221,15 @@ IMPORTANTE:
         }
       });
       setSimilarSuggestions({ ingredientes: newSugs, receitas: newRecSugs });
+
+      // Detect DOCES category ambiguity: >2 ingredients from DOCES → "Sobremesas" or "Pães e Bolos"
+      const docesCount = (result.ingredientes || []).filter(ing => {
+        if (ing.tipo === "grupo" || ing.eh_receita_basica) return false;
+        if (!ing.nome_banco) return false;
+        const dbIng = ingredientes.find(bi => bi.nome?.toLowerCase() === ing.nome_banco?.toLowerCase());
+        return dbIng?.categoria === "DOCES";
+      }).length;
+      setDocesAmbiguo(docesCount > 2);
     } catch (err) {
       toast.error("Erro ao processar: " + err.message);
     } finally {
@@ -440,6 +451,33 @@ IMPORTANTE:
               <div>
                 <Label>Categoria</Label>
                 <CategoriaPicker value={parsed.categorias || []} onChange={(v) => setParsed({ ...parsed, categorias: v })} />
+                {docesAmbiguo && (
+                  <div className="mt-2 p-2.5 bg-purple-50 border border-purple-200 rounded-lg">
+                    <p className="text-xs text-purple-700 mb-2">
+                      🍰 Vários ingredientes da categoria <strong>DOCES</strong> detectados — esta receita pode ser <strong>Sobremesas</strong> ou <strong>Pães e Bolos</strong>:
+                    </p>
+                    <div className="flex gap-1.5">
+                      <button
+                        className="text-xs px-2.5 py-1 rounded bg-white border border-purple-300 hover:bg-purple-100 text-purple-800 transition-colors font-medium"
+                        onClick={() => setParsed({ ...parsed, categorias: ["Sobremesas"] })}
+                      >
+                        🍮 Sobremesas
+                      </button>
+                      <button
+                        className="text-xs px-2.5 py-1 rounded bg-white border border-purple-300 hover:bg-purple-100 text-purple-800 transition-colors font-medium"
+                        onClick={() => setParsed({ ...parsed, categorias: ["Pães e Bolos"] })}
+                      >
+                        🍞 Pães e Bolos
+                      </button>
+                      <button
+                        className="text-xs px-2.5 py-1 rounded bg-white border border-purple-300 hover:bg-purple-100 text-purple-800 transition-colors font-medium"
+                        onClick={() => setParsed({ ...parsed, categorias: ["Sobremesas", "Pães e Bolos"] })}
+                      >
+                        Ambos
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -695,7 +733,7 @@ IMPORTANTE:
             </div>
 
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setParsed(null)}>Voltar</Button>
+              <Button variant="outline" onClick={() => { setParsed(null); setDocesAmbiguo(false); }}>Voltar</Button>
               <Button onClick={handleSave} disabled={saving || temZero || temAmbiguo}>
                 {saving ? "Salvando..." : "Salvar Receita"}
               </Button>
