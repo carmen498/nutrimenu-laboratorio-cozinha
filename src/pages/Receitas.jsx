@@ -563,6 +563,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
               categorias: { type: "string" },
               porcoes_base: { type: "number" },
               rendimento_g: { type: "number" },
+              unidade_base: { type: "string" },
               modo_preparo: { type: "string" },
             }
           }
@@ -599,14 +600,12 @@ function ImportReceitasCsvDialog({ open, onClose }) {
             const categorias = typeof catsRaw === "string"
               ? catsRaw.split(/[,;]/).map(c => c.trim()).filter(Boolean)
               : (Array.isArray(catsRaw) ? catsRaw : []);
-            const payload = {
-              nome: nome.toUpperCase(),
-              categorias,
-              porcoes_base: item.porcoes_base || 1,
-              rendimento_total: item.rendimento_g || 0,
-              unidade_base: "g",
-              modo_preparo: item.modo_preparo || "",
-            };
+            const payload = { nome };
+            if (categorias.length > 0) payload.categorias = categorias;
+            if (item.porcoes_base != null) payload.porcoes_base = item.porcoes_base;
+            if (item.rendimento_g != null) payload.rendimento_total = item.rendimento_g;
+            if (item.unidade_base) payload.unidade_base = item.unidade_base;
+            if (item.modo_preparo != null) payload.modo_preparo = item.modo_preparo;
             const existingItem = existingMap[nomeKey];
             if (existingItem) {
               await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: true });
