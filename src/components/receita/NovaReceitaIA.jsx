@@ -148,7 +148,7 @@ IMPORTANTE:
             tags_sugeridas: {
               type: "array",
               items: { type: "string" },
-              description: "Tags sugeridas para a receita. Use APENAS tags desta lista: 'Molho vermelho','Molho branco','Molho escuro','Molho agridoce','Molho de manteiga','Sem molho','Carne moída','Carne desfiada','Frango desfiado','Ovo','Prato único','Vegetariana','Vegana','Funcional','Low carb','Proteica','Integral','Sem glúten','Sem lactose','Sem pimentão','Sem pimenta','Sem alho','Sem cebola','Sem ovos','Sem açúcar','Air Fryer','Forno','Vapor','Grelhado','Frito','Cozido','Sem fogo / Cru','Freezer','Rende muito','Rápido — até 30 min','Para criança','Para dieta','Para festa','Comfort food'. Regras: se tem vegetais sem carne → 'Vegetariana'. Se menciona 'air fryer' → 'Air Fryer'. Se menciona 'forno'/'assar' → 'Forno'. Se não tem farinha de trigo/farinha comum → 'Sem glúten'. Se o tempo total ≤ 30 min → 'Rápido — até 30 min'. Se tem carne moída → 'Carne moída'."
+              description: "Tags sugeridas para a receita. Use APENAS tags desta lista: 'Molho vermelho','Molho branco','Molho escuro','Molho agridoce','Molho de manteiga','Sem molho','Carne moída','Carne desfiada','Frango desfiado','Ovo','Prato único','Vegetariana','Vegana','Funcional','Low carb','Proteica','Integral','Sem glúten','Sem lactose','Sem pimentão','Sem pimenta','Sem alho','Sem cebola','Sem ovos','Sem açúcar','Air Fryer','Forno','Vapor','Grelhado','Frito','Cozido','Sem fogo / Cru','Freezer','Rende muito','Rápido — até 30 min','Para criança','Para dieta','Para festa','Comfort food'. Regras gerais: se tem vegetais sem carne → 'Vegetariana'. Se menciona 'air fryer' → 'Air Fryer'. Se menciona 'forno'/'assar' → 'Forno'. Se não tem farinha de trigo/farinha comum → 'Sem glúten'. Se o tempo total ≤ 30 min → 'Rápido — até 30 min'. Se tem carne moída → 'Carne moída'. IMPORTANTE PARA SOBREMESAS E PÃES E BOLOS: se a receita for das categorias 'Sobremesas' ou 'Pães e Bolos', sugira APENAS tags da lista restrita: 'Sem Glúten', 'Sem Lactose', 'Air Fryer', 'Forno'. Nunca sugira 'Vegetariana', 'Vegana', 'Low carb' ou outras tags fora dessa lista para essas categorias."
             }
           }
         }
@@ -182,11 +182,15 @@ IMPORTANTE:
 
       setParsed(result);
       
-      // Match suggested tags to actual tag IDs
+      // Match suggested tags to actual tag IDs — filter for Sobremesas/Pães e Bolos
       const allTags = await base44.entities.Tag.list("nome", 200);
       const sugestoes = result.tags_sugeridas || [];
+      const categoriasResult = catAuto.length > 0 ? catAuto : (result.categorias || []);
+      const isDoce = categoriasResult.some(c => c === "Sobremesas" || c === "Pães e Bolos");
+      const TAGS_PERMITIDAS_DOCES = ["Sem Glúten", "Sem Lactose", "Air Fryer", "Forno"];
       const matchedIds = [];
       for (const nome of sugestoes) {
+        if (isDoce && !TAGS_PERMITIDAS_DOCES.includes(nome)) continue;
         const tag = allTags.find(t => t.nome === nome);
         if (tag) matchedIds.push(tag.id);
       }

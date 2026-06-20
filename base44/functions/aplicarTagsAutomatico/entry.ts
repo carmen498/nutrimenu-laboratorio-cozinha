@@ -1,7 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Only these 4 tags are auto-generated. All other tags must be manual.
-const AUTO_TAGS = ['Forno', 'Grelhado', 'Cozido', 'Congelável'];
+// Only these tags are auto-generated. All other tags must be manual.
+const AUTO_TAGS_REGULAR = ['Forno', 'Grelhado', 'Cozido', 'Congelável'];
+const AUTO_TAGS_DOCES = ['Sem Glúten', 'Sem Lactose', 'Air Fryer', 'Forno'];
+const ALL_AUTO_TAGS = [...AUTO_TAGS_REGULAR, ...AUTO_TAGS_DOCES];
 
 Deno.serve(async (req) => {
   try {
@@ -9,10 +11,10 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Load all tags — only care about the 4 auto tags
+    // Load all tags — only care about the auto tags
     const tags = await base44.asServiceRole.entities.Tag.list('nome', 200);
     const tagMap = {};
-    tags.forEach(t => { if (AUTO_TAGS.includes(t.nome)) tagMap[t.nome] = t; });
+    tags.forEach(t => { if (ALL_AUTO_TAGS.includes(t.nome)) tagMap[t.nome] = t; });
 
     if (Object.keys(tagMap).length === 0) {
       return Response.json({ success: true, receitas_marcadas: 0, tags_adicionadas: 0, total_receitas: 0 });
@@ -66,43 +68,89 @@ Deno.serve(async (req) => {
       const prepPreparos = ings.map(i => (i.pre_preparo || '').toLowerCase()).join(' ');
       const fullText = todosNomes + ' ' + modoPrep + ' ' + prepPreparos;
 
+      const categorias = (receita.categorias || []).map(c => c.toLowerCase());
+      const isDoce = categorias.some(c => c === 'sobremesas' || c === 'pães e bolos');
+
       const existingTagNames = new Set((tagsByReceita[receita.id] || []).map(rt => rt.tag_nome));
       const tagsToAdd = new Set();
 
-      // --- FORNO ---
-      const fornoKeywords = ['forno', 'assar', 'assado', 'assada', 'gratinar', 'gratinado', 'gratinada',
-        'assadeira', 'tabuleiro', 'forno pré-aquecido', 'forno preaquecido'];
-      if (!existingTagNames.has('Forno') && fornoKeywords.some(k => fullText.includes(k))) {
-        tagsToAdd.add('Forno');
-      }
+      if (isDoce) {
+        // ── For Sobremesas / Pães e Bolos: only 4 tags allowed ──
 
-      // --- GRELHADO ---
-      const grelhadoKeywords = ['grelhar', 'grelhado', 'grelhada', 'grelha', 'churrasco',
-        'churrasqueira', 'grelhador', 'grelhar na brasa', 'na grelha', 'brasa'];
-      if (!existingTagNames.has('Grelhado') && grelhadoKeywords.some(k => fullText.includes(k))) {
-        tagsToAdd.add('Grelhado');
-      }
+        // --- SEM GLÚTEN ---
+        const semGlutenIndicators = [
+          'farinha de arroz', 'farinha de amêndoa', 'farinha de amendoa',
+          'farinha de coco', 'polvilho', 'fécula', 'fecula',
+          'farinha sem glúten', 'farinha sem gluten', 'sem glúten', 'sem gluten',
+          'sem farinha de trigo', 'amido de milho', 'farinha de aveia sem glúten'
+        ];
+        const hasFarinhaTrigo = /\bfarinha de trigo\b|\bfarinha comum\b/.test(fullText);
+        if (!existingTagNames.has('Sem Glúten') && !hasFarinhaTrigo &&
+            (semGlutenIndicators.some(k => fullText.includes(k)) ||
+             !/\bfarinha de trigo\b/.test(todosNomes))) {
+          // Only mark if no wheat flour found at all
+          if (!/\bfarinha de trigo\b/.test(fullText)) {
+            tagsToAdd.add('Sem Glúten');
+          }
+        }
 
-      // --- COZIDO ---
-      const cozidoKeywords = ['cozinhar', 'cozido', 'cozida', 'ferver', 'fervura', 'cozimento',
-        'panela de pressão', 'panela comum', 'fogão', 'panela', 'caldeirão', 'ensopado',
-        'refogar', 'refogado', 'saltear', 'salteado', 'brasa', 'branquear'];
-      // "brasa" also appears in grelhado, but "cozido" detection requires more generic cooking terms
-      if (!existingTagNames.has('Cozido') && cozidoKeywords.some(k => fullText.includes(k))) {
-        tagsToAdd.add('Cozido');
-      }
+        // --- SEM LACTOSE ---
+        const lactoseIndicators = [
+          'leite', 'creme de leite', 'manteiga', 'queijo', 'requeijão',
+          'requeijao', 'iogurte', 'nata', 'ricota', 'catupiry',
+          'mascarpone', 'leite condensado', 'doce de leite', 'chantilly'
+        ];
+        if (!existingTagNames.has('Sem Lactose') && !lactoseIndicators.some(k => fullText.includes(k))) {
+          tagsToAdd.add('Sem Lactose');
+        }
 
-      // --- CONGELÁVEL ---
-      const congelavelIndicators = ['congelar', 'congelado', 'congelável', 'freezer', 'freezer por',
-        'pode congelar', 'pode ser congelado', 'armazenar no freezer'];
-      // Also check recipe names/categories that typically freeze well
-      const categorias = (receita.categorias || []).map(c => c.toLowerCase());
-      const congCategories = ['sopas e caldos', 'molhos e bases', 'massas', 'pães', 'salgadinhos'];
-      const hasCongCategory = congCategories.some(c => categorias.includes(c));
-      const hasCongKeyword = congelavelIndicators.some(k => fullText.includes(k));
+        // --- AIR FRYER ---
+        if (!existingTagNames.has('Air Fryer') && /\bair fryer\b|\bairfryer\b/.test(fullText)) {
+          tagsToAdd.add('Air Fryer');
+        }
 
-      if (!existingTagNames.has('Congelável') && (hasCongKeyword || hasCongCategory)) {
-        tagsToAdd.add('Congelável');
+        // --- FORNO ---
+        const fornoKeywords = ['forno', 'assar', 'assado', 'assada', 'gratinar', 'gratinado', 'gratinada',
+          'assadeira', 'tabuleiro', 'forno pré-aquecido', 'forno preaquecido'];
+        if (!existingTagNames.has('Forno') && fornoKeywords.some(k => fullText.includes(k))) {
+          tagsToAdd.add('Forno');
+        }
+
+      } else {
+        // ── Regular recipes: Forno, Grelhado, Cozido, Congelável ──
+
+        // --- FORNO ---
+        const fornoKeywords = ['forno', 'assar', 'assado', 'assada', 'gratinar', 'gratinado', 'gratinada',
+          'assadeira', 'tabuleiro', 'forno pré-aquecido', 'forno preaquecido'];
+        if (!existingTagNames.has('Forno') && fornoKeywords.some(k => fullText.includes(k))) {
+          tagsToAdd.add('Forno');
+        }
+
+        // --- GRELHADO ---
+        const grelhadoKeywords = ['grelhar', 'grelhado', 'grelhada', 'grelha', 'churrasco',
+          'churrasqueira', 'grelhador', 'grelhar na brasa', 'na grelha', 'brasa'];
+        if (!existingTagNames.has('Grelhado') && grelhadoKeywords.some(k => fullText.includes(k))) {
+          tagsToAdd.add('Grelhado');
+        }
+
+        // --- COZIDO ---
+        const cozidoKeywords = ['cozinhar', 'cozido', 'cozida', 'ferver', 'fervura', 'cozimento',
+          'panela de pressão', 'panela comum', 'fogão', 'panela', 'caldeirão', 'ensopado',
+          'refogar', 'refogado', 'saltear', 'salteado', 'brasa', 'branquear'];
+        if (!existingTagNames.has('Cozido') && cozidoKeywords.some(k => fullText.includes(k))) {
+          tagsToAdd.add('Cozido');
+        }
+
+        // --- CONGELÁVEL ---
+        const congelavelIndicators = ['congelar', 'congelado', 'congelável', 'freezer', 'freezer por',
+          'pode congelar', 'pode ser congelado', 'armazenar no freezer'];
+        const congCategories = ['sopas e caldos', 'molhos e bases', 'massas', 'pães', 'salgadinhos'];
+        const hasCongCategory = congCategories.some(c => categorias.includes(c));
+        const hasCongKeyword = congelavelIndicators.some(k => fullText.includes(k));
+
+        if (!existingTagNames.has('Congelável') && (hasCongKeyword || hasCongCategory)) {
+          tagsToAdd.add('Congelável');
+        }
       }
 
       for (const tagNome of tagsToAdd) {
