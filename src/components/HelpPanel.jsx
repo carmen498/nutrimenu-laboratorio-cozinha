@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { HelpCircle, X, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
@@ -11,6 +11,14 @@ export default function HelpPanel({ screenName = "" }) {
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [questionError, setQuestionError] = useState("");
+  const answerRef = useRef(null);
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    if (answer && answerRef.current && scrollRef.current) {
+      answerRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [answer]);
 
   const content = useMemo(() => {
     const exact = helpContent[screenName];
@@ -36,8 +44,10 @@ export default function HelpPanel({ screenName = "" }) {
       const systemPrompt = `Você é a assistente do app Laboratório de Cozinha. O usuário está na tela ${screenName || "do app"}. ${ctxInfo} Responda em português brasileiro de forma direta e prática. REGRA: apenas oriente o usuário a criar uma receita quando ele mencionar explicitamente o nome de uma receita para cadastrar — nunca sugira criar receitas de forma proativa.`;
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `[System: ${systemPrompt}]\n\nPergunta do usuário: ${question}`,
+        model: "automatic",
       });
-      setAnswer(res || "Não foi possível obter uma resposta.");
+      const textoResposta = typeof res === "string" ? res : (res?.response || res?.text || res?.content || JSON.stringify(res));
+      setAnswer(textoResposta || "Não foi possível obter uma resposta. Tente reformular a pergunta.");
     } catch (err) {
       console.error("HelpPanel ask error:", err);
       setAnswer("Ocorreu um erro ao consultar o assistente. Tente novamente.");
@@ -81,7 +91,7 @@ export default function HelpPanel({ screenName = "" }) {
         </div>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
           {/* Context */}
           {content?.context && (
             <div>
@@ -120,7 +130,7 @@ export default function HelpPanel({ screenName = "" }) {
 
           {/* Answer */}
           {answer && (
-            <div className="bg-muted/50 rounded-lg p-3 border border-border">
+            <div ref={answerRef} className="bg-muted/50 rounded-lg p-3 border border-border">
               <p className="text-xs font-semibold text-muted-foreground mb-1">Resposta</p>
               <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{answer}</p>
             </div>
