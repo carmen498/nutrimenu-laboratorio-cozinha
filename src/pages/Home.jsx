@@ -52,6 +52,13 @@ export default function Home() {
     queryFn: () => base44.entities.Ingrediente.filter({ revisar: true }, "-updated_date", 50),
   });
 
+  const { data: receitasRevisar = [] } = useQuery({
+    queryKey: ["receitas-revisar-home"],
+    queryFn: () => base44.entities.Receita.filter({ revisar: true }, "-updated_date", 100),
+    staleTime: 0,
+    refetchOnMount: "always",
+  });
+
   const formatCurrency = (v) =>
     v != null ? `R$ ${Number(v).toFixed(2).replace(".", ",")}` : "—";
 
@@ -144,6 +151,28 @@ export default function Home() {
           Acesso rápido
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Receitas a revisar — destaque */}
+          {receitasRevisar.length > 0 && (
+            <Card className="p-4 border-2 md:col-span-2" style={{ borderColor: "#E8A317", background: "linear-gradient(135deg, #FFFDF5 0%, #FFF8E1 100%)" }}>
+              <Link to="/receitas?revisar=true" className="flex items-center justify-between gap-4 hover:opacity-90 transition-opacity">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#FFF3CD" }}>
+                    <AlertTriangle className="w-5 h-5" style={{ color: "#B8860B" }} />
+                  </div>
+                  <div>
+                    <p className="font-semibold" style={{ color: "#7A5D00" }}>
+                      {receitasRevisar.length} {receitasRevisar.length === 1 ? "receita" : "receitas"} aguardando revisão
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Receitas importadas por IA que precisam da sua conferência
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: "#B8860B" }} />
+              </Link>
+            </Card>
+          )}
+
           {/* Últimas receitas */}
           <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">

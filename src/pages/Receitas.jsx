@@ -58,6 +58,7 @@ export default function Receitas() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("nova") === "manual") setShowNew("manual");
     if (params.get("nova") === "ia") setShowNew("ia");
+    if (params.get("revisar") === "true") setShowRevisar(true);
   }, []);
 
   const { data: receitas = [], isLoading } = useQuery({
