@@ -56,7 +56,9 @@ REGRAS DE EXTRAÇÃO:
 
 8. CATEGORIA DA RECEITA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia.
 
-9. CLASSIFICAÇÃO ESTRUTURAL / A GOSTO (proporcional: true/false):
+9. INGREDIENTES AMBÍGUOS ("X ou Y"): se um ingrediente estiver escrito como "X ou Y" (ex: "manteiga ou margarina"), NÃO escolha um — transcreva o nome COMPLETO "X ou Y" como nome. O sistema detectará e pedirá que o usuário escolha.
+
+10. CLASSIFICAÇÃO ESTRUTURAL / A GOSTO (proporcional: true/false):
    - ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata (quando ingrediente principal).
    - A GOSTO (false): temperos e condimentos (sal, pimenta, colorau, páprica, orégano, ervas, alho, cebola quando tempero), finalizadores (azeite para finalizar, flor de sal, ervas frescas para decorar), ingredientes opcionais/complementares (creme de leite quando complemento, queijo para gratinar, azeitonas, alcaparras), líquidos de ajuste (água para ajustar consistência, caldo para deglaçar).
 
@@ -366,7 +368,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
       const receitaMap = {};
       existingReceitas.forEach(r => { receitaMap[r.nome?.toLowerCase().trim()] = r; });
 
-      let created = 0, updated = 0, skipped = 0;
+      let created = 0, updated = 0, skipped = 0, ambiguos = 0;
       const processedNames = new Set();
 
       for (const item of result.receitas) {
@@ -427,6 +429,13 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           const ingNome = (ing.nome || "").trim();
           if (!ingNome) { ordem++; continue; }
 
+          // Skip ambiguous "X ou Y" ingredients — user must resolve manually
+          if (/\b.+\s+ou\s+.+\b/i.test(ingNome)) {
+            ambiguos++;
+            ordem++;
+            continue;
+          }
+
           // Normalize ingredient name
           const normalized = normalizeIngredienteNome(ingNome);
           const ingNomeFinal = normalized.nome;
@@ -474,7 +483,8 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         }
       }
 
-      toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.`);
+      const ambMsg = ambiguos > 0 ? ` · ${ambiguos} ambíguo(s) (X ou Y) — defina manualmente depois` : "";
+      toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.${ambMsg}`);
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });

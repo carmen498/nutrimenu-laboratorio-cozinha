@@ -94,6 +94,7 @@ IMPORTANTE:
 - CORRIJA erros de digitação ÓBVIOS nos nomes dos ingredientes (ex: "perito" → "peito", "frago" → "frango", "açucar" → "açúcar", "farinah" → "farinha"). Use o nome CORRIGIDO no campo nome_banco.
 - NÃO substitua um ingrediente por outro DIFERENTE (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango"). Só corrija erros de grafia.
 - Se NENHUM ingrediente do banco corresponder (mesmo após correção), deixe nome_banco VAZIO.
+- Se um ingrediente estiver escrito como "X ou Y" (ex: "manteiga ou margarina"), NÃO escolha um — mantenha o texto AMBÍGUO completo como nome_original para que o usuário decida depois.
 - Se o ingrediente parecer ser uma RECEITA BÁSICA (ex: "Molho Bechamel", "Massa de pizza", "Calda de chocolate"), marque eh_receita_basica=true e coloque o nome da receita em nome_banco MESMO que não seja uma correspondência exata — o sistema confirmará depois.
 - Converta SEMPRE medidas caseiras para gramas usando a tabela acima
 - NÃO invente porções: se o texto mencionar explicitamente quantas porções rende, use esse valor. Se NÃO mencionar, deixe porcoes_base = 0 (zero).
@@ -165,6 +166,17 @@ IMPORTANTE:
         }
       });
 
+      // Post-process: detect "X ou Y" ambiguous ingredients
+      (result.ingredientes || []).forEach((ing) => {
+        if (ing.tipo === "grupo") return;
+        const nome = (ing.nome_banco || ing.nome_original || "").toLowerCase();
+        const match = nome.match(/\b(.+?)\s+ou\s+(.+)/i);
+        if (match) {
+          ing.ambiguo_opcoes = [match[1].trim(), match[2].trim()];
+          ing.ambiguo_selecionado = null;
+        }
+      });
+
       setParsed(result);
       
       // Match suggested tags to actual tag IDs
@@ -232,6 +244,7 @@ IMPORTANTE:
   };
 
   const temZero = (parsed?.ingredientes || []).some(ing => ing.tipo !== "grupo" && (ing.quantidade_g || 0) === 0);
+  const temAmbiguo = (parsed?.ingredientes || []).some(ing => ing.ambiguo_opcoes && !ing.ambiguo_selecionado);
 
   const doSave = async () => {
     const p = parsedRef.current;
@@ -370,6 +383,7 @@ IMPORTANTE:
     const p = parsedRef.current;
     if (!p) return;
     if (temZero) { toast.error("Preencha a quantidade de todos os ingredientes antes de salvar."); return; }
+    if (temAmbiguo) { toast.error("Escolha um produto específico para cada ingrediente ambíguo (X ou Y) antes de salvar."); return; }
 
     const todas = await base44.entities.Receita.list("-nome", 1000);
     const normForm = normalizarNome(p.nome);
@@ -512,6 +526,13 @@ IMPORTANTE:
                   const hasSuggestion = !found && !isRecBasica && (sugs.length > 0 || recSugs.length > 0);
                   const conv = converterMedida(ing.medida_original || "", ing.nome_banco || ing.nome_original || "");
                   
+                  const isAmbiguo = ing.ambiguo_opcoes && !ing.ambiguo_selecionado;
+
+                  const acceptAmbiguo = (opcao) => {
+                    updateIngrediente(idx, "ambiguo_selecionado", opcao);
+                    updateIngrediente(idx, "nome_original", opcao);
+                  };
+
                   const acceptSimilar = (sugIng) => {
                     const novos = [...(parsed.ingredientes || [])];
                     novos[idx] = { ...novos[idx], nome_banco: sugIng.nome, eh_receita_basica: false };
@@ -548,6 +569,24 @@ IMPORTANTE:
                               {ing.proporcional !== false ? <span className="text-green-600">🔗</span> : <span className="text-gray-400">📌</span>}
                             </button>
                           </div>
+                          {isAmbiguo && (
+                            <div className="ml-5 mt-1.5 p-2 bg-amber-50 rounded border border-amber-300">
+                              <p className="text-xs text-amber-700 mb-1.5 font-medium">
+                                Ingrediente ambíguo — escolha um:
+                              </p>
+                              <div className="flex gap-1.5">
+                                {ing.ambiguo_opcoes.map((opcao, oi) => (
+                                  <button
+                                    key={oi}
+                                    className="text-xs px-2.5 py-1 rounded bg-white border border-amber-400 hover:bg-amber-100 text-amber-900 transition-colors font-medium"
+                                    onClick={() => acceptAmbiguo(opcao)}
+                                  >
+                                    {opcao}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <div className="flex items-center gap-1 ml-5 mt-1">
                             {conv.displayText && (
                               <span className={`text-xs ${conv.alerta ? "text-amber-600" : "text-muted-foreground"}`}>
@@ -654,7 +693,7 @@ IMPORTANTE:
 
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setParsed(null)}>Voltar</Button>
-              <Button onClick={handleSave} disabled={saving || temZero}>
+              <Button onClick={handleSave} disabled={saving || temZero || temAmbiguo}>
                 {saving ? "Salvando..." : "Salvar Receita"}
               </Button>
             </div>
