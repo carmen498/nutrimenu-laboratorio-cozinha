@@ -183,6 +183,7 @@ export default function ReceitaAberta() {
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
+  const pesoBruto = itensFicha.filter(i => !i.isGrupo).reduce((sum, i) => sum + (i.qtdNova || 0), 0);
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
   const custoEsquecidos = esquecidos.reduce((sum, i) => sum + ((i.custo_total || 0) * fator), 0);
@@ -1254,8 +1255,17 @@ REGRAS:
 
       {/* Cost summary */}
       <Card className="p-4">
-        <h3 className="font-display text-sm font-bold mb-3">Custo total real</h3>
+        <h3 className="font-display text-sm font-bold mb-3">Pesos e Custos</h3>
         <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Peso Bruto (g)</span>
+            <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Rendimento (PDP)</span>
+            <span className="font-medium">{(receita.rendimento_total || 0).toLocaleString("pt-BR")} g</span>
+          </div>
+          <Separator />
           <div className="flex justify-between">
             <span className="text-muted-foreground">Ingredientes</span>
             <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
