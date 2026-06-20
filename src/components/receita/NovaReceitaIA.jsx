@@ -15,7 +15,7 @@ import TagSelector from "@/components/tags/TagSelector";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
-import { normalizarNome } from "@/lib/normalizarNome";
+import { normalizarNome, buscarFuzzy } from "@/lib/normalizarNome";
 import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 
@@ -411,11 +411,10 @@ IMPORTANTE:
     if (temAmbiguo) { toast.error("Escolha um produto específico para cada ingrediente ambíguo (X ou Y) antes de salvar."); return; }
 
     const todas = await base44.entities.Receita.list("-nome", 1000);
-    const normForm = normalizarNome(p.nome);
-    const similar = todas.find(r => normalizarNome(r.nome) === normForm);
+    const fuzzy = buscarFuzzy(p.nome, todas);
 
-    if (similar) {
-      setDuplicateWarning(similar);
+    if (fuzzy) {
+      setDuplicateWarning(fuzzy.receita);
     } else {
       doSave();
     }

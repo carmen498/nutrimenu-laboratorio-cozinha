@@ -8,6 +8,7 @@ import { Upload, Loader2, Sparkles, FileText, ClipboardPaste, AlertTriangle, Che
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
+import { buscarFuzzy } from "@/lib/normalizarNome";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -397,7 +398,8 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         };
 
         let receitaId;
-        const existingReceita = receitaMap[nomeKey];
+        const fuzzyMatch = buscarFuzzy(nome, existingReceitas);
+        const existingReceita = fuzzyMatch?.receita;
         if (existingReceita) {
           receitaId = existingReceita.id;
           await base44.entities.Receita.update(receitaId, { ...payload, revisar: true });

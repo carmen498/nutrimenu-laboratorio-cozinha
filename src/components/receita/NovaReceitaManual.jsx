@@ -15,7 +15,7 @@ import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import TagSelector from "@/components/tags/TagSelector";
-import { normalizarNome } from "@/lib/normalizarNome";
+import { normalizarNome, buscarFuzzy } from "@/lib/normalizarNome";
 
 export default function NovaReceitaManual({ open, onClose, onCreated }) {
   const [form, setForm] = useState({
@@ -212,13 +212,12 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
     const zeroQtd = ingsReais.some(a => (a.quantidade_por_porcao || 0) === 0);
     if (zeroQtd) { toast.error("Todos os ingredientes precisam ter quantidade"); return; }
 
-    // Busca similar por nome normalizado
+    // Busca fuzzy — detecta nomes similares, não apenas idênticos
     const todas = await base44.entities.Receita.list("-nome", 500);
-    const normForm = normalizarNome(form.nome);
-    const similar = todas.find(r => normalizarNome(r.nome) === normForm);
+    const fuzzy = buscarFuzzy(form.nome, todas);
 
-    if (similar) {
-      setDuplicateWarning(similar);
+    if (fuzzy) {
+      setDuplicateWarning(fuzzy.receita);
     } else {
       doSave();
     }
