@@ -25,6 +25,7 @@ import TagBadge from "@/components/tags/TagBadge";
 import TagList from "@/components/tags/TagList";
 import TagSelector from "@/components/tags/TagSelector";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
+import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -51,6 +52,8 @@ export default function ReceitaAberta() {
   const [localFavoritando, setLocalFavoritando] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [pdpValue, setPdpValue] = useState("");
+  const [editingPC, setEditingPC] = useState(false);
+  const [pcValue, setPcValue] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -118,6 +121,34 @@ export default function ReceitaAberta() {
     const val = Math.max(1, Math.round(newPDP));
     setPdpValue(String(val));
     handleSavePDP(val);
+  };
+
+  // Per capita sugerido
+  const perCapitaSugerido = useMemo(() => {
+    if (!receita) return null;
+    const cat = (receita.categorias || []).length > 0 ? receita.categorias[0] : (receita.categoria || "");
+    const sug = sugerirPerCapita(receita.nome, cat);
+    const info = getPerCapitaInfo(cat);
+    return { g: sug, medida: info?.medida || "" };
+  }, [receita]);
+
+  const perCapitaAtual = receita?.per_capita_g || perCapitaSugerido?.g || null;
+
+  const handleSavePC = async (val) => {
+    if (!isNaN(val) && val > 0) {
+      await base44.entities.Receita.update(id, { per_capita_g: val });
+      qc.invalidateQueries({ queryKey: ["receita", id] });
+      setEditingPC(false);
+      toast.success("Per capita atualizado!");
+    } else {
+      setEditingPC(false);
+    }
+  };
+
+  const handlePCChange = (newPC) => {
+    const val = Math.max(1, Math.round(newPC));
+    setPcValue(String(val));
+    handleSavePC(val);
   };
 
   const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
@@ -570,6 +601,49 @@ REGRAS:
               }}
             />
           </div>
+          {/* PC recomendado */}
+          {perCapitaAtual > 0 && (
+            <div className="flex items-center gap-2 text-sm mt-0.5">
+              <span className="text-muted-foreground">PC recomendado:</span>
+              {editingPC ? (
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePCChange(perCapitaAtual - 10)}>
+                    <Minus className="w-3.5 h-3.5" />
+                  </Button>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={pcValue}
+                    onChange={(e) => setPcValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSavePC(parseInt(pcValue) || 0); if (e.key === "Escape") setEditingPC(false); }}
+                    className="h-8 w-20 text-center text-sm font-bold"
+                    autoFocus
+                  />
+                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePCChange(perCapitaAtual + 10)}>
+                    <Plus className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSavePC(parseInt(pcValue) || 0)}>
+                    <Check className="w-3.5 h-3.5 text-green-600" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingPC(false)}>
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  className="font-bold text-primary hover:underline flex items-center gap-1"
+                  onClick={() => { setPcValue(String(perCapitaAtual)); setEditingPC(true); }}
+                  title={receita.per_capita_g ? "Valor personalizado — clique para editar" : "Valor sugerido — clique para editar"}
+                >
+                  {perCapitaAtual}g/pessoa
+                  {perCapitaSugerido?.medida && <span className="font-normal text-muted-foreground text-xs">· {perCapitaSugerido.medida}</span>}
+                  {receita.per_capita_g && <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 border-amber-300 text-amber-700 bg-amber-100/50">personalizado</Badge>}
+                  {!receita.per_capita_g && <span className="text-[10px] text-muted-foreground ml-1">(sugerido)</span>}
+                  <Pencil className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
         {/* Right block: Photo */}
         {receita.foto_url ? (

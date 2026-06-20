@@ -79,6 +79,10 @@
       "type": "boolean",
       "default": false,
       "description": "Flag: Receita favorita"
+    },
+    "per_capita_g": {
+      "type": "number",
+      "description": "Per capita recomendado em gramas (override do usu\u00e1rio)"
     }
   },
   "required": [
