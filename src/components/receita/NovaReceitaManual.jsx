@@ -364,33 +364,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
               </div>
             )}
 
-            {/* Add group header */}
-            <div className="flex items-center gap-2 mb-2">
-              {showAddGrupo ? (
-                <>
-                  <Input
-                    placeholder="Nome do grupo (ex: MOLHO PROVOLONE)"
-                    value={novoGrupoTitulo}
-                    onChange={(e) => setNovoGrupoTitulo(e.target.value)}
-                    className="h-8 text-sm flex-1"
-                    autoFocus
-                    onKeyDown={(e) => { if (e.key === "Enter") handleAddGrupo(); if (e.key === "Escape") { setShowAddGrupo(false); setNovoGrupoTitulo(""); } }}
-                  />
-                  <Button size="sm" onClick={handleAddGrupo} disabled={!novoGrupoTitulo.trim()}>
-                    <Check className="w-3 h-3" />
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => { setShowAddGrupo(false); setNovoGrupoTitulo(""); }}>
-                    <X className="w-3 h-3" />
-                  </Button>
-                </>
-              ) : (
-                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setShowAddGrupo(true)}>
-                  <Plus className="w-3 h-3 mr-1" /> Adicionar sub-título de grupo
-                </Button>
-              )}
-            </div>
-
-            {/* Add ingredient form */}
+            {/* Add ingredient form (primary action) */}
             <div className="space-y-2">
               <Popover>
                 <PopoverTrigger asChild>
@@ -485,6 +459,32 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
+            </div>
+
+            {/* Add group header (secondary) */}
+            <div className="flex items-center gap-2 mt-3">
+              {showAddGrupo ? (
+                <>
+                  <Input
+                    placeholder="Nome do grupo (ex: MOLHO PROVOLONE)"
+                    value={novoGrupoTitulo}
+                    onChange={(e) => setNovoGrupoTitulo(e.target.value)}
+                    className="h-8 text-sm flex-1"
+                    autoFocus
+                    onKeyDown={(e) => { if (e.key === "Enter") handleAddGrupo(); if (e.key === "Escape") { setShowAddGrupo(false); setNovoGrupoTitulo(""); } }}
+                  />
+                  <Button size="sm" onClick={handleAddGrupo} disabled={!novoGrupoTitulo.trim()}>
+                    <Check className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => { setShowAddGrupo(false); setNovoGrupoTitulo(""); }}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => setShowAddGrupo(true)}>
+                  <Plus className="w-3 h-3 mr-1" /> Adicionar sub-título de grupo
+                </Button>
+              )}
             </div>
           </div>
 
