@@ -290,7 +290,7 @@ IMPORTANTE:
       const receita = await base44.entities.Receita.create({
         nome: p.nome?.toUpperCase(),
         categorias: semCategoria ? [] : catAuto,
-        revisar: duplicateWarning != null || semCategoria,
+        revisar: true,
         porcoes_base: porcoes,
         unidade_base: p.unidade_base || "g",
         modo_preparo: modoPreparoFinal,

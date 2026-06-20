@@ -394,7 +394,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           rendimento_total: item.rendimento_g || 0,
           unidade_base: "g",
           modo_preparo: modoPreparo,
-          revisar: semCategoria,
+          revisar: true,
         };
 
         let receitaId;
