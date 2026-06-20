@@ -29,7 +29,7 @@ export default function HelpPanel({ screenName = "" }) {
     setAnswer("");
     try {
       const ctxInfo = content?.context ? `Contexto da tela: ${content.context}` : "";
-      const systemPrompt = `Você é a assistente do app Laboratório de Cozinha. O usuário está na tela ${screenName || "do app"}. ${ctxInfo} Responda em português brasileiro de forma direta e prática.`;
+      const systemPrompt = `Você é a assistente do app Laboratório de Cozinha. O usuário está na tela ${screenName || "do app"}. ${ctxInfo} Responda em português brasileiro de forma direta e prática. REGRA: apenas oriente o usuário a criar uma receita quando ele mencionar explicitamente o nome de uma receita para cadastrar — nunca sugira criar receitas de forma proativa.`;
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `[System: ${systemPrompt}]\n\nPergunta do usuário: ${question}`,
         model: "claude_sonnet_4_6",
