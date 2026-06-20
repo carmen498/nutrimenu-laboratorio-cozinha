@@ -50,7 +50,6 @@ export default function ReceitaAberta() {
   const [convertingNATitulo, setConvertingNATitulo] = useState("");
   const [localFavoritando, setLocalFavoritando] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
-  const [editingPDP, setEditingPDP] = useState(false);
   const [pdpValue, setPdpValue] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
@@ -107,16 +106,18 @@ export default function ReceitaAberta() {
     }
   }, [receita]);
 
-  const handleSavePDP = async () => {
-    const val = parseFloat(pdpValue);
+  const handleSavePDP = async (val) => {
     if (!isNaN(val) && val > 0) {
       await base44.entities.Receita.update(id, { rendimento_total: val });
       qc.invalidateQueries({ queryKey: ["receita", id] });
-      setEditingPDP(false);
       toast.success("Rendimento atualizado!");
-    } else {
-      setEditingPDP(false);
     }
+  };
+
+  const handlePDPChange = (newPDP) => {
+    const val = Math.max(1, Math.round(newPDP));
+    setPdpValue(String(val));
+    handleSavePDP(val);
   };
 
   const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
@@ -1281,35 +1282,33 @@ REGRAS:
             <span className="text-muted-foreground">Peso Bruto (g)</span>
             <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Rendimento (PDP)</span>
-            {editingPDP ? (
-              <div className="flex items-center gap-1">
+          <div>
+            <Label className="text-sm font-semibold text-muted-foreground">Rendimento (PDP)</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) - 50)}>
+                <Minus className="w-4 h-4" />
+              </Button>
+              <div className="flex-1 relative">
                 <Input
                   type="number"
-                  className="h-7 w-24 text-sm text-right"
-                  value={pdpValue}
-                  onChange={(e) => setPdpValue(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") handleSavePDP(); if (e.key === "Escape") setEditingPDP(false); }}
-                  autoFocus
+                  min={1}
+                  value={pdpValue || ""}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value) || 0;
+                    setPdpValue(e.target.value);
+                  }}
+                  onBlur={() => handleSavePDP(parseInt(pdpValue) || 0)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSavePDP(parseInt(pdpValue) || 0);
+                  }}
+                  className="text-center text-lg font-bold h-10 pr-8"
                 />
-                <span className="text-xs text-muted-foreground">g</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleSavePDP}>
-                  <Check className="w-3 h-3 text-green-600" />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingPDP(false)}>
-                  <X className="w-3 h-3 text-muted-foreground" />
-                </Button>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">g</span>
               </div>
-            ) : (
-              <button
-                className="font-medium hover:underline hover:text-primary transition-colors"
-                onClick={() => { setPdpValue(String(receita.rendimento_total || pesoBruto || "")); setEditingPDP(true); }}
-                title="Clique para editar o rendimento após preparo"
-              >
-                {(receita.rendimento_total || 0).toLocaleString("pt-BR")} g
-              </button>
-            )}
+              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) + 50)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
