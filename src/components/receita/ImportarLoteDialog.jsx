@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, Loader2, Sparkles, FileText, ClipboardPaste, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
+import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -456,11 +457,12 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           }
 
           if (!ingId) {
+            const unidade = sugerirUnidadeCompra(ingNomeFinal);
             const novoIng = await base44.entities.Ingrediente.create({
               nome: ingNomeFinal,
               categoria: ingCategoria,
-              unidade_compra: "KG",
-              peso_embalagem_g: ingCategoria === "Receitas Básicas" ? 1000 : 1000,
+              unidade_compra: unidade.unidade_compra,
+              peso_embalagem_g: unidade.peso_embalagem_g,
               preco_embalagem_rs: 0,
               preco_por_g_rs: 0,
               fator_correcao: 1,

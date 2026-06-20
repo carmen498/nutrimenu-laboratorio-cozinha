@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { normalizarNome } from "@/lib/normalizarNome";
 import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
+import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 
 // ── Auto-category from ingredients ──
 const categorizarPorIngredientes = (ingredientesNomes) => {
@@ -341,11 +342,12 @@ IMPORTANTE:
           if (existente.length > 0) {
             matchedIng = existente[0];
           } else {
+            const unidade = sugerirUnidadeCompra(nomeCriar);
             matchedIng = await base44.entities.Ingrediente.create({
               nome: nomeCriar,
               categoria: "A Revisar",
-              unidade_compra: "KG",
-              peso_embalagem_g: 1000,
+              unidade_compra: unidade.unidade_compra,
+              peso_embalagem_g: unidade.peso_embalagem_g,
               preco_embalagem_rs: 0,
               preco_por_g_rs: 0,
               fator_correcao: 1.0,
