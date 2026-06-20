@@ -415,6 +415,55 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         }
 
         const ingredientes = item.ingredientes || [];
+
+        // ── Estimate prices for new ingredients in batch ──
+        const novosNomesLote = [];
+        for (const ing of ingredientes) {
+          if (ing.tipo === "grupo") continue;
+          const ingNome = (ing.nome || "").trim();
+          if (!ingNome || /\b.+\s+ou\s+.+\b/i.test(ingNome)) continue;
+          const normalized = normalizeIngredienteNome(ingNome);
+          const nomeFinal = normalized.nome;
+          if (!ingredienteMap[nomeFinal.toLowerCase()]) {
+            let jaExiste = false;
+            for (const key of Object.keys(ingredienteMap)) {
+              if (compareNormalized(key, nomeFinal)) { jaExiste = true; break; }
+            }
+            if (!jaExiste) novosNomesLote.push(nomeFinal);
+          }
+        }
+        const precosEstimadosLote = {};
+        if (novosNomesLote.length > 0) {
+          try {
+            const resultado = await base44.integrations.Core.InvokeLLM({
+              prompt: `Estime o preço médio de mercado no Brasil (em R$) para cada ingrediente abaixo, na unidade de compra indicada. Busque preços atuais (2025-2026) em supermercados e atacadistas brasileiros.\n\n${novosNomesLote.map((n, i) => `${i + 1}. ${n}`).join("\n")}`,
+              add_context_from_internet: true,
+              model: "gemini_3_flash",
+              response_json_schema: {
+                type: "object",
+                properties: {
+                  precos: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        nome: { type: "string" },
+                        preco_embalagem_rs: { type: "number", description: "Preço da embalagem padrão em R$" },
+                        peso_embalagem_g: { type: "number", description: "Peso da embalagem padrão em gramas" }
+                      }
+                    }
+                  }
+                }
+              }
+            });
+            (resultado.precos || []).forEach(pe => {
+              if (pe.nome && pe.preco_embalagem_rs > 0) {
+                precosEstimadosLote[pe.nome.toLowerCase()] = pe;
+              }
+            });
+          } catch { /* segue sem preços estimados */ }
+        }
+
         let ordem = 0;
         for (const ing of ingredientes) {
           if (ing.tipo === "grupo") {
@@ -461,15 +510,21 @@ ${RECIPE_EXTRACTION_PROMPT}`,
 
           if (!ingId) {
             const unidade = sugerirUnidadeCompra(ingNomeFinal);
+            const estimado = precosEstimadosLote[ingNomeFinal.toLowerCase()];
+            const precoEmb = estimado?.preco_embalagem_rs || 0;
+            const pesoEmb = estimado?.peso_embalagem_g || unidade.peso_embalagem_g;
+            const precoPorG = pesoEmb > 0 ? precoEmb / pesoEmb : 0;
             const novoIng = await base44.entities.Ingrediente.create({
               nome: ingNomeFinal,
               categoria: ingCategoria,
               unidade_compra: unidade.unidade_compra,
-              peso_embalagem_g: unidade.peso_embalagem_g,
-              preco_embalagem_rs: 0,
-              preco_por_g_rs: 0,
+              peso_embalagem_g: pesoEmb,
+              preco_embalagem_rs: precoEmb,
+              preco_por_g_rs: precoPorG,
               fator_correcao: 1,
               revisar: false,
+              preco_estimado: true,
+              fonte_preco: precoEmb > 0 ? "IA web" : "Manual",
             });
             ingId = novoIng.id;
             ingredienteMap[ingNomeFinal.toLowerCase()] = novoIng;
