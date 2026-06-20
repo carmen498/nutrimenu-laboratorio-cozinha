@@ -37,7 +37,7 @@ REGRAS DE EXTRAÇÃO:
 
 4. LINHA DE INGREDIENTE: extraia SOMENTE os ingredientes explicitamente listados no texto. NUNCA adicione, invente ou infira ingredientes que não estejam no conteúdo original. Linha com número no final = ingrediente. O número é a quantidade em gramas (substitua vírgula por ponto). O texto antes é o nome + pré-preparo opcional. Ex: "Farinha de trigo 250,00" → nome="Farinha de trigo", quantidade_g=250. Ex: "Cebola picada 150,00" → nome="Cebola", pre_preparo="picada", quantidade_g=150.
 
-5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão: lista numerada, UM verbo de ação por item no INFINITIVO (Derreter, Bater, Acrescentar, nunca Derreta/Bata/Acrescente), NENHUM texto narrativo/dicas/comentários, NENHUMA especificação de equipamento ou marca, NÃO mencione ingredientes no modo de preparo — apenas as ações.
+5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão: lista numerada, UM verbo de ação por item no INFINITIVO (Derreter, Bater, Acrescentar, nunca Derreta/Bata/Acrescente), NENHUM texto narrativo/dicas/comentários, NENHUMA especificação de equipamento ou marca, Cada passo deve ser AUTOSSUFICIENTE: inclua o verbo de ação + objeto breve para que faça sentido lido isoladamente. Nunca omita o ingrediente para evitar repetição entre passos.
 
 6. NORMALIZAÇÃO DE NOMES DE INGREDIENTES (APLICAR SEMPRE):
    - SEPARAR NOME DE PRÉ-PREPARO: texto após vírgula que indica forma/parte → mover para pre_preparo ou incorporar ao nome corretamente.
@@ -192,7 +192,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
             categoria: { type: "string" },
             porcoes_base: { type: "number" },
             rendimento_g: { type: "number" },
-            modo_preparo: { type: "string", description: "Lista numerada, UM verbo por item no INFINITIVO (Derreter, Bater). Sem imperativo, sem marcas/equipamentos, sem dicas, sem mencionar ingredientes." },
+            modo_preparo: { type: "string", description: "Lista numerada, UM verbo por item no INFINITIVO (Derreter, Bater). Sem imperativo, sem marcas/equipamentos, sem dicas. Cada passo autossuficiente com objeto breve." },
             ingredientes: {
               type: "array",
               items: {

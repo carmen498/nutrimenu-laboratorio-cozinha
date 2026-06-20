@@ -106,16 +106,16 @@ IMPORTANTE:
   * NUNCA use imperativo (Derreta, Bata, Acrescente) — apenas infinitivo
   * NENHUM texto narrativo, dicas, sugestões ou comentários
   * NENHUMA especificação de equipamento ou marca (nada de "Batedeira KitchenAid", "Processador X", "liquidificador", "batedeira", "fogão", etc.)
-  * NÃO mencione ingredientes no modo de preparo — apenas as ações
+  * Cada passo deve ser AUTOSSUFICIENTE — inclua o verbo de ação + objeto breve para que faça sentido lido isoladamente. Nunca omita o ingrediente para evitar repetição entre passos.
   * Temperatura e tempo na mesma linha da ação, quando relevantes
   Exemplo correto:
-  1. Derreter em banho-maria. Reservar.
-  2. Bater até formar creme fofo e esbranquiçado.
-  3. Incorporar e mexer até homogeneizar.
-  4. Acrescentar peneirado e misturar delicadamente.
-  5. Despejar em forma untada e polvilhada.
+  1. Derreter o chocolate com a manteiga em banho-maria. Reservar.
+  2. Bater os ovos com o açúcar até formar creme fofo e esbranquiçado.
+  3. Incorporar a farinha e mexer até homogeneizar.
+  4. Acrescentar o fermento peneirado e misturar delicadamente.
+  5. Despejar a massa em forma untada e polvilhada.
   6. Assar a 180 °C por 20 minutos.
-  7. Retirar e aguardar esfriar para cortar.
+  7. Retirar do forno e aguardar esfriar para cortar.
 - MANTENHA a ordem exata dos ingredientes como aparecem no texto original — NÃO reordene com base no modo de preparo.
 - CLASSIFIQUE cada ingrediente como estrutural (true=escala) ou 'a gosto' (false=independente):
   * ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata quando ingrediente principal.
