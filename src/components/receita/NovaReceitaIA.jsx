@@ -116,7 +116,7 @@ IMPORTANTE:
   5. Despejar em forma untada e polvilhada.
   6. Assar a 180 °C por 20 minutos.
   7. Retirar e aguardar esfriar para cortar.
-- ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.
+- MANTENHA a ordem exata dos ingredientes como aparecem no texto original — NÃO reordene com base no modo de preparo.
 - CLASSIFIQUE cada ingrediente como estrutural (true=escala) ou 'a gosto' (false=independente):
   * ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata quando ingrediente principal.
   * A GOSTO (false): temperos e condimentos (sal, pimenta, colorau, páprica, orégano, ervas, alho, cebola quando tempero), finalizadores (azeite para finalizar, flor de sal, ervas frescas para decorar), ingredientes opcionais/complementares (creme de leite quando complemento, queijo para gratinar, azeitonas, alcaparras), líquidos de ajuste (água para ajustar consistência, caldo para deglaçar).`,
