@@ -8,7 +8,7 @@ import { Upload, Loader2, Sparkles, FileText, ClipboardPaste, AlertTriangle, Che
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
-import { buscarFuzzy } from "@/lib/normalizarNome";
+import { buscarFuzzy, removerMarca } from "@/lib/normalizarNome";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -41,6 +41,7 @@ REGRAS DE EXTRAÇÃO:
 5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão: lista numerada, UM verbo de ação por item no INFINITIVO (Derreter, Bater, Acrescentar, nunca Derreta/Bata/Acrescente), NENHUM texto narrativo/dicas/comentários, NENHUMA especificação de equipamento ou marca, Cada passo deve ser AUTOSSUFICIENTE: inclua o verbo de ação + objeto breve para que faça sentido lido isoladamente. Nunca omita o ingrediente para evitar repetição entre passos.
 
 6. NORMALIZAÇÃO DE NOMES DE INGREDIENTES (APLICAR SEMPRE):
+   - REMOVER MARCAS COMERCIAIS do final do nome. Ex: "Manteiga com Sal Piracanjuba" → "Manteiga com sal", "Creme de Leite Itambé" → "Creme de leite", "Farinha de Trigo Renata" → "Farinha de trigo", "Leite Condensado Moça" → "Leite condensado", "Fermento em Pó Royal" → "Fermento em pó", "Amido de Milho Maizena" → "Amido de milho". NUNCA registre ou associe ingredientes pelo nome da marca — sempre use o nome genérico.
    - SEPARAR NOME DE PRÉ-PREPARO: texto após vírgula que indica forma/parte → mover para pre_preparo ou incorporar ao nome corretamente.
      • "Limão, suco" → nome="Limão", pre_preparo="suco"
      • "Ovo, gema" → nome="Gema de ovo", pre_preparo=""
@@ -70,21 +71,24 @@ CONTEÚDO:
 // ── NORMALIZATION HELPERS ──
 
 const normalizeIngredienteNome = (rawNome) => {
-  if (!rawNome) return { nome: "", pre_preparo: "" };
-  let nome = rawNome.trim();
+if (!rawNome) return { nome: "", pre_preparo: "" };
+let nome = rawNome.trim();
 
-  // Translations
-  const translations = {
-    "nata": "Creme de leite fresco",
-    "fines-herbes": "Ervas finas",
-    "fines herbes": "Ervas finas",
-    "cheiro verde": "Cheiro verde (salsinha + cebolinha)",
-    "pimenta moída": "Pimenta-do-reino moída",
-    "pimenta moida": "Pimenta-do-reino moída",
-  };
+// Strip commercial brands first
+nome = removerMarca(nome);
 
-  const lower = nome.toLowerCase();
-  if (translations[lower]) return { nome: translations[lower], pre_preparo: "" };
+// Translations
+const translations = {
+  "nata": "Creme de leite fresco",
+  "fines-herbes": "Ervas finas",
+  "fines herbes": "Ervas finas",
+  "cheiro verde": "Cheiro verde (salsinha + cebolinha)",
+  "pimenta moída": "Pimenta-do-reino moída",
+  "pimenta moida": "Pimenta-do-reino moída",
+};
+
+const lower = nome.toLowerCase();
+if (translations[lower]) return { nome: translations[lower], pre_preparo: "" };
 
   // Split name from pré-preparo: handle patterns like "Nome, forma" or "Nome forma"
   // Pattern: "Limão, suco" → "Limão" + "suco"

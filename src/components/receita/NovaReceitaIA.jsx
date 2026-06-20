@@ -15,7 +15,7 @@ import TagSelector from "@/components/tags/TagSelector";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
-import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado } from "@/lib/normalizarNome";
+import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado, removerMarca } from "@/lib/normalizarNome";
 import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 
@@ -129,6 +129,7 @@ ${texto}
 
 IMPORTANTE: 
 - Use SOMENTE os ingredientes fornecidos pelo usuário no texto. NUNCA adicione, invente, infira ou sugira ingredientes que não estejam explicitamente listados.
+- REMOVA marcas comerciais dos nomes dos ingredientes. Ex: "Manteiga com Sal Piracanjuba" → "Manteiga com sal", "Creme de Leite Itambé" → "Creme de leite", "Farinha de Trigo Renata" → "Farinha de trigo", "Leite Condensado Moça" → "Leite condensado", "Fermento em Pó Royal" → "Fermento em pó", "Amido de Milho Maizena" → "Amido de milho". NUNCA registre ou associe ingredientes pelo nome da marca — sempre use o nome genérico.
 - CORRIJA erros de digitação ÓBVIOS nos nomes dos ingredientes (ex: "perito" → "peito", "frago" → "frango", "açucar" → "açúcar", "farinah" → "farinha"). Use o nome CORRIGIDO no campo nome_banco.
 - NÃO substitua um ingrediente por outro DIFERENTE (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango"). Só corrija erros de grafia.
 - Se NENHUM ingrediente do banco corresponder (mesmo após correção), deixe nome_banco VAZIO.
@@ -188,6 +189,13 @@ IMPORTANTE:
           }
         }
       });
+      // Strip brands from AI-parsed ingredient names (safety net)
+      (result.ingredientes || []).forEach(ing => {
+        if (ing.tipo === "grupo") return;
+        if (ing.nome_banco) ing.nome_banco = removerMarca(ing.nome_banco);
+        if (ing.nome_original) ing.nome_original = removerMarca(ing.nome_original);
+      });
+
       // Auto-categorize based on ingredient names
       const ingNomes = (result.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
       const catAuto = categorizarPorIngredientes(ingNomes);
