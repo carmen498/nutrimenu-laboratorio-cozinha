@@ -37,6 +37,31 @@ const categorizarPorIngredientes = (ingredientesNomes) => {
   return [...new Set(cats)];
 };
 
+// ── Validate if text looks like a recipe ──
+const isRecipeText = (text) => {
+  const t = text.trim();
+  if (t.length < 50) return false;
+
+  const lower = t.toLowerCase();
+
+  // Reject if it looks like a question or general request
+  if (/^(como|qual|quem|quando|onde|por que|porque|posso|você|voce|pode|me |explique|quero|gostaria|preciso|ajuda|fale |meu |minha)/i.test(lower)) return false;
+
+  // Recipe indicators — measurements with numbers
+  const hasMedidas = /(\d+[\.,]?\d*)\s*(g|gramas?|kg|quilos?|ml|litros?|l\b|xícara|xicara|colher|pitada|unidade|pacote|lata|caixa|dente|folha|ramo|maço|maco|tablete|envelope|copo|unid)/i.test(lower);
+
+  // Recipe indicators — cooking verbs (infinitive or imperative)
+  const verbos = /\b(assar|cozinhar|bater|misturar|picar|cortar|fritar|grelhar|refogar|aquecer|derreter|acrescentar|adicionar|incorporar|despejar|levar|reservar|deixar|peneirar|amassar|sovar|modelar|enrolar|rechear|cobrir|polvilhar|regar|temperar|descascar|ralar|espremer|dissolver|hidratar|escorrer|untar|forrar|pré-aquecer|preaquecer|servir|decorar|finalizar|reduzir|apurar|saltear|selar|assar|empanar|gratinar|flambar|marinar|congelar|gelar|descongelar)\b/i.test(lower);
+
+  // Recipe section markers
+  const hasMarcadores = /\b(ingredientes|modo de preparo|preparo|rendimento|porções|porcoes|rende|massa|recheio|cobretura|calda|molho)\b/i.test(lower);
+
+  // Ingredient-like words (common food items)
+  const alimentos = /\b(farinha|açúcar|acucar|ovo|leite|manteiga|azeite|sal|pimenta|alho|cebola|arroz|feijão|feijao|macarrão|macarrao|carne|frango|peixe|camarao|camarão|chocolate|creme|queijo|presunto|bacalhau|tomate|batata|cenoira|alface|limão|limao|laranja|banana|maçã|maca|fermento|óleo|oleo|vinagre|molho)\b/i.test(lower);
+
+  return hasMedidas || verbos || hasMarcadores || alimentos;
+};
+
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -70,6 +95,10 @@ export default function NovaReceitaIA({ open, onClose, onCreated }) {
 
   const handleParse = async () => {
     if (!texto.trim()) { toast.error("Cole o texto da receita"); return; }
+    if (!isRecipeText(texto)) {
+      toast.error("O texto colado não parece ser uma receita. Certifique-se de incluir a lista de ingredientes e/ou o modo de preparo.", { duration: 6000 });
+      return;
+    }
     setProcessing(true);
     setDocesAmbiguo(false);
     try {
