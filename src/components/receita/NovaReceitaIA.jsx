@@ -90,30 +90,30 @@ Texto da receita:
 ${texto}
 
 IMPORTANTE: 
+- Use SOMENTE os ingredientes fornecidos pelo usuário no texto. NUNCA adicione, invente, infira ou sugira ingredientes que não estejam explicitamente listados.
 - CORRIJA erros de digitação ÓBVIOS nos nomes dos ingredientes (ex: "perito" → "peito", "frago" → "frango", "açucar" → "açúcar", "farinah" → "farinha"). Use o nome CORRIGIDO no campo nome_banco.
 - NÃO substitua um ingrediente por outro DIFERENTE (ex: "Ovo" NÃO é "Gema", "Filé de frango" NÃO é "Peito de frango"). Só corrija erros de grafia.
 - Se NENHUM ingrediente do banco corresponder (mesmo após correção), deixe nome_banco VAZIO.
 - Se o ingrediente parecer ser uma RECEITA BÁSICA (ex: "Molho Bechamel", "Massa de pizza", "Calda de chocolate"), marque eh_receita_basica=true e coloque o nome da receita em nome_banco MESMO que não seja uma correspondência exata — o sistema confirmará depois.
-- Se não conseguir identificar DE FORMA ALGUMA o ingrediente, tente INFERIR pelo contexto do modo de preparo. Ex: se o modo de preparo diz "grelhar o filé de frango" e há um ingrediente sem nome claro, sugira "Filé de peito de frango" no nome_original. NUNCA retorne nome_original VAZIO — sempre preencha com sua melhor inferência.
 - Converta SEMPRE medidas caseiras para gramas usando a tabela acima
 - NÃO invente porções: se o texto mencionar explicitamente quantas porções rende, use esse valor. Se NÃO mencionar, deixe porcoes_base = 0 (zero).
 - NÃO invente categoria — a categoria será determinada pelo sistema com base nos ingredientes
 - O modo de preparo deve ser REWRITTEN seguindo ESTRITAMENTE este padrão:
   * Lista numerada (1. 2. 3.)
-  * Cada passo COMEÇA com verbo no INFINITIVO (Derreter, Bater, Acrescentar, Assar, Reservar, etc.)
+  * UM verbo de ação por item, no INFINITIVO (Derreter, Bater, Acrescentar, Assar, Reservar)
   * NUNCA use imperativo (Derreta, Bata, Acrescente) — apenas infinitivo
-  * Sem repetir ingredientes já mencionados
-  * Sem marcas de equipamentos (nada de "Batedeira KitchenAid", "Processador X", etc.)
-  * Sem texto narrativo, dicas ou explicações óbvias
-  * Temperatura, tempo e ponto crítico na mesma linha da ação
+  * NENHUM texto narrativo, dicas, sugestões ou comentários
+  * NENHUMA especificação de equipamento ou marca (nada de "Batedeira KitchenAid", "Processador X", "liquidificador", "batedeira", "fogão", etc.)
+  * NÃO mencione ingredientes no modo de preparo — apenas as ações
+  * Temperatura e tempo na mesma linha da ação, quando relevantes
   Exemplo correto:
-  1. Derreter o chocolate picado em banho-maria com a manteiga. Reservar.
-  2. Bater os ovos com o açúcar até formar creme fofo e esbranquiçado.
-  3. Adicionar o chocolate derretido e mexer até homogeneizar.
-  4. Acrescentar a farinha de trigo peneirada e misturar delicadamente.
-  5. Despejar em forma untada e polvilhada com cacau em pó.
+  1. Derreter em banho-maria. Reservar.
+  2. Bater até formar creme fofo e esbranquiçado.
+  3. Incorporar e mexer até homogeneizar.
+  4. Acrescentar peneirado e misturar delicadamente.
+  5. Despejar em forma untada e polvilhada.
   6. Assar a 180 °C por 20 minutos.
-  7. Retirar do forno e aguardar esfriar para cortar.
+  7. Retirar e aguardar esfriar para cortar.
 - ORDENE os ingredientes na sequência exata em que aparecem no modo de preparo (primeiro ingrediente mencionado primeiro, etc.). Ingredientes não mencionados no modo de preparo devem ficar no final da lista.
 - CLASSIFIQUE cada ingrediente como estrutural (true=escala) ou 'a gosto' (false=independente):
   * ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata quando ingrediente principal.
