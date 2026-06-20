@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -300,6 +300,24 @@ IMPORTANTE:
 
   const temZero = (parsed?.ingredientes || []).some(ing => ing.tipo !== "grupo" && (ing.quantidade_g || 0) === 0);
   const temAmbiguo = (parsed?.ingredientes || []).some(ing => ing.ambiguo_opcoes && !ing.ambiguo_selecionado);
+
+  const pendencias = useMemo(() => {
+    if (!parsed?.ingredientes) return [];
+    const lista = [];
+    (parsed.ingredientes || []).forEach((ing, idx) => {
+      if (ing.tipo === "grupo") return;
+      const nome = ing.nome_banco || ing.nome_original || "(sem nome)";
+      if ((ing.quantidade_g || 0) === 0) {
+        lista.push({ idx, nome, tipo: "quantidade", mensagem: `"${nome}" está sem quantidade` });
+      }
+      if (ing.ambiguo_opcoes && !ing.ambiguo_selecionado) {
+        lista.push({ idx, nome, tipo: "ambiguo", mensagem: `"${nome}" é ambíguo (${ing.ambiguo_opcoes.join(" ou ")}) — escolha um` });
+      }
+    });
+    return lista;
+  }, [parsed?.ingredientes]);
+
+  const temPendencias = pendencias.length > 0;
 
   const doSave = async () => {
     const p = parsedRef.current;
@@ -682,6 +700,25 @@ Para cada variação, retorne:
             <div className="p-3 bg-accent rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">Revise os dados antes de salvar</p>
             </div>
+
+            {/* Banner de pendências */}
+            {temPendencias && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg space-y-1.5">
+                <p className="text-sm font-semibold text-red-700 flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4" />
+                  {pendencias.length} {pendencias.length === 1 ? "pendência impede" : "pendências impedem"} o salvamento:
+                </p>
+                <ul className="space-y-0.5">
+                  {pendencias.map((p) => (
+                    <li key={`pend-${p.idx}-${p.tipo}`} className="text-xs text-red-600 flex items-start gap-1.5">
+                      <span className="shrink-0 mt-0.5">•</span>
+                      <span>{p.mensagem}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Nome</Label>
