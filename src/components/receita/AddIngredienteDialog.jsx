@@ -64,7 +64,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
 
       if (selectedType === "subreceita") {
         const qtdPorPorcao = qty / (porcoes || 1);
-        await base44.entities.IngredienteReceita.create({
+        const markerItem = await base44.entities.IngredienteReceita.create({
           receita_id: receitaId,
           tipo: "subreceita",
           subreceita_id: selected.id,
@@ -93,6 +93,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
               quantidade_por_porcao: propQtdPorPorcao,
               ordem: nextOrdem++,
               proporcional: subItem.proporcional !== false,
+              subreceita_parent_id: markerItem.id,
             });
           } else {
             await base44.entities.IngredienteReceita.create({
@@ -105,6 +106,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
               medida_caseira: subItem.medida_caseira || "",
               ordem: nextOrdem++,
               proporcional: subItem.proporcional !== false,
+              subreceita_parent_id: markerItem.id,
             });
           }
         }

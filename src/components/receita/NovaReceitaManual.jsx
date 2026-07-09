@@ -128,7 +128,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     setShowAddGrupo(false);
   };
 
-  const doSave = async () => {
+  const doSave = async (isDuplicate = false) => {
     setSaving(true);
     try {
       const passos = formatarModoPreparo(form.modo_preparo);
@@ -139,7 +139,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
         modo_preparo: passos.length > 0 ? juntarPassos(passos) : form.modo_preparo,
         custo_total: 0,
         custo_por_porcao: 0,
-        revisar: duplicateWarning != null,
+        revisar: isDuplicate,
       });
 
       // Save tags
@@ -190,7 +190,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["itens-receita"] });
-      if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
+      if (isDuplicate) toast.warning("Receita salva com nome similar — marcada para revisão");
       else toast.success("Receita criada!");
       onCreated(receita.id);
     } catch (err) {
@@ -216,7 +216,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
       if (fuzzy) {
         setDuplicateWarning(fuzzy.receita);
       } else {
-        await doSave();
+        await doSave(false);
       }
     } catch (err) {
       toast.error("Erro ao verificar duplicidade: " + (err.message || err));
@@ -579,11 +579,15 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
               }}>
                 Editar existente
               </Button>
-              <Button onClick={async () => {
+              <Button disabled={saving} onClick={async () => {
                 setDuplicateWarning(null);
-                await doSave();
+                try {
+                  await doSave(true);
+                } catch (err) {
+                  toast.error("Erro ao salvar receita: " + (err.message || err));
+                }
               }}>
-                Salvar mesmo assim
+                {saving ? "Salvando..." : "Salvar mesmo assim"}
               </Button>
             </div>
           </DialogContent>

@@ -52,6 +52,10 @@
       "type": "string",
       "description": "Nome da sub-receita (cache)"
     },
+    "subreceita_parent_id": {
+      "type": "string",
+      "description": "ID do item subreceita pai (para ingredientes explodidos de sub-receitas \u2014 agrupamento visual e exclus\u00e3o em cascata)"
+    },
     "proporcional": {
       "type": "boolean",
       "default": true,

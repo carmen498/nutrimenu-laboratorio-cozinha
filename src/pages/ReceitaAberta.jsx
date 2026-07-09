@@ -218,10 +218,8 @@ export default function ReceitaAberta() {
           const rb = receitasBasicasMap[item.subreceita_id];
           const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
           const qtdNova = item.quantidade_por_porcao * (receita?.porcoes_base || 1) * fator;
-          const custo = rb && rb.rendimento_total > 0
-            ? (qtdNova / rb.rendimento_total) * (rb.custo_total || 0)
-            : 0;
-          return { ...item, isSubreceita: true, receitaBase: rb, custo, qtdOriginal, qtdNova, qtdComprar: qtdNova, isGrupo: false, isNA: false };
+          // Subreceita line is a visual marker only — cost comes from exploded ingredients
+          return { ...item, isSubreceita: true, receitaBase: rb, custo: 0, qtdOriginal, qtdNova, qtdComprar: qtdNova, isGrupo: false, isNA: false };
         }
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
@@ -231,7 +229,8 @@ export default function ReceitaAberta() {
         const qtdComprar = qtdNova * fc;
         const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
         const isNA = !!(item.ingrediente_nome && item.ingrediente_nome.toUpperCase() === "N/A");
-        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA, isFixo };
+        const isChildOfSubreceita = !!item.subreceita_parent_id;
+        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA, isFixo, isChildOfSubreceita };
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
@@ -384,6 +383,17 @@ export default function ReceitaAberta() {
     },
   });
 
+  const deleteSubreceitaMut = useMutation({
+    mutationFn: async (itemId) => {
+      await base44.entities.IngredienteReceita.deleteMany({ subreceita_parent_id: itemId });
+      await base44.entities.IngredienteReceita.delete(itemId);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Sub-receita e ingredientes removidos");
+    },
+  });
+
   const handleMove = async (idx, dir) => {
     const items = [...itensFicha];
     if (dir < 0 && idx === 0) return;
@@ -521,6 +531,15 @@ REGRAS:
   const showAlertaFixos = (fator > 3 || fator < 0.5) && countFixos > 0;
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
+  const formatCustoItem = (item) => {
+    if (!item.ing || !item.ing.preco_por_g_rs || item.ing.preco_por_g_rs === 0) {
+      return { text: "cadastrar", className: "text-destructive" };
+    }
+    if (item.custo > 0 && item.custo < 0.01) {
+      return { text: `R$ ${item.custo.toFixed(4).replace(".", ",")}`, className: "text-primary" };
+    }
+    return { text: formatCurrency(item.custo), className: "text-primary" };
+  };
   const formatWeight = (g, unit) => {
     if (unit === "ml") return g >= 1000 ? `${(g / 1000).toFixed(2)} lt` : `${g.toFixed(0)} ml`;
     return g >= 1000 ? `${(g / 1000).toFixed(2)} kg` : `${g.toFixed(0)} g`;
@@ -930,7 +949,7 @@ REGRAS:
                       </div>
                       {temFatorCorrecao && <div className="col-span-2"></div>}
                       <div className="col-span-2 text-right">
-                        <span className="text-sm font-semibold text-primary">{formatCurrency(item.custo)}</span>
+                        <span className="text-sm text-muted-foreground">—</span>
                       </div>
                       <div className="col-span-3 flex justify-end gap-0.5">
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
@@ -942,7 +961,7 @@ REGRAS:
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                           <ArrowDown className="w-3 h-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSubreceitaMut.mutate(item.id)} title="Remover sub-receita e ingredientes">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -967,12 +986,12 @@ REGRAS:
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
                             <ArrowDown className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteSubreceitaMut.mutate(item.id)} title="Remover sub-receita e ingredientes">
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
-                          </div>
-                          </div>
-                          <div className="flex justify-between mt-2 text-xs items-center">
+                            </div>
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs items-center">
                           <span className="text-muted-foreground">Quantidade: </span>
                           {editingQtdId === item.id ? (
                           <div className="flex items-center gap-1">
@@ -1011,7 +1030,7 @@ REGRAS:
                       )}
                       <div className="flex justify-between mt-1 text-xs">
                         <div></div>
-                        <span className="font-bold text-primary">{formatCurrency(item.custo)}</span>
+                        <span className="text-muted-foreground">—</span>
                       </div>
                     </div>
                   </Card>
@@ -1019,7 +1038,7 @@ REGRAS:
               }
 
               return (
-              <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""}`}>
+              <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""} ${item.isChildOfSubreceita ? "ml-6 border-l-4 border-l-amber-300 bg-amber-50/30" : ""}`}>
                 {/* Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-3">
@@ -1136,10 +1155,10 @@ REGRAS:
                   )}
                   <div className="col-span-2 text-right">
                     <button
-                      className="text-sm font-semibold text-primary hover:underline"
+                      className={`text-sm font-semibold hover:underline ${formatCustoItem(item).className}`}
                       onClick={() => setEditingPrice(item)}
                     >
-                      {formatCurrency(item.custo)}
+                      {formatCustoItem(item).text}
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
@@ -1296,8 +1315,8 @@ REGRAS:
                     <div>
                       {temFatorCorrecao && <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>}
                     </div>
-                    <button className="font-bold text-primary hover:underline" onClick={() => setEditingPrice(item)}>
-                      {formatCurrency(item.custo)}
+                    <button className={`font-bold hover:underline ${formatCustoItem(item).className}`} onClick={() => setEditingPrice(item)}>
+                      {formatCustoItem(item).text}
                     </button>
                   </div>
                 </div>
