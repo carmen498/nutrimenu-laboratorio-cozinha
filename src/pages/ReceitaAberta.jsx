@@ -236,6 +236,31 @@ export default function ReceitaAberta() {
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
+  // Reagrupa: filhos explodidos ficam imediatamente abaixo do seu marcador
+  const itensFichaAgrupada = useMemo(() => {
+    const childrenByParent = {};
+    itensFicha.forEach(item => {
+      if (item.subreceita_parent_id) {
+        if (!childrenByParent[item.subreceita_parent_id]) childrenByParent[item.subreceita_parent_id] = [];
+        childrenByParent[item.subreceita_parent_id].push(item);
+      }
+    });
+    const result = [];
+    const seen = new Set();
+    itensFicha.forEach(item => {
+      if (seen.has(item.id) || item.subreceita_parent_id) return;
+      result.push(item);
+      seen.add(item.id);
+      if (item.tipo === "subreceita" && childrenByParent[item.id]) {
+        childrenByParent[item.id].forEach(child => {
+          result.push(child);
+          seen.add(child.id);
+        });
+      }
+    });
+    return result;
+  }, [itensFicha]);
+
   const pesoBruto = itensFicha.filter(i => !i.isGrupo).reduce((sum, i) => sum + (i.qtdNova || 0), 0);
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
@@ -408,25 +433,78 @@ export default function ReceitaAberta() {
   });
 
   const handleMove = async (idx, dir) => {
-    const items = [...itensFicha];
+    const items = itensFichaAgrupada;
+    const item = items[idx];
+    if (!item) return;
     if (dir < 0 && idx === 0) return;
     if (dir > 0 && idx >= items.length - 1) return;
-    const targetIdx = idx + dir;
 
     // If no manual order exists yet, initialize ALL items with sequential ordem first
-    // so that swapping two items doesn't shuffle the rest (which have ordem=0)
     if (!temOrdemManual) {
       await base44.entities.IngredienteReceita.bulkUpdate(
-        items.map((item, i) => ({ id: item.id, ordem: i * 10 }))
+        items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
       );
     }
 
-    // Swap the two items' ordem values
-    await base44.entities.IngredienteReceita.bulkUpdate([
-      { id: items[idx].id, ordem: targetIdx * 10 },
-      { id: items[targetIdx].id, ordem: idx * 10 },
-    ]);
+    // Child: only move within its sibling group
+    if (item.subreceita_parent_id) {
+      const parentId = item.subreceita_parent_id;
+      const sibIdxs = [];
+      items.forEach((it, i) => { if (it.subreceita_parent_id === parentId) sibIdxs.push(i); });
+      const localIdx = sibIdxs.indexOf(idx);
+      const targetLocalIdx = localIdx + dir;
+      if (targetLocalIdx < 0 || targetLocalIdx >= sibIdxs.length) return;
+      const targetIdx = sibIdxs[targetLocalIdx];
+      await base44.entities.IngredienteReceita.bulkUpdate([
+        { id: items[idx].id, ordem: targetIdx * 10 },
+        { id: items[targetIdx].id, ordem: idx * 10 },
+      ]);
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Ordem alterada");
+      return;
+    }
 
+    // Marker or regular item: move as a block (marker + its children)
+    const blocks = [];
+    let i = 0;
+    while (i < items.length) {
+      if (items[i].tipo === "subreceita" && !items[i].subreceita_parent_id) {
+        const block = [{ item: items[i], idx: i }];
+        let j = i + 1;
+        while (j < items.length && items[j].subreceita_parent_id === items[i].id) {
+          block.push({ item: items[j], idx: j });
+          j++;
+        }
+        blocks.push({ entries: block, startIdx: i });
+        i = j;
+      } else {
+        blocks.push({ entries: [{ item: items[i], idx: i }], startIdx: i });
+        i++;
+      }
+    }
+
+    let blockIdx = -1;
+    for (let b = 0; b < blocks.length; b++) {
+      if (idx >= blocks[b].startIdx && idx < blocks[b].startIdx + blocks[b].entries.length) {
+        blockIdx = b; break;
+      }
+    }
+    if (blockIdx === -1) return;
+    const targetBlockIdx = blockIdx + dir;
+    if (targetBlockIdx < 0 || targetBlockIdx >= blocks.length) return;
+
+    const blockA = blocks[blockIdx];
+    const blockB = blocks[targetBlockIdx];
+    const updates = [];
+    // Block B items take Block A's positions
+    for (let k = 0; k < blockB.entries.length; k++) {
+      updates.push({ id: blockB.entries[k].item.id, ordem: (blockA.startIdx + k) * 10 });
+    }
+    // Block A items take positions right after Block B's new positions
+    for (let k = 0; k < blockA.entries.length; k++) {
+      updates.push({ id: blockA.entries[k].item.id, ordem: (blockA.startIdx + blockB.entries.length + k) * 10 });
+    }
+    await base44.entities.IngredienteReceita.bulkUpdate(updates);
     qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     toast.success("Ordem alterada");
   };
@@ -789,7 +867,7 @@ REGRAS:
 
         {loadingItens ? (
           <div className="flex justify-center py-8"><div className="w-6 h-6 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>
-        ) : itensFicha.filter(i => !i.isGrupo && !i.isNA).length === 0 && itensFicha.filter(i => i.isGrupo || i.isNA).length === 0 && !pendingGrupo ? (
+        ) : itensFichaAgrupada.filter(i => !i.isGrupo && !i.isNA).length === 0 && itensFichaAgrupada.filter(i => i.isGrupo || i.isNA).length === 0 && !pendingGrupo ? (
           <Card className="p-8 text-center text-muted-foreground">
             <p>Nenhum ingrediente adicionado</p>
             <Button size="sm" className="mt-3" onClick={() => setShowAddIng(true)}>
@@ -807,7 +885,7 @@ REGRAS:
               <div className="col-span-3"></div>
             </div>
 
-            {itensFicha.map((item, idx) => {
+            {itensFichaAgrupada.map((item, idx) => {
               const isQtdZero = !item.isGrupo && (item.quantidade_por_porcao || 0) === 0;
 
               // Grupo header

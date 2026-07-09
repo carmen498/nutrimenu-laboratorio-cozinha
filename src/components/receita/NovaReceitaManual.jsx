@@ -170,6 +170,24 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     setAddedIngs(newBlocks.flat());
   };
 
+  const handleMoveChild = (idx, dir) => {
+    const item = addedIngs[idx];
+    if (!item._isChild) return;
+    let markerIdx = idx - 1;
+    while (markerIdx >= 0 && addedIngs[markerIdx]._isChild) markerIdx--;
+    if (markerIdx < 0 || !addedIngs[markerIdx]._isMarker) return;
+    const childIdxs = [];
+    let j = markerIdx + 1;
+    while (j < addedIngs.length && addedIngs[j]._isChild) { childIdxs.push(j); j++; }
+    const localIdx = childIdxs.indexOf(idx);
+    const targetLocalIdx = localIdx + dir;
+    if (targetLocalIdx < 0 || targetLocalIdx >= childIdxs.length) return;
+    const targetIdx = childIdxs[targetLocalIdx];
+    const list = [...addedIngs];
+    [list[idx], list[targetIdx]] = [list[targetIdx], list[idx]];
+    setAddedIngs(list);
+  };
+
   const handleUpdateGrupo = (idx) => {
     if (!editingGrupoText.trim()) { setEditingGrupoIdx(null); return; }
     const list = [...addedIngs];
@@ -411,6 +429,12 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
                       )}
                     </span>
                     <span className="text-muted-foreground shrink-0 text-xs">{ing.quantidade_por_porcao.toFixed(1)}g/porção</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveChild(idx, -1)} title="Subir">
+                      <ArrowUp className="w-3 h-3" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveChild(idx, 1)} title="Descer">
+                      <ArrowDown className="w-3 h-3" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
                       <Trash2 className="w-3 h-3 text-destructive" />
                     </Button>
