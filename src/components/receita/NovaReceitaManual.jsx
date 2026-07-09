@@ -74,7 +74,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
         return;
       }
       try {
-        const children = await explodeSubreceita(selectedIng, qtd);
+        const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selectedIng, qtd);
         const marker = {
           tipo: "subreceita",
           subreceita_id: selectedIng.id,
@@ -89,7 +89,10 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
           _isChild: true,
         }));
         setAddedIngs([...addedIngs, marker, ...childItems]);
-        toast.success(`${selectedIng.nome} adicionada com ${children.length} ingredientes`);
+        const rendMsg = rendimentoEstimado
+          ? ` — Rendimento não cadastrado, usando soma dos ingredientes: ${rendimentoEfetivo}g. Ajuste na ficha da receita se necessário.`
+          : "";
+        toast.success(`${selectedIng.nome} adicionada com ${children.length} ingredientes${rendMsg}`);
       } catch (err) {
         toast.error("Erro ao buscar ingredientes da sub-receita: " + (err.message || err));
         return;
@@ -271,6 +274,10 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
 
   const handleSave = async () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
+    if (form.categorias?.includes("Receitas Base") && (!form.rendimento_total || form.rendimento_total <= 0)) {
+      toast.error("Receitas marcadas como \"Receitas Base\" precisam ter o rendimento total preenchido.");
+      return;
+    }
     const ingsReais = addedIngs.filter(a => a.tipo !== "grupo");
     if (ingsReais.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
     const zeroQtd = ingsReais.some(a => (a.quantidade_por_porcao || 0) === 0);

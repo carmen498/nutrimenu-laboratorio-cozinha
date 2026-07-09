@@ -76,7 +76,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
         });
 
         // Pull ingredients from the sub-receita automatically (proportional)
-        const children = await explodeSubreceita(selected, qtdPorPorcao);
+        const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selected, qtdPorPorcao);
         let nextOrdem = existingItems.length + 1;
         for (const child of children) {
           await base44.entities.IngredienteReceita.create({
@@ -87,7 +87,10 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           });
         }
         const pulledCount = children.length;
-        toast.success(`Sub-receita ${selected.nome} adicionada${pulledCount > 0 ? ` com ${pulledCount} ingredientes puxados` : ""}!`);
+        const rendMsg = rendimentoEstimado
+          ? ` — Rendimento não cadastrado, usando soma dos ingredientes: ${rendimentoEfetivo}g. Ajuste na ficha da receita se necessário.`
+          : "";
+        toast.success(`Sub-receita ${selected.nome} adicionada${pulledCount > 0 ? ` com ${pulledCount} ingredientes puxados` : ""}!${rendMsg}`);
       } else {
         const qtdGramas = convertToGrams(qty, medidaSel);
         const qtdPorPorcao = qtdGramas / (porcoes || 1);
