@@ -75,7 +75,43 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           ordem: existingItems.length,
           proporcional: true,
         });
-        toast.success(`Sub-receita ${selected.nome} adicionada!`);
+
+        // Pull ingredients from the sub-receita automatically (proportional)
+        const subItens = await base44.entities.IngredienteReceita.filter({ receita_id: selected.id }, "ordem", 200);
+        const subRendimento = selected.rendimento_total || 1;
+        const fatorSub = qty / subRendimento;
+        const subPorcoesBase = selected.porcoes_base || 1;
+        let nextOrdem = existingItems.length + 1;
+        for (const subItem of subItens) {
+          if (subItem.tipo === "grupo") continue;
+          const subQtdTotal = (subItem.quantidade_por_porcao || 0) * subPorcoesBase;
+          const propQtdPorPorcao = (subQtdTotal * fatorSub) / (porcoes || 1);
+          if (subItem.tipo === "subreceita") {
+            await base44.entities.IngredienteReceita.create({
+              receita_id: receitaId,
+              tipo: "subreceita",
+              subreceita_id: subItem.subreceita_id,
+              subreceita_nome: subItem.subreceita_nome,
+              quantidade_por_porcao: propQtdPorPorcao,
+              ordem: nextOrdem++,
+              proporcional: subItem.proporcional !== false,
+            });
+          } else {
+            await base44.entities.IngredienteReceita.create({
+              receita_id: receitaId,
+              tipo: "ingrediente",
+              ingrediente_id: subItem.ingrediente_id || "",
+              ingrediente_nome: subItem.ingrediente_nome || "",
+              pre_preparo: subItem.pre_preparo || "",
+              quantidade_por_porcao: propQtdPorPorcao,
+              medida_caseira: subItem.medida_caseira || "",
+              ordem: nextOrdem++,
+              proporcional: subItem.proporcional !== false,
+            });
+          }
+        }
+        const pulledCount = subItens.filter(i => i.tipo !== "grupo").length;
+        toast.success(`Sub-receita ${selected.nome} adicionada${pulledCount > 0 ? ` com ${pulledCount} ingredientes puxados` : ""}!`);
       } else {
         const qtdGramas = convertToGrams(qty, medidaSel);
         const qtdPorPorcao = qtdGramas / (porcoes || 1);

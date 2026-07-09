@@ -384,15 +384,27 @@ export default function ReceitaAberta() {
     },
   });
 
-  const handleMove = (idx, dir) => {
+  const handleMove = async (idx, dir) => {
     const items = [...itensFicha];
     if (dir < 0 && idx === 0) return;
     if (dir > 0 && idx >= items.length - 1) return;
     const targetIdx = idx + dir;
-    const ordemA = items[idx].ordem || (idx + 1) * 10;
-    const ordemB = items[targetIdx].ordem || (targetIdx + 1) * 10;
-    updateOrdemMut.mutate({ itemId: items[idx].id, ordem: ordemB });
-    updateOrdemMut.mutate({ itemId: items[targetIdx].id, ordem: ordemA });
+
+    // If no manual order exists yet, initialize ALL items with sequential ordem first
+    // so that swapping two items doesn't shuffle the rest (which have ordem=0)
+    if (!temOrdemManual) {
+      await base44.entities.IngredienteReceita.bulkUpdate(
+        items.map((item, i) => ({ id: item.id, ordem: i * 10 }))
+      );
+    }
+
+    // Swap the two items' ordem values
+    await base44.entities.IngredienteReceita.bulkUpdate([
+      { id: items[idx].id, ordem: targetIdx * 10 },
+      { id: items[targetIdx].id, ordem: idx * 10 },
+    ]);
+
+    qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     toast.success("Ordem alterada");
   };
 
