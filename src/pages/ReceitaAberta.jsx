@@ -495,14 +495,17 @@ export default function ReceitaAberta() {
 
     const blockA = blocks[blockIdx];
     const blockB = blocks[targetBlockIdx];
+    // dir=-1 (up): blockA goes first (lower ordem), blockB shifts down
+    // dir=+1 (down): blockB goes first (lower ordem), blockA shifts down
+    const firstBlock = dir < 0 ? blockA : blockB;
+    const secondBlock = dir < 0 ? blockB : blockA;
+    const baseIdx = Math.min(blockA.startIdx, blockB.startIdx);
     const updates = [];
-    // Block B items take Block A's positions
-    for (let k = 0; k < blockB.entries.length; k++) {
-      updates.push({ id: blockB.entries[k].item.id, ordem: (blockA.startIdx + k) * 10 });
+    for (let k = 0; k < firstBlock.entries.length; k++) {
+      updates.push({ id: firstBlock.entries[k].item.id, ordem: (baseIdx + k) * 10 });
     }
-    // Block A items take positions right after Block B's new positions
-    for (let k = 0; k < blockA.entries.length; k++) {
-      updates.push({ id: blockA.entries[k].item.id, ordem: (blockA.startIdx + blockB.entries.length + k) * 10 });
+    for (let k = 0; k < secondBlock.entries.length; k++) {
+      updates.push({ id: secondBlock.entries[k].item.id, ordem: (baseIdx + firstBlock.entries.length + k) * 10 });
     }
     await base44.entities.IngredienteReceita.bulkUpdate(updates);
     qc.invalidateQueries({ queryKey: ["itens-receita", id] });
@@ -1193,7 +1196,7 @@ REGRAS:
                       </div>
                     ) : (
                       <>
-                        <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
+                        <p className="font-medium text-sm">{item.ing?.nome || item.ingrediente_nome}</p>
                         {item.medida_caseira && <p className="text-xs text-muted-foreground">{item.medida_caseira}</p>}
                         {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                         {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
@@ -1337,7 +1340,7 @@ REGRAS:
                     </div>
                   ) : (
                     <div>
-                      <p className="font-medium text-sm">{item.ingrediente_nome || item.ing?.nome}</p>
+                      <p className="font-medium text-sm">{item.ing?.nome || item.ingrediente_nome}</p>
                       {item.medida_caseira && <p className="text-xs text-muted-foreground">{item.medida_caseira}</p>}
                       {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                       {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
