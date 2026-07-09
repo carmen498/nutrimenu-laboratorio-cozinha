@@ -17,7 +17,7 @@ import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import TagSelector from "@/components/tags/TagSelector";
 import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 
-export default function NovaReceitaManual({ open, onClose, onCreated }) {
+export default function NovaReceitaManual({ open, onClose, onCreated, receitasExistentes = [] }) {
   const [form, setForm] = useState({
     nome: "", categorias: [], porcoes_base: "", rendimento_total: 0,
     unidade_base: "g", modo_preparo: "", foto_url: ""
@@ -137,6 +137,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
       const receita = await base44.entities.Receita.create({
         ...form,
         nome: form.nome?.toUpperCase(),
+        porcoes_base: form.porcoes_base || null,
         modo_preparo: passos.length > 0 ? juntarPassos(passos) : form.modo_preparo,
         custo_total: 0,
         custo_por_porcao: 0,
@@ -195,7 +196,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
       else toast.success("Receita criada!");
       onCreated(receita.id);
     } catch (err) {
-      toast.error("Erro ao criar receita");
+      toast.error("Erro ao criar receita: " + (err.message || err));
     } finally {
       setSaving(false);
       setDuplicateWarning(null);
@@ -209,14 +210,20 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
     const zeroQtd = ingsReais.some(a => (a.quantidade_por_porcao || 0) === 0);
     if (zeroQtd) { toast.error("Todos os ingredientes precisam ter quantidade"); return; }
 
-    // Busca fuzzy — detecta nomes similares, não apenas idênticos
-    const todas = await base44.entities.Receita.list("-nome", 500);
-    const fuzzy = buscarFuzzy(form.nome, todas);
+    setSaving(true);
+    try {
+      // Usa lista em cache da página pai — evita busca desnecessária e rate limit
+      const fuzzy = buscarFuzzy(form.nome, receitasExistentes);
 
-    if (fuzzy) {
-      setDuplicateWarning(fuzzy.receita);
-    } else {
-      doSave();
+      if (fuzzy) {
+        setDuplicateWarning(fuzzy.receita);
+      } else {
+        await doSave();
+      }
+    } catch (err) {
+      toast.error("Erro ao verificar duplicidade: " + (err.message || err));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -255,7 +262,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
         <div className="space-y-4">
           <div>
             <Label>Nome da receita</Label>
-            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex: Bolo de Cenoura" />
+            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value.toUpperCase() })} placeholder="Ex: BOLO DE CENOURA" />
           </div>
           <div>
             <Label>Categoria</Label>
@@ -489,7 +496,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
 
           <div>
             <Label>Modo de preparo</Label>
-            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. Derreter o chocolate em banho-maria com a manteiga. Reservar.\n2. Bater os ovos com o açúcar até formar creme fofo.\n3. Acrescentar a farinha e mexer até homogeneizar.\n4. Assar a 180 °C por 25 minutos."} />
+            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value.toLowerCase() })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. derreter o chocolate em banho-maria com a manteiga. reservar.\n2. bater os ovos com o açúcar até formar creme fofo.\n3. acrescentar a farinha e mexer até homogeneizar.\n4. assar a 180 °c por 25 minutos."} />
           </div>
 
           <div>

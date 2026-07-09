@@ -478,6 +478,7 @@ export default function Receitas() {
           open={true}
           onClose={() => { setShowNew(null); window.history.replaceState({}, "", "/receitas"); }}
           onCreated={(id) => { setShowNew(null); navigate(`/receita/${id}`); }}
+          receitasExistentes={receitas}
         />
       )}
       {showNew === "ia" && (
