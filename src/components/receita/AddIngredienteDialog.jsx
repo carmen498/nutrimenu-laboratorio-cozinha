@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, ChefHat, Star } from "lucide-react";
 import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
-import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
+import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes, unidadeBase }) {
   const [busca, setBusca] = useState("");
@@ -31,7 +31,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+    queryFn: () => base44.entities.Receita.list("-nome", 500),
   });
 
   const { data: medidas = [] } = useQuery({
@@ -44,9 +44,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
   const favoritos = !busca ? ingredientes.filter(i => i.favorito).slice(0, 8) : [];
   const outros = !busca ? filteredIng.filter(i => !i.favorito) : filteredIng;
 
-  const filteredRec = receitasBasicas.filter(
-    (r) => !busca || r.nome?.toUpperCase().includes(busca.toUpperCase())
-  );
+  const filteredRec = buscarReceitasMultiPalavra(busca, receitasBasicas, receitaId, 20);
 
   const convertToGrams = (qty, measure) => {
     if (measure === "g" || measure === "ml") return qty;
@@ -201,19 +199,26 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
                     <span className="text-xs text-muted-foreground">{ing.categoria}</span>
                   </button>
                 ))}
-                {filteredRec.slice(0, 20).map((rec) => (
-                  <button
-                    key={`rec-${rec.id}`}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
-                    onClick={() => { setSelected(rec); setSelectedType("subreceita"); }}
-                  >
-                    <span className="font-medium flex items-center gap-1">
-                      <ChefHat className="w-3.5 h-3.5 text-primary" />
-                      {rec.nome}
-                    </span>
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Receita</Badge>
-                  </button>
-                ))}
+                {filteredRec.length > 0 && (
+                  <>
+                    <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 pt-2 pb-0.5 tracking-wide flex items-center gap-1">
+                      <ChefHat className="w-3 h-3 text-primary" /> Sub-receitas
+                    </p>
+                    {filteredRec.map((rec) => (
+                      <button
+                        key={`rec-${rec.id}`}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
+                        onClick={() => { setSelected(rec); setSelectedType("subreceita"); }}
+                      >
+                        <span className="font-medium flex items-center gap-1">
+                          <ChefHat className="w-3.5 h-3.5 text-primary" />
+                          {rec.nome}
+                        </span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Receita</Badge>
+                      </button>
+                    ))}
+                  </>
+                )}
                 {noResults && busca.trim() && selectedType !== "subreceita" && (
                   <div className="text-center py-3 space-y-2">
                     <p className="text-sm text-muted-foreground">

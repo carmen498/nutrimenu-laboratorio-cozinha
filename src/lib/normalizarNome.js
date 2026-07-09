@@ -131,6 +131,27 @@ export function removerMarca(nome) {
   return nome;
 }
 
+/**
+ * Busca tolerante em receitas: divide o termo em palavras e retorna
+ * itens que contenham TODAS as palavras em qualquer posição.
+ * "molho 4" → "MOLHO DE 4 QUEIJOS"
+ * "arroz bra" → "ARROZ BRANCO"
+ * excludeId: ID da receita sendo editada (para não aparecer como sub-receita dela mesma).
+ */
+export function buscarReceitasMultiPalavra(termo, receitas, excludeId = null, limite = 20) {
+  if (!termo?.trim()) return [];
+  const palavras = normalizarNome(termo).split(" ").filter(w => w.length > 0);
+  if (palavras.length === 0) return [];
+  return receitas
+    .filter(r => {
+      if (excludeId && r.id === excludeId) return false;
+      if (!r.nome) return false;
+      const normR = normalizarNome(r.nome);
+      return palavras.every(p => normR.includes(p));
+    })
+    .slice(0, limite);
+}
+
 export function buscarFuzzy(nome, receitasExistentes) {
   const norm = normalizarNome(nome);
   if (!norm || norm.length < 4) return null;

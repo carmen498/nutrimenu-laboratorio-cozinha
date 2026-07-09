@@ -15,7 +15,7 @@ import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import TagSelector from "@/components/tags/TagSelector";
-import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado } from "@/lib/normalizarNome";
+import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 
 export default function NovaReceitaManual({ open, onClose, onCreated, receitasExistentes = [] }) {
   const [form, setForm] = useState({
@@ -50,15 +50,13 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.filter({ categoria: "Receitas Básicas" }),
+    queryFn: () => base44.entities.Receita.list("-nome", 500),
   });
 
   const filteredIngs = useMemo(() => {
     if (!ingBusca.trim()) return { ings: [], recs: [] };
     const ings = buscarIngredientesRanqueado(ingBusca, ingredientesDB, 20);
-    const recs = receitasBasicas
-      .filter(r => r.nome?.toUpperCase().includes(ingBusca.toUpperCase()))
-      .slice(0, 10);
+    const recs = buscarReceitasMultiPalavra(ingBusca, receitasBasicas, null, 10);
     return { ings, recs };
   }, [ingBusca, ingredientesDB, receitasBasicas]);
 
@@ -386,6 +384,11 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
                   <div className="max-h-48 overflow-y-auto border-t">
                     {(filteredIngs.ings.length > 0 || filteredIngs.recs.length > 0) ? (
                       <>
+                        {filteredIngs.ings.length > 0 && (
+                          <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 pt-1.5 pb-0.5 tracking-wide">
+                            Ingredientes
+                          </p>
+                        )}
                         {filteredIngs.ings.map((ing) => (
                           <button
                             key={`ing-${ing.id}`}
@@ -403,6 +406,11 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
                             )}
                           </button>
                         ))}
+                        {filteredIngs.recs.length > 0 && (
+                          <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 pt-1.5 pb-0.5 tracking-wide flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-500" /> Sub-receitas
+                          </p>
+                        )}
                         {filteredIngs.recs.map((rec) => (
                           <button
                             key={`rec-${rec.id}`}
