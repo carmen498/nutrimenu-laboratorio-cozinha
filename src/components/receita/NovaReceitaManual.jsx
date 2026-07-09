@@ -383,7 +383,12 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                           <button
                             key={`ing-${ing.id}`}
                             className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between"
-                            onClick={() => { setSelectedIng(ing); setSelectedType("ingrediente"); setIngBusca(ing.nome); }}
+                            onClick={() => {
+                              setSelectedIng(ing);
+                              setSelectedType("ingrediente");
+                              setIngBusca(ing.nome);
+                              setTimeout(() => document.getElementById('ing-qtd-input')?.focus(), 0);
+                            }}
                           >
                             <span>{ing.nome}</span>
                             {ing.preco_por_g_rs > 0 && (
@@ -395,7 +400,12 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
                           <button
                             key={`rec-${rec.id}`}
                             className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between items-center"
-                            onClick={() => { setSelectedIng(rec); setSelectedType("subreceita"); setIngBusca(rec.nome); }}
+                            onClick={() => {
+                              setSelectedIng(rec);
+                              setSelectedType("subreceita");
+                              setIngBusca(rec.nome);
+                              setTimeout(() => document.getElementById('ing-qtd-input')?.focus(), 0);
+                            }}
                           >
                             <span className="flex items-center gap-1">
                               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -426,6 +436,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <Input
+                    id="ing-qtd-input"
                     type="number"
                     placeholder="Quant. por porção (g)"
                     value={ingQtd}
@@ -553,7 +564,10 @@ export default function NovaReceitaManual({ open, onClose, onCreated }) {
               }}>
                 Editar existente
               </Button>
-              <Button onClick={doSave}>
+              <Button onClick={async () => {
+                setDuplicateWarning(null);
+                await doSave();
+              }}>
                 Salvar mesmo assim
               </Button>
             </div>

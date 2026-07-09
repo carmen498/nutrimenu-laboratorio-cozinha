@@ -134,28 +134,21 @@ export function removerMarca(nome) {
 export function buscarFuzzy(nome, receitasExistentes) {
   const norm = normalizarNome(nome);
   if (!norm || norm.length < 4) return null;
-  const wordsA = norm.split(" ").filter(w => w.length > 2);
 
   for (const r of receitasExistentes) {
     const normR = normalizarNome(r.nome);
     if (!normR) continue;
 
-    // Exata
+    // 1. Idêntico (após normalização: lowercase, sem acentos, sem pontuação)
     if (norm === normR) return { receita: r, motivo: "idêntico" };
 
-    // Contida
-    if (norm.includes(normR) || normR.includes(norm)) {
-      return { receita: r, motivo: "nome contido" };
-    }
-
-    // Sobreposição de palavras
-    const wordsB = normR.split(" ").filter(w => w.length > 2);
-    if (wordsA.length === 0 || wordsB.length === 0) continue;
-    const overlap = wordsA.filter(wa => wordsB.some(wb => wb === wa || wb.includes(wa) || wa.includes(wb)));
-    const ratioA = overlap.length / wordsA.length;
-    const ratioB = overlap.length / wordsB.length;
-    if (ratioA > 0.6 || ratioB > 0.6) {
-      return { receita: r, motivo: "similar" };
+    // 2. Quase idêntico — mesma sequência de palavras, mas com palavras extras curtas
+    //    removidas (artigos, preposições) para tolerar "Bolo de Cenoura" vs "Bolo Cenoura"
+    const stripShort = (s) => normalizarNome(s).split(" ").filter(w => w.length > 2).join(" ");
+    const normAStripped = stripShort(nome);
+    const normRStripped = stripShort(r.nome);
+    if (normAStripped && normAStripped === normRStripped) {
+      return { receita: r, motivo: "idêntico" };
     }
   }
   return null;
