@@ -51,12 +51,30 @@ export default function InsumosSection({ receitaId }) {
 
   const filtered = useMemo(() => {
     if (!busca.trim()) return [];
-    const term = busca.toLowerCase();
-    return INSUMOS_PREDEFINIDOS.filter(i =>
-      i.nome.toLowerCase().includes(term) &&
-      !insumosReceita.some(ir => ir.insumo_nome?.toLowerCase() === i.nome.toLowerCase())
-    );
-  }, [busca, insumosReceita]);
+    const words = busca.toLowerCase().trim().split(/\s+/);
+    const matchSearch = (nome) => {
+      const n = nome.toLowerCase();
+      return words.every(w => n.includes(w));
+    };
+    const existingNames = new Set(insumosReceita.map(ir => ir.insumo_nome?.toLowerCase()));
+    const seenNames = new Set();
+    const results = [];
+    // Search DB insumos first
+    insumosDB.forEach(i => {
+      if (matchSearch(i.nome) && !existingNames.has(i.nome.toLowerCase()) && !seenNames.has(i.nome.toLowerCase())) {
+        results.push({ nome: i.nome, categoria: i.categoria, unidade: i.unidade });
+        seenNames.add(i.nome.toLowerCase());
+      }
+    });
+    // Then predefinidos
+    INSUMOS_PREDEFINIDOS.forEach(i => {
+      if (matchSearch(i.nome) && !existingNames.has(i.nome.toLowerCase()) && !seenNames.has(i.nome.toLowerCase())) {
+        results.push(i);
+        seenNames.add(i.nome.toLowerCase());
+      }
+    });
+    return results;
+  }, [busca, insumosReceita, insumosDB]);
 
   const addMut = useMutation({
     mutationFn: async (insumo) => {

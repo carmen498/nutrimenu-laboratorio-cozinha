@@ -762,7 +762,7 @@ REGRAS:
                   title={receita.per_capita_g ? "Valor personalizado — clique para editar" : "Valor sugerido — clique para editar"}
                 >
                   {perCapitaAtual}g/pessoa
-                  {perCapitaSugerido?.medida && <span className="font-normal text-muted-foreground text-xs">· {perCapitaSugerido.medida}</span>}
+                  {perCapitaSugerido?.medida && false && <span className="font-normal text-muted-foreground text-xs">· {perCapitaSugerido.medida}</span>}
                   {receita.per_capita_g && <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 border-amber-300 text-amber-700 bg-amber-100/50">personalizado</Badge>}
                   {!receita.per_capita_g && <span className="text-[10px] text-muted-foreground ml-1">(sugerido)</span>}
                   <Pencil className="w-3 h-3 text-muted-foreground" />
@@ -855,7 +855,14 @@ REGRAS:
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-bold">Ingredientes</h2>
           <div className="flex gap-1 flex-wrap">
-            <Button size="sm" variant="outline" onClick={handleOrderByPrep} disabled={orderingByPrep || !receita?.modo_preparo} title="Ordenar ingredientes conforme o modo de preparo">
+            <Button
+              size="sm"
+              variant={temFatorCorrecao ? "default" : "outline"}
+              className={temFatorCorrecao ? "bg-amber-500 hover:bg-amber-600 border-amber-500" : ""}
+              onClick={handleOrderByPrep}
+              disabled={orderingByPrep || !receita?.modo_preparo}
+              title={temFatorCorrecao ? "Esta receita tem ingredientes com Fator de Correção aplicado" : "Ordenar ingredientes conforme o modo de preparo"}
+            >
               {orderingByPrep ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowUpDown className="w-4 h-4 mr-1" />}
               Ordenar por preparo
             </Button>
@@ -1477,40 +1484,61 @@ REGRAS:
       {/* Pesos */}
       <Card className="p-4">
         <h3 className="font-display text-sm font-bold mb-3">Pesos</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Peso Bruto (g)</span>
-            <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
-          </div>
-          <div>
-            <Label className="text-sm font-semibold text-muted-foreground">Rendimento (PDP)</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) - 50)}>
-                <Minus className="w-4 h-4" />
-              </Button>
-              <div className="flex-1 relative">
-                <Input
-                  type="number"
-                  min={1}
-                  value={pdpValue || ""}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value) || 0;
-                    setPdpValue(e.target.value);
-                  }}
-                  onBlur={() => handleSavePDP(parseInt(pdpValue) || 0)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSavePDP(parseInt(pdpValue) || 0);
-                  }}
-                  className="text-center text-lg font-bold h-10 pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">g</span>
+        {(() => {
+          const pdpNum = parseFloat(pdpValue) || 0;
+          let perdaText = "—";
+          let perdaClass = "text-muted-foreground";
+          if (pdpNum > 0 && pesoBruto > 0) {
+            if (pdpNum > pesoBruto) {
+              const pct = ((pdpNum - pesoBruto) / pesoBruto) * 100;
+              perdaText = `Ganho: +${pct.toFixed(1).replace(".", ",")}%`;
+              perdaClass = "text-blue-600";
+            } else {
+              const pct = ((pesoBruto - pdpNum) / pesoBruto) * 100;
+              perdaText = `Perda: ${pct.toFixed(1).replace(".", ",")}%`;
+              perdaClass = "text-primary";
+            }
+          }
+          return (
+            <div className="flex items-center gap-2 flex-wrap text-sm">
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Peso Bruto:</span>
+                <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
               </div>
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) + 50)}>
-                <Plus className="w-4 h-4" />
-              </Button>
+              <span className="text-muted-foreground">|</span>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Rendimento (PDP):</span>
+                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) - 50)}>
+                  <Minus className="w-3.5 h-3.5" />
+                </Button>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={pdpValue || ""}
+                    onChange={(e) => {
+                      setPdpValue(e.target.value);
+                    }}
+                    onBlur={() => handleSavePDP(parseInt(pdpValue) || 0)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSavePDP(parseInt(pdpValue) || 0);
+                    }}
+                    className="text-center text-sm font-bold h-8 w-24 pr-7"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">g</span>
+                </div>
+                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) + 50)}>
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <span className="text-muted-foreground">|</span>
+              <div className="flex items-center gap-1" title="PDP = Peso Depois de Pronto. A % Perda identifica receitas com rendimento muito abaixo do esperado. Ganho indica hidratação na cocção.">
+                <span className="text-muted-foreground">Perda:</span>
+                <span className={`font-medium ${perdaClass}`}>{perdaText}</span>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
       </Card>
 
       {/* Custos */}
