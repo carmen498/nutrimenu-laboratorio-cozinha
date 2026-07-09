@@ -32,7 +32,7 @@ const TIPO_MAP = Object.fromEntries(TIPOS_CARDAPIO.map(t => [t.key, t]));
 const LABEL_UNIDADE = {
   diario: "pessoas", semanal: "pessoas", fim_de_semana: "pessoas",
   especial: "pessoas", comemoracao: "convidados", marmitas: "marmitas",
-  buffet: "kg", happy_hour: "pessoas", personalizado: "unidades",
+  buffet: "kg", happy_hour: "pessoas", personalizado: "pessoas",
 };
 
 export default function Cardapios() {
@@ -200,6 +200,17 @@ export default function Cardapios() {
         </Button>
       </div>
 
+      {/* Busca */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar cardápio..."
+          className="pl-10"
+          value={busca}
+          onChange={e => setBusca(e.target.value)}
+        />
+      </div>
+
       {/* Filter row */}
       <div className="flex gap-2">
         <Button
@@ -301,17 +312,6 @@ export default function Cardapios() {
           </div>
         </div>
       )}
-
-      {/* Busca */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar cardápio..."
-          className="pl-10"
-          value={busca}
-          onChange={e => setBusca(e.target.value)}
-        />
-      </div>
 
       {/* Lista */}
       {loading ? (

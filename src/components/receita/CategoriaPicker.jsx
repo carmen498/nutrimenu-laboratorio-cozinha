@@ -9,7 +9,7 @@ export const CATEGORIAS = [
   "Carne Bovina", "Aves", "Peixes e Frutos do Mar", "Ovos",
   "Massas, Pastelão e Quiches", "Arroz e Risoto", "Sopas e Caldos", "Leguminosas",
   "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos",
-  "Acompanhamento", "Prato Principal", "Prato Único",
+  "Acompanhamento", "Prato Principal",
   "Entradas", "Petiscos", "Lanche", "Receitas Base"
 ];
 
@@ -17,7 +17,7 @@ export const ICONE_CATEGORIA = {
   "Carne Bovina": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
   "Massas, Pastelão e Quiches": "🍝", "Arroz e Risoto": "🍚", "Sopas e Caldos": "🥣", "Leguminosas": "🫘",
   "Salgadinhos": "🥟", "Pães e Bolos": "🍞", "Sobremesas": "🍰", "Molhos": "🫙",
-  "Acompanhamento": "🥗", "Prato Principal": "🍽️", "Prato Único": "🍲",
+  "Acompanhamento": "🥗", "Prato Principal": "🍽️",
   "Entradas": "🥄", "Petiscos": "🍢", "Lanche": "🥪", "Receitas Base": "📖"
 };
 

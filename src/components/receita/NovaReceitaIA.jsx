@@ -162,7 +162,7 @@ IMPORTANTE:
           type: "object",
           properties: {
             nome: { type: "string", description: "Nome da receita" },
-            categorias: { type: "array", items: { type: "string" }, description: "Categorias sugeridas: Carne Bovina, Aves, Peixes e Frutos do Mar, Ovos, Massas Pastelão e Quiches, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães e Bolos, Sobremesas, Molhos, Acompanhamento, Prato Principal, Prato Único, Entradas, Petiscos, Lanche, Receitas Base" },
+            categorias: { type: "array", items: { type: "string" }, description: "Categorias sugeridas: Carne Bovina, Aves, Peixes e Frutos do Mar, Ovos, Massas Pastelão e Quiches, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães e Bolos, Sobremesas, Molhos, Acompanhamento, Prato Principal, Entradas, Petiscos, Lanche, Receitas Base" },
             porcoes_base: { type: "number" },
             unidade_base: { type: "string", enum: ["g", "ml"] },
             modo_preparo: { type: "string" },

@@ -21,6 +21,7 @@ import {
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
+import AddInsumoBanco from "@/components/cardapio/AddInsumoBanco";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -354,7 +355,7 @@ export default function CardapioAberto() {
 
   const tipo = TIPOS[cardapio.tipo] || TIPOS.diario;
   const TipoIcon = tipo.icon;
-  const unidadeLabel = UNIDADE_LABEL[cardapio.tipo] || "unidades";
+  const unidadeLabel = UNIDADE_LABEL[cardapio.tipo] || "pessoas";
 
   return (
     <div className="max-w-4xl mx-auto print:max-w-full">
@@ -508,7 +509,7 @@ export default function CardapioAberto() {
                     <span className="text-xs text-muted-foreground">{rec.receita_categoria}</span>
                   )}
                   {temDias && (
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2 mt-1 no-print">
                       <Select value={rec.dia_semana || ""} onValueChange={v => updateReceita(rec.id, "dia_semana", v)}>
                         <SelectTrigger className="h-7 text-xs w-24">
                           <SelectValue placeholder="Dia" />
@@ -532,7 +533,7 @@ export default function CardapioAberto() {
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="text-right">
+                  <div className="text-right no-print">
                     <Input
                       className="w-20 h-7 text-xs text-center"
                       value={rec.per_capita_g || ""}
@@ -544,13 +545,7 @@ export default function CardapioAberto() {
                       placeholder={isBuffet ? "kg/un" : "g/pessoa"}
                     />
                     <span className="text-[10px] text-muted-foreground">
-                      {(() => {
-                        const info = getPerCapitaInfo(rec.receita_categoria || "");
-                        if (info) {
-                          return <span className="italic">Sugestão Nutrimenu · {info.g}g · {info.medida}</span>;
-                        }
-                        return isBuffet ? "kg/un" : `g/${cardapio.tipo === "marmitas" ? "marm" : "pessoa"}`;
-                      })()}
+                      {isBuffet ? "kg/un" : `g/${cardapio.tipo === "marmitas" ? "marm" : "pessoa"}`}
                     </span>
                   </div>
                   <span className="text-xs text-muted-foreground w-16 text-right">
@@ -581,19 +576,11 @@ export default function CardapioAberto() {
                 + {sug.nome}
               </Button>
             ))}
-            <Select onValueChange={(v) => {
-              const ins = insumosGlobais.find(i => i.id === v);
-              if (ins) addInsumo(ins);
-            }}>
-              <SelectTrigger className="w-36 h-8 text-xs">
-                <SelectValue placeholder="+ Banco" />
-              </SelectTrigger>
-              <SelectContent>
-                {insumosGlobais.map(i => (
-                  <SelectItem key={i.id} value={i.id}>{i.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <AddInsumoBanco
+              insumosGlobais={insumosGlobais}
+              onAdd={addInsumo}
+              onUpdateGlobais={() => load()}
+            />
           </div>
         </div>
         <h2 className="font-display font-semibold text-lg hidden print:block mb-4">Insumos e Embalagens</h2>

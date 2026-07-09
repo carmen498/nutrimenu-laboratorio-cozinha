@@ -32,7 +32,7 @@ const CORES_CATEGORIA = {
   "Molhos":                        { cor: "#EDE7F6", corTexto: "#4527A0", corPill: "#D1C4E9", corPillTexto: "#311B92" },
   "Acompanhamento":                { cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E" },
   "Prato Principal":               { cor: "#FFEBEE", corTexto: "#B71C1C", corPill: "#FFCDD2", corPillTexto: "#8B0000" },
-  "Prato Único":                   { cor: "#FFF8E1", corTexto: "#E65100", corPill: "#FFE082", corPillTexto: "#BF360C" },
+
   "Entradas":                      { cor: "#ECEFF1", corTexto: "#455A64", corPill: "#CFD8DC", corPillTexto: "#263238" },
   "Petiscos":                      { cor: "#FBE9E7", corTexto: "#D84315", corPill: "#FFCCBC", corPillTexto: "#BF360C" },
   "Lanche":                        { cor: "#F9FBE7", corTexto: "#827717", corPill: "#F0F4C3", corPillTexto: "#33691E" },
