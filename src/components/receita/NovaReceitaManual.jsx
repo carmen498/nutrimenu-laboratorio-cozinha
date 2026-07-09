@@ -16,6 +16,8 @@ import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import TagSelector from "@/components/tags/TagSelector";
 import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
+import { explodeSubreceita } from "@/lib/subreceitaUtils";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 
 export default function NovaReceitaManual({ open, onClose, onCreated, receitasExistentes = [] }) {
   const [form, setForm] = useState({
@@ -39,6 +41,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const [editingGrupoIdx, setEditingGrupoIdx] = useState(null);
   const [editingGrupoText, setEditingGrupoText] = useState("");
+  const [showDiscard, setShowDiscard] = useState(false);
 
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -60,29 +63,44 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     return { ings, recs };
   }, [ingBusca, ingredientesDB, receitasBasicas]);
 
-  const handleAddIng = () => {
+  const handleAddIng = async () => {
     if (!selectedIng) { toast.error("Selecione um ingrediente"); return; }
     const qtd = parseFloat(ingQtd);
     if (!qtd || qtd <= 0) { toast.error("Informe a quantidade por porção"); return; }
 
     if (selectedType === "subreceita") {
-      if (addedIngs.some(a => a.tipo === "subreceita" && a.subreceita_id === selectedIng.id)) {
+      if (addedIngs.some(a => a.tipo === "subreceita" && !a._isChild && a.subreceita_id === selectedIng.id)) {
         toast.error("Sub-receita já adicionada");
         return;
       }
-      setAddedIngs([...addedIngs, {
-        tipo: "subreceita",
-        subreceita_id: selectedIng.id,
-        subreceita_nome: selectedIng.nome,
-        quantidade_por_porcao: qtd,
-        ordem: addedIngs.length,
-      }]);
+      try {
+        const children = await explodeSubreceita(selectedIng, qtd);
+        const marker = {
+          tipo: "subreceita",
+          subreceita_id: selectedIng.id,
+          subreceita_nome: selectedIng.nome,
+          quantidade_por_porcao: qtd,
+          ordem: addedIngs.length,
+          _isMarker: true,
+        };
+        const childItems = children.map((c, i) => ({
+          ...c,
+          ordem: addedIngs.length + 1 + i,
+          _isChild: true,
+        }));
+        setAddedIngs([...addedIngs, marker, ...childItems]);
+        toast.success(`${selectedIng.nome} adicionada com ${children.length} ingredientes`);
+      } catch (err) {
+        toast.error("Erro ao buscar ingredientes da sub-receita: " + (err.message || err));
+        return;
+      }
     } else {
-      if (addedIngs.some(a => a.tipo !== "subreceita" && a.tipo !== "grupo" && a.ingrediente_id === selectedIng.id)) {
+      if (addedIngs.some(a => a.tipo !== "subreceita" && a.tipo !== "grupo" && !a._isChild && a.ingrediente_id === selectedIng.id)) {
         toast.error("Ingrediente já adicionado");
         return;
       }
       setAddedIngs([...addedIngs, {
+        tipo: "ingrediente",
         ingrediente_id: selectedIng.id,
         ingrediente_nome: selectedIng.nome,
         quantidade_por_porcao: qtd,
@@ -98,15 +116,55 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
   };
 
   const handleRemoveIng = (idx) => {
-    setAddedIngs(addedIngs.filter((_, i) => i !== idx));
+    const item = addedIngs[idx];
+    if (item._isMarker) {
+      const newList = [...addedIngs];
+      newList.splice(idx, 1);
+      while (idx < newList.length && newList[idx]._isChild) {
+        newList.splice(idx, 1);
+      }
+      setAddedIngs(newList);
+    } else {
+      setAddedIngs(addedIngs.filter((_, i) => i !== idx));
+    }
   };
 
   const handleMoveIng = (idx, dir) => {
-    const newIdx = idx + dir;
-    if (newIdx < 0 || newIdx >= addedIngs.length) return;
-    const list = [...addedIngs];
-    [list[idx], list[newIdx]] = [list[newIdx], list[idx]];
-    setAddedIngs(list);
+    const item = addedIngs[idx];
+    if (item._isChild) {
+      let parentIdx = idx - 1;
+      while (parentIdx >= 0 && addedIngs[parentIdx]._isChild) parentIdx--;
+      if (parentIdx >= 0 && addedIngs[parentIdx]._isMarker) {
+        return handleMoveIng(parentIdx, dir);
+      }
+      return;
+    }
+    const blocks = [];
+    let i = 0;
+    while (i < addedIngs.length) {
+      if (addedIngs[i]._isMarker) {
+        const block = [addedIngs[i]];
+        let j = i + 1;
+        while (j < addedIngs.length && addedIngs[j]._isChild) { block.push(addedIngs[j]); j++; }
+        blocks.push(block);
+        i = j;
+      } else {
+        blocks.push([addedIngs[i]]);
+        i++;
+      }
+    }
+    let blockIdx = -1;
+    let itemIdx = 0;
+    for (let b = 0; b < blocks.length; b++) {
+      if (itemIdx === idx) { blockIdx = b; break; }
+      itemIdx += blocks[b].length;
+    }
+    if (blockIdx === -1) return;
+    const newBlockIdx = blockIdx + dir;
+    if (newBlockIdx < 0 || newBlockIdx >= blocks.length) return;
+    const newBlocks = [...blocks];
+    [newBlocks[blockIdx], newBlocks[newBlockIdx]] = [newBlocks[newBlockIdx], newBlocks[blockIdx]];
+    setAddedIngs(newBlocks.flat());
   };
 
   const handleUpdateGrupo = (idx) => {
@@ -156,34 +214,44 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
         }
       }
 
+      let currentParentId = "";
       for (let i = 0; i < addedIngs.length; i++) {
         const ing = addedIngs[i];
         if (ing.tipo === "grupo") {
+          currentParentId = "";
           await base44.entities.IngredienteReceita.create({
             receita_id: receita.id,
             tipo: "grupo",
             titulo_grupo: ing.titulo_grupo,
             ordem: i * 10,
           });
-        } else if (ing.tipo === "subreceita") {
-          await base44.entities.IngredienteReceita.create({
+        } else if (ing.tipo === "subreceita" && !ing._isChild) {
+          const marker = await base44.entities.IngredienteReceita.create({
             receita_id: receita.id,
             tipo: "subreceita",
             subreceita_id: ing.subreceita_id,
             subreceita_nome: ing.subreceita_nome,
             quantidade_por_porcao: ing.quantidade_por_porcao,
             ordem: i * 10,
-          });
-        } else {
-          await base44.entities.IngredienteReceita.create({
-            receita_id: receita.id,
-            ingrediente_id: ing.ingrediente_id,
-            ingrediente_nome: ing.ingrediente_nome,
-            quantidade_por_porcao: ing.quantidade_por_porcao,
-            pre_preparo: ing.pre_preparo || "",
-            ordem: i * 10,
             proporcional: true,
           });
+          currentParentId = marker.id;
+        } else {
+          const isChild = !!ing._isChild;
+          await base44.entities.IngredienteReceita.create({
+            receita_id: receita.id,
+            tipo: ing.tipo === "subreceita" ? "subreceita" : "ingrediente",
+            ingrediente_id: ing.ingrediente_id || "",
+            ingrediente_nome: ing.ingrediente_nome || "",
+            subreceita_id: ing.subreceita_id || "",
+            subreceita_nome: ing.subreceita_nome || "",
+            pre_preparo: ing.pre_preparo || "",
+            quantidade_por_porcao: ing.quantidade_por_porcao,
+            ordem: i * 10,
+            proporcional: ing.proporcional !== false,
+            subreceita_parent_id: isChild ? currentParentId : "",
+          });
+          if (!isChild) currentParentId = "";
         }
       }
 
@@ -225,6 +293,9 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     }
   };
 
+  const hasData = !!form.nome?.trim() || addedIngs.length > 0 || !!form.modo_preparo?.trim() || !!form.foto_url || selectedTagIds.length > 0;
+  const handleAttemptClose = () => { if (hasData) setShowDiscard(true); else onClose(); };
+
   const handleUploadPhoto = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -252,8 +323,8 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={(v) => { if (!v) handleAttemptClose(); }}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => { e.preventDefault(); handleAttemptClose(); }}>
         <DialogHeader>
           <DialogTitle className="font-display">Nova Receita</DialogTitle>
         </DialogHeader>
@@ -320,6 +391,23 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
                       </Button>
                     </div>
                   )
+                ) : ing._isChild ? (
+                  <div key={idx} className="flex items-center gap-1 rounded-lg p-2 text-sm ml-6 border-l-2 border-amber-300 bg-amber-50/30">
+                    <span className="flex-1 truncate text-muted-foreground">
+                      {ing.tipo === "subreceita" ? (
+                        <span className="flex items-center gap-1">
+                          <Sparkles className="w-2.5 h-2.5 text-amber-500" />
+                          {ing.subreceita_nome}
+                        </span>
+                      ) : (
+                        ing.ingrediente_nome
+                      )}
+                    </span>
+                    <span className="text-muted-foreground shrink-0 text-xs">{ing.quantidade_por_porcao.toFixed(1)}g/porção</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleRemoveIng(idx)}>
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                  </div>
                 ) : ing.tipo === "subreceita" ? (
                   <div key={idx} className="flex items-center gap-1 bg-amber-50/70 border border-amber-200/60 rounded-lg p-2 text-sm">
                     <span className="flex items-center gap-1 flex-1 truncate font-medium">
@@ -543,7 +631,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
           Após salvar a receita, você poderá: adicionar/reordenar ingredientes e enviar uma foto.
         </div>
         <div className="flex gap-2 justify-end mt-4">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button variant="outline" onClick={handleAttemptClose}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? "Criando..." : "Criar Receita"}</Button>
         </div>
       </DialogContent>
@@ -593,6 +681,23 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
           </DialogContent>
         </Dialog>
       )}
+
+      <AlertDialog open={showDiscard} onOpenChange={setShowDiscard}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Descartar receita?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem dados não salvos. Deseja descartar tudo?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Continuar editando</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setShowDiscard(false); onClose(); }}>
+              Descartar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

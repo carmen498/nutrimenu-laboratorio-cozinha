@@ -20,6 +20,7 @@ import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
 import InsumosSection from "@/components/receita/InsumosSection";
 import IngredientesEsquecidos from "@/components/receita/IngredientesEsquecidos";
+import EditItemDialog from "@/components/receita/EditItemDialog";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import TagBadge from "@/components/tags/TagBadge";
 import TagList from "@/components/tags/TagList";
@@ -39,6 +40,7 @@ export default function ReceitaAberta() {
   const [orderingByPrep, setOrderingByPrep] = useState(false);
   const [margem, setMargem] = useState(30);
   const [editingPrice, setEditingPrice] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
   const [editingQtdId, setEditingQtdId] = useState(null);
   const [editingQtdValue, setEditingQtdValue] = useState("");
   const [editingIngId, setEditingIngId] = useState(null);
@@ -272,6 +274,17 @@ export default function ReceitaAberta() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingQtdId(null);
+    },
+  });
+
+  const updateItemMut = useMutation({
+    mutationFn: async ({ itemId, quantidade_por_porcao, pre_preparo }) => {
+      await base44.entities.IngredienteReceita.update(itemId, { quantidade_por_porcao, pre_preparo });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      setEditingItem(null);
+      toast.success("Item atualizado");
     },
   });
 
@@ -952,7 +965,7 @@ REGRAS:
                         <span className="text-sm text-muted-foreground">—</span>
                       </div>
                       <div className="col-span-3 flex justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
                           <Pencil className="w-3 h-3" />
                         </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
@@ -977,7 +990,7 @@ REGRAS:
                       </div>
                       <div className="flex items-start justify-between">
                         <div className="flex gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
                             <Pencil className="w-3 h-3" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
@@ -1165,7 +1178,7 @@ REGRAS:
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
                       {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
                       <Pencil className="w-3 h-3" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
@@ -1257,7 +1270,7 @@ REGRAS:
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
                         {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingIngId(item.id); setIngSearch(""); }} title="Editar ingrediente">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
                         <Pencil className="w-3 h-3" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
@@ -1492,6 +1505,18 @@ REGRAS:
 
       {showEdit && (
         <EditReceitaDialog open={true} onClose={() => setShowEdit(false)} receita={receita} />
+      )}
+
+      {editingItem && (
+        <EditItemDialog
+          open={true}
+          onClose={() => setEditingItem(null)}
+          item={editingItem}
+          porcoesBase={receita?.porcoes_base}
+          fator={fator}
+          onSave={(data) => updateItemMut.mutate(data)}
+          saving={updateItemMut.isPending}
+        />
       )}
 
       {editingPrice && (

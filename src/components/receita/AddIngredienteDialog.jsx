@@ -11,6 +11,7 @@ import { Search, Plus, ChefHat, Star } from "lucide-react";
 import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
+import { explodeSubreceita } from "@/lib/subreceitaUtils";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes, unidadeBase }) {
   const [busca, setBusca] = useState("");
@@ -75,42 +76,17 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
         });
 
         // Pull ingredients from the sub-receita automatically (proportional)
-        const subItens = await base44.entities.IngredienteReceita.filter({ receita_id: selected.id }, "ordem", 200);
-        const subRendimento = selected.rendimento_total || 1;
-        const fatorSub = qty / subRendimento;
-        const subPorcoesBase = selected.porcoes_base || 1;
+        const children = await explodeSubreceita(selected, qtdPorPorcao);
         let nextOrdem = existingItems.length + 1;
-        for (const subItem of subItens) {
-          if (subItem.tipo === "grupo") continue;
-          const subQtdTotal = (subItem.quantidade_por_porcao || 0) * subPorcoesBase;
-          const propQtdPorPorcao = (subQtdTotal * fatorSub) / (porcoes || 1);
-          if (subItem.tipo === "subreceita") {
-            await base44.entities.IngredienteReceita.create({
-              receita_id: receitaId,
-              tipo: "subreceita",
-              subreceita_id: subItem.subreceita_id,
-              subreceita_nome: subItem.subreceita_nome,
-              quantidade_por_porcao: propQtdPorPorcao,
-              ordem: nextOrdem++,
-              proporcional: subItem.proporcional !== false,
-              subreceita_parent_id: markerItem.id,
-            });
-          } else {
-            await base44.entities.IngredienteReceita.create({
-              receita_id: receitaId,
-              tipo: "ingrediente",
-              ingrediente_id: subItem.ingrediente_id || "",
-              ingrediente_nome: subItem.ingrediente_nome || "",
-              pre_preparo: subItem.pre_preparo || "",
-              quantidade_por_porcao: propQtdPorPorcao,
-              medida_caseira: subItem.medida_caseira || "",
-              ordem: nextOrdem++,
-              proporcional: subItem.proporcional !== false,
-              subreceita_parent_id: markerItem.id,
-            });
-          }
+        for (const child of children) {
+          await base44.entities.IngredienteReceita.create({
+            ...child,
+            receita_id: receitaId,
+            ordem: nextOrdem++,
+            subreceita_parent_id: markerItem.id,
+          });
         }
-        const pulledCount = subItens.filter(i => i.tipo !== "grupo").length;
+        const pulledCount = children.length;
         toast.success(`Sub-receita ${selected.nome} adicionada${pulledCount > 0 ? ` com ${pulledCount} ingredientes puxados` : ""}!`);
       } else {
         const qtdGramas = convertToGrams(qty, medidaSel);
