@@ -1457,6 +1457,69 @@ REGRAS:
         )}
       </div>
 
+      {/* Pesos */}
+      <Card className="p-4">
+        <h3 className="font-display text-sm font-bold mb-3">Pesos</h3>
+        {(() => {
+          const pdpNum = parseFloat(pdpValue) || 0;
+          let perdaText = "—";
+          let perdaClass = "text-muted-foreground";
+          let perdaTitle = "Pese a preparação pronta e registre o PDP para calcular a perda";
+          if (pdpNum > 0 && pesoBruto > 0) {
+            if (pdpNum > pesoBruto) {
+              const pct = ((pdpNum - pesoBruto) / pesoBruto) * 100;
+              perdaText = `Ganho: +${pct.toFixed(1).replace(".", ",")}%`;
+              perdaClass = "text-blue-600";
+              perdaTitle = "PDP = Peso Depois de Pronto. Ganho indica hidratação na cocção.";
+            } else {
+              const pct = ((pesoBruto - pdpNum) / pesoBruto) * 100;
+              perdaText = `Perda: ${pct.toFixed(1).replace(".", ",")}%`;
+              perdaClass = "text-primary";
+              perdaTitle = "PDP = Peso Depois de Pronto. A % Perda identifica receitas com rendimento muito abaixo do esperado.";
+            }
+          }
+          return (
+            <div className="flex items-center gap-2 flex-wrap text-sm">
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Peso Bruto:</span>
+                <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
+              </div>
+              <span className="text-muted-foreground">|</span>
+              <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Rendimento (PDP):</span>
+                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || 0) - 50)}>
+                  <Minus className="w-3.5 h-3.5" />
+                </Button>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min={1}
+                    value={pdpValue || ""}
+                    onChange={(e) => {
+                      setPdpValue(e.target.value);
+                    }}
+                    onBlur={() => handleSavePDP(parseInt(pdpValue) || 0)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSavePDP(parseInt(pdpValue) || 0);
+                    }}
+                    className="text-center text-sm font-bold h-8 w-24 pr-7"
+                  />
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">g</span>
+                </div>
+                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || 0) + 50)}>
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <span className="text-muted-foreground">|</span>
+              <div className="flex items-center gap-1" title={perdaTitle}>
+                <span className="text-muted-foreground">Perda:</span>
+                <span className={`font-medium ${perdaClass}`}>{perdaText}</span>
+              </div>
+            </div>
+          );
+        })()}
+      </Card>
+
       {/* Ingredientes Esquecidos */}
       <IngredientesEsquecidos receitaId={id} fator={fator} />
 
@@ -1480,66 +1543,6 @@ REGRAS:
 
       {/* Insumos e Embalagens */}
       <InsumosSection receitaId={id} />
-
-      {/* Pesos */}
-      <Card className="p-4">
-        <h3 className="font-display text-sm font-bold mb-3">Pesos</h3>
-        {(() => {
-          const pdpNum = parseFloat(pdpValue) || 0;
-          let perdaText = "—";
-          let perdaClass = "text-muted-foreground";
-          if (pdpNum > 0 && pesoBruto > 0) {
-            if (pdpNum > pesoBruto) {
-              const pct = ((pdpNum - pesoBruto) / pesoBruto) * 100;
-              perdaText = `Ganho: +${pct.toFixed(1).replace(".", ",")}%`;
-              perdaClass = "text-blue-600";
-            } else {
-              const pct = ((pesoBruto - pdpNum) / pesoBruto) * 100;
-              perdaText = `Perda: ${pct.toFixed(1).replace(".", ",")}%`;
-              perdaClass = "text-primary";
-            }
-          }
-          return (
-            <div className="flex items-center gap-2 flex-wrap text-sm">
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">Peso Bruto:</span>
-                <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
-              </div>
-              <span className="text-muted-foreground">|</span>
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">Rendimento (PDP):</span>
-                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) - 50)}>
-                  <Minus className="w-3.5 h-3.5" />
-                </Button>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={pdpValue || ""}
-                    onChange={(e) => {
-                      setPdpValue(e.target.value);
-                    }}
-                    onBlur={() => handleSavePDP(parseInt(pdpValue) || 0)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSavePDP(parseInt(pdpValue) || 0);
-                    }}
-                    className="text-center text-sm font-bold h-8 w-24 pr-7"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">g</span>
-                </div>
-                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || pesoBruto || 0) + 50)}>
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <span className="text-muted-foreground">|</span>
-              <div className="flex items-center gap-1" title="PDP = Peso Depois de Pronto. A % Perda identifica receitas com rendimento muito abaixo do esperado. Ganho indica hidratação na cocção.">
-                <span className="text-muted-foreground">Perda:</span>
-                <span className={`font-medium ${perdaClass}`}>{perdaText}</span>
-              </div>
-            </div>
-          );
-        })()}
-      </Card>
 
       {/* Custos */}
       <Card className="p-4">
