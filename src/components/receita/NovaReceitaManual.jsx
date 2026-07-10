@@ -277,8 +277,14 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["itens-receita"] });
-      if (isDuplicate) toast.warning("Receita salva com nome similar — marcada para revisão");
-      else toast.success("Receita criada!");
+      const isBaseSemPDP = (form.categorias || []).includes("Receitas Base") && (!form.rendimento_total || form.rendimento_total <= 0);
+      if (isDuplicate) {
+        toast.warning("Receita salva com nome similar — marcada para revisão");
+      } else if (isBaseSemPDP) {
+        toast.warning("Receita Base criada sem PDP — preencha o rendimento na ficha");
+      } else {
+        toast.success("Receita criada!");
+      }
       onCreated(receita.id);
     } catch (err) {
       toast.error("Erro ao criar receita: " + (err.message || err));
@@ -290,10 +296,6 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
 
   const handleSave = async () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome da receita"); return; }
-    if (form.categorias?.includes("Receitas Base") && (!form.rendimento_total || form.rendimento_total <= 0)) {
-      toast.error("Receitas marcadas como \"Receitas Base\" precisam ter o rendimento total preenchido.");
-      return;
-    }
     const ingsReais = addedIngs.filter(a => a.tipo !== "grupo");
     if (ingsReais.length === 0) { toast.error("Adicione pelo menos um ingrediente"); return; }
     const zeroQtd = ingsReais.some(a => (a.quantidade_por_porcao || 0) === 0);
