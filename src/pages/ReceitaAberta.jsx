@@ -273,6 +273,46 @@ export default function ReceitaAberta() {
     return result;
   }, [itensFicha]);
 
+  // Build movement blocks: grupo = block header (absorbs all following items until next grupo),
+  // subreceita = marker + children, loose items = single-entry blocks
+  const blocos = useMemo(() => {
+    const items = itensFichaAgrupada;
+    const blocks = [];
+    let i = 0;
+    while (i < items.length) {
+      if (items[i].tipo === "grupo") {
+        const entries = [{ item: items[i], idx: i }];
+        let j = i + 1;
+        while (j < items.length && items[j].tipo !== "grupo") {
+          entries.push({ item: items[j], idx: j });
+          j++;
+        }
+        blocks.push({ entries, startIdx: i });
+        i = j;
+      } else if (items[i].tipo === "subreceita" && !items[i].subreceita_parent_id) {
+        const entries = [{ item: items[i], idx: i }];
+        let j = i + 1;
+        while (j < items.length && items[j].subreceita_parent_id === items[i].id) {
+          entries.push({ item: items[j], idx: j });
+          j++;
+        }
+        blocks.push({ entries, startIdx: i });
+        i = j;
+      } else {
+        blocks.push({ entries: [{ item: items[i], idx: i }], startIdx: i });
+        i++;
+      }
+    }
+    return blocks;
+  }, [itensFichaAgrupada]);
+
+  const findBlocoIdx = (idx) => {
+    for (let b = 0; b < blocos.length; b++) {
+      if (idx >= blocos[b].startIdx && idx < blocos[b].startIdx + blocos[b].entries.length) return b;
+    }
+    return -1;
+  };
+
   const pesoBruto = itensFicha.filter(i => !i.isGrupo).reduce((sum, i) => sum + (i.qtdNova || 0), 0);
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
@@ -467,37 +507,14 @@ export default function ReceitaAberta() {
       return;
     }
 
-    // Marker or regular item: move as a block (marker + its children)
-    const blocks = [];
-    let i = 0;
-    while (i < items.length) {
-      if (items[i].tipo === "subreceita" && !items[i].subreceita_parent_id) {
-        const block = [{ item: items[i], idx: i }];
-        let j = i + 1;
-        while (j < items.length && items[j].subreceita_parent_id === items[i].id) {
-          block.push({ item: items[j], idx: j });
-          j++;
-        }
-        blocks.push({ entries: block, startIdx: i });
-        i = j;
-      } else {
-        blocks.push({ entries: [{ item: items[i], idx: i }], startIdx: i });
-        i++;
-      }
-    }
-
-    let blockIdx = -1;
-    for (let b = 0; b < blocks.length; b++) {
-      if (idx >= blocks[b].startIdx && idx < blocks[b].startIdx + blocks[b].entries.length) {
-        blockIdx = b; break;
-      }
-    }
+    // Use pre-computed blocos (grupo absorbs followers, subreceita absorbs children)
+    const blockIdx = findBlocoIdx(idx);
     if (blockIdx === -1) return;
     const targetBlockIdx = blockIdx + dir;
-    if (targetBlockIdx < 0 || targetBlockIdx >= blocks.length) return;
+    if (targetBlockIdx < 0 || targetBlockIdx >= blocos.length) return;
 
-    const blockA = blocks[blockIdx];
-    const blockB = blocks[targetBlockIdx];
+    const blockA = blocos[blockIdx];
+    const blockB = blocos[targetBlockIdx];
     // dir=-1 (up): blockA goes first (lower ordem), blockB shifts down
     // dir=+1 (down): blockB goes first (lower ordem), blockA shifts down
     const firstBlock = dir < 0 ? blockA : blockB;
@@ -923,12 +940,16 @@ REGRAS:
                       ) : (
                         <>
                           <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
-                            <ArrowUp className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
-                            <ArrowDown className="w-3 h-3" />
-                          </Button>
+                          {(() => { const bIdx = findBlocoIdx(idx); return bIdx > 0; })() && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover bloco para cima">
+                              <ArrowUp className="w-3 h-3" />
+                            </Button>
+                          )}
+                          {(() => { const bIdx = findBlocoIdx(idx); return bIdx < blocos.length - 1; })() && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover bloco para baixo">
+                              <ArrowDown className="w-3 h-3" />
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
                             <Pencil className="w-3 h-3" />
                           </Button>
