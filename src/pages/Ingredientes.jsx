@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -7,29 +8,25 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid } from "lucide-react";
+import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtualizacoesDialog";
+import ExcluirIngredienteDialog from "@/components/ingrediente/ExcluirIngredienteDialog";
+import { exportarIngredientesPDF } from "@/lib/exportarIngredientesPDF";
 import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
 
 const GRUPOS_INGREDIENTES = [
-  // Reordenado para intercalar famílias de cor — sem cores similares adjacentes
-  { nome: "Carnes",                   icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["CARNES"] },
+  { nome: "Carnes e Ovos",            icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["Carnes e Ovos"] },
   { nome: "Peixes e Frutos do Mar",   icone: "🐟", cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1", match: ["Peixes e Frutos do Mar"] },
   { nome: "Laticínios",               icone: "🥛", cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C", match: ["LATICÍNIOS"] },
-  { nome: "Ovos",                     icone: "🥚", cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100", match: ["Ovos"] },
-  { nome: "Cereais & Secos",          icone: "🌾", cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723", match: ["CEREAIS & SECOS"] },
-  { nome: "Grãos e Sementes",         icone: "🫘", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20", match: ["GRÃOS E SEMENTES"] },
-  { nome: "Legumes e Verduras",       icone: "🥕", cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C", match: ["Legumes e Verduras"] },
-  { nome: "Doces",                    icone: "🍬", cor: "#FCE4EC", corTexto: "#AD1457", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["DOCES"] },
+  { nome: "Panificação e Cereais",    icone: "🌾", cor: "#EFEBE9", corTexto: "#4E342E", corPill: "#D7CCC8", corPillTexto: "#3E2723", match: ["Panificação e Cereais"] },
+  { nome: "Verduras e Hortaliças",    icone: "🥦", cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E", match: ["Verduras e Hortaliças"] },
+  { nome: "Açúcares e Doces",         icone: "🍬", cor: "#FCE4EC", corTexto: "#AD1457", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["Açúcares e Doces"] },
   { nome: "Óleos e Gorduras",         icone: "🫒", cor: "#FFFDE7", corTexto: "#F9A825", corPill: "#FFF176", corPillTexto: "#F57F17", match: ["Óleos e Gorduras"] },
-  { nome: "Refrigerados",             icone: "❄️", cor: "#E1F5FE", corTexto: "#0277BD", corPill: "#B3E5FC", corPillTexto: "#01579B", match: ["REFRIGERADOS"] },
-  { nome: "Vegetais",                 icone: "🥦", cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E", match: ["VEGETAIS"] },
   { nome: "Temperos",                 icone: "🌶️", cor: "#FBE9E7", corTexto: "#BF360C", corPill: "#FFCCBC", corPillTexto: "#A3150B", match: ["TEMPEROS"] },
-  { nome: "Temperos e Ervas",         icone: "🌿", cor: "#E0F2F1", corTexto: "#00695C", corPill: "#B2DFDB", corPillTexto: "#004D40", match: ["Temperos e Ervas"] },
   { nome: "Frutas",                   icone: "🍎", cor: "#FCE4EC", corTexto: "#880E4F", corPill: "#F8BBD0", corPillTexto: "#880E4F", match: ["Frutas"] },
   { nome: "Conservas e Enlatados",    icone: "🥫", cor: "#FFF9C4", corTexto: "#F57F17", corPill: "#FFF176", corPillTexto: "#E65100", match: ["ENLATADOS", "Conservas e Enlatados"] },
   { nome: "Receitas Básicas",         icone: "🍳", cor: "#F9FBE7", corTexto: "#827717", corPill: "#F0F4C3", corPillTexto: "#33691E", match: ["Receitas Básicas"] },
@@ -57,6 +54,9 @@ export default function Ingredientes() {
   const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
   const [showHistorico, setShowHistorico] = useState(false);
   const [buscaInterna, setBuscaInterna] = useState("");
+  const [autoUpdateAtiva, setAutoUpdateAtiva] = useState(false);
+  const [togglingAuto, setTogglingAuto] = useState(false);
+  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const { data: ingredientes = [], isLoading } = useQuery({
@@ -72,6 +72,18 @@ export default function Ingredientes() {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const { data: autoUpdateStatus } = useQuery({
+    queryKey: ["auto-update-status"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("gerenciarAtualizacaoAutomatica", { acao: "status" });
+      return res.data;
+    },
+  });
+
+  useEffect(() => {
+    if (autoUpdateStatus) setAutoUpdateAtiva(autoUpdateStatus.ativa);
+  }, [autoUpdateStatus]);
 
   const { data: historicoLogs = [] } = useQuery({
     queryKey: ["historico-log-precos"],
@@ -151,6 +163,19 @@ export default function Ingredientes() {
     },
   });
 
+  const handleToggleAutoUpdate = async () => {
+    setTogglingAuto(true);
+    try {
+      const res = await base44.functions.invoke("gerenciarAtualizacaoAutomatica", { acao: "toggle" });
+      setAutoUpdateAtiva(res.data?.ativa || false);
+      toast.success(res.data?.ativa ? "Atualização automática ATIVADA" : "Atualização automática PAUSADA");
+    } catch (err) {
+      toast.error("Erro ao alterar: " + (err.message || ""));
+    } finally {
+      setTogglingAuto(false);
+    }
+  };
+
   // Helpers for price freshness
   const diasDesdeAtualizacao = (ing) => {
     if (!ing.preco_atualizado_em) return null;
@@ -227,9 +252,15 @@ export default function Ingredientes() {
           <h1 className="font-display text-2xl font-bold">Ingredientes e Preços <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalIngredientes}</Badge></h1>
           <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={() => setShowAtualizarPrecos(true)}>
             <RefreshCw className="w-4 h-4 mr-1" /> Atualizar preços
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => exportarIngredientesPDF(ingredientes)}>
+            <FileText className="w-4 h-4 mr-1" /> PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/lista-compras")}>
+            <ShoppingCart className="w-4 h-4 mr-1" /> Reposição
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
@@ -241,24 +272,38 @@ export default function Ingredientes() {
       </div>
 
       {/* Status da atualização automática */}
-      <button
-        onClick={() => setShowHistorico(true)}
-        className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-      >
-        <History className="w-3 h-3" />
-        {ultimoLog ? (
-          <>
-            Atualização automática: toda segunda às 3h · Última execução:{" "}
-            {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
-            {" "}às{" "}
-            {new Date(ultimoLog.data_execucao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-            {" · "}{ultimoLog.total_atualizado} ingredientes atualizados
-          </>
-        ) : (
-          "Atualização automática: toda segunda às 3h · Ainda não executada"
-        )}
-        <span className="underline ml-0.5">Ver histórico</span>
-      </button>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <button
+          onClick={() => setShowHistorico(true)}
+          className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+        >
+          <History className="w-3 h-3" />
+          {ultimoLog ? (
+            <>
+              Última execução:{" "}
+              {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
+              {" "}às{" "}
+              {new Date(ultimoLog.data_execucao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+              {" · "}{ultimoLog.total_atualizado} ingredientes atualizados
+            </>
+          ) : (
+            "Atualização automática: toda segunda às 3h · Ainda não executada"
+          )}
+          <span className="underline ml-0.5">Ver histórico</span>
+        </button>
+        <button
+          onClick={handleToggleAutoUpdate}
+          disabled={togglingAuto}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+            autoUpdateAtiva
+              ? "bg-green-100 text-green-700 hover:bg-green-200"
+              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+          }`}
+        >
+          <Power className="w-3.5 h-3.5" />
+          {autoUpdateAtiva ? "ATIVA" : "PAUSADA"}
+        </button>
+      </div>
 
       {/* Filters */}
       <div className="flex gap-2">
@@ -384,7 +429,7 @@ export default function Ingredientes() {
             diasDesdeAtualizacao={diasDesdeAtualizacao}
             formatIngredientPrice={formatIngredientPrice}
             favoritarMut={favoritarMut}
-            delMut={delMut}
+            onDeleteComplete={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
             setEditItem={setEditItem}
             setShowForm={setShowForm}
           />
@@ -450,7 +495,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             <Select value={form.categoria || "A Revisar"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["CARNES", "VEGETAIS", "TEMPEROS", "LATICÍNIOS", "CEREAIS & SECOS", "ENLATADOS", "REFRIGERADOS", "GRÃOS E SEMENTES", "DOCES", "DIVERSOS", "A Revisar", "Receitas Básicas", "Conservas e Enlatados", "Peixes e Frutos do Mar", "Legumes e Verduras", "Frutas", "Temperos e Ervas", "Óleos e Gorduras", "Ovos"].map((c) => (
+                {["Carnes e Ovos", "Verduras e Hortaliças", "TEMPEROS", "LATICÍNIOS", "Panificação e Cereais", "ENLATADOS", "Açúcares e Doces", "DIVERSOS", "A Revisar", "Receitas Básicas", "Conservas e Enlatados", "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"].map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>

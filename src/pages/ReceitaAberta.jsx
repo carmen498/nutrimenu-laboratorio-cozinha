@@ -56,6 +56,8 @@ export default function ReceitaAberta() {
   const [pdpValue, setPdpValue] = useState("");
   const [editingPC, setEditingPC] = useState(false);
   const [pcValue, setPcValue] = useState("");
+  const [editingPreparo, setEditingPreparo] = useState(false);
+  const [preparoDraft, setPreparoDraft] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -151,6 +153,17 @@ export default function ReceitaAberta() {
     const val = Math.max(1, Math.round(newPC));
     setPcValue(String(val));
     handleSavePC(val);
+  };
+
+  const handleSavePreparo = async () => {
+    try {
+      await base44.entities.Receita.update(id, { modo_preparo: preparoDraft });
+      qc.invalidateQueries({ queryKey: ["receita", id] });
+      setEditingPreparo(false);
+      toast.success("Modo de preparo atualizado!");
+    } catch (err) {
+      toast.error("Erro ao salvar: " + (err.message || ""));
+    }
   };
 
   const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
@@ -840,15 +853,7 @@ REGRAS:
         </div>
       </Card>
 
-      {/* Alerta de escalonamento extremo com fixos */}
-      {showAlertaFixos && (
-        <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-sm text-amber-800">
-            Esta receita tem <strong>{countFixos} ingredientes marcados como 'a gosto' (📌)</strong>. Verifique se as quantidades fazem sentido para <strong>{porcoes} porções</strong>.
-          </p>
-        </div>
-      )}
+
 
       {/* Ingredients table */}
       <div>
@@ -1263,9 +1268,7 @@ REGRAS:
                     </button>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
-                      {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
-                    </Button>
+
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
                       <Pencil className="w-3 h-3" />
                     </Button>
@@ -1279,11 +1282,7 @@ REGRAS:
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
-                  {item.isFixo && fator !== 1 && (
-                    <div className="col-span-12 text-right">
-                      <span className="text-[10px] text-muted-foreground">📌 Ingrediente 'a gosto' — quantidade fixa, não escala.</span>
-                    </div>
-                  )}
+
                 </div>
                 {/* Mobile */}
                 <div className="md:hidden">
@@ -1372,9 +1371,7 @@ REGRAS:
                       </Button>
                       </div>
                       </div>
-                      {item.isFixo && fator !== 1 && (
-                      <div className="text-[10px] text-muted-foreground text-right">📌 Ingrediente 'a gosto' — não escala.</div>
-                  )}
+
                   <div className="flex justify-between mt-2 text-xs items-center">
                     <span className="text-muted-foreground">Quantidade: </span>
                     {editingQtdId === item.id ? (
@@ -1526,9 +1523,29 @@ REGRAS:
       {/* Mode of preparation */}
       {passos.length > 0 && (
         <div>
-          <h2 className="font-display text-lg font-bold mb-2">Modo de Preparo</h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-lg font-bold">Modo de Preparo</h2>
+            {!editingPreparo && (
+              <Button variant="ghost" size="sm" onClick={() => { setPreparoDraft(receita.modo_preparo || ""); setEditingPreparo(true); }}>
+                <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+              </Button>
+            )}
+          </div>
           <Card className="p-4">
-            {passos.length === 1 ? (
+            {editingPreparo ? (
+              <div className="space-y-2">
+                <textarea
+                  className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring"
+                  value={preparoDraft}
+                  onChange={(e) => setPreparoDraft(e.target.value)}
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" size="sm" onClick={() => setEditingPreparo(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={handleSavePreparo}>Salvar</Button>
+                </div>
+              </div>
+            ) : passos.length === 1 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
             ) : (
               <ol className="space-y-2 list-decimal list-inside">
@@ -1597,7 +1614,7 @@ REGRAS:
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => navigate(`/lista-compras?receita=${id}&porcoes=${porcoes}`)}>
-          <ShoppingCart className="w-4 h-4 mr-1" /> Lista de Compras
+          <ShoppingCart className="w-4 h-4 mr-1" /> Gerar lista de compras
         </Button>
         <Button variant="outline" onClick={() => navigate(`/exportar/${id}?porcoes=${porcoes || 1}&qtd=${quantidadeTotal || receita?.rendimento_total || 0}`)}>
           <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF

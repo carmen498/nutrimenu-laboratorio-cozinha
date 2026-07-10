@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const CATS_VOLATEIS = [
-  "CARNES", "LATICÍNIOS", "Legumes e Verduras", "Frutas",
-  "Óleos e Gorduras", "Peixes e Frutos do Mar", "VEGETAIS"
+  "Carnes e Ovos", "LATICÍNIOS", "Frutas",
+  "Óleos e Gorduras", "Peixes e Frutos do Mar", "Verduras e Hortaliças"
 ];
 
 const BATCH_SIZE = 25;
@@ -64,6 +64,12 @@ Deno.serve(async (req) => {
 
   try {
     const base44 = createClientFromRequest(req);
+
+    // Check if auto-update is enabled
+    const configs = await base44.asServiceRole.entities.AppConfig.filter({ chave: 'auto_update_prices' });
+    if (configs[0] && configs[0].valor === 'false') {
+      return Response.json({ message: "Atualização automática pausada pelo usuário." });
+    }
 
     // Buscar todos os ingredientes das categorias voláteis com preço cadastrado
     const allIngs = await base44.asServiceRole.entities.Ingrediente.list("-nome", 1000);

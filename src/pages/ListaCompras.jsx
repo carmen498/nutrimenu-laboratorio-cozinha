@@ -13,15 +13,13 @@ import { ShoppingCart, Plus, Trash2, FileText, Share2, ChefHat } from "lucide-re
 import { toast } from "sonner";
 
 const CATEGORIAS_COMPRA = {
-  "CARNES": "Carnes",
-  "VEGETAIS": "Hortifruti",
+  "Carnes e Ovos": "Carnes",
+  "Verduras e Hortaliças": "Hortifruti",
   "TEMPEROS": "Temperos",
   "LATICÍNIOS": "Laticínios",
-  "CEREAIS & SECOS": "Mercearia",
+  "Panificação e Cereais": "Mercearia",
   "ENLATADOS": "Mercearia",
-  "REFRIGERADOS": "Refrigerados",
-  "GRÃOS E SEMENTES": "Mercearia",
-  "DOCES": "Mercearia",
+  "Açúcares e Doces": "Mercearia",
   "DIVERSOS": "Diversos",
 };
 
