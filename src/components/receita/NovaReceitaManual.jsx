@@ -254,7 +254,6 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             subreceita_nome: ing.subreceita_nome,
             quantidade_por_porcao: ing.quantidade_por_porcao,
             ordem: i * 10,
-            proporcional: true,
           });
           currentParentId = marker.id;
         } else {
@@ -269,7 +268,6 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             pre_preparo: ing.pre_preparo || "",
             quantidade_por_porcao: ing.quantidade_por_porcao,
             ordem: i * 10,
-            proporcional: ing.proporcional !== false,
             subreceita_parent_id: isChild ? currentParentId : "",
           });
           if (!isChild) currentParentId = "";

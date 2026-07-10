@@ -18,8 +18,7 @@ export default function EditItemDialog({ open, onClose, item, porcoesBase, fator
   if (!item) return null;
 
   const isSubreceita = item.tipo === "subreceita";
-  const isFixo = item.proporcional === false;
-  const baseTotal = isFixo ? (porcoesBase || 1) : (porcoesBase || 1) * (fator || 1);
+  const baseTotal = (porcoesBase || 1) * (fator || 1);
   const numPorcoes = Math.round((porcoesBase || 1) * (fator || 1));
 
   const handleSave = () => {

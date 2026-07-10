@@ -238,14 +238,13 @@ export default function ReceitaAberta() {
         }
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
-        const isFixo = item.proporcional === false;
-        const qtdNova = isFixo ? qtdOriginal : qtdOriginal * fator;
+        const qtdNova = qtdOriginal * fator;
         const fc = ing?.fator_correcao || 1;
         const qtdComprar = qtdNova * fc;
         const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
         const isNA = !!(item.ingrediente_nome && item.ingrediente_nome.toUpperCase() === "N/A");
         const isChildOfSubreceita = !!item.subreceita_parent_id;
-        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA, isFixo, isChildOfSubreceita };
+        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA, isChildOfSubreceita };
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
@@ -323,15 +322,6 @@ export default function ReceitaAberta() {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingItem(null);
       toast.success("Item atualizado");
-    },
-  });
-
-  const toggleProporcionalMut = useMutation({
-    mutationFn: async ({ itemId, proporcional }) => {
-      await base44.entities.IngredienteReceita.update(itemId, { proporcional });
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     },
   });
 
@@ -634,8 +624,6 @@ REGRAS:
   };
 
   const temFatorCorrecao = itensFicha.some(i => (i.ing?.fator_correcao || 1) !== 1);
-  const countFixos = itensFicha.filter(i => i.isFixo).length;
-  const showAlertaFixos = (fator > 3 || fator < 0.5) && countFixos > 0;
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatCustoItem = (item) => {
@@ -1354,9 +1342,6 @@ REGRAS:
                   )}
                   <div className="flex items-start justify-between">
                     <div className="flex gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleProporcionalMut.mutate({ itemId: item.id, proporcional: item.proporcional === false })} title={item.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}>
-                        {item.proporcional !== false ? <span className="text-green-600 text-xs">🔗</span> : <span className="text-gray-400 text-xs">📌</span>}
-                      </Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
                         <Pencil className="w-3 h-3" />
                       </Button>
