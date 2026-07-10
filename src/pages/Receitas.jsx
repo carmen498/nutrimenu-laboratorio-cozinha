@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, Link2, LayoutGrid, ChevronDown } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -44,9 +44,6 @@ export default function Receitas() {
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [showNew, setShowNew] = useState(null);
   const [showImportCsv, setShowImportCsv] = useState(false);
-  const [showClassificarLote, setShowClassificarLote] = useState(false);
-  const [classificarResult, setClassificarResult] = useState(null);
-  const [classifying, setClassifying] = useState(false);
   const [showRevisar, setShowRevisar] = useState(false);
   const [showFavoritas, setShowFavoritas] = useState(false);
   const [tagFilterIds, setTagFilterIds] = useState([]);
@@ -118,21 +115,6 @@ export default function Receitas() {
     },
   });
 
-  const handleClassificarLote = async () => {
-    setClassifying(true);
-    try {
-      const res = await base44.functions.invoke("classificarProporcionalidadeLote", {});
-      setClassificarResult(res.data);
-      setShowClassificarLote(true);
-      toast.success(`${res.data.alterados} ingredientes reclassificados.`);
-      qc.invalidateQueries({ queryKey: ["receitas"] });
-    } catch (err) {
-      toast.error("Erro ao classificar: " + err.message);
-    } finally {
-      setClassifying(false);
-    }
-  };
-
   const favoritarMut = useMutation({
     mutationFn: async ({ id, favorita }) => {
       await base44.entities.Receita.update(id, { favorita });
@@ -186,9 +168,6 @@ export default function Receitas() {
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleClassificarLote} disabled={classifying}>
-            <Link2 className="w-4 h-4 mr-1" /> {classifying ? "..." : "Estrutural / A gosto"}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -500,44 +479,6 @@ export default function Receitas() {
         <ImportReceitasCsvDialog open={true} onClose={() => setShowImportCsv(false)} />
       )}
 
-      {/* Classificação proporcional — relatório */}
-      {showClassificarLote && classificarResult && (
-        <Dialog open={true} onOpenChange={() => setShowClassificarLote(false)}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle className="font-display">Classificação Estrutural / A gosto</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <Card className="p-3 text-center bg-green-50 border-green-200">
-                  <span className="text-2xl">🔗</span>
-                  <p className="text-2xl font-bold text-green-700">{classificarResult.proporcional}</p>
-                  <p className="text-xs text-green-600">Estruturais</p>
-                </Card>
-                <Card className="p-3 text-center bg-gray-50 border-gray-200">
-                  <span className="text-2xl">📌</span>
-                  <p className="text-2xl font-bold text-gray-700">{classificarResult.fixo}</p>
-                  <p className="text-xs text-gray-500">A gosto</p>
-                </Card>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">
-                  <strong>{classificarResult.total}</strong> ingredientes processados
-                  {classificarResult.alterados > 0 && (
-                    <> — <strong>{classificarResult.alterados}</strong> reclassificados</>
-                  )}
-                </p>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Ajustes manuais podem ser feitos em cada receita pelo toggle Estrutural / A gosto.
-              </p>
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={() => setShowClassificarLote(false)}>Fechar</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

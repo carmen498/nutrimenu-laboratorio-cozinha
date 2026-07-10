@@ -154,10 +154,7 @@ IMPORTANTE:
   5. Despejar a massa em forma untada e polvilhada.
   6. Assar a 180 °C por 20 minutos.
   7. Retirar do forno e aguardar esfriar para cortar.
-- MANTENHA a ordem exata dos ingredientes como aparecem no texto original — NÃO reordene com base no modo de preparo.
-- CLASSIFIQUE cada ingrediente como estrutural (true=escala) ou 'a gosto' (false=independente):
-  * ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata quando ingrediente principal.
-  * A GOSTO (false): temperos e condimentos (sal, pimenta, colorau, páprica, orégano, ervas, alho, cebola quando tempero), finalizadores (azeite para finalizar, flor de sal, ervas frescas para decorar), ingredientes opcionais/complementares (creme de leite quando complemento, queijo para gratinar, azeitonas, alcaparras), líquidos de ajuste (água para ajustar consistência, caldo para deglaçar).`,
+- MANTENHA a ordem exata dos ingredientes como aparecem no texto original — NÃO reordene com base no modo de preparo.`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -176,8 +173,7 @@ IMPORTANTE:
                   eh_receita_basica: { type: "boolean", description: "True se for uma receita básica, não ingrediente" },
                   pre_preparo: { type: "string" },
                   quantidade_g: { type: "number", description: "Quantidade em gramas ou ml" },
-                  medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" },
-                  proporcional: { type: "boolean", description: "Classificação: true=estrutural (escala), false='a gosto' (independente). Ver regras no prompt." }
+                  medida_original: { type: "string", description: "Medida como aparece no texto (ex: 2 xícaras)" }
                 }
               }
             },
@@ -497,7 +493,6 @@ IMPORTANTE:
           quantidade_por_porcao: qtdPorPorcao,
           medida_caseira: ing.medida_original || "",
           ordem: i,
-          proporcional: ing.proporcional !== false,
         });
       }
 
@@ -540,7 +535,7 @@ IMPORTANTE:
     try {
       const ingsList = (p.ingredientes || []).filter(i => i.tipo !== "grupo");
       const ingsPrompt = ingsList.map((ing, j) =>
-        `${j}. ${ing.nome_banco || ing.nome_original} (${ing.quantidade_g || 0}g, ${ing.proporcional !== false ? "estrutural" : "a gosto"})`
+        `${j}. ${ing.nome_banco || ing.nome_original} (${ing.quantidade_g || 0}g)`
       ).join("\n");
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -656,7 +651,6 @@ Para cada variação, retorne:
             quantidade_por_porcao: (ing.quantidade_g || 0) / (p.porcoes_base || 1),
             medida_caseira: ing.medida_original || "",
             ordem: i,
-            proporcional: ing.proporcional !== false,
             tipo: "ingrediente",
           });
         }
@@ -806,7 +800,6 @@ Para cada variação, retorne:
               <div className="flex items-center justify-between mb-2">
                 <Label>Ingredientes identificados</Label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground">🔗 Estrutural = escala · 📌 A gosto = independente</span>
                   {temZero && (
                     <span className="text-xs text-amber-600 flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" /> Preencha as quantidades faltantes
@@ -892,13 +885,6 @@ Para cada variação, retorne:
                             {isRecBasica ? <ChefHat className="w-3.5 h-3.5 text-green-600 shrink-0" /> : found ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : hasSuggestion ? <AlertCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" /> : <Plus className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
                             <span className="font-medium truncate">{ing.nome_banco || ing.nome_original}</span>
                             {isRecBasica && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1 bg-green-100 text-green-700">Receita</Badge>}
-                            <button
-                              className="text-xs px-1 py-0 rounded hover:bg-accent shrink-0 ml-auto"
-                              onClick={() => updateIngrediente(idx, "proporcional", ing.proporcional !== false ? false : true)}
-                              title={ing.proporcional !== false ? "Ingrediente estrutural — escala com a receita. Clique para marcar como 'a gosto'." : "Ingrediente a gosto — quantidade fixa, não escala. Clique para marcar como estrutural."}
-                            >
-                              {ing.proporcional !== false ? <span className="text-green-600">🔗</span> : <span className="text-gray-400">📌</span>}
-                            </button>
                           </div>
                           {isAmbiguo && (
                             <div className="ml-5 mt-1.5 p-2 bg-amber-50 rounded border border-amber-300">

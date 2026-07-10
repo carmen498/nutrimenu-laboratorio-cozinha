@@ -35,7 +35,6 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao) {
         subreceita_nome: subItem.subreceita_nome,
         quantidade_por_porcao: propQtd,
         pre_preparo: subItem.pre_preparo || "",
-        proporcional: subItem.proporcional !== false,
       });
     } else {
       children.push({
@@ -45,7 +44,6 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao) {
         quantidade_por_porcao: propQtd,
         pre_preparo: subItem.pre_preparo || "",
         medida_caseira: subItem.medida_caseira || "",
-        proporcional: subItem.proporcional !== false,
       });
     }
   }

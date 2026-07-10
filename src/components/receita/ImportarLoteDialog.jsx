@@ -61,10 +61,6 @@ REGRAS DE EXTRAÇÃO:
 
 9. INGREDIENTES AMBÍGUOS ("X ou Y"): se um ingrediente estiver escrito como "X ou Y" (ex: "manteiga ou margarina"), NÃO escolha um — transcreva o nome COMPLETO "X ou Y" como nome. O sistema detectará e pedirá que o usuário escolha.
 
-10. CLASSIFICAÇÃO ESTRUTURAL / A GOSTO (proporcional: true/false):
-   - ESTRUTURAL (true): ingredientes estruturais de massa/base (farinha, ovos, açúcar, manteiga, margarina, fermento, bicarbonato, amido, leite, água quando base, óleo quando base), proteínas principais (carne, frango, peixe, camarão, bacalhau), base de molhos estruturais (bechamel, caldo base, extrato de tomate quando base), arroz, macarrão, batata (quando ingrediente principal).
-   - A GOSTO (false): temperos e condimentos (sal, pimenta, colorau, páprica, orégano, ervas, alho, cebola quando tempero), finalizadores (azeite para finalizar, flor de sal, ervas frescas para decorar), ingredientes opcionais/complementares (creme de leite quando complemento, queijo para gratinar, azeitonas, alcaparras), líquidos de ajuste (água para ajustar consistência, caldo para deglaçar).
-
 CONTEÚDO:
 `;
 
@@ -206,8 +202,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
                   nome: { type: "string" },
                   pre_preparo: { type: "string" },
                   quantidade_g: { type: "number" },
-                  tipo: { type: "string", enum: ["ingrediente", "grupo"] },
-                  proporcional: { type: "boolean", description: "Classificação: true=estrutural (escala), false='a gosto' (independente)" }
+                  tipo: { type: "string", enum: ["ingrediente", "grupo"] }
                 }
               }
             }
@@ -542,7 +537,6 @@ ${RECIPE_EXTRACTION_PROMPT}`,
             quantidade_por_porcao: ing.quantidade_g || 0,
             tipo: "ingrediente",
             ordem: ordem++,
-            proporcional: ing.proporcional !== false,
           });
         }
       }
