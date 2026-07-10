@@ -911,7 +911,7 @@ REGRAS:
               // Grupo header
               if (item.isGrupo) {
                 return (
-                  <Card key={item.id} className="p-2 bg-primary/5 border-primary/20 border-dashed">
+                  <Card key={item.id} className="p-2 bg-primary/10 border-primary/30 border-dashed">
                     <div className="flex items-center gap-2">
                       {editingGrupoId === item.id ? (
                         <>
@@ -941,13 +941,13 @@ REGRAS:
                         <>
                           <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
                           {(() => { const bIdx = findBlocoIdx(idx); return bIdx > 0; })() && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover bloco para cima">
-                              <ArrowUp className="w-3 h-3" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover bloco (divisor + ingredientes)">
+                              <ArrowUp className="w-4 h-4" />
                             </Button>
                           )}
                           {(() => { const bIdx = findBlocoIdx(idx); return bIdx < blocos.length - 1; })() && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover bloco para baixo">
-                              <ArrowDown className="w-3 h-3" />
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover bloco (divisor + ingredientes)">
+                              <ArrowDown className="w-4 h-4" />
                             </Button>
                           )}
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
