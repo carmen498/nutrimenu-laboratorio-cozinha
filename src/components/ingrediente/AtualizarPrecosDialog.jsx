@@ -23,6 +23,7 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
   const [atualizando, setAtualizando] = useState(false);
   const [progresso, setProgresso] = useState({ atual: 0, total: 0, nomeAtual: "" });
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
+  const [pausado, setPausado] = useState(false);
   const pausadoRef = useRef(false);
   const timerRef = useRef(null);
 
@@ -56,6 +57,7 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
       });
       setSelectedCats(init);
       pausadoRef.current = false;
+      setPausado(false);
     }
   }, [open, catList]);
 
@@ -185,9 +187,11 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
   };
 
   const handlePause = () => {
-    pausadoRef.current = !pausadoRef.current;
+    const novoEstado = !pausadoRef.current;
+    pausadoRef.current = novoEstado;
+    setPausado(novoEstado);
     if (timerRef.current) clearInterval(timerRef.current);
-    if (!pausadoRef.current) {
+    if (!novoEstado) {
       const inicio = Date.now() - tempoDecorrido * 1000;
       timerRef.current = setInterval(() => {
         setTempoDecorrido(Math.floor((Date.now() - inicio) / 1000));
@@ -459,7 +463,7 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
 
             <div className="flex justify-center">
               <Button variant="outline" size="sm" onClick={handlePause}>
-                {pausadoRef.current ? (
+                {pausado ? (
                   <>
                     <Play className="w-4 h-4 mr-1" /> Retomar
                   </>
