@@ -15,7 +15,6 @@
         "DIVERSOS",
         "A Revisar",
         "Receitas B\u00e1sicas",
-        "Conservas e Enlatados",
         "Peixes e Frutos do Mar",
         "Frutas",
         "\u00d3leos e Gorduras"
@@ -81,7 +80,7 @@
     },
     "variacao_percentual": {
       "type": "number",
-      "description": "Varia\u00e7\u00e3oo % em rela\u00e7\u00e3oo ao pre\u00e7o anterior"
+      "description": "Varia\u00e7\u00e3o % em rela\u00e7\u00e3o ao pre\u00e7o anterior"
     },
     "estado_usuario": {
       "type": "string",
