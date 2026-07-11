@@ -58,6 +58,9 @@ export default function ReceitaAberta() {
   const [pcValue, setPcValue] = useState("");
   const [editingPreparo, setEditingPreparo] = useState(false);
   const [preparoDraft, setPreparoDraft] = useState("");
+  const [editingDescritivo, setEditingDescritivo] = useState(false);
+  const [descritivoDraft, setDescritivoDraft] = useState("");
+  const [mostrarFC, setMostrarFC] = useState(false);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -112,6 +115,26 @@ export default function ReceitaAberta() {
       setPdpValue(String(receita.rendimento_total));
     }
   }, [receita]);
+
+  useEffect(() => {
+    if (receita) setMostrarFC(!!receita.mostrar_fc);
+  }, [receita]);
+
+  const handleToggleFC = async (val) => {
+    setMostrarFC(val);
+    await base44.entities.Receita.update(id, { mostrar_fc: val });
+  };
+
+  const handleSaveDescritivo = async () => {
+    try {
+      await base44.entities.Receita.update(id, { descritivo_menu: descritivoDraft });
+      qc.invalidateQueries({ queryKey: ["receita", id] });
+      setEditingDescritivo(false);
+      toast.success("Descritivo atualizado!");
+    } catch (err) {
+      toast.error("Erro ao salvar: " + (err.message || ""));
+    }
+  };
 
   const handleSavePDP = async (val) => {
     if (!isNaN(val) && val > 0) {
@@ -640,7 +663,7 @@ REGRAS:
     }
   };
 
-  const temFatorCorrecao = itensFicha.some(i => (i.ing?.fator_correcao || 1) !== 1);
+  // FC column visibility controlled by mostrarFC toggle
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatCustoItem = (item) => {
@@ -867,15 +890,19 @@ REGRAS:
           <div className="flex gap-1 flex-wrap">
             <Button
               size="sm"
-              variant={temFatorCorrecao ? "default" : "outline"}
-              className={temFatorCorrecao ? "bg-amber-500 hover:bg-amber-600 border-amber-500" : ""}
+              variant={mostrarFC ? "default" : "outline"}
+              className={mostrarFC ? "bg-amber-500 hover:bg-amber-600 border-amber-500" : ""}
               onClick={handleOrderByPrep}
               disabled={orderingByPrep || !receita?.modo_preparo}
-              title={temFatorCorrecao ? "Esta receita tem ingredientes com Fator de Correção aplicado" : "Ordenar ingredientes conforme o modo de preparo"}
+              title={mostrarFC ? "Esta receita tem ingredientes com Fator de Correção aplicado" : "Ordenar ingredientes conforme o modo de preparo"}
             >
               {orderingByPrep ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowUpDown className="w-4 h-4 mr-1" />}
               Ordenar por preparo
             </Button>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
+              <Switch checked={mostrarFC} onCheckedChange={handleToggleFC} className="scale-90" />
+              <span className="text-xs text-muted-foreground font-medium">Aplicar FC</span>
+            </div>
             <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}>
               <Plus className="w-4 h-4 mr-1" /> Sub-título
             </Button>
@@ -898,9 +925,9 @@ REGRAS:
           <div className="space-y-2">
             {/* Header */}
             <div className="hidden md:grid grid-cols-12 gap-2 px-3 text-xs text-muted-foreground font-medium">
-              <div className={temFatorCorrecao ? "col-span-3" : "col-span-3"}>Ingrediente</div>
-              <div className={temFatorCorrecao ? "col-span-2 text-center" : "col-span-3 text-center"}>Quantidade</div>
-              {temFatorCorrecao && <div className="col-span-2 text-center">Comprar</div>}
+              <div className={mostrarFC ? "col-span-3" : "col-span-3"}>Ingrediente</div>
+              <div className={mostrarFC ? "col-span-2 text-center" : "col-span-3 text-center"}>Quantidade</div>
+              {mostrarFC && <div className="col-span-2 text-center">Comprar</div>}
               <div className="col-span-2 text-right">Custo</div>
               <div className="col-span-3"></div>
             </div>
@@ -1028,7 +1055,7 @@ REGRAS:
                           </div>
                         </div>
                       </div>
-                      <div className={temFatorCorrecao ? "col-span-2" : "col-span-3"}>
+                      <div className={mostrarFC ? "col-span-2" : "col-span-3"}>
                         {editingQtdId === item.id ? (
                           <div className="flex items-center gap-1 justify-center">
                             <Input
@@ -1062,7 +1089,7 @@ REGRAS:
                           </button>
                         )}
                       </div>
-                      {temFatorCorrecao && <div className="col-span-2"></div>}
+                      {mostrarFC && <div className="col-span-2"></div>}
                       <div className="col-span-2 text-right">
                         <span className="text-sm text-muted-foreground">—</span>
                       </div>
@@ -1224,7 +1251,7 @@ REGRAS:
                       </>
                     )}
                   </div>
-                  <div className={`${temFatorCorrecao ? "col-span-2" : "col-span-3"} text-center`}>
+                  <div className={`${mostrarFC ? "col-span-2" : "col-span-3"} text-center`}>
                     {editingQtdId === item.id ? (
                       <div className="flex items-center gap-1 justify-center">
                         <Input
@@ -1263,7 +1290,7 @@ REGRAS:
                       </div>
                     )}
                   </div>
-                  {temFatorCorrecao && (
+                  {mostrarFC && (
                     <div className="col-span-2 text-center text-sm text-muted-foreground">
                       {formatWeight(item.qtdComprar, receita.unidade_base)}
                     </div>
@@ -1417,7 +1444,7 @@ REGRAS:
                   )}
                   <div className="flex justify-between mt-1 text-xs">
                     <div>
-                      {temFatorCorrecao && <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>}
+                      {mostrarFC && <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>}
                     </div>
                     <button className={`font-bold hover:underline ${formatCustoItem(item).className}`} onClick={() => setEditingPrice(item)}>
                       {formatCustoItem(item).text}
@@ -1563,6 +1590,42 @@ REGRAS:
           </Card>
         </div>
       )}
+
+      {/* Descritivo do Menu */}
+      {editingDescritivo ? (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-lg font-bold">Descritivo da receita (para Menu)</h2>
+          </div>
+          <Card className="p-4">
+            <div className="space-y-2">
+              <textarea
+                className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-ring"
+                value={descritivoDraft}
+                onChange={(e) => setDescritivoDraft(e.target.value)}
+                placeholder="Texto voltado ao cliente final. Ex: Filé mignon grelhado com molho de mostarda e ervas."
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={() => setEditingDescritivo(false)}>Cancelar</Button>
+                <Button size="sm" onClick={handleSaveDescritivo}>Salvar</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      ) : receita.descritivo_menu ? (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-lg font-bold">Descritivo da receita (para Menu)</h2>
+            <Button variant="ghost" size="sm" onClick={() => { setDescritivoDraft(receita.descritivo_menu || ""); setEditingDescritivo(true); }}>
+              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+            </Button>
+          </div>
+          <Card className="p-4">
+            <p className="text-sm leading-relaxed whitespace-pre-line">{receita.descritivo_menu}</p>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Insumos e Embalagens */}
       <InsumosSection receitaId={id} />

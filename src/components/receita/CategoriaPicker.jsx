@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ChevronDown, X } from "lucide-react";
 
 export const CATEGORIAS = [
-  "Carne Bovina", "Aves", "Peixes e Frutos do Mar", "Ovos",
+  "Carnes", "Aves", "Peixes e Frutos do Mar", "Ovos",
   "Massas, Pastelão e Quiches", "Arroz e Risoto", "Sopas e Caldos", "Leguminosas",
   "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos",
   "Acompanhamento", "Prato Principal",
@@ -14,7 +14,7 @@ export const CATEGORIAS = [
 ];
 
 export const ICONE_CATEGORIA = {
-  "Carne Bovina": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
+  "Carnes": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
   "Massas, Pastelão e Quiches": "🍝", "Arroz e Risoto": "🍚", "Sopas e Caldos": "🥣", "Leguminosas": "🫘",
   "Salgadinhos": "🥟", "Pães e Bolos": "🍞", "Sobremesas": "🍰", "Molhos": "🫙",
   "Acompanhamento": "🥗", "Prato Principal": "🍽️",

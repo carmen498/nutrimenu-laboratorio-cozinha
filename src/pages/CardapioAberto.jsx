@@ -107,6 +107,12 @@ export default function CardapioAberto() {
   const temDias = TIPOS_COM_DIAS.includes(cardapio?.tipo);
   const diasDisponiveis = cardapio?.tipo === "fim_de_semana" ? FIM_DE_SEMANA : null;
 
+  const receitaMap = useMemo(() => {
+    const map = {};
+    todasReceitas.forEach(r => { map[r.id] = r; });
+    return map;
+  }, [todasReceitas]);
+
   const calcs = useMemo(() => {
     const custoReceitas = receitas.reduce((s, r) => s + (Number(r.custo_total) || 0), 0);
     const custoInsumos = insumos.reduce((s, i) => s + (Number(i.custo_total) || 0), 0);
@@ -505,6 +511,9 @@ export default function CardapioAberto() {
                   <Link to={`/receita/${rec.receita_id}`} className="font-medium text-sm hover:text-primary truncate block">
                     {rec.receita_nome?.toUpperCase?.() || rec.receita_nome}
                   </Link>
+                  {receitaMap[rec.receita_id]?.descritivo_menu && (
+                    <p className="text-xs text-muted-foreground italic mt-0.5">{receitaMap[rec.receita_id].descritivo_menu}</p>
+                  )}
                   {rec.receita_categoria && (
                     <span className="text-xs text-muted-foreground">{rec.receita_categoria}</span>
                   )}

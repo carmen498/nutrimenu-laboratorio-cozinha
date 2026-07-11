@@ -22,7 +22,7 @@ import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, 
 export default function NovaReceitaManual({ open, onClose, onCreated, receitasExistentes = [] }) {
   const [form, setForm] = useState({
     nome: "", categorias: [], porcoes_base: "", rendimento_total: 0,
-    unidade_base: "g", modo_preparo: "", foto_url: ""
+    unidade_base: "g", modo_preparo: "", descritivo_menu: "", foto_url: ""
   });
   const [saving, setSaving] = useState(false);
   const [generatingPhoto, setGeneratingPhoto] = useState(false);
@@ -624,6 +624,11 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
           <div>
             <Label>Modo de preparo</Label>
             <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value.toLowerCase() })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. derreter o chocolate em banho-maria com a manteiga. reservar.\n2. bater os ovos com o açúcar até formar creme fofo.\n3. acrescentar a farinha e mexer até homogeneizar.\n4. assar a 180 °c por 25 minutos."} />
+          </div>
+
+          <div>
+            <Label>Descritivo da receita (para Menu)</Label>
+            <Textarea rows={2} value={form.descritivo_menu || ""} onChange={(e) => setForm({ ...form, descritivo_menu: e.target.value })} placeholder="Texto voltado ao cliente final. Ex: Filé mignon grelhado com molho de mostarda e ervas." />
           </div>
 
           <div>

@@ -18,7 +18,7 @@ import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 
 const CORES_CATEGORIA = {
-  "Carne Bovina":                  { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
+  "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
   "Aves":                          { cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C" },
   "Peixes e Frutos do Mar":        { cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1" },
   "Ovos":                          { cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100" },
