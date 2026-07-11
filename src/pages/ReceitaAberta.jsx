@@ -668,7 +668,7 @@ REGRAS:
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatCustoItem = (item) => {
     if (!item.ing || !item.ing.preco_por_g_rs || item.ing.preco_por_g_rs === 0) {
-      return { text: "cadastrar", className: "text-destructive" };
+      return { text: "R$ 0,00", className: "text-orange-600 font-semibold" };
     }
     if (item.custo > 0 && item.custo < 0.01) {
       return { text: `R$ ${item.custo.toFixed(4).replace(".", ",")}`, className: "text-primary" };
@@ -1296,12 +1296,9 @@ REGRAS:
                     </div>
                   )}
                   <div className="col-span-2 text-right">
-                    <button
-                      className={`text-sm font-semibold hover:underline ${formatCustoItem(item).className}`}
-                      onClick={() => setEditingPrice(item)}
-                    >
+                    <span className={`text-sm font-semibold ${formatCustoItem(item).className}`}>
                       {formatCustoItem(item).text}
-                    </button>
+                    </span>
                   </div>
                   <div className="col-span-3 flex justify-end gap-0.5">
 
@@ -1446,9 +1443,9 @@ REGRAS:
                     <div>
                       {mostrarFC && <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>}
                     </div>
-                    <button className={`font-bold hover:underline ${formatCustoItem(item).className}`} onClick={() => setEditingPrice(item)}>
+                    <span className={`font-bold ${formatCustoItem(item).className}`}>
                       {formatCustoItem(item).text}
-                    </button>
+                    </span>
                   </div>
                 </div>
               </Card>
