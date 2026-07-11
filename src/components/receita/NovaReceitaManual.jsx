@@ -400,13 +400,13 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
                       </Button>
                     </div>
                   ) : (
-                    <div key={idx} className="flex items-center gap-1 bg-primary/5 border border-primary/20 border-dashed rounded-lg p-2 text-sm">
+                    <div key={idx} className="flex items-center gap-1 bg-primary/10 border border-primary/30 border-dashed rounded-lg p-2 text-sm">
                       <span className="flex-1 font-bold text-xs text-primary uppercase tracking-wide">{ing.titulo_grupo}</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, -1)} title="Subir">
-                        <ArrowUp className="w-3 h-3" />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleMoveIng(idx, -1)} title="Mover bloco (divisor + ingredientes)">
+                        <ArrowUp className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => handleMoveIng(idx, 1)} title="Descer">
-                        <ArrowDown className="w-3 h-3" />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleMoveIng(idx, 1)} title="Mover bloco (divisor + ingredientes)">
+                        <ArrowDown className="w-4 h-4" />
                       </Button>
                       <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { setEditingGrupoIdx(idx); setEditingGrupoText(ing.titulo_grupo); }} title="Editar título">
                         <Pencil className="w-3 h-3" />

@@ -494,7 +494,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             <Select value={form.categoria || "A Revisar"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["Carnes e Ovos", "Verduras e Hortaliças", "TEMPEROS", "LATICÍNIOS", "Panificação e Cereais", "ENLATADOS", "Açúcares e Doces", "DIVERSOS", "A Revisar", "Receitas Básicas", "Conservas e Enlatados", "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"].map((c) => (
+                {["Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios", "Panificação e Cereais", "Conservas e Enlatados", "Açúcares e Doces", "Diversos", "A Revisar", "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"].map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>

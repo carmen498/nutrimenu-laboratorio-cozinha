@@ -834,7 +834,7 @@ Para cada variação, retorne:
                 {(parsed.ingredientes || []).map((ing, idx) => {
                   if (ing.tipo === "grupo") {
                     return (
-                      <div key={idx} className="flex items-center gap-2 p-2 bg-primary/5 border border-primary/20 border-dashed rounded-lg text-sm">
+                      <div key={idx} className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/30 border-dashed rounded-lg text-sm">
                         <span className="flex-1 font-bold text-xs text-primary uppercase tracking-wide">{ing.titulo_grupo}</span>
                         <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => removeIngrediente(idx)}>
                           <X className="w-3 h-3" />
