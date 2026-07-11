@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -33,10 +33,12 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
   const [pcCriancas, setPcCriancas] = useState(300);
   const [margem, setMargem] = useState(20);
 
-  // Reset ao abrir com/sem edição
-  const handleOpenChange = (v) => {
-    if (v && planejamentoEdicao) {
-      setEtapa(1);
+  // Carregar dados ao abrir (useEffect — onOpenChange do Radix não dispara quando open é controlado externamente)
+  useEffect(() => {
+    if (!open) return;
+    if (planejamentoEdicao) {
+      // Edição: abre na última etapa relevante (etapa 2 por enquanto)
+      setEtapa(2);
       setNome(planejamentoEdicao.nome || "");
       setTipoPlanejamento(planejamentoEdicao.tipo_planejamento || "");
       setTipoServico(planejamentoEdicao.tipo_servico || "");
@@ -49,15 +51,16 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setPcMulheres(planejamentoEdicao.per_capita_mulheres_g || 400);
       setPcCriancas(planejamentoEdicao.per_capita_criancas_g || 300);
       setMargem(planejamentoEdicao.margem_seguranca_pct || 20);
-    } else if (v) {
+    } else {
       setEtapa(1);
       setNome(""); setTipoPlanejamento(""); setTipoServico("");
       setHorario(""); setDuracao("");
       setHomens(0); setMulheres(0); setCriancas(0);
       setPcHomens(600); setPcMulheres(400); setPcCriancas(300); setMargem(20);
     }
-    if (!v) onClose();
-  };
+  }, [open, planejamentoEdicao]);
+
+  const handleClose = (v) => { if (!v) onClose(); };
 
   const totalPessoas = homens + mulheres + criancas;
   const totalBaseKg = useMemo(() =>
@@ -141,7 +144,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
   );
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">
@@ -152,23 +155,25 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
         {/* Barra de progresso */}
         <div className="flex items-center gap-2 mb-4">
           <div className="flex-1 flex items-center gap-2">
-            <div className={`flex items-center gap-2 ${etapa >= 1 ? "text-primary" : "text-muted-foreground"}`}>
+            <button type="button" onClick={() => etapa > 1 && setEtapa(1)}
+              className={`flex items-center gap-2 ${etapa >= 1 ? "text-primary" : "text-muted-foreground"}`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${etapa >= 1 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 {etapa > 1 ? <Check className="w-4 h-4" /> : "1"}
               </div>
               <span className="text-sm font-medium hidden sm:inline">Contexto</span>
-            </div>
+            </button>
             <div className={`flex-1 h-0.5 ${etapa >= 2 ? "bg-primary" : "bg-muted"}`} />
-            <div className={`flex items-center gap-2 ${etapa >= 2 ? "text-primary" : "text-muted-foreground"}`}>
+            <button type="button" onClick={() => setEtapa(2)}
+              className={`flex items-center gap-2 ${etapa >= 2 ? "text-primary" : "text-muted-foreground"}`}>
               <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${etapa >= 2 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                 2
               </div>
-              <span className="text-sm font-medium hidden sm:inline">Cardápio</span>
-            </div>
+              <span className="text-sm font-medium hidden sm:inline">Clientes</span>
+            </button>
             <div className="flex-1 h-0.5 bg-muted" />
             <div className="flex items-center gap-2 text-muted-foreground">
               <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-muted">3</div>
-              <span className="text-sm font-medium hidden sm:inline">...</span>
+              <span className="text-sm font-medium hidden sm:inline">Cardápio</span>
             </div>
           </div>
         </div>
