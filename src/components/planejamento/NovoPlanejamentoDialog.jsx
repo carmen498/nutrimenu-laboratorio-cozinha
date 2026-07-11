@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Plus, Minus, Clock, Info, Check, ArrowRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import EtapaCardapio from "./EtapaCardapio";
 
 const TIPOS_PLANEJAMENTO = ["Almoço", "Jantar", "Coquetel", "Data Comemorativa", "Confraternização", "Outro"];
 const TIPOS_SERVICO = ["Bufê", "Empratado", "À La Carte", "Refeição Familiar", "Self-Service", "Outro"];
@@ -33,12 +35,17 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
   const [pcCriancas, setPcCriancas] = useState(300);
   const [margem, setMargem] = useState(20);
 
+  // Etapa 3 — Cardápio
+  const [cardapioConfig, setCardapioConfig] = useState(null);
+  const navigate = useNavigate();
+
   // Carregar dados ao abrir (useEffect — onOpenChange do Radix não dispara quando open é controlado externamente)
   useEffect(() => {
     if (!open) return;
     if (planejamentoEdicao) {
-      // Edição: abre na última etapa relevante (etapa 2 por enquanto)
-      setEtapa(2);
+      // Edição: abre na última etapa relevante (3 se cardápio salvo, senão 2)
+      const hasCardapio = !!planejamentoEdicao.cardapio_config;
+      setEtapa(hasCardapio ? 3 : 2);
       setNome(planejamentoEdicao.nome || "");
       setTipoPlanejamento(planejamentoEdicao.tipo_planejamento || "");
       setTipoServico(planejamentoEdicao.tipo_servico || "");
@@ -51,12 +58,24 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setPcMulheres(planejamentoEdicao.per_capita_mulheres_g || 400);
       setPcCriancas(planejamentoEdicao.per_capita_criancas_g || 300);
       setMargem(planejamentoEdicao.margem_seguranca_pct || 20);
+      // Carregar cardápio salvo
+      if (planejamentoEdicao.cardapio_config) {
+        try {
+          const config = typeof planejamentoEdicao.cardapio_config === "string"
+            ? JSON.parse(planejamentoEdicao.cardapio_config)
+            : planejamentoEdicao.cardapio_config;
+          setCardapioConfig(config);
+        } catch (e) { setCardapioConfig(null); }
+      } else {
+        setCardapioConfig(null);
+      }
     } else {
       setEtapa(1);
       setNome(""); setTipoPlanejamento(""); setTipoServico("");
       setHorario(""); setDuracao("");
       setHomens(0); setMulheres(0); setCriancas(0);
       setPcHomens(600); setPcMulheres(400); setPcCriancas(300); setMargem(20);
+      setCardapioConfig(null);
     }
   }, [open, planejamentoEdicao]);
 
@@ -74,27 +93,29 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
   const etapa1Valida = nome.trim() && tipoPlanejamento;
 
-  const handleSalvar = async () => {
+  const buildDados = (configOverride) => ({
+    nome: nome.trim(),
+    tipo_planejamento: tipoPlanejamento,
+    tipo_servico: tipoServico || undefined,
+    horario_inicio: horario || undefined,
+    duracao_horas: duracao ? parseFloat(duracao.replace(",", ".")) : undefined,
+    qtd_homens: homens,
+    qtd_mulheres: mulheres,
+    qtd_criancas: criancas,
+    per_capita_homens_g: pcHomens,
+    per_capita_mulheres_g: pcMulheres,
+    per_capita_criancas_g: pcCriancas,
+    margem_seguranca_pct: margem,
+    total_base_kg: parseFloat(totalBaseKg.toFixed(2)),
+    total_com_margem_kg: parseFloat(totalComMargemKg.toFixed(2)),
+    total_pessoas: totalPessoas,
+    cardapio_config: configOverride ? JSON.stringify(configOverride) : (cardapioConfig ? JSON.stringify(cardapioConfig) : undefined),
+  });
+
+  const handleSalvar = async (configOverride) => {
     setSalvando(true);
     try {
-      const dados = {
-        nome: nome.trim(),
-        tipo_planejamento: tipoPlanejamento,
-        tipo_servico: tipoServico || undefined,
-        horario_inicio: horario || undefined,
-        duracao_horas: duracao ? parseFloat(duracao.replace(",", ".")) : undefined,
-        qtd_homens: homens,
-        qtd_mulheres: mulheres,
-        qtd_criancas: criancas,
-        per_capita_homens_g: pcHomens,
-        per_capita_mulheres_g: pcMulheres,
-        per_capita_criancas_g: pcCriancas,
-        margem_seguranca_pct: margem,
-        total_base_kg: parseFloat(totalBaseKg.toFixed(2)),
-        total_com_margem_kg: parseFloat(totalComMargemKg.toFixed(2)),
-        total_pessoas: totalPessoas,
-      };
-
+      const dados = buildDados(configOverride);
       if (planejamentoEdicao) {
         await base44.entities.Planejamento.update(planejamentoEdicao.id, dados);
         toast.success("Planejamento atualizado!");
@@ -107,6 +128,28 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
     } catch (e) {
       toast.error("Erro ao salvar planejamento");
     } finally {
+      setSalvando(false);
+    }
+  };
+
+  const handleGerarListaCompras = async (configOverride) => {
+    setSalvando(true);
+    try {
+      const dados = buildDados(configOverride);
+      let savedId;
+      if (planejamentoEdicao) {
+        await base44.entities.Planejamento.update(planejamentoEdicao.id, dados);
+        savedId = planejamentoEdicao.id;
+      } else {
+        const created = await base44.entities.Planejamento.create(dados);
+        savedId = created.id;
+      }
+      setSalvando(false);
+      onClose();
+      onSaved?.();
+      navigate(`/lista-compras?planejamento=${savedId}`);
+    } catch (e) {
+      toast.error("Erro ao salvar planejamento");
       setSalvando(false);
     }
   };
@@ -170,11 +213,14 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
               </div>
               <span className="text-sm font-medium hidden sm:inline">Clientes</span>
             </button>
-            <div className="flex-1 h-0.5 bg-muted" />
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold bg-muted">3</div>
+            <div className={`flex-1 h-0.5 ${etapa >= 3 ? "bg-primary" : "bg-muted"}`} />
+            <button type="button" onClick={() => etapa1Valida && setEtapa(3)}
+              className={`flex items-center gap-2 ${etapa >= 3 ? "text-primary" : "text-muted-foreground"}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${etapa >= 3 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                {etapa > 3 ? <Check className="w-4 h-4" /> : "3"}
+              </div>
               <span className="text-sm font-medium hidden sm:inline">Cardápio</span>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -299,11 +345,23 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
               <Button variant="outline" onClick={() => setEtapa(1)} className="gap-1">
                 <ArrowLeft className="w-4 h-4" /> Voltar
               </Button>
-              <Button onClick={handleSalvar} disabled={salvando}>
-                {salvando ? "Salvando..." : "Salvar Planejamento"}
+              <Button onClick={() => setEtapa(3)} disabled={!etapa1Valida} className="gap-1">
+                Cardápio <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
+        )}
+
+        {etapa === 3 && (
+          <EtapaCardapio
+            totalComMargemKg={totalComMargemKg}
+            totalPessoas={totalPessoas}
+            cardapioConfig={cardapioConfig}
+            onSalvar={handleSalvar}
+            onGerarListaCompras={handleGerarListaCompras}
+            onVoltar={() => setEtapa(2)}
+            salvando={salvando}
+          />
         )}
       </DialogContent>
     </Dialog>

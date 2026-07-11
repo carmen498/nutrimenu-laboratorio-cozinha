@@ -55,9 +55,35 @@ export default function ListaCompras() {
     const params = new URLSearchParams(window.location.search);
     const receitaId = params.get("receita");
     const porcoes = parseInt(params.get("porcoes")) || null;
+    const planejamentoId = params.get("planejamento");
+
     if (receitaId && !selectedReceitas.includes(receitaId)) {
       setSelectedReceitas([receitaId]);
       if (porcoes) setPorcoesPorReceita({ [receitaId]: porcoes });
+    }
+
+    // Carregar cardápio do planejamento
+    if (planejamentoId) {
+      base44.entities.Planejamento.get(planejamentoId).then(p => {
+        if (!p?.cardapio_config) return;
+        try {
+          const config = typeof p.cardapio_config === "string"
+            ? JSON.parse(p.cardapio_config)
+            : p.cardapio_config;
+          const recs = [];
+          const porc = {};
+          (config.grupos || []).forEach(g => {
+            (g.itens || []).forEach(item => {
+              if (!recs.includes(item.receita_id)) {
+                recs.push(item.receita_id);
+                porc[item.receita_id] = item.porcoes || Math.round((item.qtd_kg || 0) * 1000 / (item.pc_g || 200));
+              }
+            });
+          });
+          setSelectedReceitas(recs);
+          setPorcoesPorReceita(porc);
+        } catch (e) { console.error("Erro ao carregar cardápio:", e); }
+      }).catch(e => console.error("Erro ao carregar planejamento:", e));
     }
   }, []);
 

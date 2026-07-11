@@ -84,6 +84,10 @@
     "total_pessoas": {
       "type": "number",
       "description": "Total de pessoas"
+    },
+    "cardapio_config": {
+      "type": "string",
+      "description": "Configura\u00e7\u00e3o do card\u00e1pio (JSON: grupos, percentuais, itens e receitas)"
     }
   },
   "required": [

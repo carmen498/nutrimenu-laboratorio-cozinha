@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, Scale } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, Scale, ShoppingCart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
@@ -14,6 +15,7 @@ import {
 import NovoPlanejamentoDialog from "./NovoPlanejamentoDialog";
 
 export default function ListaPlanejamentos() {
+  const navigate = useNavigate();
   const [planejamentos, setPlanejamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -96,6 +98,9 @@ export default function ListaPlanejamentos() {
                   <span className="text-xs text-muted-foreground flex items-center gap-1">
                     <Scale className="w-3 h-3" /> {p.total_com_margem_kg?.toFixed(1).replace(".", ",") || "0,0"} kg
                   </span>
+                  {p.cardapio_config && (
+                    <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">Cardápio</Badge>
+                  )}
                 </div>
               </div>
               <DropdownMenu>
@@ -108,6 +113,11 @@ export default function ListaPlanejamentos() {
                   <DropdownMenuItem onClick={() => handleEdit(p)}>
                     <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
                   </DropdownMenuItem>
+                  {p.cardapio_config && (
+                    <DropdownMenuItem onClick={() => navigate(`/lista-compras?planejamento=${p.id}`)}>
+                      <ShoppingCart className="w-3.5 h-3.5 mr-2" /> Lista de Compras
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem className="text-destructive" onClick={() => setExcluirItem(p)}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
                   </DropdownMenuItem>
