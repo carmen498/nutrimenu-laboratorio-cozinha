@@ -25,19 +25,18 @@ const NORMALIZAR = (nome) => {
 
 const CATEGORIA_INGREDIENTE = (nome) => {
   const n = nome.toLowerCase();
-  if (/carne|bovin|contrafilé|picanha|alcatra|maminha|patinho|coxão|costela|fraldinha|cupim|músculo|filet|filé/.test(n)) return "CARNES";
-  if (/frango|peru|ave|galinha|chester|pato/.test(n)) return "CARNES";
+  if (/carne|bovin|contrafilé|picanha|alcatra|maminha|patinho|coxão|costela|fraldinha|cupim|músculo|filet|filé/.test(n)) return "Carnes e Ovos";
+  if (/frango|peru|ave|galinha|chester|pato/.test(n)) return "Carnes e Ovos";
+  if (/ovo|gema|clara/.test(n)) return "Carnes e Ovos";
   if (/bacalhau|camarão|peixe|salmão|atum|sardinha|lula|polvo|marisco|mexilhão|lagosta/.test(n)) return "Peixes e Frutos do Mar";
-  if (/cebola|alho|cenoura|brócolis|abobrinha|berinjela|pimentão|tomate|pepino|beterraba|batata|mandioca|aipim|inhame|rúcula|alface|espinafre|couve|repolho|acelga|agrião|quiabo|vagem|chuchu|abóbora|milho|ervilha|palmito|azeitona|legume|verdura/.test(n)) return "Legumes e Verduras";
+  if (/cebola|alho|cenoura|brócolis|abobrinha|berinjela|pimentão|tomate|pepino|beterraba|batata|mandioca|aipim|inhame|rúcula|alface|espinafre|couve|repolho|acelga|agrião|quiabo|vagem|chuchu|abóbora|milho|ervilha|palmito|azeitona|legume|verdura/.test(n)) return "Verduras e Hortaliças";
   if (/limão|laranja|maçã|banana|abacaxi|morango|uva|manga|maracujá|pêssego|ameixa|coco|abacate|kiwi|melão|melancia|framboesa|mirtilo|cereja/.test(n)) return "Frutas";
-  if (/leite|queijo|creme|iogurte|nata|manteiga|requeijão|ricota|catupiry|mascarpone|parmesão|mussarela|muçarela|provolone|gorgonzola|cheddar|minas|coalho/.test(n)) return "LATICÍNIOS";
+  if (/leite|queijo|creme|iogurte|nata|manteiga|requeijão|ricota|catupiry|mascarpone|parmesão|mussarela|muçarela|provolone|gorgonzola|cheddar|minas|coalho/.test(n)) return "Laticínios";
   if (/óleo|azeite|margarina|banha|gordura/.test(n)) return "Óleos e Gorduras";
-  if (/pimenta|orégano|tomilho|alecrim|manjericão|salsinha|cebolinha|coentro|louro|noz|cravo|cominho|açafrão|curry|gengibre|colorau|urucum|sal|páprica|canela|baunilha|essência|erva|tempero/.test(n)) return "Temperos e Ervas";
-  if (/ovo|gema|clara/.test(n)) return "Ovos";
-  if (/farinha|amido|maizena|fécula|polvilho|açúcar|acucar|fermento|bicarbonato|fubá|trigo|aveia|macarrão|arroz|grão|feijão|lentilha|grão-de-bico|soja/.test(n)) return "CEREAIS & SECOS";
-  if (/vinho|cerveja|cachaça|vodka|rum|conhaque|licor|champanhe|espumante|saquê/.test(n)) return "DIVERSOS";
-  if (/chocolate|cacau|doce|mel|geleia|compota|calda|chantilly|brigadeiro/.test(n)) return "DOCES";
-  return "DIVERSOS";
+  if (/pimenta|orégano|tomilho|alecrim|manjericão|salsinha|cebolinha|coentro|louro|noz|cravo|cominho|açafrão|curry|gengibre|colorau|urucum|sal|páprica|canela|baunilha|essência|erva|tempero/.test(n)) return "Temperos";
+  if (/farinha|amido|maizena|fécula|polvilho|açúcar|acucar|fermento|bicarbonato|fubá|trigo|aveia|macarrão|arroz|grão|feijão|lentilha|grão-de-bico|soja/.test(n)) return "Panificação e Cereais";
+  if (/chocolate|cacau|doce|mel|geleia|compota|calda|chantilly|brigadeiro/.test(n)) return "Açúcares e Doces";
+  return "Diversos";
 };
 
 Deno.serve(async (req) => {

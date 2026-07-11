@@ -9,7 +9,7 @@ import { Loader2, Sparkles, AlertTriangle, Check, Pause, Play, Clock, Zap } from
 import { toast } from "sonner";
 
 // Categorias com badge ⚡ (oscilam frequentemente)
-const CATS_OSCILANTES = ["Carnes e Ovos", "Peixes e Frutos do Mar", "LATICÍNIOS", "Verduras e Hortaliças", "Frutas", "Óleos e Gorduras"];
+const CATS_OSCILANTES = ["Carnes e Ovos", "Peixes e Frutos do Mar", "Laticínios", "Verduras e Hortaliças", "Frutas", "Óleos e Gorduras"];
 
 const isOscilante = (cat) => CATS_OSCILANTES.includes(cat);
 

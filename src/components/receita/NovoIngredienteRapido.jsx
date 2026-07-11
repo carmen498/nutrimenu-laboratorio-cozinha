@@ -9,8 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 
 const CATEGORIAS_ING = [
-  "Carnes e Ovos", "Verduras e Hortaliças", "TEMPEROS", "LATICÍNIOS", "Panificação e Cereais",
-  "ENLATADOS", "Açúcares e Doces", "DIVERSOS", "A Revisar", "Receitas Básicas"
+  "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios", "Panificação e Cereais",
+  "Conservas e Enlatados", "Açúcares e Doces", "Diversos", "A Revisar",
+  "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"
 ];
 
 const UNIDADES = ["G", "KG", "LT", "ML", "UN", "MOLHO", "CX", "PACOTE", "BANDEJA", "BALDE", "LATA", "SACHÊ", "PC", "DÚZIA"];
