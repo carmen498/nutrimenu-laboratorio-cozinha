@@ -13,7 +13,8 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown } from "lucide-react";
+import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown, ClipboardList } from "lucide-react";
+import ListaPlanejamentos from "@/components/planejamento/ListaPlanejamentos";
 
 const TIPOS_CARDAPIO = [
   { nome: "Diário",        key: "diario",        icone: "🏠", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
@@ -49,6 +50,7 @@ export default function Cardapios() {
   const [form, setForm] = useState({ nome: "", tipo: "", data: "", observacoes: "" });
   const [salvando, setSalvando] = useState(false);
   const [favPending, setFavPending] = useState({});
+  const [aba, setAba] = useState("cardapios"); // cardapios | planejamentos
 
   const load = async () => {
     setLoading(true);
@@ -188,18 +190,38 @@ export default function Cardapios() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Cardápios</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {cardapios.length} cardápio{cardapios.length !== 1 ? "s" : ""}
+            {aba === "cardapios"
+              ? `${cardapios.length} cardápio${cardapios.length !== 1 ? "s" : ""}`
+              : "Planejamentos de eventos"}
           </p>
         </div>
-        <Button onClick={() => setShowNovo(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Cardápio
+        {aba === "cardapios" && (
+          <Button onClick={() => setShowNovo(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> Novo Cardápio
+          </Button>
+        )}
+      </div>
+
+      {/* Toggle Cardápios / Planejamentos */}
+      <div className="flex gap-2 mb-4">
+        <Button variant={aba === "cardapios" ? "default" : "outline"} size="sm"
+          onClick={() => setAba("cardapios")} className="gap-1.5">
+          <LayoutGrid className="w-4 h-4" /> Cardápios
+        </Button>
+        <Button variant={aba === "planejamentos" ? "default" : "outline"} size="sm"
+          onClick={() => setAba("planejamentos")} className="gap-1.5">
+          <ClipboardList className="w-4 h-4" /> Planejamentos
         </Button>
       </div>
 
+      {aba === "planejamentos" ? (
+        <ListaPlanejamentos />
+      ) : (
+      <>
       {/* Busca */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -452,6 +474,8 @@ export default function Cardapios() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
+      )}
     </div>
   );
 }
