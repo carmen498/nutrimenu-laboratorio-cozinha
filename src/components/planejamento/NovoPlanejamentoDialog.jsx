@@ -188,7 +188,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`${etapa === 3 ? "max-w-6xl w-[95vw]" : "max-w-2xl"} max-h-[95vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="font-display">
             {planejamentoEdicao ? "Editar Planejamento" : "Novo Planejamento"}

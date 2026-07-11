@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShoppingCart, Plus, Trash2, FileText, Share2, ChefHat } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, FileText, Share2, ChefHat, ArrowLeft, RotateCcw } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import { toast } from "sonner";
 
 const CATEGORIAS_COMPRA = {
@@ -29,6 +31,9 @@ export default function ListaCompras() {
   const [showAddReceita, setShowAddReceita] = useState(false);
   const [selectedReceitas, setSelectedReceitas] = useState([]);
   const [porcoesPorReceita, setPorcoesPorReceita] = useState({});
+  const [comprarManual, setComprarManual] = useState({});
+  const [margemSeguranca, setMargemSeguranca] = useState(0);
+  const [planejamentoOrigem, setPlanejamentoOrigem] = useState(null);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
@@ -64,6 +69,7 @@ export default function ListaCompras() {
 
     // Carregar cardápio do planejamento
     if (planejamentoId) {
+      setPlanejamentoOrigem(planejamentoId);
       base44.entities.Planejamento.get(planejamentoId).then(p => {
         if (!p?.cardapio_config) return;
         try {
@@ -123,6 +129,7 @@ export default function ListaCompras() {
           quantidade: qtd,
           unidade_compra: ing.unidade_compra,
           peso_embalagem_g: ing.peso_embalagem_g,
+          preco_por_g: ing.preco_por_g_rs || 0,
           custo,
           origem: extra.origem || null,
         };
@@ -162,6 +169,16 @@ export default function ListaCompras() {
     return Object.values(totals).sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nome.localeCompare(b.nome));
   }, [selectedReceitas, porcoesPorReceita, allItens, ingMap, receitaMap]);
 
+  const getItemKey = (item) => `${item.ingrediente_id}_${item.origem || ""}`;
+
+  const getComprarQtd = (item) => {
+    const key = getItemKey(item);
+    if (comprarManual[key] != null) return comprarManual[key];
+    return item.quantidade * (1 + margemSeguranca / 100);
+  };
+
+  const getComprarCusto = (item) => getComprarQtd(item) * (item.preco_por_g || 0);
+
   // Group by category
   const grouped = {};
   listaItems.forEach((item) => {
@@ -169,7 +186,7 @@ export default function ListaCompras() {
     grouped[item.categoria].push(item);
   });
 
-  const totalGeral = listaItems.filter(i => !jaTemho[i.ingrediente_id]).reduce((s, i) => s + i.custo, 0);
+  const totalGeral = listaItems.filter(i => !jaTemho[i.ingrediente_id]).reduce((s, i) => s + getComprarCusto(i), 0);
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatWeight = (g) => g >= 1000 ? `${(g / 1000).toFixed(2)} kg` : `${g.toFixed(0)} g`;
@@ -190,7 +207,7 @@ export default function ListaCompras() {
       text += `📌 ${cat}\n`;
       grouped[cat].forEach(item => {
         if (!jaTemho[item.ingrediente_id]) {
-          text += `  • ${item.nome} — ${formatQuantidade(item)} — ${formatCurrency(item.custo)}\n`;
+          text += `  • ${item.nome} — ${formatQuantidade({...item, quantidade: getComprarQtd(item)})} — ${formatCurrency(getComprarCusto(item))}\n`;
         }
       });
       text += "\n";
@@ -208,11 +225,40 @@ export default function ListaCompras() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Lista de Compras</h1>
+        <div className="flex items-center gap-3">
+          {planejamentoOrigem && (
+            <Button variant="ghost" size="sm" onClick={() => navigate("/cardapios")} className="gap-1">
+              <ArrowLeft className="w-4 h-4" /> Voltar ao planejamento
+            </Button>
+          )}
+          <h1 className="font-display text-2xl font-bold">Lista de Compras</h1>
+        </div>
         <Button size="sm" onClick={() => setShowAddReceita(true)}>
           <Plus className="w-4 h-4 mr-1" /> Receita
         </Button>
       </div>
+
+      {/* Margem de segurança */}
+      {listaItems.length > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 flex-wrap">
+          <Label className="text-sm font-medium shrink-0">Margem de segurança</Label>
+          <Input type="number" min="0" max="100" value={margemSeguranca}
+            onChange={e => setMargemSeguranca(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+            className="w-16 h-8 text-center tabular-nums" />
+          <span className="text-sm text-muted-foreground">%</span>
+          {margemSeguranca > 0 && (
+            <span className="text-xs text-muted-foreground">
+              Quantidades ajustadas com +{margemSeguranca}%
+            </span>
+          )}
+          {Object.keys(comprarManual).length > 0 && (
+            <Button variant="ghost" size="sm" className="ml-auto gap-1"
+              onClick={() => setComprarManual({})}>
+              <RotateCcw className="w-3.5 h-3.5" /> Resetar edições
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Selected recipes */}
       {selectedReceitas.length > 0 && (
@@ -261,24 +307,52 @@ export default function ListaCompras() {
             <div key={cat}>
               <Badge variant="secondary" className="mb-2">{cat}</Badge>
               <div className="space-y-1">
-                {grouped[cat].map((item) => (
-                  <Card
-                    key={item.ingrediente_id}
-                    className={`p-3 flex items-center gap-3 transition-opacity ${jaTemho[item.ingrediente_id] ? "opacity-40" : ""}`}
-                  >
-                    <Checkbox
-                      checked={!!jaTemho[item.ingrediente_id]}
-                      onCheckedChange={(v) => setJaTenho({ ...jaTemho, [item.ingrediente_id]: v })}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${jaTemho[item.ingrediente_id] ? "line-through" : ""}`}>
-                        {item.nome}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{formatQuantidade(item)}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-primary shrink-0">{formatCurrency(item.custo)}</span>
-                  </Card>
-                ))}
+                {grouped[cat].map((item) => {
+                  const isContagem = UNIDADES_CONTAGEM.includes(item.unidade_compra?.toUpperCase());
+                  const hasEmbalagem = item.peso_embalagem_g > 0;
+                  const usarUnidades = isContagem && hasEmbalagem;
+                  const comprarQtd = getComprarQtd(item);
+                  const comprarCusto = getComprarCusto(item);
+                  const inputVal = usarUnidades
+                    ? Math.ceil(comprarQtd / item.peso_embalagem_g)
+                    : (comprarQtd / 1000).toFixed(2);
+                  const unit = usarUnidades ? "un" : "kg";
+                  const handleComprar = (val) => {
+                    const key = getItemKey(item);
+                    let grams;
+                    if (usarUnidades) {
+                      grams = (parseInt(val) || 0) * item.peso_embalagem_g;
+                    } else {
+                      grams = (parseFloat((val || "").toString().replace(",", ".")) || 0) * 1000;
+                    }
+                    setComprarManual(prev => ({ ...prev, [key]: grams }));
+                  };
+                  return (
+                    <Card
+                      key={item.ingrediente_id}
+                      className={`p-3 flex items-center gap-2 flex-wrap transition-opacity ${jaTemho[item.ingrediente_id] ? "opacity-40" : ""}`}
+                    >
+                      <Checkbox
+                        checked={!!jaTemho[item.ingrediente_id]}
+                        onCheckedChange={(v) => setJaTenho({ ...jaTemho, [item.ingrediente_id]: v })}
+                      />
+                      <div className="flex-1 min-w-[100px]">
+                        <p className={`text-sm font-medium ${jaTemho[item.ingrediente_id] ? "line-through" : ""}`}>
+                          {item.nome}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Base: {formatQuantidade(item)}</p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 bg-primary/5 border border-primary/20 rounded-md px-2 py-1">
+                        <span className="text-[10px] text-muted-foreground font-medium">Comprar</span>
+                        <Input type="number" step={usarUnidades ? "1" : "0.01"} value={inputVal}
+                          onChange={e => handleComprar(e.target.value)}
+                          className="w-20 h-7 text-sm text-center tabular-nums border-none bg-transparent focus-visible:ring-0" />
+                        <span className="text-xs text-muted-foreground">{unit}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-primary shrink-0 tabular-nums">{formatCurrency(comprarCusto)}</span>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -301,33 +375,17 @@ export default function ListaCompras() {
       )}
 
       {/* Add recipe dialog */}
-      <Dialog open={showAddReceita} onOpenChange={(v) => !v && setShowAddReceita(false)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">Adicionar Receita à Lista</DialogTitle>
-          </DialogHeader>
-          <div className="max-h-60 overflow-y-auto space-y-1">
-            {receitas.map((r) => {
-              const alreadyAdded = selectedReceitas.includes(r.id);
-              return (
-                <button
-                  key={r.id}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between ${alreadyAdded ? "bg-primary/5 text-muted-foreground" : "hover:bg-accent"}`}
-                  disabled={alreadyAdded}
-                  onClick={() => {
-                    setSelectedReceitas([...selectedReceitas, r.id]);
-                    setPorcoesPorReceita({ ...porcoesPorReceita, [r.id]: r.porcoes_base || 4 });
-                    setShowAddReceita(false);
-                  }}
-                >
-                  <span className="font-medium">{r.nome}</span>
-                  {alreadyAdded && <Badge variant="secondary" className="text-xs">Adicionada</Badge>}
-                </button>
-              );
-            })}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BuscaReceitaDialog
+        open={showAddReceita}
+        onClose={() => setShowAddReceita(false)}
+        onSelect={(r) => {
+          setSelectedReceitas([...selectedReceitas, r.id]);
+          setPorcoesPorReceita({ ...porcoesPorReceita, [r.id]: r.porcoes_base || 4 });
+          setShowAddReceita(false);
+        }}
+        excludeIds={selectedReceitas}
+        title="Adicionar Receita à Lista"
+      />
     </div>
   );
 }

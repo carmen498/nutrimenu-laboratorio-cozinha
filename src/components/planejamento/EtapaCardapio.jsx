@@ -11,6 +11,7 @@ import {
   Cookie, X
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
+import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import { toast } from "sonner";
 
 const GRUPOS_PADRAO = [
@@ -64,7 +65,6 @@ export default function EtapaCardapio({
 }) {
   const [grupos, setGrupos] = useState(() => initGrupos(cardapioConfig));
   const [buscaGrupoIdx, setBuscaGrupoIdx] = useState(null);
-  const [buscaTexto, setBuscaTexto] = useState("");
   const [showNovoGrupo, setShowNovoGrupo] = useState(false);
   const [novoGrupoNome, setNovoGrupoNome] = useState("");
 
@@ -145,7 +145,6 @@ export default function EtapaCardapio({
       ? { ...g, itens: [...g.itens, { receita_id: receita.id, receita_nome: receita.nome, pc_g: pc, qtd_kg_manual: null }] }
       : g));
     setBuscaGrupoIdx(null);
-    setBuscaTexto("");
   };
 
   const updateItem = (grupoIdx, itemIdx, patch) => {
@@ -170,12 +169,6 @@ export default function EtapaCardapio({
     setNovoGrupoNome("");
     setShowNovoGrupo(false);
   };
-
-  const receitasFiltradas = useMemo(() => {
-    if (!buscaTexto.trim()) return receitas.slice(0, 30);
-    const q = buscaTexto.toLowerCase();
-    return receitas.filter(r => r.nome?.toLowerCase().includes(q)).slice(0, 30);
-  }, [receitas, buscaTexto]);
 
   const handleSalvar = () => onSalvar(buildConfig());
   const handleGerarLista = () => onGerarListaCompras(buildConfig());
@@ -241,7 +234,7 @@ export default function EtapaCardapio({
                 <p className="text-xs text-muted-foreground text-center py-2">Nenhum item. Clique em "Adicionar item".</p>
               ) : (
                 g.itens.map((item, ii) => (
-                  <div key={ii} className="flex items-center gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div key={ii} className="flex flex-col gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:gap-2">
                     {/* Nome + link */}
                     <div className="flex-1 min-w-0">
                       <a href={`/receita/${item.receita_id}`} target="_blank" rel="noopener noreferrer"
@@ -254,40 +247,43 @@ export default function EtapaCardapio({
                       )}
                     </div>
 
-                    {/* PC (g) */}
-                    <div className="shrink-0 text-center">
-                      <Label className="text-[9px] text-muted-foreground block leading-none">PC (g)</Label>
-                      <Input type="number" value={item.pc_g}
-                        onChange={e => updateItem(gi, ii, { pc_g: parseInt(e.target.value) || 0 })}
-                        className="w-14 h-7 text-xs text-center tabular-nums" />
-                    </div>
+                    {/* Colunas */}
+                    <div className="flex items-center gap-2">
+                      {/* PC (g) */}
+                      <div className="shrink-0 text-center">
+                        <Label className="text-[9px] text-muted-foreground block leading-none">PC (g)</Label>
+                        <Input type="number" value={item.pc_g}
+                          onChange={e => updateItem(gi, ii, { pc_g: parseInt(e.target.value) || 0 })}
+                          className="w-14 h-7 text-xs text-center tabular-nums" />
+                      </div>
 
-                    {/* Qtd (kg) */}
-                    <div className="shrink-0 text-center">
-                      <Label className="text-[9px] text-muted-foreground block leading-none">Qtd (kg)</Label>
-                      <Input type="number" step="0.1" value={parseFloat(item.qtd_kg.toFixed(2))}
-                        onChange={e => updateItem(gi, ii, { qtd_kg_manual: parseFloat(e.target.value.replace(",", ".")) || 0 })}
-                        className="w-16 h-7 text-xs text-center tabular-nums" />
-                    </div>
+                      {/* Qtd (kg) */}
+                      <div className="shrink-0 text-center">
+                        <Label className="text-[9px] text-muted-foreground block leading-none">Qtd (kg)</Label>
+                        <Input type="number" step="0.1" value={item.qtd_kg.toFixed(1)}
+                          onChange={e => updateItem(gi, ii, { qtd_kg_manual: parseFloat(e.target.value.replace(",", ".")) || 0 })}
+                          className="w-16 h-7 text-xs text-center tabular-nums" />
+                      </div>
 
-                    {/* Porções */}
-                    <div className="shrink-0 text-center w-12">
-                      <Label className="text-[9px] text-muted-foreground block leading-none">Porções</Label>
-                      <span className="text-xs font-medium tabular-nums">{item.porcoes}</span>
-                    </div>
+                      {/* Porções */}
+                      <div className="shrink-0 text-center w-12">
+                        <Label className="text-[9px] text-muted-foreground block leading-none">Porções</Label>
+                        <span className="text-xs font-medium tabular-nums">{item.porcoes}</span>
+                      </div>
 
-                    {/* Custo */}
-                    <div className="shrink-0 text-right w-16">
-                      <Label className="text-[9px] text-muted-foreground block leading-none">Custo</Label>
-                      <span className={`text-xs font-semibold tabular-nums ${item.sem_custo ? "text-amber-600" : "text-primary"}`}>
-                        {item.sem_custo ? "—" : fmtRs(item.custo)}
-                      </span>
-                    </div>
+                      {/* Custo */}
+                      <div className="shrink-0 text-right w-16">
+                        <Label className="text-[9px] text-muted-foreground block leading-none">Custo</Label>
+                        <span className={`text-xs font-semibold tabular-nums ${item.sem_custo ? "text-amber-600" : "text-primary"}`}>
+                          {item.sem_custo ? "—" : fmtRs(item.custo)}
+                        </span>
+                      </div>
 
-                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive"
-                      onClick={() => removeItem(gi, ii)}>
-                      <X className="w-3.5 h-3.5" />
-                    </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive"
+                        onClick={() => removeItem(gi, ii)}>
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 ))
               )}
@@ -361,32 +357,13 @@ export default function EtapaCardapio({
       </div>
 
       {/* Dialog de busca de receitas */}
-      <Dialog open={buscaGrupoIdx !== null} onOpenChange={v => !v && setBuscaGrupoIdx(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Adicionar receita</DialogTitle>
-          </DialogHeader>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar receita..." className="pl-10" value={buscaTexto}
-              onChange={e => setBuscaTexto(e.target.value)} autoFocus />
-          </div>
-          <div className="max-h-72 overflow-y-auto space-y-1">
-            {receitasFiltradas.length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-4">Nenhuma receita encontrada.</p>
-            ) : (
-              receitasFiltradas.map(r => (
-                <button key={r.id}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors flex items-center justify-between"
-                  onClick={() => addItem(buscaGrupoIdx, r)}>
-                  <span className="font-medium">{r.nome}</span>
-                  {r.categorias?.[0] && <Badge variant="outline" className="text-xs">{r.categorias[0]}</Badge>}
-                </button>
-              ))
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <BuscaReceitaDialog
+        open={buscaGrupoIdx !== null}
+        onClose={() => setBuscaGrupoIdx(null)}
+        onSelect={(r) => addItem(buscaGrupoIdx, r)}
+        receitas={receitas}
+        title="Adicionar item"
+      />
     </div>
   );
 }
