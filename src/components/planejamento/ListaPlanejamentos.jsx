@@ -89,7 +89,7 @@ export default function ListaPlanejamentos() {
             <div key={p.id}
               className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => handleAbrirCard(p)}>
-              <div className="flex-1 min-w-0" onClick={e => e.stopPropagation()}>
+              <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-foreground truncate">{p.nome}</h3>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                   {p.tipo_planejamento && (

@@ -215,7 +215,7 @@ export default function EtapaCardapio({
                   type="number"
                   value={g.percentual}
                   onChange={e => updateGrupo(gi, { percentual: parseFloat(e.target.value) || 0 })}
-                  className="w-16 h-7 text-sm text-center tabular-nums"
+                  className="w-20 h-7 text-sm text-center tabular-nums px-1"
                 />
                 <span className="text-sm text-muted-foreground">%</span>
               </div>
@@ -233,8 +233,18 @@ export default function EtapaCardapio({
               {g.itens.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-2">Nenhum item. Clique em "Adicionar item".</p>
               ) : (
-                g.itens.map((item, ii) => (
-                  <div key={ii} className="flex flex-col gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:gap-2">
+                <>
+                  {/* Cabeçalho de colunas */}
+                  <div className="hidden sm:flex items-center gap-3 px-3 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                    <div className="flex-1">Receita</div>
+                    <div className="w-20 text-center">PC (g)</div>
+                    <div className="w-24 text-center">Qtd (kg)</div>
+                    <div className="w-14 text-center">Porções</div>
+                    <div className="w-20 text-right">Custo</div>
+                    <div className="w-7" />
+                  </div>
+                  {g.itens.map((item, ii) => (
+                  <div key={ii} className="flex flex-col gap-2 p-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:gap-3">
                     {/* Nome + link */}
                     <div className="flex-1 min-w-0">
                       <a href={`/receita/${item.receita_id}`} target="_blank" rel="noopener noreferrer"
@@ -248,44 +258,45 @@ export default function EtapaCardapio({
                     </div>
 
                     {/* Colunas */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {/* PC (g) */}
-                      <div className="shrink-0 text-center">
-                        <Label className="text-[9px] text-muted-foreground block leading-none">PC (g)</Label>
+                      <div className="shrink-0 w-20 text-center">
+                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">PC (g)</Label>
                         <Input type="number" value={item.pc_g}
                           onChange={e => updateItem(gi, ii, { pc_g: parseInt(e.target.value) || 0 })}
-                          className="w-16 h-7 text-xs text-center tabular-nums" />
+                          className="w-full h-8 text-sm text-center tabular-nums px-1" />
                       </div>
 
                       {/* Qtd (kg) */}
-                      <div className="shrink-0 text-center">
-                        <Label className="text-[9px] text-muted-foreground block leading-none">Qtd (kg)</Label>
+                      <div className="shrink-0 w-24 text-center">
+                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">Qtd (kg)</Label>
                         <Input type="number" step="0.1" value={item.qtd_kg.toFixed(1)}
                           onChange={e => updateItem(gi, ii, { qtd_kg_manual: parseFloat(e.target.value.replace(",", ".")) || 0 })}
-                          className="w-20 h-7 text-xs text-center tabular-nums" />
+                          className="w-full h-8 text-sm text-center tabular-nums px-1" />
                       </div>
 
                       {/* Porções */}
-                      <div className="shrink-0 text-center w-12">
-                        <Label className="text-[9px] text-muted-foreground block leading-none">Porções</Label>
-                        <span className="text-xs font-medium tabular-nums">{item.porcoes}</span>
+                      <div className="shrink-0 w-14 text-center">
+                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">Porções</Label>
+                        <span className="text-sm font-medium tabular-nums">{item.porcoes}</span>
                       </div>
 
                       {/* Custo */}
-                      <div className="shrink-0 text-right w-16">
-                        <Label className="text-[9px] text-muted-foreground block leading-none">Custo</Label>
-                        <span className={`text-xs font-semibold tabular-nums ${item.sem_custo ? "text-amber-600" : "text-primary"}`}>
+                      <div className="shrink-0 w-20 text-right">
+                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">Custo</Label>
+                        <span className={`text-sm font-semibold tabular-nums ${item.sem_custo ? "text-amber-600" : "text-primary"}`}>
                           {item.sem_custo ? "—" : fmtRs(item.custo)}
                         </span>
                       </div>
 
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive"
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive"
                         onClick={() => removeItem(gi, ii)}>
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
-                ))
+                  ))}
+                </>
               )}
 
               <Button variant="ghost" size="sm" className="w-full text-xs gap-1"

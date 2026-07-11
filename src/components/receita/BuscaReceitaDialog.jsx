@@ -46,11 +46,11 @@ export default function BuscaReceitaDialog({
 
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-2">
+        <div className="space-y-2 flex-1 min-h-0 flex flex-col">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input placeholder="Buscar por nome..." className="pl-10" value={busca}
@@ -68,7 +68,7 @@ export default function BuscaReceitaDialog({
               </button>
             ))}
           </div>
-          <div className="max-h-[70vh] overflow-y-auto space-y-1">
+          <div className="flex-1 overflow-y-auto space-y-1">
             {filtradas.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-4">Nenhuma receita encontrada.</p>
             ) : (
