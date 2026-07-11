@@ -54,6 +54,11 @@ export default function ListaPlanejamentos() {
     setShowDialog(true);
   };
 
+  const handleAbrirCard = (p) => {
+    setEdicao(p);
+    setShowDialog(true);
+  };
+
   const handleNovo = () => {
     setEdicao(null);
     setShowDialog(true);
@@ -82,8 +87,9 @@ export default function ListaPlanejamentos() {
         <div className="space-y-2">
           {filtrados.map(p => (
             <div key={p.id}
-              className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex-1 min-w-0">
+              className="flex items-center gap-3 p-4 bg-card rounded-xl border border-border shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => handleAbrirCard(p)}>
+              <div className="flex-1 min-w-0" onClick={e => e.stopPropagation()}>
                 <h3 className="font-semibold text-foreground truncate">{p.nome}</h3>
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                   {p.tipo_planejamento && (
@@ -105,11 +111,12 @@ export default function ListaPlanejamentos() {
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8"
+                    onClick={e => e.stopPropagation()}>
                     <MoreHorizontal className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
                   <DropdownMenuItem onClick={() => handleEdit(p)}>
                     <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
                   </DropdownMenuItem>

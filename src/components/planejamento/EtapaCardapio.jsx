@@ -215,7 +215,7 @@ export default function EtapaCardapio({
                   type="number"
                   value={g.percentual}
                   onChange={e => updateGrupo(gi, { percentual: parseFloat(e.target.value) || 0 })}
-                  className="w-14 h-7 text-sm text-center tabular-nums"
+                  className="w-16 h-7 text-sm text-center tabular-nums"
                 />
                 <span className="text-sm text-muted-foreground">%</span>
               </div>
@@ -254,7 +254,7 @@ export default function EtapaCardapio({
                         <Label className="text-[9px] text-muted-foreground block leading-none">PC (g)</Label>
                         <Input type="number" value={item.pc_g}
                           onChange={e => updateItem(gi, ii, { pc_g: parseInt(e.target.value) || 0 })}
-                          className="w-14 h-7 text-xs text-center tabular-nums" />
+                          className="w-16 h-7 text-xs text-center tabular-nums" />
                       </div>
 
                       {/* Qtd (kg) */}
@@ -262,7 +262,7 @@ export default function EtapaCardapio({
                         <Label className="text-[9px] text-muted-foreground block leading-none">Qtd (kg)</Label>
                         <Input type="number" step="0.1" value={item.qtd_kg.toFixed(1)}
                           onChange={e => updateItem(gi, ii, { qtd_kg_manual: parseFloat(e.target.value.replace(",", ".")) || 0 })}
-                          className="w-16 h-7 text-xs text-center tabular-nums" />
+                          className="w-20 h-7 text-xs text-center tabular-nums" />
                       </div>
 
                       {/* Porções */}

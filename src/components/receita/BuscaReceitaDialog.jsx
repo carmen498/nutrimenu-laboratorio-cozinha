@@ -38,7 +38,7 @@ export default function BuscaReceitaDialog({
         return terms.every(t => nome.includes(t));
       });
     }
-    return result.slice(0, 50);
+    return result.slice(0, 100);
   }, [receitas, busca, categoria]);
 
   const handleClose = () => { setBusca(""); setCategoria("Todas"); onClose(); };
@@ -68,7 +68,7 @@ export default function BuscaReceitaDialog({
               </button>
             ))}
           </div>
-          <div className="max-h-72 overflow-y-auto space-y-1">
+          <div className="max-h-[70vh] overflow-y-auto space-y-1">
             {filtradas.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-4">Nenhuma receita encontrada.</p>
             ) : (
