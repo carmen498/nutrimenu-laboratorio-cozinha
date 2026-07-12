@@ -7,12 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Plus, Trash2, ExternalLink, ShoppingCart, AlertTriangle, Search, ArrowLeft,
+  Plus, Trash2, ExternalLink, ShoppingCart, AlertTriangle, Search, ArrowLeft, ArrowRight,
   Cookie, X
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
-import DocesBebidasSection from "./DocesBebidasSection";
 import { toast } from "sonner";
 
 const GRUPOS_PADRAO = [
@@ -39,10 +38,6 @@ function initGrupos(config) {
   return GRUPOS_PADRAO.map(g => ({ ...g, itens: [] }));
 }
 
-function initDocesBebidas(config) {
-  return config?.doces_bebidas || [];
-}
-
 function custoPorKgPronto(receita) {
   if (!receita) return 0;
   if (receita.rendimento_total > 0 && receita.custo_total > 0) {
@@ -66,10 +61,10 @@ function fmtPct(v) { return (v || 0).toFixed(0) + "%"; }
 
 export default function EtapaCardapio({
   totalComMargemKg, totalPessoas, cardapioConfig,
-  onSalvar, onGerarListaCompras, onVoltar, salvando
+  onSalvar, onGerarListaCompras, onVoltar, salvando,
+  docesBebidas, onGruposChange, onAvancar
 }) {
   const [grupos, setGrupos] = useState(() => initGrupos(cardapioConfig));
-  const [docesBebidas, setDocesBebidas] = useState(() => initDocesBebidas(cardapioConfig));
   const [buscaGrupoIdx, setBuscaGrupoIdx] = useState(null);
   const [showNovoGrupo, setShowNovoGrupo] = useState(false);
   const [novoGrupoNome, setNovoGrupoNome] = useState("");
@@ -78,9 +73,27 @@ export default function EtapaCardapio({
   useEffect(() => {
     if (cardapioConfig) {
       setGrupos(initGrupos(cardapioConfig));
-      setDocesBebidas(initDocesBebidas(cardapioConfig));
     }
   }, [cardapioConfig]);
+
+  // Push grupos config para o parent (necessário para salvar na Etapa 4)
+  useEffect(() => {
+    if (onGruposChange) {
+      onGruposChange(gruposCalc.map(g => ({
+        nome: g.nome,
+        percentual: g.percentual,
+        is_sobremesa: g.is_sobremesa,
+        itens: g.itens.map(i => ({
+          receita_id: i.receita_id,
+          receita_nome: i.receita_nome,
+          pc_g: i.pc_g,
+          qtd_kg: parseFloat(i.qtd_kg.toFixed(3)),
+          qtd_kg_manual: i.qtd_kg_manual,
+          porcoes: i.porcoes,
+        })),
+      })));
+    }
+  }, [gruposCalc, onGruposChange]);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
@@ -332,13 +345,6 @@ export default function EtapaCardapio({
         </Button>
       )}
 
-      {/* Doces & Bebidas — fora do total de comida */}
-      <DocesBebidasSection
-        totalPessoas={totalPessoas}
-        docesBebidas={docesBebidas}
-        onChange={setDocesBebidas}
-      />
-
       {/* Totais */}
       <div className="space-y-2 p-4 rounded-lg bg-muted/40">
         <div className="flex items-center justify-between text-sm">
@@ -376,9 +382,16 @@ export default function EtapaCardapio({
           <Button variant="outline" onClick={onVoltar} className="gap-1">
             <ArrowLeft className="w-4 h-4" /> Voltar
           </Button>
-          <Button variant="secondary" onClick={handleSalvar} disabled={salvando}>
-            {salvando ? "Salvando..." : "Salvar Evento"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={handleSalvar} disabled={salvando}>
+              {salvando ? "Salvando..." : "Salvar Evento"}
+            </Button>
+            {onAvancar && (
+              <Button onClick={onAvancar} disabled={salvando} className="gap-1">
+                Doces & Bebidas <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

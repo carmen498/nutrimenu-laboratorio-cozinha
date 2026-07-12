@@ -9,6 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Plus, Minus, Clock, Info, Check, ArrowRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import EtapaCardapio from "./EtapaCardapio";
+import EtapaDocesBebidas from "./EtapaDocesBebidas";
 
 const TIPOS_PLANEJAMENTO = ["Almoço", "Jantar", "Coquetel", "Data Comemorativa", "Confraternização", "Outro"];
 const TIPOS_SERVICO = ["Bufê", "Empratado", "À La Carte", "Refeição Familiar", "Self-Service", "Outro"];
@@ -37,6 +38,10 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
   // Etapa 3 — Cardápio
   const [cardapioConfig, setCardapioConfig] = useState(null);
+  // Etapa 4 — Doces & Bebidas (estado lifted — compartilhado entre Etapa 3 e 4)
+  const [docesBebidas, setDocesBebidas] = useState([]);
+  // Grupos config recebido da EtapaCardapio (necessário para salvar na Etapa 4)
+  const [gruposConfig, setGruposConfig] = useState([]);
   const navigate = useNavigate();
 
   // Carregar dados ao abrir (useEffect — onOpenChange do Radix não dispara quando open é controlado externamente)
@@ -46,6 +51,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       // Edição: abre na última etapa relevante (3 se cardápio salvo, senão 2)
       const hasCardapio = !!planejamentoEdicao.cardapio_config;
       setEtapa(hasCardapio ? 3 : 2);
+      setGruposConfig([]);
       setNome(planejamentoEdicao.nome || "");
       setTipoPlanejamento(planejamentoEdicao.tipo_planejamento || "");
       setTipoServico(planejamentoEdicao.tipo_servico || "");
@@ -65,7 +71,8 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
             ? JSON.parse(planejamentoEdicao.cardapio_config)
             : planejamentoEdicao.cardapio_config;
           setCardapioConfig(config);
-        } catch (e) { setCardapioConfig(null); }
+          setDocesBebidas(config.doces_bebidas || []);
+        } catch (e) { setCardapioConfig(null); setDocesBebidas([]); }
       } else {
         setCardapioConfig(null);
       }
@@ -76,6 +83,8 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setHomens(0); setMulheres(0); setCriancas(0);
       setPcHomens(600); setPcMulheres(400); setPcCriancas(300); setMargem(20);
       setCardapioConfig(null);
+      setDocesBebidas([]);
+      setGruposConfig([]);
     }
   }, [open, planejamentoEdicao]);
 
@@ -188,7 +197,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${etapa === 3 ? "max-w-6xl w-[95vw]" : "max-w-2xl"} max-h-[95vh] overflow-y-auto`}>
+      <DialogContent className={`${(etapa === 3 || etapa === 4) ? "max-w-6xl w-[95vw]" : "max-w-2xl"} max-h-[95vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="font-display">
             {planejamentoEdicao ? "Editar Evento" : "Novo Evento"}
@@ -220,6 +229,14 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
                 {etapa > 3 ? <Check className="w-4 h-4" /> : "3"}
               </div>
               <span className="text-sm font-medium hidden sm:inline">Cardápio</span>
+            </button>
+            <div className={`flex-1 h-0.5 ${etapa >= 4 ? "bg-primary" : "bg-muted"}`} />
+            <button type="button" onClick={() => etapa1Valida && setEtapa(4)}
+              className={`flex items-center gap-2 ${etapa >= 4 ? "text-primary" : "text-muted-foreground"}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${etapa >= 4 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                4
+              </div>
+              <span className="text-sm font-medium hidden sm:inline">Doces & Bebidas</span>
             </button>
           </div>
         </div>
@@ -360,6 +377,21 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
             onSalvar={handleSalvar}
             onGerarListaCompras={handleGerarListaCompras}
             onVoltar={() => setEtapa(2)}
+            onAvancar={() => setEtapa(4)}
+            docesBebidas={docesBebidas}
+            onGruposChange={setGruposConfig}
+            salvando={salvando}
+          />
+        )}
+
+        {etapa === 4 && (
+          <EtapaDocesBebidas
+            totalPessoas={totalPessoas}
+            docesBebidas={docesBebidas}
+            onDocesBebidasChange={setDocesBebidas}
+            gruposConfig={gruposConfig}
+            onSalvar={handleSalvar}
+            onVoltar={() => setEtapa(3)}
             salvando={salvando}
           />
         )}
