@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, Scale, ShoppingCart } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, Scale, ShoppingCart, FileText } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +13,7 @@ import {
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel
 } from "@/components/ui/alert-dialog";
 import NovoPlanejamentoDialog from "./NovoPlanejamentoDialog";
+import RelatoriosPlanejamentoDialog from "./RelatoriosPlanejamentoDialog";
 
 export default function ListaPlanejamentos() {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ export default function ListaPlanejamentos() {
   const [showDialog, setShowDialog] = useState(false);
   const [edicao, setEdicao] = useState(null);
   const [excluirItem, setExcluirItem] = useState(null);
+  const [relatorioItem, setRelatorioItem] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -121,9 +123,14 @@ export default function ListaPlanejamentos() {
                     <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
                   </DropdownMenuItem>
                   {p.cardapio_config && (
-                    <DropdownMenuItem onClick={() => navigate(`/lista-compras?planejamento=${p.id}`)}>
-                      <ShoppingCart className="w-3.5 h-3.5 mr-2" /> Lista de Compras
-                    </DropdownMenuItem>
+                    <>
+                      <DropdownMenuItem onClick={() => navigate(`/lista-compras?planejamento=${p.id}`)}>
+                        <ShoppingCart className="w-3.5 h-3.5 mr-2" /> Lista de Compras
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setRelatorioItem(p)}>
+                        <FileText className="w-3.5 h-3.5 mr-2" /> Relatórios
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuItem className="text-destructive" onClick={() => setExcluirItem(p)}>
                     <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
@@ -140,6 +147,12 @@ export default function ListaPlanejamentos() {
         onClose={() => setShowDialog(false)}
         onSaved={load}
         planejamentoEdicao={edicao}
+      />
+
+      <RelatoriosPlanejamentoDialog
+        open={!!relatorioItem}
+        onClose={() => setRelatorioItem(null)}
+        planejamento={relatorioItem}
       />
 
       <AlertDialog open={!!excluirItem} onOpenChange={(v) => !v && setExcluirItem(null)}>
