@@ -26,6 +26,8 @@ import TagBadge from "@/components/tags/TagBadge";
 import TagList from "@/components/tags/TagList";
 import TagSelector from "@/components/tags/TagSelector";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
+import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
+import ModoPreparoComposto from "@/components/receita/ModoPreparoComposto";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
@@ -330,6 +332,15 @@ export default function ReceitaAberta() {
     }
     return blocks;
   }, [itensFichaAgrupada]);
+
+  const temSubreceitas = useMemo(
+    () => itensFichaAgrupada.some(i => i.tipo === "subreceita" && !i.subreceita_parent_id && i.subreceita_id),
+    [itensFichaAgrupada]
+  );
+  const blocosCompostos = useMemo(
+    () => temSubreceitas && receita ? calcularModoPreparoComposto(itensFichaAgrupada, receitasBasicasMap, receita.modo_preparo) : [],
+    [temSubreceitas, itensFichaAgrupada, receitasBasicasMap, receita]
+  );
 
   const findBlocoIdx = (idx) => {
     for (let b = 0; b < blocos.length; b++) {
@@ -801,7 +812,7 @@ REGRAS:
   }
 
   const precoVenda = showMargin ? custoPorcao / (1 - margem / 100) : 0;
-  const passos = formatarModoPreparo(receita.modo_preparo);
+  const passos = formatarModoPreparo(receita?.modo_preparo);
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
@@ -1681,7 +1692,7 @@ REGRAS:
       <IngredientesEsquecidos receitaId={id} fator={fator} />
 
       {/* Mode of preparation */}
-      {passos.length > 0 && (
+      {(passos.length > 0 || temSubreceitas) && (
         <div>
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display text-lg font-bold">Modo de Preparo</h2>
@@ -1694,6 +1705,9 @@ REGRAS:
           <Card className="p-4">
             {editingPreparo ? (
               <div className="space-y-2">
+                {temSubreceitas && (
+                  <p className="text-xs text-muted-foreground italic">Editando o bloco "Montagem" da receita-mãe. Os modos de preparo das sub-receitas são exibidos por referência e não podem ser editados aqui.</p>
+                )}
                 <textarea
                   className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring"
                   value={preparoDraft}
@@ -1705,6 +1719,8 @@ REGRAS:
                   <Button size="sm" onClick={handleSavePreparo}>Salvar</Button>
                 </div>
               </div>
+            ) : temSubreceitas ? (
+              <ModoPreparoComposto blocos={blocosCompostos} />
             ) : passos.length === 1 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
             ) : (

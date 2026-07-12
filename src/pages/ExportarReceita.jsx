@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
+import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 
 export default function ExportarReceita() {
   const { id } = useParams();
@@ -94,6 +95,9 @@ export default function ExportarReceita() {
       return { ...item, ing, qtd, custo, isSubreceita: false };
     });
 
+  const temSubreceitas = itensFicha.some(i => i.tipo === "subreceita" && i.subreceita_id);
+  const blocosCompostos = temSubreceitas ? calcularModoPreparoComposto(itensFicha, recMap, receita.modo_preparo) : [];
+
   const hasMedidaCaseira = itensFicha.some(i => i.medida_caseira && i.medida_caseira.trim());
   const custoIngredientes = itensFicha.reduce((s, i) => s + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
@@ -128,10 +132,22 @@ export default function ExportarReceita() {
         text += `\n`;
       });
     }
-    if (passos.length > 0) {
-      text += `\nMODO DE PREPARO:\n`;
-      text += passosParaTexto(passos);
-      text += `\n`;
+    if (passos.length > 0 || temSubreceitas) {
+      if (temSubreceitas) {
+        blocosCompostos.forEach(bloco => {
+          text += `\n${bloco.tipo === "subreceita" ? `MODO DE PREPARO — ${bloco.nome.toUpperCase()}` : "MONTAGEM"}:\n`;
+          if (bloco.passos.length === 0) {
+            text += `(sem modo de preparo cadastrado)\n`;
+          } else {
+            text += passosParaTexto(bloco.passos);
+            text += `\n`;
+          }
+        });
+      } else {
+        text += `\nMODO DE PREPARO:\n`;
+        text += passosParaTexto(passos);
+        text += `\n`;
+      }
     }
     if (aba === "custos") {
       text += `\n💰 Ingredientes: ${formatCurrency(custoIngredientes)}`;
@@ -296,10 +312,38 @@ export default function ExportarReceita() {
           </div>
         )}
 
-        {aba === "preparo" && passos.length > 0 && (
+        {aba === "preparo" && (passos.length > 0 || temSubreceitas) && (
           <>
             <h3 className="font-semibold mt-6 mb-2">Modo de Preparo</h3>
-            {passos.length === 1 ? (
+            {temSubreceitas ? (
+              <div className="space-y-3">
+                {blocosCompostos.map((bloco, idx) => (
+                  <div key={idx} className={idx > 0 ? "pt-2 border-t border-border/50" : ""}>
+                    <p className="font-semibold text-sm mb-1 flex items-center gap-1">
+                      {bloco.tipo === "subreceita" ? (
+                        <>
+                          <ChefHat className="w-3.5 h-3.5 text-primary shrink-0" />
+                          Modo de preparo — {bloco.nome}
+                        </>
+                      ) : (
+                        "Montagem"
+                      )}
+                    </p>
+                    {bloco.passos.length === 0 ? (
+                      <p className="text-sm italic text-muted-foreground pl-5">(sem modo de preparo cadastrado)</p>
+                    ) : bloco.passos.length === 1 ? (
+                      <p className="text-sm leading-relaxed whitespace-pre-line pl-5">{bloco.passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
+                    ) : (
+                      <ol className="space-y-1 list-decimal list-inside pl-5">
+                        {bloco.passos.map((passo, pi) => (
+                          <li key={pi} className="text-sm leading-relaxed">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : passos.length === 1 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
             ) : (
               <ol className="space-y-1.5 list-decimal list-inside">
