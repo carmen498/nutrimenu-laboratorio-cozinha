@@ -1041,8 +1041,8 @@ REGRAS:
 
             <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId="ingredientes">
-              {(provided) => (
-                <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
+              {(provided, snapshot) => (
+                <div ref={provided.innerRef} {...provided.droppableProps} className={`space-y-2 transition-colors rounded-lg ${snapshot.isDraggingOver ? "bg-primary/5 p-1 ring-1 ring-primary/20" : ""}`}>
             {itensFichaAgrupada.map((item, idx) => {
               const isQtdZero = !item.isGrupo && (item.quantidade_por_porcao || 0) === 0;
 
@@ -1573,32 +1573,37 @@ REGRAS:
       </DragDropContext>
 
             {pendingGrupo && (
-              <Card className="p-3 bg-primary/20 border-primary/40 border-dashed">
-                <div className="flex items-center gap-2">
-                  <Input
-                    className="h-9 text-sm font-bold flex-1"
-                    value={pendingGrupoTitulo}
-                    onChange={(e) => setPendingGrupoTitulo(e.target.value.toUpperCase())}
-                    placeholder="Digite o nome do sub-título..."
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && pendingGrupoTitulo.trim()) {
-                        addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
-                      }
-                      if (e.key === "Escape") { setPendingGrupo(false); setPendingGrupoTitulo(""); }
-                    }}
-                  />
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                    if (pendingGrupoTitulo.trim()) addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
-                    else { setPendingGrupo(false); setPendingGrupoTitulo(""); }
-                  }}>
-                    <Check className="w-4 h-4 text-green-600" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setPendingGrupo(false); setPendingGrupoTitulo(""); }}>
-                    <X className="w-4 h-4" />
-                  </Button>
+              <div className="flex items-stretch gap-0.5">
+                <div className="flex items-center justify-center w-8 min-h-[32px] shrink-0" title="Arraste disponível após salvar">
+                  <GripVertical className="w-4 h-4 text-muted-foreground/20" />
                 </div>
-              </Card>
+                <Card className="p-3 bg-primary/20 border-primary/40 border-dashed flex-1">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      className="h-9 text-sm font-bold flex-1"
+                      value={pendingGrupoTitulo}
+                      onChange={(e) => setPendingGrupoTitulo(e.target.value.toUpperCase())}
+                      placeholder="Digite o nome do sub-título..."
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && pendingGrupoTitulo.trim()) {
+                          addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
+                        }
+                        if (e.key === "Escape") { setPendingGrupo(false); setPendingGrupoTitulo(""); }
+                      }}
+                    />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                      if (pendingGrupoTitulo.trim()) addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
+                      else { setPendingGrupo(false); setPendingGrupoTitulo(""); }
+                    }} title="Salvar sub-título">
+                      <Check className="w-4 h-4 text-green-600" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setPendingGrupo(false); setPendingGrupoTitulo(""); }} title="Cancelar">
+                      <X className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </Card>
+              </div>
             )}
           </div>
         )}

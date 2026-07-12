@@ -62,6 +62,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
     setSaving(true);
     try {
       const existingItems = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId });
+      const maxOrdem = existingItems.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
 
       if (selectedType === "subreceita") {
         const qtdPorPorcao = qty / (porcoes || 1);
@@ -71,12 +72,12 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           subreceita_id: selected.id,
           subreceita_nome: selected.nome,
           quantidade_por_porcao: qtdPorPorcao,
-          ordem: existingItems.length,
+          ordem: maxOrdem + 10,
         });
 
         // Pull ingredients from the sub-receita automatically (proportional)
         const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selected, qtdPorPorcao);
-        let nextOrdem = existingItems.length + 1;
+        let nextOrdem = maxOrdem + 11;
         for (const child of children) {
           await base44.entities.IngredienteReceita.create({
             ...child,
@@ -100,7 +101,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           pre_preparo: prePreparo,
           quantidade_por_porcao: qtdPorPorcao,
           medida_caseira: medidaSel !== "g" && medidaSel !== "ml" ? `${quantidade} ${medidaSel}` : "",
-          ordem: existingItems.length,
+          ordem: maxOrdem + 10,
         });
         toast.success(`${selected.nome} adicionado!`);
       }

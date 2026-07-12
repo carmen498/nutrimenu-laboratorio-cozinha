@@ -8,18 +8,25 @@ export default function DraggableRow({ draggableId, index, isDragDisabled = fals
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`flex items-stretch gap-1 ${snapshot.isDragging ? "opacity-75 z-50" : ""}`}
+          className={`group flex items-stretch gap-0.5 ${snapshot.isDragging ? "z-50" : ""}`}
         >
-          {!isDragDisabled && (
+          {!isDragDisabled ? (
             <button
               {...provided.dragHandleProps}
-              className="flex items-center justify-center w-5 cursor-grab active:cursor-grabbing text-muted-foreground/40 hover:text-primary transition-colors touch-none shrink-0"
+              className="flex items-center justify-center w-8 min-h-[32px] cursor-grab active:cursor-grabbing text-muted-foreground opacity-40 group-hover:opacity-100 group-hover:text-primary transition-all touch-none shrink-0 rounded-l-md"
               title="Arraste para reordenar"
+              aria-label="Arraste para reordenar"
             >
               <GripVertical className="w-4 h-4" />
             </button>
+          ) : (
+            <div className="w-2 shrink-0" />
           )}
-          <div className={`flex-1 min-w-0 transition-shadow ${snapshot.isDragging ? "ring-2 ring-primary rounded-lg shadow-lg" : ""}`}>
+          <div className={`flex-1 min-w-0 transition-all rounded-md ${
+            snapshot.isDragging
+              ? "ring-2 ring-primary shadow-xl scale-[1.02] bg-background"
+              : "group-hover:ring-1 group-hover:ring-primary/15"
+          }`}>
             {children}
           </div>
           {provided.placeholder}
