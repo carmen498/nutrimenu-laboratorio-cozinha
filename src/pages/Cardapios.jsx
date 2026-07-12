@@ -196,7 +196,7 @@ export default function Cardapios() {
           <p className="text-sm text-muted-foreground mt-0.5">
             {aba === "cardapios"
               ? `${cardapios.length} cardápio${cardapios.length !== 1 ? "s" : ""}`
-              : "Planejamentos de eventos"}
+              : "Eventos"}
           </p>
         </div>
         {aba === "cardapios" && (
@@ -214,7 +214,7 @@ export default function Cardapios() {
         </Button>
         <Button variant={aba === "planejamentos" ? "default" : "outline"} size="sm"
           onClick={() => setAba("planejamentos")} className="gap-1.5">
-          <ClipboardList className="w-4 h-4" /> Planejamentos
+          <ClipboardList className="w-4 h-4" /> Eventos
         </Button>
       </div>
 
@@ -420,7 +420,7 @@ export default function Cardapios() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Novo Cardápio</DialogTitle>
-            <DialogDescription>Organize receitas por tipo de evento ou planejamento.</DialogDescription>
+            <DialogDescription>Organize receitas por tipo de evento.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>

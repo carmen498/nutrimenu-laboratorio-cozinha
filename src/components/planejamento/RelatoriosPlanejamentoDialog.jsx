@@ -21,8 +21,8 @@ const RELATORIOS = [
   },
   {
     id: "receitas",
-    titulo: "Receitas do Planejamento",
-    descricao: "Lista simples dos nomes das receitas, agrupadas por seção, na ordem do planejamento.",
+    titulo: "Receitas do Evento",
+    descricao: "Lista simples dos nomes das receitas, agrupadas por seção, na ordem do evento.",
     icone: List,
     cor: "bg-green-50 text-green-700 border-green-200",
   },
@@ -60,7 +60,7 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
     setDados(null);
     carregarDadosRelatorios(planejamento)
       .then(d => setDados(d))
-      .catch(() => toast.error("Erro ao carregar dados do planejamento"))
+      .catch(() => toast.error("Erro ao carregar dados do evento"))
       .finally(() => setLoading(false));
   }, [open, planejamento]);
 
@@ -96,19 +96,19 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display">Relatórios do Planejamento</DialogTitle>
+          <DialogTitle className="font-display">Relatórios do Evento</DialogTitle>
         </DialogHeader>
 
         {!temCardapio ? (
           <div className="py-8 text-center text-sm text-muted-foreground">
-            Nenhum cardápio salvo neste planejamento.
+            Nenhum cardápio salvo neste evento.
             <br />
             Gere o cardápio na Etapa 3 antes de emitir relatórios.
           </div>
         ) : loading ? (
           <div className="flex flex-col items-center gap-2 py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Carregando dados do planejamento...</p>
+            <p className="text-sm text-muted-foreground">Carregando dados do evento...</p>
           </div>
         ) : (
           <div className="space-y-2">

@@ -181,7 +181,7 @@ export function gerarRelatorioProducao(planejamento, dados) {
 export function gerarRelatorioReceitas(planejamento, dados) {
   const doc = new jsPDF();
   const margin = 14;
-  let y = drawHeader(doc, planejamento, "Receitas do Planejamento");
+  let y = drawHeader(doc, planejamento, "Receitas do Evento");
 
   const { config } = dados;
   const grupos = (config.grupos || []).filter(g => (g.itens || []).length > 0);

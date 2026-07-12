@@ -14,6 +14,9 @@ import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
+import GerenciarTagsDialog from "@/components/receita/GerenciarTagsDialog";
+import QuickTagAssignDialog from "@/components/receita/QuickTagAssignDialog";
+import TagBadge from "@/components/tags/TagBadge";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 
@@ -48,6 +51,8 @@ export default function Receitas() {
   const [showFavoritas, setShowFavoritas] = useState(false);
   const [tagFilterIds, setTagFilterIds] = useState([]);
   const [showTagPainel, setShowTagPainel] = useState(false);
+  const [showGerenciarTags, setShowGerenciarTags] = useState(false);
+  const [assignTagsReceita, setAssignTagsReceita] = useState(null);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -71,18 +76,10 @@ export default function Receitas() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: receitaTags = [] } = useQuery({
-    queryKey: ["receita-tags", tagFilterIds],
-    queryFn: async () => {
-      if (tagFilterIds.length === 0) return [];
-      const all = [];
-      for (const tid of tagFilterIds) {
-        const rts = await base44.entities.ReceitaTag.filter({ tag_id: tid }, "", 1000);
-        all.push(...rts);
-      }
-      return all;
-    },
-    enabled: tagFilterIds.length > 0,
+  const { data: allReceitaTags = [] } = useQuery({
+    queryKey: ["all-receita-tags"],
+    queryFn: () => base44.entities.ReceitaTag.filter({}, "", 5000),
+    staleTime: 0,
   });
 
   const { data: totalReceitas = 0 } = useQuery({
@@ -142,9 +139,9 @@ export default function Receitas() {
     if (showFavoritas) return r.favorita === true;
     const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
     const matchCat = !categoriaSelecionada || hasCategoria(r, categoriaSelecionada);
-    if (tagFilterIds.length > 0 && receitaTags.length > 0) {
-      const tagsForReceita = receitaTags.filter(rt => rt.receita_id === r.id);
-      const matchTags = tagFilterIds.every(tid => tagsForReceita.some(rt => rt.tag_id === tid));
+    if (tagFilterIds.length > 0) {
+      const tagsForReceita = allReceitaTags.filter(rt => rt.receita_id === r.id);
+      const matchTags = tagFilterIds.some(tid => tagsForReceita.some(rt => rt.tag_id === tid));
       if (!matchTags) return false;
     }
     return matchBusca && matchCat;
@@ -166,6 +163,9 @@ export default function Receitas() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge></h1>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowGerenciarTags(true)}>
+            <Tag className="w-4 h-4 mr-1" /> Gerenciar Tags
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
@@ -328,7 +328,7 @@ export default function Receitas() {
       {showTagPainel && (
         <div className="p-3 bg-card border border-border rounded-xl space-y-3 max-h-80 overflow-y-auto">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filtrar por tags (AND)</span>
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filtrar por tags</span>
           </div>
           {(() => {
             const ORDEM_GRUPOS = [
@@ -396,6 +396,15 @@ export default function Receitas() {
                       <span className="text-[11px] text-muted-foreground">{getCategorias(r).join(", ")}</span>
                     )}
                   </div>
+                  {allReceitaTags.filter(rt => rt.receita_id === r.id).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {allReceitaTags.filter(rt => rt.receita_id === r.id).map(rt => {
+                        const tag = tags.find(t => t.id === rt.tag_id);
+                        if (!tag) return null;
+                        return <TagBadge key={rt.id} nome={tag.nome} cor={tag.cor} grupo={tag.grupo} />;
+                      })}
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 mt-0.5">
                     {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
                       <span className="text-xs font-bold text-primary">
@@ -429,6 +438,9 @@ export default function Receitas() {
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
                       <Copy className="w-4 h-4 mr-2" /> Duplicar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setAssignTagsReceita(r)}>
+                      <Tag className="w-4 h-4 mr-2" /> Tags
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive" onClick={() => {
                       if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
@@ -478,6 +490,12 @@ export default function Receitas() {
       {showImportCsv && (
         <ImportReceitasCsvDialog open={true} onClose={() => setShowImportCsv(false)} />
       )}
+
+      {/* Gerenciar Tags dialog */}
+      <GerenciarTagsDialog open={showGerenciarTags} onClose={() => setShowGerenciarTags(false)} />
+
+      {/* Quick Tag Assign dialog */}
+      <QuickTagAssignDialog open={!!assignTagsReceita} onClose={() => setAssignTagsReceita(null)} receita={assignTagsReceita} />
 
     </div>
   );

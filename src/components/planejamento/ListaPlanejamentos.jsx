@@ -71,11 +71,11 @@ export default function ListaPlanejamentos() {
       <div className="flex items-center justify-between gap-3">
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar planejamento..." className="pl-10" value={busca}
+          <Input placeholder="Buscar evento..." className="pl-10" value={busca}
             onChange={e => setBusca(e.target.value)} />
         </div>
         <Button onClick={handleNovo} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Planejamento
+          <Plus className="w-4 h-4" /> Novo Evento
         </Button>
       </div>
 
@@ -83,7 +83,7 @@ export default function ListaPlanejamentos() {
         <div className="text-center py-8 text-muted-foreground">Carregando...</div>
       ) : filtrados.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          {busca ? "Nenhum planejamento encontrado." : "Nenhum planejamento criado ainda."}
+          {busca ? "Nenhum evento encontrado." : "Nenhum evento criado ainda."}
         </div>
       ) : (
         <div className="space-y-2">
@@ -158,7 +158,7 @@ export default function ListaPlanejamentos() {
       <AlertDialog open={!!excluirItem} onOpenChange={(v) => !v && setExcluirItem(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir planejamento?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir evento?</AlertDialogTitle>
             <AlertDialogDescription>
               "{excluirItem?.nome}" será removido permanentemente.
             </AlertDialogDescription>

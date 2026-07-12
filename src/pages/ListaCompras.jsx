@@ -228,7 +228,7 @@ export default function ListaCompras() {
         <div className="flex items-center gap-3">
           {planejamentoOrigem && (
             <Button variant="ghost" size="sm" onClick={() => navigate("/cardapios")} className="gap-1">
-              <ArrowLeft className="w-4 h-4" /> Voltar ao planejamento
+              <ArrowLeft className="w-4 h-4" /> Voltar ao evento
             </Button>
           )}
           <h1 className="font-display text-2xl font-bold">Lista de Compras</h1>

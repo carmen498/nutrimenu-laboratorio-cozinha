@@ -362,7 +362,7 @@ export default function EtapaCardapio({
             <ArrowLeft className="w-4 h-4" /> Voltar
           </Button>
           <Button variant="secondary" onClick={handleSalvar} disabled={salvando}>
-            {salvando ? "Salvando..." : "Salvar Planejamento"}
+            {salvando ? "Salvando..." : "Salvar Evento"}
           </Button>
         </div>
       </div>

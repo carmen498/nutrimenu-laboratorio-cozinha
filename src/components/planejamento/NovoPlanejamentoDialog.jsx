@@ -118,15 +118,15 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       const dados = buildDados(configOverride);
       if (planejamentoEdicao) {
         await base44.entities.Planejamento.update(planejamentoEdicao.id, dados);
-        toast.success("Planejamento atualizado!");
+        toast.success("Evento atualizado!");
       } else {
         await base44.entities.Planejamento.create(dados);
-        toast.success("Planejamento salvo!");
+        toast.success("Evento salvo!");
       }
       onSaved?.();
       onClose();
     } catch (e) {
-      toast.error("Erro ao salvar planejamento");
+      toast.error("Erro ao salvar evento");
     } finally {
       setSalvando(false);
     }
@@ -149,7 +149,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       onSaved?.();
       navigate(`/lista-compras?planejamento=${savedId}`);
     } catch (e) {
-      toast.error("Erro ao salvar planejamento");
+      toast.error("Erro ao salvar evento");
       setSalvando(false);
     }
   };
@@ -191,7 +191,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       <DialogContent className={`${etapa === 3 ? "max-w-6xl w-[95vw]" : "max-w-2xl"} max-h-[95vh] overflow-y-auto`}>
         <DialogHeader>
           <DialogTitle className="font-display">
-            {planejamentoEdicao ? "Editar Planejamento" : "Novo Planejamento"}
+            {planejamentoEdicao ? "Editar Evento" : "Novo Evento"}
           </DialogTitle>
         </DialogHeader>
 
@@ -227,7 +227,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
         {etapa === 1 && (
           <div className="space-y-4">
             <div>
-              <Label>Nome do planejamento *</Label>
+              <Label>Nome do evento *</Label>
               <Input placeholder="Ex: Almoço corporativo de dezembro" value={nome}
                 onChange={e => setNome(e.target.value)} autoFocus />
             </div>
