@@ -27,6 +27,8 @@ import TagList from "@/components/tags/TagList";
 import TagSelector from "@/components/tags/TagSelector";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
+import { DragDropContext, Droppable } from "@hello-pangea/dnd";
+import DraggableRow from "@/components/receita/DraggableRow";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -600,6 +602,66 @@ export default function ReceitaAberta() {
     toast.success("Ordem alterada");
   };
 
+  const handleDragEnd = async (result) => {
+    if (!result.destination || result.destination.index === result.source.index) return;
+    const items = itensFichaAgrupada;
+    const sourceIdx = result.source.index;
+    const destIdx = result.destination.index;
+    const dragged = items[sourceIdx];
+    if (!dragged) return;
+
+    // Initialize ordem if needed
+    if (!temOrdemManual) {
+      await base44.entities.IngredienteReceita.bulkUpdate(
+        items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
+      );
+    }
+
+    // Compute block to move: grupo = section until next grupo, subreceita = marker + children, else single
+    let blockStart, blockEnd;
+    if (dragged.isGrupo) {
+      blockStart = sourceIdx;
+      blockEnd = sourceIdx + 1;
+      while (blockEnd < items.length && !items[blockEnd].isGrupo) blockEnd++;
+    } else if (dragged.isSubreceita) {
+      blockStart = sourceIdx;
+      blockEnd = sourceIdx + 1;
+      while (blockEnd < items.length && items[blockEnd].subreceita_parent_id === dragged.id) blockEnd++;
+    } else {
+      blockStart = sourceIdx;
+      blockEnd = sourceIdx + 1;
+    }
+
+    const blockItems = items.slice(blockStart, blockEnd);
+    const remaining = items.slice(0, blockStart).concat(items.slice(blockEnd));
+
+    // Adjust destination for removed block
+    let adjustedDest = destIdx >= blockEnd ? destIdx - blockItems.length : destIdx;
+    adjustedDest = Math.max(0, Math.min(adjustedDest, remaining.length));
+
+    // Prevent dropping inside a sub-receita's children — snap after the block
+    if (adjustedDest > 0 && adjustedDest < remaining.length) {
+      const after = remaining[adjustedDest];
+      const before = remaining[adjustedDest - 1];
+      if (after && after.subreceita_parent_id && (!before || before.id !== after.subreceita_parent_id)) {
+        let snap = adjustedDest;
+        while (snap < remaining.length && remaining[snap].subreceita_parent_id === after.subreceita_parent_id) snap++;
+        adjustedDest = snap;
+      }
+    }
+
+    const newOrder = [
+      ...remaining.slice(0, adjustedDest),
+      ...blockItems,
+      ...remaining.slice(adjustedDest)
+    ];
+
+    const updates = newOrder.map((it, i) => ({ id: it.id, ordem: i * 10 }));
+    await base44.entities.IngredienteReceita.bulkUpdate(updates);
+    qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    toast.success("Ordem alterada");
+  };
+
   const handleOrderByPrep = async () => {
     if (!receita?.modo_preparo) {
       toast.error("A receita não tem modo de preparo descrito.");
@@ -977,13 +1039,18 @@ REGRAS:
               <div className="col-span-3"></div>
             </div>
 
+            <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="ingredientes">
+              {(provided) => (
+                <div ref={provided.innerRef} {...provided.droppableProps} className="space-y-2">
             {itensFichaAgrupada.map((item, idx) => {
               const isQtdZero = !item.isGrupo && (item.quantidade_por_porcao || 0) === 0;
 
               // Grupo header
               if (item.isGrupo) {
                 return (
-                  <Card key={item.id} className="p-3 bg-primary/20 border-primary/40 border-dashed">
+                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
+                  <Card className="p-3 bg-primary/20 border-primary/40 border-dashed">
                     <div className="flex items-center gap-2">
                       {editingGrupoId === item.id ? (
                         <>
@@ -1028,12 +1095,14 @@ REGRAS:
                       )}
                     </div>
                   </Card>
+                  </DraggableRow>
                 );
               }
 
               if (item.isNA) {
                 return (
-                  <Card key={item.id} className="p-2 bg-primary/5 border-primary/20 border-dashed">
+                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
+                  <Card className="p-2 bg-primary/5 border-primary/20 border-dashed">
                     <div className="flex items-center gap-2">
                       {convertingNAId === item.id ? (
                         <div className="flex items-center gap-2 flex-1">
@@ -1079,12 +1148,14 @@ REGRAS:
                       </Button>
                     </div>
                   </Card>
+                  </DraggableRow>
                 );
               }
 
               if (item.isSubreceita) {
                 return (
-                  <Card key={item.id} className="p-3 bg-amber-50/70 border-amber-200/60">
+                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
+                  <Card className="p-3 bg-amber-50/70 border-amber-200/60">
                     {/* Desktop */}
                     <div className="hidden md:grid grid-cols-12 gap-2 items-center">
                       <div className="col-span-3">
@@ -1217,11 +1288,13 @@ REGRAS:
                       </div>
                     </div>
                   </Card>
+                  </DraggableRow>
                 );
               }
 
               return (
-              <Card key={item.id} className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""} ${item.isChildOfSubreceita ? "ml-6 border-l-4 border-l-amber-300 bg-amber-50/30" : ""}`}>
+              <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
+              <Card className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""} ${item.isChildOfSubreceita ? "ml-6 border-l-4 border-l-amber-300 bg-amber-50/30" : ""}`}>
                 {/* Desktop */}
                 <div className="hidden md:grid grid-cols-12 gap-2 items-center">
                   <div className="col-span-3">
@@ -1490,8 +1563,14 @@ REGRAS:
                   </div>
                 </div>
               </Card>
+              </DraggableRow>
               );
             })}
+            {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
 
             {pendingGrupo && (
               <Card className="p-3 bg-primary/20 border-primary/40 border-dashed">
