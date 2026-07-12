@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
@@ -53,6 +53,8 @@ export default function Receitas() {
   const [showTagPainel, setShowTagPainel] = useState(false);
   const [showGerenciarTags, setShowGerenciarTags] = useState(false);
   const [assignTagsReceita, setAssignTagsReceita] = useState(null);
+  const tagPanelRef = useRef(null);
+  const tagButtonRef = useRef(null);
   const navigate = useNavigate();
   const qc = useQueryClient();
 
@@ -62,6 +64,20 @@ export default function Receitas() {
     if (params.get("nova") === "ia") setShowNew("ia");
     if (params.get("revisar") === "true") setShowRevisar(true);
   }, []);
+
+  useEffect(() => {
+    if (!showTagPainel) return;
+    const handleClickOutside = (e) => {
+      if (
+        tagPanelRef.current && !tagPanelRef.current.contains(e.target) &&
+        tagButtonRef.current && !tagButtonRef.current.contains(e.target)
+      ) {
+        setShowTagPainel(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showTagPainel]);
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
@@ -163,9 +179,6 @@ export default function Receitas() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge></h1>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowGerenciarTags(true)}>
-            <Tag className="w-4 h-4 mr-1" /> Gerenciar Tags
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
@@ -220,6 +233,7 @@ export default function Receitas() {
           Revisar
         </Button>
         <Button
+          ref={tagButtonRef}
           variant={tagFilterIds.length > 0 ? "default" : "outline"}
           size="sm"
           onClick={() => setShowTagPainel(!showTagPainel)}
@@ -326,9 +340,15 @@ export default function Receitas() {
 
       {/* Tag filter panel */}
       {showTagPainel && (
-        <div className="p-3 bg-card border border-border rounded-xl space-y-3 max-h-80 overflow-y-auto">
+        <div ref={tagPanelRef} className="p-3 bg-card border border-border rounded-xl space-y-3 max-h-80 overflow-y-auto">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filtrar por tags</span>
+            <button
+              className="text-xs text-primary hover:underline inline-flex items-center gap-1 font-medium"
+              onClick={() => setShowGerenciarTags(true)}
+            >
+              <Tag className="w-3 h-3" /> Gerenciar tags
+            </button>
           </div>
           {(() => {
             const ORDEM_GRUPOS = [
