@@ -94,6 +94,7 @@ export default function ExportarReceita() {
       return { ...item, ing, qtd, custo, isSubreceita: false };
     });
 
+  const hasMedidaCaseira = itensFicha.some(i => i.medida_caseira && i.medida_caseira.trim());
   const custoIngredientes = itensFicha.reduce((s, i) => s + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
   const custoEsquecidos = esquecidos.reduce((s, i) => s + ((i.custo_total || 0) * fator), 0);
@@ -189,9 +190,9 @@ export default function ExportarReceita() {
         <div className="text-sm">
           {/* Cabeçalho da tabela */}
           <div className="flex font-semibold text-xs uppercase tracking-wider text-muted-foreground border-b-2 border-border pb-1 mb-1 px-1">
-            <span className="flex-[4]">Ingrediente</span>
-            <span className="flex-[2.5]">Medida caseira</span>
-            <span className="flex-[1.5]">Qtd. (g)</span>
+            <span className={hasMedidaCaseira ? "flex-[4]" : "flex-[6]"}>Ingrediente</span>
+            {hasMedidaCaseira && <span className="flex-[2.5]">Medida caseira</span>}
+            <span className={hasMedidaCaseira ? "flex-[1.5]" : "flex-[2]"}>Qtd. (g)</span>
             {aba === "custos" && <span className="flex-[2] text-right">Custo</span>}
           </div>
           {itensFicha.map((item) => {
@@ -205,28 +206,28 @@ export default function ExportarReceita() {
             if (item.isSubreceita) {
               return (
                 <div key={item.id} className="flex py-1 border-b border-border/50 px-1 items-center">
-                  <span className="flex-[4]">
+                  <span className={hasMedidaCaseira ? "flex-[4]" : "flex-[6]"}>
                     <span className="flex items-center gap-1">
                       <ChefHat className="w-3.5 h-3.5 text-primary shrink-0" />
                       {item.subreceitaNome}
                     </span>
                     <span className="text-xs text-muted-foreground italic"> (ver receita separada)</span>
                   </span>
-                  <span className="flex-[2.5] text-muted-foreground"></span>
-                  <span className="flex-[1.5]">{formatWeight(item.qtd, receita.unidade_base)}</span>
+                  {!hasMedidaCaseira || <span className="flex-[2.5] text-muted-foreground"></span>}
+                  <span className={hasMedidaCaseira ? "flex-[1.5]" : "flex-[2]"}>{formatWeight(item.qtd, receita.unidade_base)}</span>
                   {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
                 </div>
               );
             }
             return (
               <div key={item.id} className="flex py-1 border-b border-border/50 px-1 items-center">
-                <span className="flex-[4]">
+                <span className={hasMedidaCaseira ? "flex-[4]" : "flex-[6]"}>
                   {item.ingrediente_nome || item.ing?.nome || item.subreceita_nome}
                   {item.pre_preparo && <span className="text-muted-foreground"> ({item.pre_preparo})</span>}
                   {item.proporcional === false && <span className="text-muted-foreground ml-1">📌</span>}
                 </span>
-                <span className="flex-[2.5] text-muted-foreground">{item.medida_caseira || ""}</span>
-                <span className="flex-[1.5]">{formatWeight(item.qtd, receita.unidade_base)}</span>
+                {hasMedidaCaseira && <span className="flex-[2.5] text-muted-foreground">{item.medida_caseira || ""}</span>}
+                <span className={hasMedidaCaseira ? "flex-[1.5]" : "flex-[2]"}>{formatWeight(item.qtd, receita.unidade_base)}</span>
                 {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
               </div>
             );

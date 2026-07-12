@@ -380,8 +380,13 @@ export default function ReceitaAberta() {
   });
 
   const updateItemMut = useMutation({
-    mutationFn: async ({ itemId, quantidade_por_porcao, pre_preparo }) => {
-      await base44.entities.IngredienteReceita.update(itemId, { quantidade_por_porcao, pre_preparo });
+    mutationFn: async ({ itemId, quantidade_por_porcao, pre_preparo, ingrediente_id, ingrediente_nome }) => {
+      const updates = { quantidade_por_porcao, pre_preparo };
+      if (ingrediente_id) {
+        updates.ingrediente_id = ingrediente_id;
+        updates.ingrediente_nome = ingrediente_nome;
+      }
+      await base44.entities.IngredienteReceita.update(itemId, updates);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
