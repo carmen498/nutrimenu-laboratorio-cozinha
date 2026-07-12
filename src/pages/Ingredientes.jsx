@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power } from "lucide-react";
+import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power, Tags } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
@@ -17,6 +17,8 @@ import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtual
 import ExcluirIngredienteDialog from "@/components/ingrediente/ExcluirIngredienteDialog";
 import { exportarIngredientesPDF } from "@/lib/exportarIngredientesPDF";
 import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
+import ImportarSinonimosDialog from "@/components/ingrediente/ImportarSinonimosDialog";
+import SinonimosSection from "@/components/ingrediente/SinonimosSection";
 
 const GRUPOS_INGREDIENTES = [
   { nome: "Carnes e Ovos",            icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["Carnes e Ovos"] },
@@ -47,6 +49,7 @@ export default function Ingredientes() {
   const [editItem, setEditItem] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showImportSinonimos, setShowImportSinonimos] = useState(false);
   const [showRevisar, setShowRevisar] = useState(false);
   const [showDesatualizados, setShowDesatualizados] = useState(false);
   const [showFavoritos, setShowFavoritos] = useState(false);
@@ -264,6 +267,9 @@ export default function Ingredientes() {
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowImportSinonimos(true)}>
+            <Tags className="w-4 h-4 mr-1" /> Sinônimos
+          </Button>
           <Button size="sm" onClick={() => { setEditItem(null); setShowForm(true); }}>
             <Plus className="w-4 h-4 mr-1" /> Novo
           </Button>
@@ -447,6 +453,9 @@ export default function Ingredientes() {
       {/* Import Dialog */}
       <ImportDialog open={showImport} onClose={() => setShowImport(false)} />
 
+      {/* Import Sinônimos Dialog */}
+      <ImportarSinonimosDialog open={showImportSinonimos} onClose={() => setShowImportSinonimos(false)} />
+
       {/* Update Prices Dialog */}
       <AtualizarPrecosDialog open={showAtualizarPrecos} onClose={() => setShowAtualizarPrecos(false)} ingredientes={ingredientes} />
 
@@ -532,7 +541,8 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
               </div>
             </div>
           )}
-          {/* Ajustes avançados — reservado para campos futuros */}
+          {/* Sinônimos */}
+          {item?.id && <SinonimosSection ingredienteId={item.id} />}
         </div>
         <div className="flex gap-2 justify-end mt-4">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>

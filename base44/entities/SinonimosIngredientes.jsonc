@@ -1,0 +1,18 @@
+{
+  "name": "SinonimosIngredientes",
+  "type": "object",
+  "properties": {
+    "ingrediente_id": {
+      "type": "string",
+      "description": "ID do ingrediente vinculado"
+    },
+    "sinonimo": {
+      "type": "string",
+      "description": "Texto do sin\u00f4nimo (\u00fanico na tabela, case-insensitive)"
+    }
+  },
+  "required": [
+    "ingrediente_id",
+    "sinonimo"
+  ]
+}
