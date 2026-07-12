@@ -530,6 +530,49 @@ export default function ReceitaAberta() {
       return;
     }
 
+    // Regular ingredient: move individually (not absorbed into grupo block)
+    if (!item.isGrupo && !item.isSubreceita) {
+      const targetIdx = idx + dir;
+      if (targetIdx < 0 || targetIdx >= items.length) return;
+      const target = items[targetIdx];
+
+      // Can't cross into a grupo header (section boundary)
+      if (target.isGrupo) return;
+      // Can't cross into a subreceita child from outside
+      if (target.subreceita_parent_id) return;
+
+      // If target is a subreceita marker, swap with the whole subreceita block
+      if (target.isSubreceita) {
+        const subEntries = [{ item: target, idx: targetIdx }];
+        let j = targetIdx + 1;
+        while (j < items.length && items[j].subreceita_parent_id === target.id) {
+          subEntries.push({ item: items[j], idx: j });
+          j++;
+        }
+        const updates = [];
+        if (dir < 0) {
+          updates.push({ id: item.id, ordem: targetIdx * 10 });
+          subEntries.forEach((e, k) => updates.push({ id: e.item.id, ordem: (targetIdx + 1 + k) * 10 }));
+        } else {
+          subEntries.forEach((e, k) => updates.push({ id: e.item.id, ordem: (idx + k) * 10 }));
+          updates.push({ id: item.id, ordem: (idx + subEntries.length) * 10 });
+        }
+        await base44.entities.IngredienteReceita.bulkUpdate(updates);
+        qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+        toast.success("Ordem alterada");
+        return;
+      }
+
+      // Simple swap: two regular ingredients
+      await base44.entities.IngredienteReceita.bulkUpdate([
+        { id: item.id, ordem: targetIdx * 10 },
+        { id: target.id, ordem: idx * 10 },
+      ]);
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Ordem alterada");
+      return;
+    }
+
     // Use pre-computed blocos (grupo absorbs followers, subreceita absorbs children)
     const blockIdx = findBlocoIdx(idx);
     if (blockIdx === -1) return;
