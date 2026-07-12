@@ -246,7 +246,7 @@ export default function Receitas() {
 
       {/* "Todas" button + Category filter buttons */}
       <button
-        onClick={() => { setCategoriaSelecionada(null); setBusca(""); setShowRevisar(false); setShowFavoritas(false); }}
+        onClick={() => { setCategoriaSelecionada(null); setBusca(""); setShowRevisar(false); setShowFavoritas(false); setShowTagPainel(false); }}
         className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
           !categoriaSelecionada
             ? "border-primary bg-primary/10 text-primary"
@@ -279,6 +279,7 @@ export default function Receitas() {
                 onClick={() => {
                   setBusca("");
                   setCategoriaSelecionada(selecionada ? null : cat);
+                  setShowTagPainel(false);
                 }}
               >
                 <span className="text-lg">{icone}</span>
@@ -382,6 +383,7 @@ export default function Receitas() {
                             setTagFilterIds(prev =>
                               active ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
                             );
+                            setShowTagPainel(false);
                           }}
                         >
                           {tag.nome}
