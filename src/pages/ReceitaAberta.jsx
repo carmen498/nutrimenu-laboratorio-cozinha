@@ -938,14 +938,14 @@ REGRAS:
               // Grupo header
               if (item.isGrupo) {
                 return (
-                  <Card key={item.id} className="p-2 bg-primary/10 border-primary/30 border-dashed">
+                  <Card key={item.id} className="p-3 bg-primary/20 border-primary/40 border-dashed">
                     <div className="flex items-center gap-2">
                       {editingGrupoId === item.id ? (
                         <>
                           <Input
                             className="h-8 text-sm font-bold flex-1"
                             value={editingGrupoTitulo}
-                            onChange={(e) => setEditingGrupoTitulo(e.target.value)}
+                            onChange={(e) => setEditingGrupoTitulo(e.target.value.toUpperCase())}
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === "Enter" && editingGrupoTitulo.trim()) {
@@ -966,17 +966,13 @@ REGRAS:
                         </>
                       ) : (
                         <>
-                          <span className="flex-1 font-bold text-sm text-primary uppercase tracking-wide">{item.titulo_grupo}</span>
-                          {(() => { const bIdx = findBlocoIdx(idx); return bIdx > 0; })() && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover bloco (divisor + ingredientes)">
+                          <span className="flex-1 font-bold text-base text-primary uppercase tracking-wide px-1">{item.titulo_grupo}</span>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground disabled:opacity-30" disabled={findBlocoIdx(idx) <= 0} onClick={() => handleMove(idx, -1)} title="Mover bloco (divisor + ingredientes)">
                               <ArrowUp className="w-4 h-4" />
                             </Button>
-                          )}
-                          {(() => { const bIdx = findBlocoIdx(idx); return bIdx < blocos.length - 1; })() && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover bloco (divisor + ingredientes)">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground disabled:opacity-30" disabled={findBlocoIdx(idx) >= blocos.length - 1} onClick={() => handleMove(idx, 1)} title="Mover bloco (divisor + ingredientes)">
                               <ArrowDown className="w-4 h-4" />
                             </Button>
-                          )}
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
                             <Pencil className="w-3 h-3" />
                           </Button>
@@ -999,7 +995,7 @@ REGRAS:
                           <Input
                             className="h-8 text-sm font-bold flex-1"
                             value={convertingNATitulo}
-                            onChange={(e) => setConvertingNATitulo(e.target.value)}
+                            onChange={(e) => setConvertingNATitulo(e.target.value.toUpperCase())}
                             placeholder="Digite o nome do sub-título..."
                             autoFocus
                             onKeyDown={(e) => {
@@ -1453,12 +1449,12 @@ REGRAS:
             })}
 
             {pendingGrupo && (
-              <Card className="p-2 bg-primary/5 border-primary/20 border-dashed">
+              <Card className="p-3 bg-primary/20 border-primary/40 border-dashed">
                 <div className="flex items-center gap-2">
                   <Input
                     className="h-9 text-sm font-bold flex-1"
                     value={pendingGrupoTitulo}
-                    onChange={(e) => setPendingGrupoTitulo(e.target.value)}
+                    onChange={(e) => setPendingGrupoTitulo(e.target.value.toUpperCase())}
                     placeholder="Digite o nome do sub-título..."
                     autoFocus
                     onKeyDown={(e) => {
