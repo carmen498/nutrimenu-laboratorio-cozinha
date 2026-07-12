@@ -489,11 +489,11 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); else resetForm(); }}>
-      <DialogContent className="max-w-md" onOpenAutoFocus={(e) => { e.preventDefault(); resetForm(); }}>
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden gap-0" onOpenAutoFocus={(e) => { e.preventDefault(); resetForm(); }}>
+        <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
           <DialogTitle className="font-display">{item ? "Editar Ingrediente" : "Novo Ingrediente"}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="flex-1 overflow-y-auto px-6 space-y-3">
           <div>
             <Label>Nome</Label>
             <Input value={form.nome || ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
@@ -544,7 +544,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
           {/* Sinônimos */}
           {item?.id && <SinonimosSection ingredienteId={item.id} />}
         </div>
-        <div className="flex gap-2 justify-end mt-4">
+        <div className="flex gap-2 justify-end px-6 py-4 border-t shrink-0">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
         </div>
