@@ -76,25 +76,6 @@ export default function EtapaCardapio({
     }
   }, [cardapioConfig]);
 
-  // Push grupos config para o parent (necessário para salvar na Etapa 4)
-  useEffect(() => {
-    if (onGruposChange) {
-      onGruposChange(gruposCalc.map(g => ({
-        nome: g.nome,
-        percentual: g.percentual,
-        is_sobremesa: g.is_sobremesa,
-        itens: g.itens.map(i => ({
-          receita_id: i.receita_id,
-          receita_nome: i.receita_nome,
-          pc_g: i.pc_g,
-          qtd_kg: parseFloat(i.qtd_kg.toFixed(3)),
-          qtd_kg_manual: i.qtd_kg_manual,
-          porcoes: i.porcoes,
-        })),
-      })));
-    }
-  }, [gruposCalc, onGruposChange]);
-
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
     queryFn: () => base44.entities.Receita.list("-nome", 500),
@@ -129,6 +110,25 @@ export default function EtapaCardapio({
       return { ...g, groupKg, actualKg, itens };
     });
   }, [grupos, totalComMargemKg, receitaMap]);
+
+  // Push grupos config para o parent (necessário para salvar na Etapa 4)
+  useEffect(() => {
+    if (onGruposChange) {
+      onGruposChange(gruposCalc.map(g => ({
+        nome: g.nome,
+        percentual: g.percentual,
+        is_sobremesa: g.is_sobremesa,
+        itens: g.itens.map(i => ({
+          receita_id: i.receita_id,
+          receita_nome: i.receita_nome,
+          pc_g: i.pc_g,
+          qtd_kg: parseFloat(i.qtd_kg.toFixed(3)),
+          qtd_kg_manual: i.qtd_kg_manual,
+          porcoes: i.porcoes,
+        })),
+      })));
+    }
+  }, [gruposCalc, onGruposChange]);
 
   const somaPct = grupos.filter(g => !g.is_sobremesa).reduce((s, g) => s + (g.percentual || 0), 0);
   const pctOk = Math.abs(somaPct - 100) < 0.5;
