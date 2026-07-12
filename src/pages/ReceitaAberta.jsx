@@ -530,69 +530,71 @@ export default function ReceitaAberta() {
       return;
     }
 
-    // Regular ingredient: move individually (not absorbed into grupo block)
-    if (!item.isGrupo && !item.isSubreceita) {
-      const targetIdx = idx + dir;
-      if (targetIdx < 0 || targetIdx >= items.length) return;
-      const target = items[targetIdx];
+    // Grupo header: move entire section (all items until next grupo) via pre-computed blocos
+    if (item.isGrupo) {
+      const blockIdx = findBlocoIdx(idx);
+      if (blockIdx === -1) return;
+      const targetBlockIdx = blockIdx + dir;
+      if (targetBlockIdx < 0 || targetBlockIdx >= blocos.length) return;
 
-      // Can't cross into a grupo header (section boundary)
-      if (target.isGrupo) return;
-      // Can't cross into a subreceita child from outside
-      if (target.subreceita_parent_id) return;
-
-      // If target is a subreceita marker, swap with the whole subreceita block
-      if (target.isSubreceita) {
-        const subEntries = [{ item: target, idx: targetIdx }];
-        let j = targetIdx + 1;
-        while (j < items.length && items[j].subreceita_parent_id === target.id) {
-          subEntries.push({ item: items[j], idx: j });
-          j++;
-        }
-        const updates = [];
-        if (dir < 0) {
-          updates.push({ id: item.id, ordem: targetIdx * 10 });
-          subEntries.forEach((e, k) => updates.push({ id: e.item.id, ordem: (targetIdx + 1 + k) * 10 }));
-        } else {
-          subEntries.forEach((e, k) => updates.push({ id: e.item.id, ordem: (idx + k) * 10 }));
-          updates.push({ id: item.id, ordem: (idx + subEntries.length) * 10 });
-        }
-        await base44.entities.IngredienteReceita.bulkUpdate(updates);
-        qc.invalidateQueries({ queryKey: ["itens-receita", id] });
-        toast.success("Ordem alterada");
-        return;
+      const blockA = blocos[blockIdx];
+      const blockB = blocos[targetBlockIdx];
+      const firstBlock = dir < 0 ? blockA : blockB;
+      const secondBlock = dir < 0 ? blockB : blockA;
+      const baseIdx = Math.min(blockA.startIdx, blockB.startIdx);
+      const updates = [];
+      for (let k = 0; k < firstBlock.entries.length; k++) {
+        updates.push({ id: firstBlock.entries[k].item.id, ordem: (baseIdx + k) * 10 });
       }
-
-      // Simple swap: two regular ingredients
-      await base44.entities.IngredienteReceita.bulkUpdate([
-        { id: item.id, ordem: targetIdx * 10 },
-        { id: target.id, ordem: idx * 10 },
-      ]);
+      for (let k = 0; k < secondBlock.entries.length; k++) {
+        updates.push({ id: secondBlock.entries[k].item.id, ordem: (baseIdx + firstBlock.entries.length + k) * 10 });
+      }
+      await base44.entities.IngredienteReceita.bulkUpdate(updates);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       toast.success("Ordem alterada");
       return;
     }
 
-    // Use pre-computed blocos (grupo absorbs followers, subreceita absorbs children)
-    const blockIdx = findBlocoIdx(idx);
-    if (blockIdx === -1) return;
-    const targetBlockIdx = blockIdx + dir;
-    if (targetBlockIdx < 0 || targetBlockIdx >= blocos.length) return;
+    // Sub-receita marker or regular ingredient: treat as atomic block, swap with adjacent block
+    // Atomic block = sub-receita marker + its children, or a single regular ingredient
+    const getAtomicBlock = (startIdx) => {
+      const it = items[startIdx];
+      if (it.isSubreceita || it.subreceita_parent_id) {
+        const parentId = it.subreceita_parent_id || it.id;
+        const markerIdx = it.subreceita_parent_id
+          ? items.findIndex(x => x.id === parentId)
+          : startIdx;
+        const entries = [{ item: items[markerIdx], idx: markerIdx }];
+        let j = markerIdx + 1;
+        while (j < items.length && items[j].subreceita_parent_id === parentId) {
+          entries.push({ item: items[j], idx: j });
+          j++;
+        }
+        return { entries, startIdx: markerIdx, endIdx: j };
+      }
+      return { entries: [{ item: it, idx: startIdx }], startIdx, endIdx: startIdx + 1 };
+    };
 
-    const blockA = blocos[blockIdx];
-    const blockB = blocos[targetBlockIdx];
-    // dir=-1 (up): blockA goes first (lower ordem), blockB shifts down
-    // dir=+1 (down): blockB goes first (lower ordem), blockA shifts down
-    const firstBlock = dir < 0 ? blockA : blockB;
-    const secondBlock = dir < 0 ? blockB : blockA;
-    const baseIdx = Math.min(blockA.startIdx, blockB.startIdx);
+    const sourceBlock = getAtomicBlock(idx);
+    let targetIdx = dir < 0 ? sourceBlock.startIdx - 1 : sourceBlock.endIdx;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+
+    const targetItem = items[targetIdx];
+    if (targetItem.isGrupo) return; // can't cross grupo boundary
+    // If target is a sub-receita child, resolve to its marker (jump the whole block)
+    if (targetItem.subreceita_parent_id) {
+      const markerIdx = items.findIndex(x => x.id === targetItem.subreceita_parent_id);
+      if (markerIdx === -1) return;
+      targetIdx = markerIdx;
+    }
+
+    const targetBlock = getAtomicBlock(targetIdx);
+    const firstBlock = dir < 0 ? sourceBlock : targetBlock;
+    const secondBlock = dir < 0 ? targetBlock : sourceBlock;
+    const baseIdx = Math.min(sourceBlock.startIdx, targetBlock.startIdx);
     const updates = [];
-    for (let k = 0; k < firstBlock.entries.length; k++) {
-      updates.push({ id: firstBlock.entries[k].item.id, ordem: (baseIdx + k) * 10 });
-    }
-    for (let k = 0; k < secondBlock.entries.length; k++) {
-      updates.push({ id: secondBlock.entries[k].item.id, ordem: (baseIdx + firstBlock.entries.length + k) * 10 });
-    }
+    firstBlock.entries.forEach((e, k) => updates.push({ id: e.item.id, ordem: (baseIdx + k) * 10 }));
+    secondBlock.entries.forEach((e, k) => updates.push({ id: e.item.id, ordem: (baseIdx + firstBlock.entries.length + k) * 10 }));
     await base44.entities.IngredienteReceita.bulkUpdate(updates);
     qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     toast.success("Ordem alterada");
