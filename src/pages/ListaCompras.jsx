@@ -34,6 +34,8 @@ export default function ListaCompras() {
   const [comprarManual, setComprarManual] = useState({});
   const [margemSeguranca, setMargemSeguranca] = useState(0);
   const [planejamentoOrigem, setPlanejamentoOrigem] = useState(null);
+  const [docesBebidas, setDocesBebidas] = useState([]);
+  const [totalPessoasEvento, setTotalPessoasEvento] = useState(0);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
@@ -71,6 +73,7 @@ export default function ListaCompras() {
     if (planejamentoId) {
       setPlanejamentoOrigem(planejamentoId);
       base44.entities.Planejamento.get(planejamentoId).then(p => {
+        setTotalPessoasEvento(p.total_pessoas || 0);
         if (!p?.cardapio_config) return;
         try {
           const config = typeof p.cardapio_config === "string"
@@ -88,6 +91,7 @@ export default function ListaCompras() {
           });
           setSelectedReceitas(recs);
           setPorcoesPorReceita(porc);
+          setDocesBebidas(config.doces_bebidas || []);
         } catch (e) { console.error("Erro ao carregar cardápio:", e); }
       }).catch(e => console.error("Erro ao carregar planejamento:", e));
     }
@@ -372,6 +376,38 @@ export default function ListaCompras() {
             </Button>
           </div>
         </>
+      )}
+
+      {/* Doces & Bebidas — fora do total de comida */}
+      {docesBebidas.length > 0 && totalPessoasEvento > 0 && (
+        <div>
+          <Badge variant="secondary" className="mb-2 bg-purple-100 text-purple-700">Doces & Bebidas</Badge>
+          <div className="space-y-1">
+            {docesBebidas.map((item, i) => {
+              const total = totalPessoasEvento * (item.percentual || 0) / 100 * (item.media || 0);
+              let qtdStr;
+              if (item.unidade === "ml") qtdStr = (total / 1000).toFixed(1).replace(".", ",") + " L";
+              else if (item.unidade === "un") qtdStr = Math.ceil(total) + " un";
+              else qtdStr = (total / 1000).toFixed(1).replace(".", ",") + " kg";
+              return (
+                <Card key={i} className="p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{item.item}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.percentual != null ? item.percentual + "%" : "—"} · {item.media != null ? item.media + " " + item.unidade : "—"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-purple-700">{qtdStr}</p>
+                    {item.custo_manual > 0 && (
+                      <p className="text-xs text-muted-foreground">R$ {item.custo_manual.toFixed(2).replace(".", ",")}</p>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Add recipe dialog */}

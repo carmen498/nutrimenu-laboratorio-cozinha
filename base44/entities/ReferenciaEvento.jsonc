@@ -1,0 +1,46 @@
+{
+  "name": "ReferenciaEvento",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "bebida",
+        "coquetel",
+        "doce"
+      ],
+      "description": "Tipo do item: bebida, coquetel ou doce"
+    },
+    "item": {
+      "type": "string",
+      "description": "Nome do item"
+    },
+    "percentual_padrao": {
+      "type": "number",
+      "description": "Percentual padr\u00e3o (%) de pessoas que consomem o item"
+    },
+    "media_padrao": {
+      "type": "number",
+      "description": "M\u00e9dia padr\u00e3o por pessoa (em ml, un ou g conforme unidade)"
+    },
+    "unidade": {
+      "type": "string",
+      "enum": [
+        "ml",
+        "un",
+        "g"
+      ],
+      "description": "Unidade de medida: ml (l\u00edquidos), un (unidades), g (gramas)"
+    },
+    "sem_padrao": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se true, % e m\u00e9dia come\u00e7am vazios ao marcar no evento"
+    }
+  },
+  "required": [
+    "tipo",
+    "item",
+    "unidade"
+  ]
+}

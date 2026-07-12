@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
+import DocesBebidasSection from "./DocesBebidasSection";
 import { toast } from "sonner";
 
 const GRUPOS_PADRAO = [
@@ -36,6 +37,10 @@ function initGrupos(config) {
     }));
   }
   return GRUPOS_PADRAO.map(g => ({ ...g, itens: [] }));
+}
+
+function initDocesBebidas(config) {
+  return config?.doces_bebidas || [];
 }
 
 function custoPorKgPronto(receita) {
@@ -64,6 +69,7 @@ export default function EtapaCardapio({
   onSalvar, onGerarListaCompras, onVoltar, salvando
 }) {
   const [grupos, setGrupos] = useState(() => initGrupos(cardapioConfig));
+  const [docesBebidas, setDocesBebidas] = useState(() => initDocesBebidas(cardapioConfig));
   const [buscaGrupoIdx, setBuscaGrupoIdx] = useState(null);
   const [showNovoGrupo, setShowNovoGrupo] = useState(false);
   const [novoGrupoNome, setNovoGrupoNome] = useState("");
@@ -72,6 +78,7 @@ export default function EtapaCardapio({
   useEffect(() => {
     if (cardapioConfig) {
       setGrupos(initGrupos(cardapioConfig));
+      setDocesBebidas(initDocesBebidas(cardapioConfig));
     }
   }, [cardapioConfig]);
 
@@ -132,6 +139,7 @@ export default function EtapaCardapio({
         porcoes: i.porcoes,
       })),
     })),
+    doces_bebidas: docesBebidas,
   });
 
   // Handlers
@@ -323,6 +331,13 @@ export default function EtapaCardapio({
           <Plus className="w-4 h-4" /> Adicionar tipo de refeição
         </Button>
       )}
+
+      {/* Doces & Bebidas — fora do total de comida */}
+      <DocesBebidasSection
+        totalPessoas={totalPessoas}
+        docesBebidas={docesBebidas}
+        onChange={setDocesBebidas}
+      />
 
       {/* Totais */}
       <div className="space-y-2 p-4 rounded-lg bg-muted/40">

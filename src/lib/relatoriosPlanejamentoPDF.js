@@ -174,6 +174,43 @@ export function gerarRelatorioProducao(planejamento, dados) {
   doc.setFont(undefined, "bold");
   doc.text(`TOTAL GERAL: ${fmtKg(totalGeralKg)}`, pageWidth - margin, y, { align: "right" });
 
+  // Bloco Doces & Bebidas (fora do total de comida)
+  const docesBebidas = config.doces_bebidas || [];
+  const totalPessoas = planejamento.total_pessoas ||
+    (planejamento.qtd_homens || 0) + (planejamento.qtd_mulheres || 0) + (planejamento.qtd_criancas || 0);
+
+  if (docesBebidas.length > 0) {
+    y = checkPageBreak(doc, y, 25);
+    y += 6;
+    doc.setFontSize(10);
+    doc.setFont(undefined, "bold");
+    doc.text("DOCES & BEBIDAS", margin, y);
+    y += 5;
+
+    doc.setFontSize(7);
+    doc.text("Item", margin, y);
+    doc.text("Qtd", pageWidth - margin, y, { align: "right" });
+    y += 3;
+    doc.setDrawColor(220);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 4;
+
+    doc.setFontSize(8);
+    doc.setFont(undefined, "normal");
+    docesBebidas.forEach(item => {
+      y = checkPageBreak(doc, y);
+      const total = totalPessoas * (item.percentual || 0) / 100 * (item.media || 0);
+      let qtdStr;
+      if (item.unidade === "ml") qtdStr = (total / 1000).toFixed(1).replace(".", ",") + " L";
+      else if (item.unidade === "un") qtdStr = Math.ceil(total) + " un";
+      else qtdStr = (total / 1000).toFixed(1).replace(".", ",") + " kg";
+
+      doc.text((item.item || "").substring(0, 60), margin, y);
+      doc.text(qtdStr, pageWidth - margin, y, { align: "right" });
+      y += 5;
+    });
+  }
+
   doc.save(`relatorio-producao-${(planejamento.nome || "planejamento").replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
