@@ -11,7 +11,7 @@ function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
 export default function CardapioPratoLinha({
   rec, descritivo, pcSuffix, kg, pct, selected, onSelect,
   onUpdatePC, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown,
-  temDias, diasOptions, refeicoesOptions, onUpdateField,
+  temDias, diasOptions, refeicoesOptions, onUpdateField, semCusto,
 }) {
   return (
     <div
@@ -28,6 +28,7 @@ export default function CardapioPratoLinha({
             {rec.receita_nome?.toUpperCase?.() || rec.receita_nome}
           </Link>
           {descritivo && <p className="text-xs text-muted-foreground italic truncate">{descritivo}</p>}
+          {semCusto && <p className="text-[10px] text-amber-600">sem custo cadastrado</p>}
         </div>
         <div className="shrink-0 w-20 text-center" onClick={e => e.stopPropagation()}>
           <Input
@@ -38,7 +39,9 @@ export default function CardapioPratoLinha({
           />
         </div>
         <span className="text-sm text-muted-foreground w-20 text-right shrink-0">{fmtKg(kg)}</span>
-        <span className="text-sm font-semibold w-20 text-right shrink-0">{fmtRs(rec.custo_total)}</span>
+        <span className={`text-sm font-semibold w-20 text-right shrink-0 ${semCusto ? "text-amber-600" : ""}`}>
+          {semCusto ? "—" : fmtRs(rec.custo_total)}
+        </span>
         <span className="text-xs text-muted-foreground w-14 text-right shrink-0">{fmtPct(pct)}</span>
       </div>
 

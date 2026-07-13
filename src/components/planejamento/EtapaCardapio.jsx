@@ -3,16 +3,15 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Plus, Trash2, ExternalLink, ShoppingCart, AlertTriangle, Search, ArrowLeft, ArrowRight,
-  Cookie, X
+  Plus, ShoppingCart, AlertTriangle, Search, ArrowLeft, ArrowRight,
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
+import EtapaCardapioTabela from "@/components/planejamento/EtapaCardapioTabela";
 import { toast } from "sonner";
 
 const GRUPOS_PADRAO = [
@@ -185,6 +184,17 @@ export default function EtapaCardapio({
     setGrupos(prev => prev.filter((_, i) => i !== idx));
   };
 
+  const moveItem = (grupoIdx, itemIdx, dir) => {
+    setGrupos(prev => prev.map((g, gi) => {
+      if (gi !== grupoIdx) return g;
+      const ni = itemIdx + dir;
+      if (ni < 0 || ni >= g.itens.length) return g;
+      const itens = [...g.itens];
+      [itens[itemIdx], itens[ni]] = [itens[ni], itens[itemIdx]];
+      return { ...g, itens };
+    }));
+  };
+
   const addGrupoCustom = () => {
     if (!novoGrupoNome.trim()) return;
     setGrupos(prev => [...prev, { nome: novoGrupoNome.trim(), percentual: 0, is_sobremesa: false, itens: [] }]);
@@ -223,115 +233,19 @@ export default function EtapaCardapio({
       {/* Barra de cores do cardápio */}
       <BarraCoresCardapio gruposCalc={gruposCalc} receitaMap={receitaMap} />
 
-      {/* Grupos */}
-      <div className="space-y-3">
-        {gruposCalc.map((g, gi) => (
-          <div key={gi} className={`rounded-lg border ${g.is_sobremesa ? "border-purple-200 bg-purple-50/40" : "border-border bg-card"}`}>
-            {/* Header do grupo */}
-            <div className="flex items-center gap-2 p-3 border-b border-inherit/50">
-              {g.is_sobremesa && <Cookie className="w-4 h-4 text-purple-500 shrink-0" />}
-              <Input
-                value={g.nome}
-                onChange={e => updateGrupo(gi, { nome: e.target.value })}
-                className="h-7 flex-1 text-sm font-semibold border-none bg-transparent focus-visible:ring-0 px-0"
-              />
-              <div className="flex items-center gap-1 shrink-0">
-                <Input
-                  type="number"
-                  value={g.percentual}
-                  onChange={e => updateGrupo(gi, { percentual: parseFloat(e.target.value) || 0 })}
-                  className="w-20 h-7 text-sm text-center tabular-nums px-1"
-                />
-                <span className="text-sm text-muted-foreground">%</span>
-              </div>
-              <div className="text-right shrink-0 w-20">
-                <p className="text-sm font-bold tabular-nums">{fmtKg(g.actualKg)}</p>
-              </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-destructive"
-                onClick={() => removeGrupo(gi)}>
-                <Trash2 className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-
-            {/* Itens do grupo */}
-            <div className="p-2 space-y-1">
-              {g.itens.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-2">Nenhum item. Clique em "Adicionar item".</p>
-              ) : (
-                <>
-                  {/* Cabeçalho de colunas */}
-                  <div className="hidden sm:flex items-center gap-3 px-3 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                    <div className="flex-1">Receita</div>
-                    <div className="w-20 text-center">PC (g)</div>
-                    <div className="w-24 text-center">Qtd (kg)</div>
-                    <div className="w-14 text-center">Porções</div>
-                    <div className="w-20 text-right">Custo</div>
-                    <div className="w-7" />
-                  </div>
-                  {g.itens.map((item, ii) => (
-                  <div key={ii} className="flex flex-col gap-2 p-3 rounded-md bg-muted/30 hover:bg-muted/50 transition-colors sm:flex-row sm:items-center sm:gap-3">
-                    {/* Nome + link */}
-                    <div className="flex-1 min-w-0">
-                      <a href={`/receita/${item.receita_id}`} target="_blank" rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline flex items-center gap-1 truncate">
-                        {item.receita_nome}
-                        <ExternalLink className="w-3 h-3 shrink-0" />
-                      </a>
-                      {item.sem_custo && (
-                        <span className="text-[10px] text-amber-600">sem custo cadastrado</span>
-                      )}
-                    </div>
-
-                    {/* Colunas */}
-                    <div className="flex items-center gap-3">
-                      {/* PC (g) */}
-                      <div className="shrink-0 w-20 text-center">
-                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">PC (g)</Label>
-                        <Input type="number" value={item.pc_g}
-                          onChange={e => updateItem(gi, ii, { pc_g: parseInt(e.target.value) || 0 })}
-                          className="w-full h-8 text-sm text-center tabular-nums px-1" />
-                      </div>
-
-                      {/* Qtd (kg) */}
-                      <div className="shrink-0 w-24 text-center">
-                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">Qtd (kg)</Label>
-                        <Input type="number" step="0.1" value={item.qtd_kg.toFixed(1)}
-                          onChange={e => updateItem(gi, ii, { qtd_kg_manual: parseFloat(e.target.value.replace(",", ".")) || 0 })}
-                          className="w-full h-8 text-sm text-center tabular-nums px-1" />
-                      </div>
-
-                      {/* Porções */}
-                      <div className="shrink-0 w-14 text-center">
-                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">Porções</Label>
-                        <span className="text-sm font-medium tabular-nums">{item.porcoes}</span>
-                      </div>
-
-                      {/* Custo */}
-                      <div className="shrink-0 w-20 text-right">
-                        <Label className="text-[9px] text-muted-foreground block leading-none sm:hidden">Custo</Label>
-                        <span className={`text-sm font-semibold tabular-nums ${item.sem_custo ? "text-amber-600" : "text-primary"}`}>
-                          {item.sem_custo ? "—" : fmtRs(item.custo)}
-                        </span>
-                      </div>
-
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive"
-                        onClick={() => removeItem(gi, ii)}>
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  ))}
-                </>
-              )}
-
-              <Button variant="ghost" size="sm" className="w-full text-xs gap-1"
-                onClick={() => setBuscaGrupoIdx(gi)}>
-                <Plus className="w-3.5 h-3.5" /> Adicionar item
-              </Button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Tabela de receitas por seção (mesmo componente da Parte 1, com % editável por seção) */}
+      <EtapaCardapioTabela
+        gruposCalc={gruposCalc}
+        totalPessoas={totalPessoas}
+        custoTotal={custoTotal}
+        onUpdateItem={updateItem}
+        onRemoveItem={removeItem}
+        onMoveItem={moveItem}
+        onOpenAddReceita={(gi) => setBuscaGrupoIdx(gi)}
+        onChangePct={(gi, val) => updateGrupo(gi, { percentual: val })}
+        onChangeNomeSecao={(gi, val) => updateGrupo(gi, { nome: val })}
+        onRemoveSecao={(gi) => removeGrupo(gi)}
+      />
 
       {/* Adicionar grupo custom */}
       {showNovoGrupo ? (
