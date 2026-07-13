@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const CATEGORIAS_ING = [
   "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios", "Panificação e Cereais",
-  "Conservas e Enlatados", "Açúcares e Doces", "Diversos", "A Revisar",
+  "Açúcares e Doces", "Diversos", "A Revisar",
   "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"
 ];
 

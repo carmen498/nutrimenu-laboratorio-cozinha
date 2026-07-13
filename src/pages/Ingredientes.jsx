@@ -94,7 +94,8 @@ export default function Ingredientes() {
   });
 
   const saveMut = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async (rawData) => {
+      const { _novos_sinonimos, ...data } = rawData;
       const preco_por_g = data.peso_embalagem_g > 0
         ? data.preco_embalagem_rs / data.peso_embalagem_g
         : 0;
@@ -138,10 +139,17 @@ export default function Ingredientes() {
         payload.revisar = true;
         toast.warning("Ingrediente duplicado — marcado para revisão");
       }
-      return base44.entities.Ingrediente.create(payload);
+      const created = await base44.entities.Ingrediente.create(payload);
+      if (_novos_sinonimos?.length) {
+        for (const sin of _novos_sinonimos) {
+          await base44.entities.SinonimosIngredientes.create({ ingrediente_id: created.id, sinonimo: sin });
+        }
+      }
+      return created;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      qc.invalidateQueries({ queryKey: ["sinonimos"] });
       setShowForm(false);
       setEditItem(null);
       toast.success("Ingrediente salvo!");
@@ -265,7 +273,7 @@ export default function Ingredientes() {
             <ShoppingCart className="w-4 h-4 mr-1" /> Reposição
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
-            <Upload className="w-4 h-4 mr-1" /> CSV
+            <Upload className="w-4 h-4 mr-1" /> Importar CSV
           </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImportSinonimos(true)}>
             <Tags className="w-4 h-4 mr-1" /> Sinônimos
@@ -476,9 +484,11 @@ export default function Ingredientes() {
 function IngredienteForm({ open, onClose, item, onSave, saving }) {
   const [form, setForm] = useState({});
   const [erroQuantidade, setErroQuantidade] = useState(null);
+  const [novosSinonimos, setNovosSinonimos] = useState([]);
 
   const resetForm = () => {
     setErroQuantidade(null);
+    setNovosSinonimos([]);
     if (item) {
       setForm({ ...item, _preco_anterior: item.preco_embalagem_rs, _peso_anterior: item.peso_embalagem_g });
     } else {
@@ -499,7 +509,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
       return;
     }
     setErroQuantidade(null);
-    onSave(form);
+    onSave({ ...form, _novos_sinonimos: novosSinonimos });
   };
 
   const formatCurrency = (v) => v != null ? "R$ " + v.toFixed(2).replace(".", ",") : "—";
@@ -520,7 +530,7 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             <Select value={form.categoria || "A Revisar"} onValueChange={(v) => setForm({ ...form, categoria: v })}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios", "Panificação e Cereais", "Conservas e Enlatados", "Açúcares e Doces", "Diversos", "A Revisar", "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"].map((c) => (
+                {["Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios", "Panificação e Cereais", "Açúcares e Doces", "Diversos", "A Revisar", "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras"].map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
@@ -564,7 +574,11 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
             </div>
           )}
           {/* Sinônimos */}
-          {item?.id && <SinonimosSection ingredienteId={item.id} />}
+          {item?.id ? (
+            <SinonimosSection ingredienteId={item.id} />
+          ) : (
+            <SinonimosSection localSinonimos={novosSinonimos} onLocalChange={setNovosSinonimos} />
+          )}
         </div>
         <div className="flex gap-2 justify-end px-6 py-4 border-t shrink-0">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>

@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Plus, X, Tag } from "lucide-react";
 import { toast } from "sonner";
 
-export default function SinonimosSection({ ingredienteId }) {
+export default function SinonimosSection({ ingredienteId, localSinonimos, onLocalChange }) {
+  const isLocal = !ingredienteId;
   const [novoSinonimo, setNovoSinonimo] = useState("");
   const qc = useQueryClient();
 
-  const { data: sinonimos = [] } = useQuery({
+  const { data: sinonimosDb = [] } = useQuery({
     queryKey: ["sinonimos", ingredienteId],
     queryFn: () => base44.entities.SinonimosIngredientes.filter({ ingrediente_id: ingredienteId }, "created_date", 500),
     enabled: !!ingredienteId,
   });
+
+  const sinonimos = isLocal ? (localSinonimos || []).map((s) => ({ id: s, sinonimo: s })) : sinonimosDb;
 
   const addMut = useMutation({
     mutationFn: async ({ sinonimo }) => {
@@ -48,7 +51,7 @@ export default function SinonimosSection({ ingredienteId }) {
     },
   });
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const sin = novoSinonimo.trim();
     if (!sin) return;
     const existeLocal = sinonimos.some(s => s.sinonimo?.toLowerCase().trim() === sin.toLowerCase());
@@ -56,10 +59,29 @@ export default function SinonimosSection({ ingredienteId }) {
       toast.error("Este sinônimo já existe neste ingrediente");
       return;
     }
+    if (isLocal) {
+      const todos = await base44.entities.SinonimosIngredientes.list("-created_date", 1000);
+      const existe = todos.some(s => s.sinonimo?.toLowerCase().trim() === sin.toLowerCase());
+      if (existe) {
+        toast.error("Este sinônimo já existe para outro ingrediente");
+        return;
+      }
+      onLocalChange([...(localSinonimos || []), sin]);
+      setNovoSinonimo("");
+      return;
+    }
     addMut.mutate({ sinonimo: sin });
   };
 
-  if (!ingredienteId) return null;
+  const handleRemove = (s) => {
+    if (isLocal) {
+      onLocalChange((localSinonimos || []).filter(x => x !== s.id));
+    } else {
+      delMut.mutate(s.id);
+    }
+  };
+
+  if (!ingredienteId && !onLocalChange) return null;
 
   return (
     <div>
@@ -77,9 +99,9 @@ export default function SinonimosSection({ ingredienteId }) {
           >
             {s.sinonimo}
             <button
-              onClick={() => delMut.mutate(s.id)}
+              onClick={() => handleRemove(s)}
               className="hover:text-destructive"
-              disabled={delMut.isPending}
+              disabled={!isLocal && delMut.isPending}
             >
               <X className="w-3 h-3" />
             </button>
