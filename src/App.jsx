@@ -21,6 +21,7 @@ import ListaCompras from '@/pages/ListaCompras';
 import ExportarReceita from '@/pages/ExportarReceita';
 import PerCapita from '@/pages/PerCapita';
 import RelatorioCategorias from '@/pages/RelatorioCategorias';
+import MedidasCaseiras from '@/pages/MedidasCaseiras';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
           <Route path="/exportar/:id" element={<ExportarReceita />} />
           <Route path="/percapita" element={<PerCapita />} />
           <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
+          <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

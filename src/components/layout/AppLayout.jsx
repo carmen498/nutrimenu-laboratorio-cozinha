@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, PieChart } from "lucide-react";
+import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, PieChart, Utensils } from "lucide-react";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ const navItems = [
   { path: "/cardapios", label: "Cardápios", icon: CalendarDays },
   { path: "/ingredientes", label: "Ingredientes", icon: Apple },
   { path: "/percapita", label: "Per Capita", icon: Gauge },
+  { path: "/medidas-caseiras", label: "Medidas", icon: Utensils },
   { path: "/relatorio-categorias", label: "Relatório", icon: PieChart },
 ];
 
@@ -128,6 +129,7 @@ export default function AppLayout() {
           if (p === "/ingredientes") return "Ingredientes";
           if (p === "/lista-compras") return "Lista de Compras";
           if (p === "/percapita") return "Per Capita";
+          if (p === "/medidas-caseiras") return "Medidas Caseiras";
           if (p === "/relatorio-categorias") return "Relatório de Categorias";
           if (p.startsWith("/exportar/")) return "Exportar Receita";
           return "";
