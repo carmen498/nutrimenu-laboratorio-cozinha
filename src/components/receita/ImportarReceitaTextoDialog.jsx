@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Check, AlertTriangle, Loader2, ClipboardPaste, ChefHat } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Check, AlertTriangle, Loader2, ClipboardPaste, ChefHat, ChevronDown, FileText, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
+import ImportarReceitaTextoItemDetail from "@/components/receita/ImportarReceitaTextoItemDetail";
 
 const PLACEHOLDER = `RECEITA: CONSOMÊ DE CARNE
 CATEGORIA: Sopas e Caldos
@@ -18,20 +20,71 @@ Sal | temperar | 2
 MODO DE PREPARO:
 1. Refogar a cebola no óleo.
 2. Temperar com sal.
-NOTA: observação opcional`;
+NOTA: observação opcional
+
+===== (opcional: cole mais receitas abaixo, cada uma com sua linha RECEITA:) =====
+
+RECEITA: OUTRA RECEITA
+...`;
+
+async function criarReceitaDoItem(item) {
+  const resolvidos = item.ingredientes.filter((i) => i.resolvido);
+  const pendentes = item.ingredientes.filter((i) => !i.resolvido);
+
+  const categoriaValida = CATEGORIAS.includes(item.categoria) ? item.categoria : null;
+  const rendimentoTotal = item.ingredientes.reduce((acc, i) => acc + (i.quantidade_g || 0), 0);
+
+  let notaFinal = (item.nota || "").trim();
+  if (pendentes.length > 0) {
+    const bloco = "Ingredientes pendentes:\n" + pendentes.map((p) =>
+      `- ${p.nome_texto} (${p.quantidade_g}g${p.pre_preparo ? ", " + p.pre_preparo : ""})`
+    ).join("\n");
+    notaFinal = notaFinal ? notaFinal + "\n\n" + bloco : bloco;
+  }
+
+  const receita = await base44.entities.Receita.create({
+    nome: item.nome.toUpperCase(),
+    categorias: categoriaValida ? [categoriaValida] : [],
+    revisar: !categoriaValida,
+    porcoes_base: 1,
+    unidade_base: "g",
+    rendimento_total: rendimentoTotal,
+    per_capita_g: item.porcao || null,
+    modo_preparo: item.modo_preparo || "",
+    nota: notaFinal,
+    custo_total: 0,
+    custo_por_porcao: 0,
+  });
+
+  for (let i = 0; i < resolvidos.length; i++) {
+    const ing = resolvidos[i];
+    await base44.entities.IngredienteReceita.create({
+      receita_id: receita.id,
+      tipo: "ingrediente",
+      ingrediente_id: ing.ingrediente_id,
+      ingrediente_nome: ing.ingrediente_nome,
+      pre_preparo: ing.pre_preparo || "",
+      quantidade_por_porcao: ing.quantidade_g,
+      ordem: i * 10,
+    });
+  }
+
+  return { receita, vinculados: resolvidos.length, pendentes };
+}
 
 export default function ImportarReceitaTextoDialog({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");
   const [analisando, setAnalisando] = useState(false);
-  const [parsed, setParsed] = useState(null);
+  const [parsedList, setParsedList] = useState(null); // array of { ...receita, selecionada, expanded }
   const [creating, setCreating] = useState(false);
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
+  const fileInputRef = useRef(null);
   const qc = useQueryClient();
 
   const reset = () => {
     setTexto("");
-    setParsed(null);
+    setParsedList(null);
     setReport(null);
     setError("");
   };
@@ -41,9 +94,18 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
     onClose();
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => { setTexto(ev.target.result || ""); setError(""); };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   const handleAnalisar = async () => {
     if (!texto.trim()) {
-      setError("Cole o texto da receita para continuar.");
+      setError("Cole o texto ou selecione um arquivo .txt para continuar.");
       return;
     }
     setAnalisando(true);
@@ -54,7 +116,11 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
       if (!data || data.error) {
         throw new Error(data?.error || "Resposta inválida");
       }
-      setParsed(data);
+      setParsedList(data.receitas.map((r) => ({
+        ...r,
+        selecionada: !r.erro && !r.existe,
+        expanded: false,
+      })));
     } catch (err) {
       setError("Erro ao analisar: " + (err?.response?.data?.error || err?.message || "erro desconhecido"));
     } finally {
@@ -62,56 +128,41 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
     }
   };
 
-  const handleCriar = async () => {
-    if (!parsed) return;
+  const toggleSelecionada = (idx) => {
+    setParsedList((prev) => prev.map((it, i) => (i === idx ? { ...it, selecionada: !it.selecionada } : it)));
+  };
+
+  const toggleExpanded = (idx) => {
+    setParsedList((prev) => prev.map((it, i) => (i === idx ? { ...it, expanded: !it.expanded } : it)));
+  };
+
+  const handleCriarSelecionadas = async () => {
+    if (!parsedList) return;
     setCreating(true);
     try {
-      const resolvidos = parsed.ingredientes.filter(i => i.resolvido);
-      const pendentes = parsed.ingredientes.filter(i => !i.resolvido);
-
-      const categoriaValida = CATEGORIAS.includes(parsed.categoria) ? parsed.categoria : null;
-      const rendimentoTotal = parsed.ingredientes.reduce((acc, i) => acc + (i.quantidade_g || 0), 0);
-
-      let notaFinal = (parsed.nota || "").trim();
-      if (pendentes.length > 0) {
-        const bloco = "Ingredientes pendentes:\n" + pendentes.map(p =>
-          `- ${p.nome_texto} (${p.quantidade_g}g${p.pre_preparo ? ", " + p.pre_preparo : ""})`
-        ).join("\n");
-        notaFinal = notaFinal ? notaFinal + "\n\n" + bloco : bloco;
+      const criadas = [];
+      const puladas = [];
+      for (const item of parsedList) {
+        if (item.erro) {
+          puladas.push({ nome: item.nome, motivo: item.erro });
+          continue;
+        }
+        if (item.existe) {
+          puladas.push({ nome: item.nome, motivo: "já existe" });
+          continue;
+        }
+        if (!item.selecionada) {
+          puladas.push({ nome: item.nome, motivo: "não selecionada" });
+          continue;
+        }
+        const result = await criarReceitaDoItem(item);
+        criadas.push({ nome: item.nome, id: result.receita.id, vinculados: result.vinculados, pendentes: result.pendentes });
       }
-
-      const receita = await base44.entities.Receita.create({
-        nome: parsed.nome.toUpperCase(),
-        categorias: categoriaValida ? [categoriaValida] : [],
-        revisar: !categoriaValida,
-        porcoes_base: 1,
-        unidade_base: "g",
-        rendimento_total: rendimentoTotal,
-        per_capita_g: parsed.porcao || null,
-        modo_preparo: parsed.modo_preparo || "",
-        nota: notaFinal,
-        custo_total: 0,
-        custo_por_porcao: 0,
-      });
-
-      for (let i = 0; i < resolvidos.length; i++) {
-        const ing = resolvidos[i];
-        await base44.entities.IngredienteReceita.create({
-          receita_id: receita.id,
-          tipo: "ingrediente",
-          ingrediente_id: ing.ingrediente_id,
-          ingrediente_nome: ing.ingrediente_nome,
-          pre_preparo: ing.pre_preparo || "",
-          quantidade_por_porcao: ing.quantidade_g,
-          ordem: i * 10,
-        });
-      }
-
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
-      setReport({ receita, vinculados: resolvidos.length, pendentes });
+      setReport({ total: parsedList.length, criadas, puladas });
     } catch (err) {
-      toast.error("Erro ao criar receita: " + (err.message || err));
+      toast.error("Erro ao criar receitas: " + (err.message || err));
     } finally {
       setCreating(false);
     }
@@ -124,14 +175,15 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
         onInteractOutside={(e) => { if (report) e.preventDefault(); }}
         onEscapeKeyDown={(e) => { if (report) e.preventDefault(); }}
       >
-        {!parsed && !report && (
+        {!parsedList && !report && (
           <>
             <DialogHeader>
               <DialogTitle className="font-display flex items-center gap-2">
                 <ClipboardPaste className="w-5 h-5 text-primary" /> Importar Receita (colar texto)
               </DialogTitle>
               <DialogDescription>
-                Cole o texto no formato estruturado (RECEITA, CATEGORIA, PORÇÃO, INGREDIENTES, MODO DE PREPARO, NOTA).
+                Cole uma ou várias receitas no formato estruturado (RECEITA, CATEGORIA, PORÇÃO, INGREDIENTES, MODO DE PREPARO, NOTA).
+                Cada linha "RECEITA:" inicia uma nova receita — ou envie um arquivo .txt com o mesmo conteúdo.
               </DialogDescription>
             </DialogHeader>
             <Textarea
@@ -141,6 +193,12 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
               placeholder={PLACEHOLDER}
               className="text-sm font-mono"
             />
+            <div className="flex items-center gap-2">
+              <input ref={fileInputRef} type="file" accept=".txt" className="hidden" onChange={handleFileChange} />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                <FileText className="w-4 h-4 mr-1" /> Carregar arquivo .txt
+              </Button>
+            </div>
             {error && (
               <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                 <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
@@ -156,84 +214,63 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
           </>
         )}
 
-        {parsed && !report && (
+        {parsedList && !report && (
           <>
             <DialogHeader>
               <DialogTitle className="font-display">Prévia da importação</DialogTitle>
-              <DialogDescription>Revise antes de criar a receita.</DialogDescription>
+              <DialogDescription>
+                {parsedList.length} receita{parsedList.length > 1 ? "s" : ""} encontrada{parsedList.length > 1 ? "s" : ""} no texto. Revise e selecione o que deseja criar.
+              </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-muted-foreground">Nome</p>
-                  <p className="font-semibold">{parsed.nome}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Categoria</p>
-                  <p className="font-semibold">{CATEGORIAS.includes(parsed.categoria) ? parsed.categoria : (parsed.categoria || "— (Revisar)")}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Porção</p>
-                  <p className="font-semibold">{parsed.porcao ? `${parsed.porcao}g` : "—"}</p>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <p className="text-sm font-semibold">Ingredientes</p>
-                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
-                    {parsed.ingredientes.filter(i => i.resolvido).length} resolvidos
-                  </Badge>
-                  {parsed.ingredientes.some(i => !i.resolvido) && (
-                    <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700">
-                      {parsed.ingredientes.filter(i => !i.resolvido).length} pendentes
-                    </Badge>
-                  )}
-                </div>
-                <div className="space-y-1 max-h-56 overflow-y-auto border rounded-lg p-2">
-                  {parsed.ingredientes.map((ing, i) => (
-                    <div
-                      key={i}
-                      className={`flex items-center gap-2 p-1.5 rounded text-sm ${ing.resolvido ? "bg-green-50" : "bg-amber-50 border border-amber-200"}`}
-                    >
-                      {ing.resolvido ? <Check className="w-3.5 h-3.5 text-green-600 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
-                      <span className="flex-1">
-                        {ing.resolvido ? (
+            <div className="space-y-2">
+              {parsedList.map((item, idx) => {
+                const resolvidosCount = item.ingredientes.filter((i) => i.resolvido).length;
+                const pendentesCount = item.ingredientes.filter((i) => !i.resolvido).length;
+                return (
+                  <div key={idx} className="border rounded-lg overflow-hidden">
+                    <div className="flex items-center gap-2 p-2.5">
+                      <Checkbox
+                        checked={item.selecionada}
+                        disabled={!!item.erro || item.existe}
+                        onCheckedChange={() => toggleSelecionada(idx)}
+                      />
+                      <button
+                        type="button"
+                        className="flex-1 flex items-center gap-2 min-w-0 text-left"
+                        onClick={() => toggleExpanded(idx)}
+                      >
+                        <span className="font-medium text-sm truncate">{item.nome}</span>
+                        {item.erro ? (
+                          <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 shrink-0">
+                            <Ban className="w-3 h-3 mr-1" /> {item.erro}
+                          </Badge>
+                        ) : (
                           <>
-                            <span className="font-medium">{ing.ingrediente_nome}</span>
-                            {ing.ingrediente_nome.toLowerCase() !== ing.nome_texto.toLowerCase() && (
-                              <span className="text-xs text-muted-foreground"> (de "{ing.nome_texto}"{ing.via_sinonimo ? " · via sinônimo" : ""})</span>
+                            {item.existe && (
+                              <Badge variant="secondary" className="text-xs bg-slate-200 text-slate-700 shrink-0">já existe</Badge>
+                            )}
+                            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 shrink-0">{resolvidosCount} resolvidos</Badge>
+                            {pendentesCount > 0 && (
+                              <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 shrink-0">{pendentesCount} pendentes</Badge>
                             )}
                           </>
-                        ) : (
-                          <span className="font-medium text-amber-800">{ing.nome_texto} — não encontrado</span>
                         )}
-                      </span>
-                      <span className="text-xs text-muted-foreground shrink-0">{ing.quantidade_g}g</span>
-                      {ing.pre_preparo && <span className="text-xs text-muted-foreground italic shrink-0">({ing.pre_preparo})</span>}
+                        <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 ml-auto transition-transform ${item.expanded ? "rotate-180" : ""}`} />
+                      </button>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {parsed.modo_preparo && (
-                <div>
-                  <p className="text-sm font-semibold mb-1">Modo de preparo</p>
-                  <p className="text-xs text-muted-foreground whitespace-pre-line bg-muted/40 p-2 rounded-lg">{parsed.modo_preparo}</p>
-                </div>
-              )}
-
-              {parsed.nota && (
-                <div>
-                  <p className="text-sm font-semibold mb-1">Nota</p>
-                  <p className="text-xs text-muted-foreground bg-muted/40 p-2 rounded-lg">{parsed.nota}</p>
-                </div>
-              )}
+                    {item.expanded && !item.erro && (
+                      <div className="px-2.5 pb-2.5 border-t">
+                        <ImportarReceitaTextoItemDetail item={item} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setParsed(null)}>Voltar</Button>
-              <Button onClick={handleCriar} disabled={creating}>
-                {creating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Criando...</> : "Criar receita"}
+              <Button variant="outline" onClick={() => setParsedList(null)}>Voltar</Button>
+              <Button onClick={handleCriarSelecionadas} disabled={creating || !parsedList.some((i) => i.selecionada)}>
+                {creating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Criando...</> : "Criar selecionadas"}
               </Button>
             </div>
           </>
@@ -243,37 +280,55 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
           <>
             <DialogHeader>
               <DialogTitle className="font-display flex items-center gap-2">
-                <ChefHat className="w-5 h-5 text-primary" /> Receita importada
+                <ChefHat className="w-5 h-5 text-primary" /> Relatório da importação
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <p className="text-sm">
-                <strong>{report.receita.nome}</strong> foi criada com sucesso.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-green-700">{report.vinculados}</p>
-                  <p className="text-xs text-green-600">Ingredientes vinculados</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-muted/40 border rounded-lg text-center">
+                  <p className="text-2xl font-bold">{report.total}</p>
+                  <p className="text-xs text-muted-foreground">No texto</p>
                 </div>
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
-                  <p className="text-2xl font-bold text-amber-700">{report.pendentes.length}</p>
-                  <p className="text-xs text-amber-600">Pendentes</p>
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-green-700">{report.criadas.length}</p>
+                  <p className="text-xs text-green-600">Criadas</p>
+                </div>
+                <div className="p-3 bg-slate-100 border border-slate-200 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-slate-700">{report.puladas.length}</p>
+                  <p className="text-xs text-slate-600">Puladas</p>
                 </div>
               </div>
-              {report.pendentes.length > 0 && (
+
+              {report.criadas.some((c) => c.pendentes.length > 0) && (
+                <div className="text-xs space-y-1.5">
+                  <p className="font-medium text-muted-foreground">Pendências por receita (salvas na nota):</p>
+                  {report.criadas.filter((c) => c.pendentes.length > 0).map((c, i) => (
+                    <div key={i} className="bg-amber-50 border border-amber-200 rounded p-1.5">
+                      <p className="font-medium text-amber-800">{c.nome}</p>
+                      {c.pendentes.map((p, j) => (
+                        <p key={j} className="text-amber-700 pl-2">- {p.nome_texto} ({p.quantidade_g}g)</p>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {report.puladas.length > 0 && (
                 <div className="text-xs text-muted-foreground space-y-1">
-                  <p className="font-medium">Pendentes (salvos na nota da receita):</p>
-                  {report.pendentes.map((p, i) => (
-                    <p key={i} className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded">{p.nome_texto} — {p.quantidade_g}g</p>
+                  <p className="font-medium">Puladas:</p>
+                  {report.puladas.map((p, i) => (
+                    <p key={i} className="bg-slate-100 px-2 py-0.5 rounded">{p.nome} — {p.motivo}</p>
                   ))}
                 </div>
               )}
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={handleClose}>Fechar</Button>
-              <Button onClick={() => { const id = report.receita.id; handleClose(); onCreated(id); }}>
-                Abrir receita
-              </Button>
+              {report.criadas.length === 1 && (
+                <Button onClick={() => { const id = report.criadas[0].id; handleClose(); onCreated(id); }}>
+                  Abrir receita
+                </Button>
+              )}
             </div>
           </>
         )}
