@@ -139,6 +139,15 @@ export default function Receitas() {
     },
   });
 
+  const toggleRevisarMut = useMutation({
+    mutationFn: async ({ id, revisar }) => {
+      await base44.entities.Receita.update(id, { revisar });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["receitas"] });
+    },
+  });
+
   const deleteMut = useMutation({
     mutationFn: async (id) => {
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: id });
@@ -476,6 +485,9 @@ export default function Receitas() {
                     <DropdownMenuItem onClick={() => setAssignTagsReceita(r)}>
                       <Tag className="w-4 h-4 mr-2" /> Tags
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toggleRevisarMut.mutate({ id: r.id, revisar: !r.revisar })}>
+                      <AlertTriangle className="w-4 h-4 mr-2" /> {r.revisar ? "Remover de A revisar" : "Marcar A revisar"}
+                    </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive" onClick={() => {
                       if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
                     }}>
@@ -613,7 +625,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
             if (item.modo_preparo != null) payload.modo_preparo = item.modo_preparo;
             const existingItem = existingMap[nomeKey];
             if (existingItem) {
-              await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: true });
+              await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: false });
               updated++;
             } else {
               await base44.entities.Receita.create({ ...payload, revisar: false });

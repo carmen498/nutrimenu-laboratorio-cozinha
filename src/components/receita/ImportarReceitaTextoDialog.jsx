@@ -53,7 +53,7 @@ async function criarReceitaDoItem(item, ingredientesById) {
   const receita = await base44.entities.Receita.create({
     nome: item.nome.toUpperCase(),
     categorias: categoriaValida ? [categoriaValida] : [],
-    revisar: pendentes.length > 0,
+    revisar: false,
     porcoes_base: 1,
     unidade_base: "g",
     rendimento_total: rendimentoTotal,

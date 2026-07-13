@@ -393,7 +393,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           rendimento_total: item.rendimento_g || 0,
           unidade_base: "g",
           modo_preparo: modoPreparo,
-          revisar: true,
+          revisar: false,
         };
 
         let receitaId;
@@ -401,7 +401,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         const existingReceita = fuzzyMatch?.receita;
         if (existingReceita) {
           receitaId = existingReceita.id;
-          await base44.entities.Receita.update(receitaId, { ...payload, revisar: true });
+          await base44.entities.Receita.update(receitaId, payload);
           const oldItems = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId }, "", 200);
           for (const old of oldItems) {
             await base44.entities.IngredienteReceita.delete(old.id);

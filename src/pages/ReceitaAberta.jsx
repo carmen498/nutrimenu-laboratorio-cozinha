@@ -151,6 +151,11 @@ export default function ReceitaAberta() {
     await base44.entities.Receita.update(id, { mostrar_fc: val });
   };
 
+  const handleToggleRevisar = async (val) => {
+    await base44.entities.Receita.update(id, { revisar: val });
+    qc.invalidateQueries({ queryKey: ["receita", id] });
+  };
+
   const handleSaveDescritivo = async () => {
     try {
       await base44.entities.Receita.update(id, { descritivo_menu: descritivoDraft });
@@ -916,6 +921,10 @@ REGRAS:
             ) : receita.categoria ? (
               <Badge variant="secondary">{receita.categoria}</Badge>
             ) : null}
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-muted/50">
+              <Switch checked={!!receita.revisar} onCheckedChange={handleToggleRevisar} className="scale-90" />
+              <span className={`text-xs font-medium ${receita.revisar ? "text-amber-700" : "text-muted-foreground"}`}>A revisar</span>
+            </div>
             {receita.rendimento_total > 0 && (
               <span className="text-sm text-muted-foreground">
                 Rendimento (PDP): {formatWeight(receita.rendimento_total, receita.unidade_base)}

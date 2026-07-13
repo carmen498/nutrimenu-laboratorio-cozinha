@@ -344,7 +344,7 @@ IMPORTANTE:
       const receita = await base44.entities.Receita.create({
         nome: p.nome?.toUpperCase(),
         categorias: semCategoria ? [] : catAuto,
-        revisar: true,
+        revisar: false,
         porcoes_base: porcoes,
         unidade_base: p.unidade_base || "g",
         modo_preparo: modoPreparoFinal,
@@ -499,7 +499,7 @@ IMPORTANTE:
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      if (duplicateWarning) toast.warning("Receita salva com nome similar — marcada para revisão");
+      if (duplicateWarning) toast.warning("Receita salva com nome similar");
       else toast.success("Receita importada com sucesso!");
       receitaSalvaRef.current = receita;
       setShowVariations(true);
@@ -631,7 +631,7 @@ Para cada variação, retorne:
         const novaReceita = await base44.entities.Receita.create({
           nome: variacao.novo_nome.toUpperCase(),
           categorias: variacao.nova_categoria ? [variacao.nova_categoria] : (p.categorias || []),
-          revisar: true,
+          revisar: false,
           porcoes_base: p.porcoes_base || 0,
           unidade_base: p.unidade_base || "g",
           modo_preparo: modoPreparoFinal,
@@ -659,7 +659,7 @@ Para cada variação, retorne:
 
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      toast.success(`${criadas} variações criadas como rascunho "A revisar"`);
+      toast.success(`${criadas} variações criadas`);
     } catch (err) {
       toast.error("Erro ao salvar variações: " + err.message);
     } finally {
@@ -1088,7 +1088,7 @@ Para cada variação, retorne:
             ) : (
               <div className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  {variationResults.length} variações sugeridas. Todas serão salvas como rascunho <strong>"A revisar"</strong>:
+                  {variationResults.length} variações sugeridas:
                 </p>
                 <div className="max-h-48 overflow-y-auto space-y-1.5">
                   {variationResults.map((v, i) => (
