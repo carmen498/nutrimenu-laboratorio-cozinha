@@ -27,7 +27,7 @@ NOTA: observação opcional
 RECEITA: OUTRA RECEITA
 ...`;
 
-async function criarReceitaDoItem(item) {
+async function criarReceitaDoItem(item, ingredientesById) {
   const resolvidos = item.ingredientes.filter((i) => i.resolvido);
   const pendentes = item.ingredientes.filter((i) => !i.resolvido);
 
@@ -42,18 +42,26 @@ async function criarReceitaDoItem(item) {
     notaFinal = notaFinal ? notaFinal + "\n\n" + bloco : bloco;
   }
 
+  const custoTotal = resolvidos.reduce((acc, i) => {
+    const ing = ingredientesById[i.ingrediente_id];
+    if (!ing) return acc;
+    const fc = ing.fator_correcao || 1;
+    return acc + (i.quantidade_g || 0) * fc * (ing.preco_por_g_rs || 0);
+  }, 0);
+  const custoTotalRounded = parseFloat(custoTotal.toFixed(2));
+
   const receita = await base44.entities.Receita.create({
     nome: item.nome.toUpperCase(),
     categorias: categoriaValida ? [categoriaValida] : [],
-    revisar: !categoriaValida,
+    revisar: pendentes.length > 0,
     porcoes_base: 1,
     unidade_base: "g",
     rendimento_total: rendimentoTotal,
     per_capita_g: item.porcao || null,
     modo_preparo: item.modo_preparo || "",
     nota: notaFinal,
-    custo_total: 0,
-    custo_por_porcao: 0,
+    custo_total: custoTotalRounded,
+    custo_por_porcao: custoTotalRounded,
   });
 
   for (let i = 0; i < resolvidos.length; i++) {
@@ -140,6 +148,10 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
     if (!parsedList) return;
     setCreating(true);
     try {
+      const ingredientesDb = await base44.entities.Ingrediente.list("-nome", 500);
+      const ingredientesById = {};
+      ingredientesDb.forEach((ing) => { ingredientesById[ing.id] = ing; });
+
       const criadas = [];
       const puladas = [];
       for (const item of parsedList) {
@@ -155,7 +167,7 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
           puladas.push({ nome: item.nome, motivo: "não selecionada" });
           continue;
         }
-        const result = await criarReceitaDoItem(item);
+        const result = await criarReceitaDoItem(item, ingredientesById);
         criadas.push({ nome: item.nome, id: result.receita.id, vinculados: result.vinculados, pendentes: result.pendentes });
       }
       qc.invalidateQueries({ queryKey: ["receitas"] });
