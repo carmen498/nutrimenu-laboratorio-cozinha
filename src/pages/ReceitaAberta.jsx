@@ -67,6 +67,8 @@ export default function ReceitaAberta() {
   const [preparoDraft, setPreparoDraft] = useState("");
   const [editingDescritivo, setEditingDescritivo] = useState(false);
   const [descritivoDraft, setDescritivoDraft] = useState("");
+  const [editingNota, setEditingNota] = useState(false);
+  const [notaDraft, setNotaDraft] = useState("");
   const [mostrarFC, setMostrarFC] = useState(false);
   const [cadastrarMedidaIng, setCadastrarMedidaIng] = useState(null);
   const [editarMedidaMc, setEditarMedidaMc] = useState(null);
@@ -155,6 +157,17 @@ export default function ReceitaAberta() {
       qc.invalidateQueries({ queryKey: ["receita", id] });
       setEditingDescritivo(false);
       toast.success("Descritivo atualizado!");
+    } catch (err) {
+      toast.error("Erro ao salvar: " + (err.message || ""));
+    }
+  };
+
+  const handleSaveNota = async () => {
+    try {
+      await base44.entities.Receita.update(id, { nota: notaDraft });
+      qc.invalidateQueries({ queryKey: ["receita", id] });
+      setEditingNota(false);
+      toast.success("Nota atualizada!");
     } catch (err) {
       toast.error("Erro ao salvar: " + (err.message || ""));
     }
@@ -1889,6 +1902,42 @@ REGRAS:
           </div>
           <Card className="p-4">
             <p className="text-sm leading-relaxed whitespace-pre-line">{receita.descritivo_menu}</p>
+          </Card>
+        </div>
+      ) : null}
+
+      {/* Nota */}
+      {editingNota ? (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-lg font-bold">Nota</h2>
+          </div>
+          <Card className="p-4">
+            <div className="space-y-2">
+              <textarea
+                className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-ring"
+                value={notaDraft}
+                onChange={(e) => setNotaDraft(e.target.value)}
+                placeholder="Observações livres sobre a receita."
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={() => setEditingNota(false)}>Cancelar</Button>
+                <Button size="sm" onClick={handleSaveNota}>Salvar</Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      ) : receita.nota ? (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-display text-lg font-bold">Nota</h2>
+            <Button variant="ghost" size="sm" onClick={() => { setNotaDraft(receita.nota || ""); setEditingNota(true); }}>
+              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+            </Button>
+          </div>
+          <Card className="p-4">
+            <p className="text-sm leading-relaxed whitespace-pre-line">{receita.nota}</p>
           </Card>
         </div>
       ) : null}

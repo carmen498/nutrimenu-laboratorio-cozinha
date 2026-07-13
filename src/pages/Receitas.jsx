@@ -9,11 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
 import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
+import ImportarReceitaTextoDialog from "@/components/receita/ImportarReceitaTextoDialog";
 import GerenciarTagsDialog from "@/components/receita/GerenciarTagsDialog";
 import QuickTagAssignDialog from "@/components/receita/QuickTagAssignDialog";
 import TagBadge from "@/components/tags/TagBadge";
@@ -198,6 +199,9 @@ export default function Receitas() {
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowNew("lote")}>
                 <Upload className="w-4 h-4 mr-2" /> Importar em lote
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowNew("texto")}>
+                <ClipboardPaste className="w-4 h-4 mr-2" /> Importar Receita (colar texto)
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -513,6 +517,13 @@ export default function Receitas() {
         <ImportarLoteDialog
           open={true}
           onClose={() => { setShowNew(null); window.history.replaceState({}, "", "/receitas"); }}
+        />
+      )}
+      {showNew === "texto" && (
+        <ImportarReceitaTextoDialog
+          open={true}
+          onClose={() => { setShowNew(null); window.history.replaceState({}, "", "/receitas"); }}
+          onCreated={(id) => { setShowNew(null); navigate(`/receita/${id}`); }}
         />
       )}
 

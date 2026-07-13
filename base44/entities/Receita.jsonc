@@ -92,6 +92,10 @@
       "type": "number",
       "description": "Per capita recomendado em gramas (override do usu\u00e1rio)"
     },
+    "nota": {
+      "type": "string",
+      "description": "Nota/observa\u00e7\u00f5es livres da receita (ex: ajustes, ingredientes pendentes de importa\u00e7\u00e3o)"
+    },
     "cor_predominante": {
       "type": "string",
       "enum": [
