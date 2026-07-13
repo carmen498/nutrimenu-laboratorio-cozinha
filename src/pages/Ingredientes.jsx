@@ -18,6 +18,7 @@ import ExcluirIngredienteDialog from "@/components/ingrediente/ExcluirIngredient
 import { exportarIngredientesPDF } from "@/lib/exportarIngredientesPDF";
 import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
 import ImportarSinonimosDialog from "@/components/ingrediente/ImportarSinonimosDialog";
+import ImportarIngredientesDialog from "@/components/ingrediente/ImportarIngredientesDialog";
 import SinonimosSection from "@/components/ingrediente/SinonimosSection";
 
 const GRUPOS_INGREDIENTES = [
@@ -450,7 +451,11 @@ export default function Ingredientes() {
       />
 
       {/* Import Dialog */}
-      <ImportDialog open={showImport} onClose={() => setShowImport(false)} />
+      <ImportarIngredientesDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
+      />
 
       {/* Import Sinônimos Dialog */}
       <ImportarSinonimosDialog open={showImportSinonimos} onClose={() => setShowImportSinonimos(false)} />
@@ -564,98 +569,6 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
         <div className="flex gap-2 justify-end px-6 py-4 border-t shrink-0">
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function ImportDialog({ open, onClose }) {
-  const [file, setFile] = useState(null);
-  const [importing, setImporting] = useState(false);
-  const qc = useQueryClient();
-
-  const handleImport = async () => {
-    if (!file) return;
-    setImporting(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              categoria: { type: "string" },
-              nome: { type: "string" },
-              unidade_compra: { type: "string" },
-              peso_embalagem_g: { type: "number" },
-              preco_embalagem_rs: { type: "number" },
-              preco_por_g_rs: { type: "number" },
-              fator_correcao: { type: "number" }
-            }
-          }
-        }
-      });
-
-      if (result.status === "success" && result.output) {
-        const items = Array.isArray(result.output) ? result.output : (result.output.items || []);
-        const existing = await base44.entities.Ingrediente.list("-nome", 500);
-        const existingMap = {};
-        existing.forEach((e) => { existingMap[e.nome?.toLowerCase()] = e; });
-
-        let created = 0, skipped = 0;
-        for (const item of items) {
-          if (!item.nome) continue;
-          const existingItem = existingMap[item.nome.toLowerCase()];
-          if (existingItem) {
-            skipped++;
-            continue;
-          }
-          const preco_por_g = item.peso_embalagem_g > 0
-            ? (item.preco_embalagem_rs || 0) / item.peso_embalagem_g
-            : (item.preco_por_g_rs || 0);
-          const payload = {
-            ...item,
-            preco_por_g_rs: preco_por_g,
-            fator_correcao: item.fator_correcao || 1.0
-          };
-          if (preco_por_g > 0) {
-            payload.preco_atualizado_em = new Date().toISOString();
-            payload.fonte_preco = "Manual";
-          }
-          await base44.entities.Ingrediente.create({ ...payload, revisar: false });
-          created++;
-        }
-        toast.success(`Importação concluída! ${created} criados, ${skipped} já existiam (ignorados).`);
-        qc.invalidateQueries({ queryKey: ["ingredientes"] });
-        onClose();
-      } else {
-        toast.error("Erro ao processar arquivo: " + (result.details || "formato inválido"));
-      }
-    } catch (err) {
-      toast.error("Erro na importação: " + err.message);
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-display">Importar CSV</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Selecione o arquivo CSV com as colunas: categoria, nome, unidade_compra, peso_embalagem_g, preco_embalagem_rs, preco_por_g_rs, fator_correcao
-        </p>
-        <Input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setFile(e.target.files[0])} />
-        <div className="flex gap-2 justify-end">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={handleImport} disabled={!file || importing}>
-            {importing ? "Importando..." : "Importar"}
-          </Button>
         </div>
       </DialogContent>
     </Dialog>
