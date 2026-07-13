@@ -605,9 +605,14 @@ function ImportDialog({ open, onClose }) {
         const existingMap = {};
         existing.forEach((e) => { existingMap[e.nome?.toLowerCase()] = e; });
 
-        let created = 0, updated = 0;
+        let created = 0, skipped = 0;
         for (const item of items) {
           if (!item.nome) continue;
+          const existingItem = existingMap[item.nome.toLowerCase()];
+          if (existingItem) {
+            skipped++;
+            continue;
+          }
           const preco_por_g = item.peso_embalagem_g > 0
             ? (item.preco_embalagem_rs || 0) / item.peso_embalagem_g
             : (item.preco_por_g_rs || 0);
@@ -620,17 +625,10 @@ function ImportDialog({ open, onClose }) {
             payload.preco_atualizado_em = new Date().toISOString();
             payload.fonte_preco = "Manual";
           }
-          const existingItem = existingMap[item.nome.toLowerCase()];
-          if (existingItem) {
-            const { id, created_date, updated_date, created_by_id, nome, ...rest } = payload;
-            await base44.entities.Ingrediente.update(existingItem.id, { ...rest, revisar: true });
-            updated++;
-          } else {
-            await base44.entities.Ingrediente.create({ ...payload, revisar: false });
-            created++;
-          }
+          await base44.entities.Ingrediente.create({ ...payload, revisar: false });
+          created++;
         }
-        toast.success(`Importação concluída! ${created} criados, ${updated} atualizados.`);
+        toast.success(`Importação concluída! ${created} criados, ${skipped} já existiam (ignorados).`);
         qc.invalidateQueries({ queryKey: ["ingredientes"] });
         onClose();
       } else {
