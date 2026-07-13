@@ -5,14 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
  * Regra 3 — Cadastro de MedidaCaseira a partir da ficha da receita.
  * Usuário escolhe utensílio (g_medio pré-preenchido, ajustável) → grava → vale imediatamente.
  */
-export default function CadastrarMedidaDialog({ open, onClose, ingrediente, utensilios = [] }) {
+export default function CadastrarMedidaDialog({ open, onClose, ingrediente, utensilios = [], medidaExistente = null }) {
   const qc = useQueryClient();
   const [utensilioId, setUtensilioId] = useState("");
   const [referenciaG, setReferenciaG] = useState("");
@@ -35,13 +35,20 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
   // Reset ao abrir
   useEffect(() => {
     if (open) {
-      setUtensilioId("");
-      setReferenciaG("");
-      setMedidaProntoG("");
-      setSoGramas(false);
+      if (medidaExistente) {
+        setUtensilioId(medidaExistente.utensilio || "");
+        setReferenciaG(medidaExistente.referencia_g != null ? String(medidaExistente.referencia_g) : "");
+        setMedidaProntoG(medidaExistente.medida_pronto_g != null ? String(medidaExistente.medida_pronto_g) : "");
+        setSoGramas(!!medidaExistente.so_gramas);
+      } else {
+        setUtensilioId("");
+        setReferenciaG("");
+        setMedidaProntoG("");
+        setSoGramas(false);
+      }
       setUserTouchedRef(false);
     }
-  }, [open]);
+  }, [open, medidaExistente]);
 
   const handleSave = async () => {
     if (!utensilioId) {
@@ -55,19 +62,30 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
       return;
     }
     try {
-      await base44.entities.MedidaCaseira.create({
-        nome: `${ingrediente.nome} · ${ute.simbolo}`,
-        alimento: ingrediente.id,
-        utensilio: utensilioId,
-        referencia_g: refG,
-        medida_pronto_g: medidaProntoG !== "" ? parseFloat(medidaProntoG.replace(",", ".")) : null,
-        so_gramas: soGramas,
-      });
+      if (medidaExistente) {
+        await base44.entities.MedidaCaseira.update(medidaExistente.id, {
+          utensilio: utensilioId,
+          referencia_g: refG,
+          medida_pronto_g: medidaProntoG !== "" ? parseFloat(medidaProntoG.replace(",", ".")) : null,
+          so_gramas: soGramas,
+          nome: `${ingrediente.nome} · ${ute.simbolo}`,
+        });
+        toast.success("Medida atualizada — conversão recalculada!");
+      } else {
+        await base44.entities.MedidaCaseira.create({
+          nome: `${ingrediente.nome} · ${ute.simbolo}`,
+          alimento: ingrediente.id,
+          utensilio: utensilioId,
+          referencia_g: refG,
+          medida_pronto_g: medidaProntoG !== "" ? parseFloat(medidaProntoG.replace(",", ".")) : null,
+          so_gramas: soGramas,
+        });
+        toast.success("Medida cadastrada — conversão ativa!");
+      }
       qc.invalidateQueries({ queryKey: ["medidas-caseiras"] });
-      toast.success("Medida cadastrada — conversão ativa!");
       onClose();
     } catch (err) {
-      toast.error("Erro ao cadastrar: " + (err.message || ""));
+      toast.error("Erro: " + (err.message || ""));
     }
   };
 
@@ -75,7 +93,7 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">Cadastrar medida — {ingrediente?.nome}</DialogTitle>
+          <DialogTitle className="font-display">{medidaExistente ? "Editar" : "Cadastrar"} medida — {ingrediente?.nome}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -128,6 +146,20 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
           </label>
         </div>
         <DialogFooter>
+          {medidaExistente && (
+            <Button variant="destructive" className="mr-auto" onClick={async () => {
+              try {
+                await base44.entities.MedidaCaseira.delete(medidaExistente.id);
+                qc.invalidateQueries({ queryKey: ["medidas-caseiras"] });
+                toast.success("Medida removida — linha volta a exibir apenas gramas");
+                onClose();
+              } catch (err) {
+                toast.error("Erro ao remover: " + (err.message || ""));
+              }
+            }}>
+              <Trash2 className="w-4 h-4 mr-1" /> Excluir
+            </Button>
+          )}
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave}><Check className="w-4 h-4 mr-1" /> Salvar</Button>
         </DialogFooter>

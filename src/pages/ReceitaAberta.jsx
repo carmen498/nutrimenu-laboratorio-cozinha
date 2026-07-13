@@ -68,6 +68,7 @@ export default function ReceitaAberta() {
   const [descritivoDraft, setDescritivoDraft] = useState("");
   const [mostrarFC, setMostrarFC] = useState(false);
   const [cadastrarMedidaIng, setCadastrarMedidaIng] = useState(null);
+  const [editarMedidaMc, setEditarMedidaMc] = useState(null);
   const [editingMedidaId, setEditingMedidaId] = useState(null);
   const [medidaInputValue, setMedidaInputValue] = useState("");
 
@@ -1445,23 +1446,35 @@ REGRAS:
                                 </div>
                               );
                             }
+                            const mcEdit = medidaByIngrediente[item.ing.id];
                             return (
-                              <button
-                                className="text-xs text-primary/70 hover:text-primary mt-0.5 block"
-                                onClick={() => { setEditingMedidaId(item.id); setMedidaInputValue(""); }}
-                                title="Clique para digitar em medida caseira"
-                              >
-                                {md.texto}
-                              </button>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <button
+                                  className="text-xs text-primary/70 hover:text-primary"
+                                  onClick={() => { setEditingMedidaId(item.id); setMedidaInputValue(""); }}
+                                  title="Clique para digitar em medida caseira"
+                                >
+                                  {md.texto}
+                                </button>
+                                {mcEdit && (
+                                  <button
+                                    className="text-xs text-primary/40 hover:text-primary underline"
+                                    onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(mcEdit); }}
+                                    title="Editar utensílio/referência da medida"
+                                  >
+                                    editar
+                                  </button>
+                                )}
+                              </div>
                             );
                           }
                           if (item.ing && !item.isChildOfSubreceita) {
                             return (
                               <button
                                 className="text-xs text-primary/50 hover:text-primary mt-0.5 block"
-                                onClick={() => setCadastrarMedidaIng(item.ing)}
+                                onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(null); }}
                               >
-                                + cadastrar medida
+                                + medida
                               </button>
                             );
                           }
@@ -1601,7 +1614,36 @@ REGRAS:
                   ) : (
                     <div>
                       <p className="font-medium text-sm">{item.ing?.nome || item.ingrediente_nome}</p>
-                      {item.medida_caseira && <p className="text-xs text-muted-foreground">{item.medida_caseira}</p>}
+                      {(() => {
+                        const mdM = getMedidaDisplay(item);
+                        if (mdM?.texto) {
+                          const mcM = medidaByIngrediente[item.ing.id];
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs text-muted-foreground">{mdM.texto}</span>
+                              {mcM && (
+                                <button
+                                  className="text-xs text-primary/50 hover:text-primary underline"
+                                  onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(mcM); }}
+                                >
+                                  editar
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (item.ing && !item.isChildOfSubreceita) {
+                          return (
+                            <button
+                              className="text-xs text-primary/50 hover:text-primary"
+                              onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(null); }}
+                            >
+                              + medida
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
                       {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                       {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                     </div>
@@ -1966,9 +2008,10 @@ REGRAS:
       {cadastrarMedidaIng && (
         <CadastrarMedidaDialog
           open={true}
-          onClose={() => setCadastrarMedidaIng(null)}
+          onClose={() => { setCadastrarMedidaIng(null); setEditarMedidaMc(null); }}
           ingrediente={cadastrarMedidaIng}
           utensilios={utensiliosPadrao}
+          medidaExistente={editarMedidaMc}
         />
       )}
 
