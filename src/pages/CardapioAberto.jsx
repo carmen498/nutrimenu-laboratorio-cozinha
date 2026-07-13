@@ -22,6 +22,7 @@ import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
 import AddInsumoBanco from "@/components/cardapio/AddInsumoBanco";
+import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -570,6 +571,13 @@ export default function CardapioAberto() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Barra de cores + alerta de monotonia visual */}
+        {receitas.length > 0 && (
+          <div className="mt-4">
+            <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
           </div>
         )}
       </div>
