@@ -16,7 +16,6 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
   const qc = useQueryClient();
   const [utensilioId, setUtensilioId] = useState("");
   const [referenciaG, setReferenciaG] = useState("");
-  const [medidaProntoG, setMedidaProntoG] = useState("");
   const [soGramas, setSoGramas] = useState(false);
   const [userTouchedRef, setUserTouchedRef] = useState(false);
 
@@ -38,12 +37,10 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
       if (medidaExistente) {
         setUtensilioId(medidaExistente.utensilio || "");
         setReferenciaG(medidaExistente.referencia_g != null ? String(medidaExistente.referencia_g) : "");
-        setMedidaProntoG(medidaExistente.medida_pronto_g != null ? String(medidaExistente.medida_pronto_g) : "");
         setSoGramas(!!medidaExistente.so_gramas);
       } else {
         setUtensilioId("");
         setReferenciaG("");
-        setMedidaProntoG("");
         setSoGramas(false);
       }
       setUserTouchedRef(false);
@@ -66,7 +63,6 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
         await base44.entities.MedidaCaseira.update(medidaExistente.id, {
           utensilio: utensilioId,
           referencia_g: refG,
-          medida_pronto_g: medidaProntoG !== "" ? parseFloat(medidaProntoG.replace(",", ".")) : null,
           so_gramas: soGramas,
           nome: `${ingrediente.nome} · ${ute.simbolo}`,
         });
@@ -77,7 +73,6 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
           alimento: ingrediente.id,
           utensilio: utensilioId,
           referencia_g: refG,
-          medida_pronto_g: medidaProntoG !== "" ? parseFloat(medidaProntoG.replace(",", ".")) : null,
           so_gramas: soGramas,
         });
         toast.success("Medida cadastrada — conversão ativa!");
@@ -112,28 +107,16 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <Label className="text-xs">Referência (g cru) {!soGramas && "*"}</Label>
-              <Input
-                type="text"
-                value={referenciaG}
-                onChange={(e) => { setReferenciaG(e.target.value); setUserTouchedRef(true); }}
-                placeholder="ex: 200"
-                disabled={soGramas}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Pronto (g) — opcional</Label>
-              <Input
-                type="text"
-                value={medidaProntoG}
-                onChange={(e) => setMedidaProntoG(e.target.value)}
-                placeholder="—"
-                className="mt-1"
-              />
-            </div>
+          <div>
+            <Label className="text-xs">Referência (g cru) {!soGramas && "*"}</Label>
+            <Input
+              type="text"
+              value={referenciaG}
+              onChange={(e) => { setReferenciaG(e.target.value); setUserTouchedRef(true); }}
+              placeholder="ex: 200"
+              disabled={soGramas}
+              className="mt-1"
+            />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input

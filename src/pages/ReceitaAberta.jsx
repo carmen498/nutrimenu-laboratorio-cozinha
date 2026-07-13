@@ -277,7 +277,7 @@ export default function ReceitaAberta() {
     const mc = medidaByIngrediente[item.ing.id];
     if (!mc) return null;
     const ute = uteMap[mc.utensilio];
-    return converterGramasParaMedida(item.qtdNova, mc, ute, "cru");
+    return converterGramasParaMedida(item.qtdNova, mc, ute);
   };
 
   const fator = receita && receita.rendimento_total > 0 && quantidadeTotal > 0 ? quantidadeTotal / receita.rendimento_total : 1;
@@ -1441,7 +1441,7 @@ REGRAS:
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter") {
                                         const n = parseFloat(medidaInputValue);
-                                        const g = converterMedidaParaGramas(n, mc, "cru");
+                                        const g = converterMedidaParaGramas(n, mc);
                                         if (g) {
                                           const baseTotal = (receita?.porcoes_base || 1) * fator;
                                           updateQtdMut.mutate({ itemId: item.id, quantidade_por_porcao: baseTotal > 0 ? g / baseTotal : g });

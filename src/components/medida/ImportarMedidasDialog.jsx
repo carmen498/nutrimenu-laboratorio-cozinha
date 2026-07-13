@@ -47,7 +47,6 @@ export default function ImportarMedidasDialog({ open, onClose, onImported }) {
               <code className="text-xs bg-muted px-1 rounded">ingrediente_nome</code>,{" "}
               <code className="text-xs bg-muted px-1 rounded">utensilio_simbolo</code>,{" "}
               <code className="text-xs bg-muted px-1 rounded">referencia_g</code>,{" "}
-              <code className="text-xs bg-muted px-1 rounded">medida_pronto_g</code>,{" "}
               <code className="text-xs bg-muted px-1 rounded">so_gramas</code>{" "}
               (UTF-8, vírgula como separador).
             </p>

@@ -36,7 +36,7 @@ export default function MedidasCaseiras() {
   });
   const [showMedidaForm, setShowMedidaForm] = useState(false);
   const [editMedida, setEditMedida] = useState(null);
-  const [medidaForm, setMedidaForm] = useState({ alimento: "", utensilio: "", referencia_g: "", medida_pronto_g: "", so_gramas: false });
+  const [medidaForm, setMedidaForm] = useState({ alimento: "", utensilio: "", referencia_g: "", so_gramas: false });
   const [showImport, setShowImport] = useState(false);
 
   const ingMap = useMemo(() => {
@@ -113,7 +113,7 @@ export default function MedidasCaseiras() {
   // --- MedidaCaseira CRUD ---
   const startNewMedida = () => {
     setEditMedida(null);
-    setMedidaForm({ alimento: "", utensilio: "", referencia_g: "", medida_pronto_g: "", so_gramas: false });
+    setMedidaForm({ alimento: "", utensilio: "", referencia_g: "", so_gramas: false });
     setShowMedidaForm(true);
   };
 
@@ -123,7 +123,6 @@ export default function MedidasCaseiras() {
       alimento: m.alimento || "",
       utensilio: m.utensilio || "",
       referencia_g: m.referencia_g != null ? String(m.referencia_g) : "",
-      medida_pronto_g: m.medida_pronto_g != null ? String(m.medida_pronto_g) : "",
       so_gramas: !!m.so_gramas,
     });
     setShowMedidaForm(true);
@@ -141,7 +140,6 @@ export default function MedidasCaseiras() {
       alimento: medidaForm.alimento,
       utensilio: medidaForm.utensilio,
       referencia_g: medidaForm.referencia_g !== "" ? parseFloat(medidaForm.referencia_g.replace(",", ".")) : null,
-      medida_pronto_g: medidaForm.medida_pronto_g !== "" ? parseFloat(medidaForm.medida_pronto_g.replace(",", ".")) : null,
       so_gramas: medidaForm.so_gramas,
     };
     try {
@@ -302,7 +300,6 @@ export default function MedidasCaseiras() {
                 <th className="text-left px-3 py-2 font-semibold text-xs">Alimento</th>
                 <th className="text-left px-3 py-2 font-semibold text-xs">Utensílio</th>
                 <th className="text-right px-2 py-2 font-semibold text-xs">Ref. (g cru)</th>
-                <th className="text-right px-2 py-2 font-semibold text-xs hidden md:table-cell">Pronto (g)</th>
                 <th className="text-center px-2 py-2 font-semibold text-xs">Só gramas</th>
                 <th className="px-2 py-2 w-20"></th>
               </tr>
@@ -316,7 +313,6 @@ export default function MedidasCaseiras() {
                     <td className="px-3 py-2 font-medium">{ing?.nome || "—"}</td>
                     <td className="px-3 py-2">{ute?.simbolo || "—"}</td>
                     <td className="px-2 py-2 text-right tabular-nums font-semibold" style={{ color: "#1B4332" }}>{fmtG(m.referencia_g)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums hidden md:table-cell">{fmtG(m.medida_pronto_g)}</td>
                     <td className="px-2 py-2 text-center">
                       {m.so_gramas ? <Badge className="bg-amber-100 text-amber-700 border-amber-300">Sim</Badge> : "—"}
                     </td>
@@ -335,7 +331,7 @@ export default function MedidasCaseiras() {
               })}
               {medidasFiltered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="text-center text-muted-foreground py-8 text-sm">
+                  <td colSpan={5} className="text-center text-muted-foreground py-8 text-sm">
                     Nenhuma medida encontrada. Clique em "Nova Medida" ou "Importar CSV".
                   </td>
                 </tr>
@@ -416,15 +412,9 @@ export default function MedidasCaseiras() {
                 {utensilios.map(u => <option key={u.id} value={u.id}>{u.simbolo} — {u.descricao_singular}</option>)}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label className="text-xs">Referência (g cru)</Label>
-                <Input type="text" value={medidaForm.referencia_g} onChange={(e) => setMedidaForm(f => ({ ...f, referencia_g: e.target.value }))} placeholder="ex: 200" className="mt-1" />
-              </div>
-              <div>
-                <Label className="text-xs">Pronto (g) — opcional</Label>
-                <Input type="text" value={medidaForm.medida_pronto_g} onChange={(e) => setMedidaForm(f => ({ ...f, medida_pronto_g: e.target.value }))} placeholder="—" className="mt-1" />
-              </div>
+            <div>
+              <Label className="text-xs">Referência (g cru)</Label>
+              <Input type="text" value={medidaForm.referencia_g} onChange={(e) => setMedidaForm(f => ({ ...f, referencia_g: e.target.value }))} placeholder="ex: 200" className="mt-1" />
             </div>
             <label className="flex items-center gap-2 cursor-pointer">
               <input

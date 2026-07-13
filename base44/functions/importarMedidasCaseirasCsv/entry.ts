@@ -24,7 +24,6 @@ Deno.serve(async (req) => {
     const idxIngrediente = header.indexOf('ingrediente_nome');
     const idxUtensilio = header.indexOf('utensilio_simbolo');
     const idxRefG = header.indexOf('referencia_g');
-    const idxProntoG = header.indexOf('medida_pronto_g');
     const idxSoGramas = header.indexOf('so_gramas');
 
     if (idxIngrediente === -1 || idxUtensilio === -1) {
@@ -88,7 +87,6 @@ Deno.serve(async (req) => {
       }
 
       const referencia_g = idxRefG !== -1 && row[idxRefG] ? parseFloat(row[idxRefG].replace(',', '.')) : null;
-      const medida_pronto_g = idxProntoG !== -1 && row[idxProntoG] ? parseFloat(row[idxProntoG].replace(',', '.')) : null;
       const so_gramas = idxSoGramas !== -1 ? (row[idxSoGramas] || '').trim().toLowerCase() === 'sim' || row[idxSoGramas].trim() === 'true' : false;
 
       novosNoBatch.add(dupKey);
@@ -97,7 +95,6 @@ Deno.serve(async (req) => {
         alimento: ing.id,
         utensilio: ute.id,
         referencia_g: !isNaN(referencia_g) ? referencia_g : null,
-        medida_pronto_g: !isNaN(medida_pronto_g) ? medida_pronto_g : null,
         so_gramas: so_gramas,
       });
       existSet.add(dupKey);

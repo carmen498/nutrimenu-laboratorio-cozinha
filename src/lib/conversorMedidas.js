@@ -70,16 +70,15 @@ function formatGramas(g) {
  * @param {number} quantidade_g - quantidade em gramas
  * @param {object|null} medida - registro MedidaCaseira (ou null se não cadastrada)
  * @param {object|null} utensilio - registro UtensilioPadrao vinculado
- * @param {'cru'|'pronto'} contexto - 'cru' usa referencia_g; 'pronto' usa medida_pronto_g
  * @returns {{ texto: string|null, regra: 1|2, n?: number, gRecalculado?: number, desvio?: number }}
  */
-export function converterGramasParaMedida(quantidade_g, medida, utensilio, contexto = "cru") {
+export function converterGramasParaMedida(quantidade_g, medida, utensilio) {
   // REGRA 2: so_gramas ou sem medida cadastrada
   if (!medida || medida.so_gramas) {
     return { texto: null, regra: 2 };
   }
 
-  const refG = contexto === "pronto" ? medida.medida_pronto_g : medida.referencia_g;
+  const refG = medida.referencia_g;
 
   // REGRA 2: sem referência de gramas
   if (!refG || refG <= 0) {
@@ -124,12 +123,11 @@ export function converterGramasParaMedida(quantidade_g, medida, utensilio, conte
  * n × referencia_g, direto, sem arredondamento
  * @param {number} quantidade_n - número de medidas (ex: 2)
  * @param {object|null} medida - registro MedidaCaseira
- * @param {'cru'|'pronto'} contexto
  * @returns {number|null} gramas
  */
-export function converterMedidaParaGramas(quantidade_n, medida, contexto = "cru") {
+export function converterMedidaParaGramas(quantidade_n, medida) {
   if (!medida || !quantidade_n || quantidade_n <= 0) return null;
-  const refG = contexto === "pronto" ? medida.medida_pronto_g : medida.referencia_g;
+  const refG = medida.referencia_g;
   if (!refG || refG <= 0) return null;
   return quantidade_n * refG;
 }
