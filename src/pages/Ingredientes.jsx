@@ -470,8 +470,10 @@ export default function Ingredientes() {
 
 function IngredienteForm({ open, onClose, item, onSave, saving }) {
   const [form, setForm] = useState({});
+  const [erroQuantidade, setErroQuantidade] = useState(null);
 
   const resetForm = () => {
+    setErroQuantidade(null);
     if (item) {
       setForm({ ...item, _preco_anterior: item.preco_embalagem_rs, _peso_anterior: item.peso_embalagem_g });
     } else {
@@ -479,8 +481,19 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
     }
   };
 
+  const avisoPreco = (form.peso_embalagem_g > 0 && !(form.preco_embalagem_rs > 0))
+    ? "Sem preço informado — o custo deste ingrediente ficará zerado nas receitas"
+    : null;
+
   const handleSave = () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome do ingrediente"); return; }
+    const precoPreenchido = (form.preco_embalagem_rs || 0) > 0;
+    const quantidadePreenchida = (form.peso_embalagem_g || 0) > 0;
+    if (precoPreenchido && !quantidadePreenchida) {
+      setErroQuantidade("Informe a quantidade (g/ml) para calcular o R$/kg");
+      return;
+    }
+    setErroQuantidade(null);
     onSave(form);
   };
 
@@ -520,7 +533,12 @@ function IngredienteForm({ open, onClose, item, onSave, saving }) {
           <CalculadoraCusto
             initialQuantidade={form.peso_embalagem_g || ""}
             initialPrecoTotal={form.preco_embalagem_rs || ""}
-            onChange={({ peso_embalagem_g, preco_embalagem_rs }) => setForm({ ...form, peso_embalagem_g, preco_embalagem_rs })}
+            erroQuantidade={erroQuantidade}
+            avisoPreco={avisoPreco}
+            onChange={({ peso_embalagem_g, preco_embalagem_rs }) => {
+              setForm({ ...form, peso_embalagem_g, preco_embalagem_rs });
+              if (peso_embalagem_g > 0) setErroQuantidade(null);
+            }}
           />
           {/* Price history */}
           {item && (item.historico_precos || []).length > 0 && (

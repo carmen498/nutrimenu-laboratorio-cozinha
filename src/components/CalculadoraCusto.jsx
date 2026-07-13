@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Calculator, Lightbulb } from "lucide-react";
+import { Calculator, Lightbulb, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -56,6 +56,8 @@ export default function CalculadoraCusto({
   initialUnidades = 1,
   initialQuantidade = "",
   initialPrecoTotal = "",
+  erroQuantidade = null,
+  avisoPreco = null,
 }) {
   const [itens, setItens] = useState(initialItens);
   const [unidades, setUnidades] = useState(initialUnidades);
@@ -130,9 +132,14 @@ export default function CalculadoraCusto({
                 step="0.1"
                 value={quantidade}
                 onChange={(e) => setQuantidade(parseFloat(e.target.value) || "")}
-                className="h-9 text-sm"
+                className={`h-9 text-sm ${erroQuantidade ? "border-red-500 ring-1 ring-red-500" : ""}`}
                 placeholder="Peso/unidade"
               />
+              {erroQuantidade && (
+                <p className="text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" /> {erroQuantidade}
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-xs">Preço total (R$)</Label>
@@ -141,9 +148,14 @@ export default function CalculadoraCusto({
                 step="0.01"
                 value={precoTotal}
                 onChange={(e) => setPrecoTotal(parseFloat(e.target.value) || "")}
-                className="h-9 text-sm"
+                className={`h-9 text-sm ${avisoPreco ? "border-amber-500 ring-1 ring-amber-500" : ""}`}
                 placeholder="Valor da compra"
               />
+              {avisoPreco && (
+                <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 shrink-0" /> {avisoPreco}
+                </p>
+              )}
             </div>
           </div>
         </div>
