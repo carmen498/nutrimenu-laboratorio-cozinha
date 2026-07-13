@@ -17,6 +17,7 @@ import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
 import GerenciarTagsDialog from "@/components/receita/GerenciarTagsDialog";
 import QuickTagAssignDialog from "@/components/receita/QuickTagAssignDialog";
 import TagBadge from "@/components/tags/TagBadge";
+import { getCorHex } from "@/lib/coresReceita";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 
@@ -410,6 +411,13 @@ export default function Receitas() {
               <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
+                    {r.cor_predominante && (
+                      <span
+                        className="w-3 h-3 rounded-full border border-black/10 shrink-0"
+                        style={{ backgroundColor: getCorHex(r.cor_predominante) }}
+                        title={`Cor: ${r.cor_predominante}`}
+                      />
+                    )}
                     <p className="font-medium text-sm truncate">{r.nome}</p>
                     {!isLoading && r.revisar && <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
                   </div>

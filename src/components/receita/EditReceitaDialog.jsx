@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Sparkles, Loader2, Wand2 } from "lucide-react";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
+import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import TagSelector from "@/components/tags/TagSelector";
 import TagList from "@/components/tags/TagList";
 import TagBadge from "@/components/tags/TagBadge";
@@ -211,6 +212,15 @@ ${form.modo_preparo}`,
                 }}
               />
             </div>
+          </div>
+
+          <div>
+            <Label>Cor predominante</Label>
+            <p className="text-xs text-muted-foreground mb-1.5">Para análise visual do cardápio do evento</p>
+            <CorPredominantePicker
+              value={form.cor_predominante || ""}
+              onChange={(v) => setForm({ ...form, cor_predominante: v || undefined })}
+            />
           </div>
 
           <div>

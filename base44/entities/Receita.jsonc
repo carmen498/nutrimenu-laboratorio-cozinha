@@ -91,6 +91,20 @@
     "per_capita_g": {
       "type": "number",
       "description": "Per capita recomendado em gramas (override do usu\u00e1rio)"
+    },
+    "cor_predominante": {
+      "type": "string",
+      "enum": [
+        "branco_bege",
+        "amarelo",
+        "laranja",
+        "vermelho",
+        "verde",
+        "marrom_dourado",
+        "roxo_rosa",
+        "preto_escuro"
+      ],
+      "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio"
     }
   },
   "required": [

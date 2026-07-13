@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
+import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import { toast } from "sonner";
 
 const GRUPOS_PADRAO = [
@@ -218,6 +219,9 @@ export default function EtapaCardapio({
           </div>
         </div>
       )}
+
+      {/* Barra de cores do cardápio */}
+      <BarraCoresCardapio gruposCalc={gruposCalc} receitaMap={receitaMap} />
 
       {/* Grupos */}
       <div className="space-y-3">
