@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
@@ -14,15 +13,17 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
-  ArrowLeft, Plus, Trash2, ChevronUp, ChevronDown, ShoppingCart, Download,
+  ArrowLeft, Trash2, ShoppingCart, Download,
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
-  GlassWater, Sun, Sparkles, MapPin
+  GlassWater, Sun, Sparkles, MapPin, MessageCircle
 } from "lucide-react";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
 import AddInsumoBanco from "@/components/cardapio/AddInsumoBanco";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
+import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
+import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -32,13 +33,6 @@ const DIAS = [
 ];
 
 const FIM_DE_SEMANA = ["sabado", "domingo"];
-
-const REFEICOES = [
-  { key: "cafe_da_manha", label: "Café da manhã" },
-  { key: "almoco", label: "Almoço" },
-  { key: "lanche", label: "Lanche" },
-  { key: "jantar", label: "Jantar" },
-];
 
 const TIPOS = {
   diario: { label: "Diário", icon: Sun, emoji: "🏠", cor: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -99,6 +93,8 @@ export default function CardapioAberto() {
   const [listaCompras, setListaCompras] = useState([]);
   const [gerandoLista, setGerandoLista] = useState(false);
 
+  const [filtroDia, setFiltroDia] = useState("todos");
+
   const getNum = () => {
     if (!cardapio) return 1;
     return Number(cardapio.num_unidades || cardapio.num_pessoas_ou_unidades) || 1;
@@ -147,6 +143,7 @@ export default function CardapioAberto() {
       setTodasReceitas(todasRec || []);
       setAllTags(tags || []);
       setCardapioTags(cTags || []);
+      setFiltroDia("todos");
     } catch (e) { console.error(e); }
     setLoading(false);
   }, [id]);
@@ -357,6 +354,19 @@ export default function CardapioAberto() {
   // === PDF ===
   const exportarPDF = () => window.print();
 
+  // === WHATSAPP ===
+  const compartilharWhatsApp = () => {
+    const lbl = UNIDADE_LABEL[cardapio.tipo] || "pessoas";
+    const texto = `📋 ${cardapio.nome}\n${num} ${lbl}\nCusto total: R$ ${calcs.total.toFixed(2)}\nCusto por ${lbl === "kg" ? "kg" : "pessoa"}: R$ ${calcs.porUnidade.toFixed(2)}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+  };
+
+  const diasUsados = useMemo(() => {
+    const set = new Set(receitas.map(r => r.dia_semana).filter(Boolean));
+    const base = diasDisponiveis || DIAS.map(d => d.key);
+    return base.filter(k => set.has(k)).map(k => DIAS.find(d => d.key === k)).filter(Boolean);
+  }, [receitas, diasDisponiveis]);
+
   if (loading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
   if (!cardapio) return <div className="text-center py-12 text-muted-foreground">Cardápio não encontrado.</div>;
 
@@ -427,13 +437,18 @@ export default function CardapioAberto() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 bg-secondary rounded-lg px-3 py-2">
-            <Button variant="ghost" size="icon" className="h-7 w-7"
-              onClick={() => saveCardapio("num_unidades", Math.max(1, num - 1))}>−</Button>
-            <span className="text-lg font-bold min-w-[2rem] text-center">{num}</span>
-            <Button variant="ghost" size="icon" className="h-7 w-7"
-              onClick={() => saveCardapio("num_unidades", num + 1)}>+</Button>
-            <span className="text-sm text-muted-foreground ml-1">{unidadeLabel}</span>
+          <div className="flex items-center gap-2 flex-wrap no-print">
+            <div className="flex items-center gap-2 bg-secondary rounded-full px-3 py-2">
+              <Button variant="ghost" size="icon" className="h-7 w-7"
+                onClick={() => saveCardapio("num_unidades", Math.max(1, num - 1))}>−</Button>
+              <span className="text-lg font-bold min-w-[2rem] text-center">{num}</span>
+              <Button variant="ghost" size="icon" className="h-7 w-7"
+                onClick={() => saveCardapio("num_unidades", num + 1)}>+</Button>
+              <span className="text-sm text-muted-foreground ml-1">{unidadeLabel}</span>
+            </div>
+            {temDias && diasUsados.length > 0 && (
+              <CardapioSeletorDia dias={diasUsados} value={filtroDia} onChange={setFiltroDia} />
+            )}
           </div>
         </div>
         {isBuffet && (
@@ -480,99 +495,29 @@ export default function CardapioAberto() {
         </div>
       </div>
 
-      {/* BLOCO 2 — Receitas */}
+      {/* BLOCO 2 — Receitas (tabela) */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 mb-4 print:shadow-none print:border-0">
-        <div className="flex items-center justify-between mb-4 no-print">
-          <h2 className="font-display font-semibold text-lg">Receitas</h2>
-          <Button variant="outline" size="sm" className="gap-1" onClick={async () => {
+        <h2 className="font-display font-semibold text-lg mb-4">Receitas</h2>
+
+        <CardapioTabelaReceitas
+          receitas={receitas}
+          receitaMap={receitaMap}
+          isBuffet={isBuffet}
+          num={num}
+          cardapioTipo={cardapio.tipo}
+          temDias={temDias}
+          diasOptions={diasDisponiveis ? diasDisponiveis.map(k => DIAS.find(d => d.key === k)).filter(Boolean) : DIAS}
+          custoReceitasTotal={calcs.custoReceitas}
+          filtroDia={filtroDia}
+          onUpdateReceita={updateReceita}
+          onRemoveReceita={removeReceita}
+          onMoveReceita={moveReceita}
+          onOpenAddReceita={async () => {
             const todas = await base44.entities.Receita.list("nome", 200);
             setTodasReceitas(todas || []);
             setShowAddReceita(true);
-          }}>
-            <Plus className="w-4 h-4" /> Adicionar receita
-          </Button>
-        </div>
-        <h2 className="font-display font-semibold text-lg hidden print:block mb-4">Receitas</h2>
-
-        {receitas.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhuma receita adicionada ainda.</p>
-        ) : (
-          <div className="space-y-2">
-            {receitas.map((rec, idx) => (
-              <div key={rec.id} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                <div className="flex flex-col gap-0.5 no-print">
-                  <button className="p-0.5 hover:text-primary" onClick={() => moveReceita(rec.id, -1)} disabled={idx === 0}>
-                    <ChevronUp className="w-4 h-4" />
-                  </button>
-                  <button className="p-0.5 hover:text-primary" onClick={() => moveReceita(rec.id, 1)} disabled={idx === receitas.length - 1}>
-                    <ChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <Link to={`/receita/${rec.receita_id}`} className="font-medium text-sm hover:text-primary truncate block">
-                    {rec.receita_nome?.toUpperCase?.() || rec.receita_nome}
-                  </Link>
-                  {receitaMap[rec.receita_id]?.descritivo_menu && (
-                    <p className="text-xs text-muted-foreground italic mt-0.5">{receitaMap[rec.receita_id].descritivo_menu}</p>
-                  )}
-                  {rec.receita_categoria && (
-                    <span className="text-xs text-muted-foreground">{rec.receita_categoria}</span>
-                  )}
-                  {temDias && (
-                    <div className="flex gap-2 mt-1 no-print">
-                      <Select value={rec.dia_semana || ""} onValueChange={v => updateReceita(rec.id, "dia_semana", v)}>
-                        <SelectTrigger className="h-7 text-xs w-24">
-                          <SelectValue placeholder="Dia" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(diasDisponiveis || DIAS.map(d => d.key)).map(key => {
-                            const d = DIAS.find(dd => dd.key === key);
-                            return <SelectItem key={key} value={key}>{d?.label || key}</SelectItem>;
-                          })}
-                        </SelectContent>
-                      </Select>
-                      <Select value={rec.refeicao || ""} onValueChange={v => updateReceita(rec.id, "refeicao", v)}>
-                        <SelectTrigger className="h-7 text-xs w-28">
-                          <SelectValue placeholder="Refeição" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {REFEICOES.map(rf => <SelectItem key={rf.key} value={rf.key}>{rf.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <div className="text-right no-print">
-                    <Input
-                      className="w-20 h-7 text-xs text-center"
-                      value={rec.per_capita_g || ""}
-                      onChange={e => {
-                        const val = Number(e.target.value) || 0;
-                        updateReceita(rec.id, "per_capita_g", val);
-                        updateReceita(rec.id, "quantidade_total_g", val * num);
-                      }}
-                      placeholder={isBuffet ? "kg/un" : "g/pessoa"}
-                    />
-                    <span className="text-[10px] text-muted-foreground">
-                      {isBuffet ? "kg/un" : `g/${cardapio.tipo === "marmitas" ? "marm" : "pessoa"}`}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground w-16 text-right">
-                    {isBuffet
-                      ? `${Number(rec.quantidade_total_g || 0).toFixed(2)} kg`
-                      : `${Number(rec.quantidade_total_g || 0).toFixed(0)} g`}
-                  </span>
-                  <span className="text-sm font-semibold w-20 text-right">R$ {Number(rec.custo_total || 0).toFixed(2)}</span>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive no-print"
-                    onClick={() => removeReceita(rec.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+          }}
+        />
 
         {/* Barra de cores + alerta de monotonia visual */}
         {receitas.length > 0 && (
@@ -692,11 +637,14 @@ export default function CardapioAberto() {
 
       {/* Botões de ação */}
       <div className="flex flex-wrap gap-3 mb-8 no-print">
-        <Button variant="outline" className="gap-2" onClick={gerarListaCompras} disabled={gerandoLista}>
-          <ShoppingCart className="w-4 h-4" /> {gerandoLista ? "Gerando..." : "📋 Lista de Compras"}
-        </Button>
         <Button variant="outline" className="gap-2" onClick={exportarPDF}>
-          <Download className="w-4 h-4" /> ↓ Exportar PDF
+          <Download className="w-4 h-4" /> PDF
+        </Button>
+        <Button variant="outline" className="gap-2" onClick={compartilharWhatsApp}>
+          <MessageCircle className="w-4 h-4" /> WhatsApp
+        </Button>
+        <Button variant="outline" className="gap-2" onClick={gerarListaCompras} disabled={gerandoLista}>
+          <ShoppingCart className="w-4 h-4" /> {gerandoLista ? "Gerando..." : "Lista de Compras"}
         </Button>
       </div>
 
