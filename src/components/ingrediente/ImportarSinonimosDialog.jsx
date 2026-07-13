@@ -58,7 +58,7 @@ export default function ImportarSinonimosDialog({ open, onClose }) {
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
-                <div className="flex flex-col items-center gap-! p-3 bg-muted/50 rounded-lg">
+                <div className="flex flex-col items-center gap-1 p-3 bg-muted/50 rounded-lg">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <p className="text-2xl font-bold">{result.total_linhas}</p>
                   <p className="text-xs text-muted-foreground">Total no arquivo</p>
