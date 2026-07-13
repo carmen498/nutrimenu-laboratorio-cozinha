@@ -13,8 +13,9 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star, Scale
 } from "lucide-react";
+import MedidasCaseirasReceitaDialog from "@/components/receita/MedidasCaseirasReceitaDialog";
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
@@ -71,6 +72,7 @@ export default function ReceitaAberta() {
   const [editarMedidaMc, setEditarMedidaMc] = useState(null);
   const [editingMedidaId, setEditingMedidaId] = useState(null);
   const [medidaInputValue, setMedidaInputValue] = useState("");
+  const [showMedidasReceita, setShowMedidasReceita] = useState(false);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -339,6 +341,11 @@ export default function ReceitaAberta() {
     });
     return result;
   }, [itensFicha]);
+
+  const ingredientesParaMedidas = useMemo(() =>
+    itensFichaAgrupada.filter(i => i.ing && !i.isGrupo),
+    [itensFichaAgrupada]
+  );
 
   // Build movement blocks: grupo = block header (absorbs all following items until next grupo),
   // subreceita = marker + children, loose items = single-entry blocks
@@ -1062,6 +1069,9 @@ REGRAS:
               {orderingByPrep ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowUpDown className="w-4 h-4 mr-1" />}
               Ordenar por preparo
             </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowMedidasReceita(true)}>
+              <Scale className="w-4 h-4 mr-1" /> Medida Caseira
+            </Button>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
               <Switch checked={mostrarFC} onCheckedChange={handleToggleFC} className="scale-90" />
               <span className="text-xs text-muted-foreground font-medium">Aplicar FC</span>
@@ -1468,16 +1478,6 @@ REGRAS:
                               </div>
                             );
                           }
-                          if (item.ing && !item.isChildOfSubreceita) {
-                            return (
-                              <button
-                                className="text-xs text-primary/50 hover:text-primary mt-0.5 block"
-                                onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(null); }}
-                              >
-                                + medida
-                              </button>
-                            );
-                          }
                           return null;
                         })()}
                         {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
@@ -1630,16 +1630,6 @@ REGRAS:
                                 </button>
                               )}
                             </div>
-                          );
-                        }
-                        if (item.ing && !item.isChildOfSubreceita) {
-                          return (
-                            <button
-                              className="text-xs text-primary/50 hover:text-primary"
-                              onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(null); }}
-                            >
-                              + medida
-                            </button>
                           );
                         }
                         return null;
@@ -2012,6 +2002,19 @@ REGRAS:
           ingrediente={cadastrarMedidaIng}
           utensilios={utensiliosPadrao}
           medidaExistente={editarMedidaMc}
+        />
+      )}
+
+      {/* Medidas Caseiras da Receita — cadastro centralizado */}
+      {showMedidasReceita && (
+        <MedidasCaseirasReceitaDialog
+          open={true}
+          onClose={() => setShowMedidasReceita(false)}
+          itens={ingredientesParaMedidas}
+          medidaByIngrediente={medidaByIngrediente}
+          utensilios={utensiliosPadrao}
+          uteMap={uteMap}
+          getMedidaDisplay={getMedidaDisplay}
         />
       )}
 
