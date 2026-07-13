@@ -9,6 +9,7 @@ import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
+import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 
 export default function ExportarReceita() {
   const { id } = useParams();
@@ -50,11 +51,37 @@ export default function ExportarReceita() {
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
   });
 
+  const { data: medidasCaseiras = [] } = useQuery({
+    queryKey: ["medidas-caseiras"],
+    queryFn: () => base44.entities.MedidaCaseira.list("-created_date", 500),
+    staleTime: 60 * 1000,
+  });
+
+  const { data: utensiliosPadrao = [] } = useQuery({
+    queryKey: ["utensilios-padrao"],
+    queryFn: () => base44.entities.UtensilioPadrao.list("simbolo", 200),
+    staleTime: 60 * 1000,
+  });
+
   const ingMap = useMemo(() => {
     const map = {};
     ingredientesDB.forEach((i) => { map[i.id] = i; });
     return map;
   }, [ingredientesDB]);
+
+  const uteMap = useMemo(() => {
+    const map = {};
+    utensiliosPadrao.forEach((u) => { map[u.id] = u; });
+    return map;
+  }, [utensiliosPadrao]);
+
+  const medidaByIngrediente = useMemo(() => {
+    const map = {};
+    medidasCaseiras.forEach((mc) => {
+      if (mc.alimento && !map[mc.alimento]) map[mc.alimento] = mc;
+    });
+    return map;
+  }, [medidasCaseiras]);
 
   const recMap = useMemo(() => {
     const map = {};
@@ -98,7 +125,19 @@ export default function ExportarReceita() {
   const temSubreceitas = itensFicha.some(i => i.tipo === "subreceita" && i.subreceita_id);
   const blocosCompostos = temSubreceitas ? calcularModoPreparoComposto(itensFicha, recMap, receita.modo_preparo) : [];
 
-  const hasMedidaCaseira = itensFicha.some(i => i.medida_caseira && i.medida_caseira.trim());
+  const medidaDisplayMap = {};
+  itensFicha.forEach((item) => {
+    if (item.ing && !item.isSubreceita) {
+      const mc = medidaByIngrediente[item.ing.id];
+      if (mc) {
+        const ute = uteMap[mc.utensilio];
+        const result = converterGramasParaMedida(item.qtd, mc, ute, "cru");
+        if (result?.texto) medidaDisplayMap[item.id] = result.texto;
+      }
+    }
+  });
+
+  const hasMedidaCaseira = Object.keys(medidaDisplayMap).length > 0;
   const custoIngredientes = itensFicha.reduce((s, i) => s + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
   const custoEsquecidos = esquecidos.reduce((s, i) => s + ((i.custo_total || 0) * fator), 0);
@@ -242,7 +281,7 @@ export default function ExportarReceita() {
                   {item.pre_preparo && <span className="text-muted-foreground"> ({item.pre_preparo})</span>}
                   {item.proporcional === false && <span className="text-muted-foreground ml-1">📌</span>}
                 </span>
-                {hasMedidaCaseira && <span className="flex-[2.5] text-muted-foreground">{item.medida_caseira || ""}</span>}
+                {hasMedidaCaseira && <span className="flex-[2.5] text-muted-foreground">{medidaDisplayMap[item.id] || ""}</span>}
                 <span className={hasMedidaCaseira ? "flex-[1.5]" : "flex-[2]"}>{formatWeight(item.qtd, receita.unidade_base)}</span>
                 {aba === "custos" && <span className="flex-[2] text-primary font-medium text-right">{formatCurrency(item.custo)}</span>}
               </div>

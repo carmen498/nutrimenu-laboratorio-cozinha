@@ -31,6 +31,8 @@ import ModoPreparoComposto from "@/components/receita/ModoPreparoComposto";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
+import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
+import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -65,6 +67,9 @@ export default function ReceitaAberta() {
   const [editingDescritivo, setEditingDescritivo] = useState(false);
   const [descritivoDraft, setDescritivoDraft] = useState("");
   const [mostrarFC, setMostrarFC] = useState(false);
+  const [cadastrarMedidaIng, setCadastrarMedidaIng] = useState(null);
+  const [editingMedidaId, setEditingMedidaId] = useState(null);
+  const [medidaInputValue, setMedidaInputValue] = useState("");
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -106,6 +111,18 @@ export default function ReceitaAberta() {
     queryKey: ["tags"],
     queryFn: () => base44.entities.Tag.list("nome", 200),
     staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: medidasCaseiras = [] } = useQuery({
+    queryKey: ["medidas-caseiras"],
+    queryFn: () => base44.entities.MedidaCaseira.list("-created_date", 500),
+    staleTime: 60 * 1000,
+  });
+
+  const { data: utensiliosPadrao = [] } = useQuery({
+    queryKey: ["utensilios-padrao"],
+    queryFn: () => base44.entities.UtensilioPadrao.list("simbolo", 200),
+    staleTime: 60 * 1000,
   });
 
   useEffect(() => {
@@ -237,6 +254,28 @@ export default function ReceitaAberta() {
     receitasBasicas.forEach((r) => { map[r.id] = r; });
     return map;
   }, [receitasBasicas]);
+
+  const uteMap = useMemo(() => {
+    const map = {};
+    utensiliosPadrao.forEach((u) => { map[u.id] = u; });
+    return map;
+  }, [utensiliosPadrao]);
+
+  const medidaByIngrediente = useMemo(() => {
+    const map = {};
+    medidasCaseiras.forEach((mc) => {
+      if (mc.alimento && !map[mc.alimento]) map[mc.alimento] = mc;
+    });
+    return map;
+  }, [medidasCaseiras]);
+
+  const getMedidaDisplay = (item) => {
+    if (!item.ing) return null;
+    const mc = medidaByIngrediente[item.ing.id];
+    if (!mc) return null;
+    const ute = uteMap[mc.utensilio];
+    return converterGramasParaMedida(item.qtdNova, mc, ute, "cru");
+  };
 
   const fator = receita && receita.rendimento_total > 0 && quantidadeTotal > 0 ? quantidadeTotal / receita.rendimento_total : 1;
 
@@ -1375,7 +1414,59 @@ REGRAS:
                     ) : (
                       <>
                         <p className="font-medium text-sm">{item.ing?.nome || item.ingrediente_nome}</p>
-                        {item.medida_caseira && <p className="text-xs text-muted-foreground">{item.medida_caseira}</p>}
+                        {(() => {
+                          const md = getMedidaDisplay(item);
+                          if (md?.texto) {
+                            if (editingMedidaId === item.id) {
+                              const mc = medidaByIngrediente[item.ing.id];
+                              const ute = uteMap[mc?.utensilio];
+                              return (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <input
+                                    type="number"
+                                    className="h-6 w-12 text-xs border rounded px-1"
+                                    value={medidaInputValue}
+                                    onChange={(e) => setMedidaInputValue(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        const n = parseFloat(medidaInputValue);
+                                        const g = converterMedidaParaGramas(n, mc, "cru");
+                                        if (g) {
+                                          const baseTotal = (receita?.porcoes_base || 1) * fator;
+                                          updateQtdMut.mutate({ itemId: item.id, quantidade_por_porcao: baseTotal > 0 ? g / baseTotal : g });
+                                        }
+                                        setEditingMedidaId(null);
+                                      }
+                                      if (e.key === "Escape") setEditingMedidaId(null);
+                                    }}
+                                    autoFocus
+                                  />
+                                  <span className="text-xs text-muted-foreground">{ute?.descricao_plural || ute?.descricao_singular || ""}</span>
+                                </div>
+                              );
+                            }
+                            return (
+                              <button
+                                className="text-xs text-primary/70 hover:text-primary mt-0.5 block"
+                                onClick={() => { setEditingMedidaId(item.id); setMedidaInputValue(""); }}
+                                title="Clique para digitar em medida caseira"
+                              >
+                                {md.texto}
+                              </button>
+                            );
+                          }
+                          if (item.ing && !item.isChildOfSubreceita) {
+                            return (
+                              <button
+                                className="text-xs text-primary/50 hover:text-primary mt-0.5 block"
+                                onClick={() => setCadastrarMedidaIng(item.ing)}
+                              >
+                                + cadastrar medida
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
                         {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
                         {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
                       </>
@@ -1868,6 +1959,16 @@ REGRAS:
           ing={editingPrice.ing}
           onSave={(data) => updatePriceMut.mutate(data)}
           saving={updatePriceMut.isPending}
+        />
+      )}
+
+      {/* Cadastrar Medida (Regra 3) */}
+      {cadastrarMedidaIng && (
+        <CadastrarMedidaDialog
+          open={true}
+          onClose={() => setCadastrarMedidaIng(null)}
+          ingrediente={cadastrarMedidaIng}
+          utensilios={utensiliosPadrao}
         />
       )}
 

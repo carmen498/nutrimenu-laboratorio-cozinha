@@ -449,6 +449,10 @@ export default function MedidasCaseiras() {
         onClose={() => setShowImport(false)}
         onImported={() => queryClient.invalidateQueries({ queryKey: ["medidas-caseiras"] })}
       />
+
+      <p className="text-xs text-muted-foreground italic text-center pt-2">
+        Conversor de produção — não substitui as medidas caseiras oficiais de rotulagem (RDC 429/2020 e IN 75/2020).
+      </p>
     </div>
   );
 }
