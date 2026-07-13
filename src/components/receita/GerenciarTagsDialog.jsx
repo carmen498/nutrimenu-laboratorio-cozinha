@@ -88,8 +88,13 @@ export default function GerenciarTagsDialog({ open, onClose }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tags"] });
       qc.invalidateQueries({ queryKey: ["all-receita-tags"] });
-      setEditandoId(null);
       toast.success("Tag renomeada!");
+    },
+    onError: (error) => {
+      toast.error("Erro ao renomear tag: " + (error.message || ""));
+    },
+    onSettled: () => {
+      setEditandoId(null);
     },
   });
 
