@@ -3,35 +3,71 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Upload, CheckCircle, AlertTriangle, XCircle, FileText } from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, FileText, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ImportarSinonimosDialog({ open, onClose }) {
+export default function ImportarSinonimosDialog({ open, onClose, onImported }) {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [progressMsg, setProgressMsg] = useState("");
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
 
   const handleImport = async () => {
-    if (!file) return;
+    if (!file) {
+      setError("Selecione um arquivo CSV primeiro.");
+      return;
+    }
     setImporting(true);
     setResult(null);
+    setError(null);
+    setProgressMsg("Enviando arquivo...");
+
+    let file_url;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const res = await base44.functions.invoke("importarSinonimosCsv", { file_url });
-      setResult(res.data);
-      if (res.data.criados > 0) {
-        toast.success(`${res.data.criados} sinônimo(s) criado(s)`);
-      }
+      const uploadRes = await base44.integrations.Core.UploadFile({ file });
+      file_url = uploadRes.file_url;
+      if (!file_url) throw new Error("Upload não retornou URL do arquivo.");
     } catch (err) {
-      toast.error("Erro na importação: " + (err.message || ""));
+      const msg = "Falha ao enviar arquivo: " + (err?.message || JSON.stringify(err) || "erro desconhecido");
+      setError(msg);
+      toast.error(msg);
+      setImporting(false);
+      setProgressMsg("");
+      return;
+    }
+
+    setProgressMsg("Processando linhas...");
+    try {
+      const res = await base44.functions.invoke("importarSinonimosCsv", { file_url });
+      const data = res.data;
+      if (!data || typeof data !== "object") {
+        throw new Error("Resposta inválida da função: " + JSON.stringify(res));
+      }
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setResult(data);
+      if (data.criados > 0) {
+        toast.success(`${data.criados} sinônimo(s) criado(s)`);
+      }
+      if (onImported) onImported();
+    } catch (err) {
+      const msg = "Erro no processamento: " + (err?.response?.data?.error || err?.message || JSON.stringify(err) || "erro desconhecido");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setImporting(false);
+      setProgressMsg("");
     }
   };
 
   const handleClose = () => {
     setFile(null);
     setResult(null);
+    setError(null);
+    setImporting(false);
+    setProgressMsg("");
     onClose();
   };
 
@@ -42,7 +78,7 @@ export default function ImportarSinonimosDialog({ open, onClose }) {
           <DialogTitle className="font-display">Importar Sinônimos (CSV)</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 pb-2">
-          {!result ? (
+          {!result && !error ? (
             <>
               <p className="text-sm text-muted-foreground">
                 Formato: colunas <code className="text-xs bg-muted px-1 rounded">ingrediente_nome</code> e{" "}
@@ -54,7 +90,28 @@ export default function ImportarSinonimosDialog({ open, onClose }) {
                 (em qualquer ingrediente) são ignorados. Nenhum dado do ingrediente é alterado.
               </p>
               <Input type="file" accept=".csv" onChange={(e) => setFile(e.target.files[0])} className="mt-3" />
+              {file && (
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <Upload className="w-3 h-3" /> {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+              {importing && progressMsg && (
+                <div className="flex items-center gap-2 mt-3 p-3 bg-muted/50 rounded-lg">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <span className="text-sm text-primary font-medium">{progressMsg}</span>
+                </div>
+              )}
             </>
+          ) : error ? (
+            <div className="space-y-3">
+              <div className="flex items-start gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
+                <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-red-700">Erro na importação</p>
+                  <p className="text-xs text-red-600 mt-1 break-words">{error}</p>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
@@ -75,7 +132,7 @@ export default function ImportarSinonimosDialog({ open, onClose }) {
                 </div>
               </div>
 
-              {result.rejeitados.length > 0 ? (
+              {result.rejeitados?.length > 0 ? (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
                     <XCircle className="w-4 h-4 text-red-600" />
@@ -113,11 +170,16 @@ export default function ImportarSinonimosDialog({ open, onClose }) {
           )}
         </div>
         <div className="flex gap-2 justify-end px-6 py-4 border-t shrink-0">
-          {!result ? (
+          {!result && !error ? (
             <>
-              <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+              <Button variant="outline" onClick={handleClose} disabled={importing}>Cancelar</Button>
               <Button onClick={handleImport} disabled={!file || importing}>
-                {importing ? "Importando..." : "Importar"}
+                {importing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    {progressMsg || "Importando..."}
+                  </>
+                ) : "Importar"}
               </Button>
             </>
           ) : (
