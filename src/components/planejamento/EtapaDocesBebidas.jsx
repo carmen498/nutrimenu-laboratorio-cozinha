@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cookie } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import DocesBebidasSection from "./DocesBebidasSection";
 
 export default function EtapaDocesBebidas({
@@ -15,14 +15,6 @@ export default function EtapaDocesBebidas({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-50 border border-purple-200">
-        <Cookie className="w-5 h-5 text-purple-500 shrink-0" />
-        <div>
-          <p className="text-sm font-semibold text-purple-700">Etapa opcional</p>
-          <p className="text-xs text-purple-600">Doces & Bebidas são calculados separadamente e não afetam o total de comida (kg).</p>
-        </div>
-      </div>
-
       <DocesBebidasSection
         totalPessoas={totalPessoas}
         docesBebidas={docesBebidas}
