@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
 import GerenciarReferenciaDialog from "./GerenciarReferenciaDialog";
+import DecimalInput from "./DecimalInput";
 
 const TIPO_LABEL = {
   coquetel: "Coquetel",
@@ -116,6 +117,7 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
             <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5 font-normal bg-muted text-muted-foreground">
               etapa opcional
             </Badge>
+            <span className="text-xs text-muted-foreground">para {totalPessoas || 0} pessoas</span>
           </div>
           <Button variant="ghost" size="sm" className="gap-1 h-7 text-primary"
             onClick={() => setShowGerenciar(true)}>
@@ -145,9 +147,9 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
         <div className="flex-1">Item</div>
         <div className="w-16 text-right shrink-0">PC médio</div>
         <div className="w-20 text-right shrink-0">Qtd. total</div>
-        <div className="w-28 text-right shrink-0">Custo unit.</div>
+        <div className="w-40 text-right shrink-0">Custo unit.</div>
         <div className="w-24 text-right shrink-0">R$ total</div>
-        <div className="w-16 text-right shrink-0">% ref.</div>
+        <div className="w-20 text-right shrink-0">% ref.</div>
       </div>
 
       <div className="border-t border-border">
@@ -168,7 +170,7 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
                   <div key={ref.id} className="flex items-center gap-3 px-3 py-2.5 border-b border-border last:border-b-0">
                     <Checkbox checked={isChecked} onCheckedChange={() => toggleItem(ref)} className="shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{ref.item}</p>
+                      <p className="text-sm font-medium break-words">{ref.item}</p>
                       {isChecked && ref.sem_padrao && (
                         <span className="text-[10px] text-amber-600">sem padrão — preencher</span>
                       )}
@@ -183,19 +185,19 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
                         <div className="w-20 shrink-0 text-right text-sm font-medium tabular-nums">
                           {fmtQtd(qtdRaw, ref.unidade)}
                         </div>
-                        <div className="w-28 shrink-0 flex items-center justify-end gap-1">
+                        <div className="w-40 shrink-0 flex items-center justify-end gap-1">
                           <span className="text-[10px] text-muted-foreground shrink-0">R$/{unidadeCustoLabel(ref.unidade)}</span>
-                          <Input type="number" step="0.01" value={sel.custo_unitario ?? ""}
-                            onChange={e => updateField(ref.item, "custo_unitario", e.target.value === "" ? null : parseFloat(e.target.value.replace(",", ".")))}
-                            className="w-16 h-7 text-sm text-right tabular-nums px-1" placeholder="0,00" />
+                          <DecimalInput value={sel.custo_unitario ?? null}
+                            onChange={v => updateField(ref.item, "custo_unitario", v)}
+                            className="w-24 h-7 text-sm text-right tabular-nums px-1" placeholder="0,00" />
                         </div>
                         <div className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">
                           {rsTotal != null ? fmtRs(rsTotal) : "—"}
                         </div>
-                        <div className="w-16 shrink-0 flex items-center justify-end gap-1">
+                        <div className="w-20 shrink-0 flex items-center justify-end gap-1">
                           <Input type="number" step="0.5" value={sel.percentual ?? ""}
                             onChange={e => updateField(ref.item, "percentual", e.target.value === "" ? null : parseFloat(e.target.value.replace(",", ".")))}
-                            className="w-10 h-7 text-sm text-right tabular-nums px-1" placeholder="0" />
+                            className="w-14 h-7 text-sm text-right tabular-nums px-1" placeholder="0" />
                           <span className="text-[10px] text-muted-foreground">%</span>
                         </div>
                       </>
@@ -203,9 +205,9 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
                       <>
                         <div className="w-16 shrink-0" />
                         <div className="w-20 shrink-0" />
-                        <div className="w-28 shrink-0" />
+                        <div className="w-40 shrink-0" />
                         <div className="w-24 shrink-0" />
-                        <div className="w-16 shrink-0" />
+                        <div className="w-20 shrink-0" />
                       </>
                     )}
                   </div>
@@ -223,9 +225,9 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
           </div>
           <div className="w-16 shrink-0" />
           <div className="w-20 shrink-0" />
-          <div className="w-28 shrink-0" />
+          <div className="w-40 shrink-0" />
           <div className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">{fmtRs(custoTotalDoces)}</div>
-          <div className="w-16 shrink-0" />
+          <div className="w-20 shrink-0" />
         </div>
       </div>
 
