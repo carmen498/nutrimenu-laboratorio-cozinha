@@ -3,7 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ShoppingCart, ArrowLeft, ArrowRight } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ShoppingCart, ArrowLeft, ArrowRight } from "lucide-react";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
@@ -35,6 +36,8 @@ function initGrupos(config) {
   return NOMES_SECAO_PADRAO.map(nome => ({ nome, itens: [] }));
 }
 
+function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
+
 function pcSugeridoReceita(receita) {
   if (receita?.per_capita_g) return receita.per_capita_g;
   const cat = (receita?.categorias || [])[0] || "";
@@ -48,8 +51,8 @@ export default function EtapaCardapio({
 }) {
   const [grupos, setGrupos] = useState(() => initGrupos(cardapioConfig));
   const [buscaGrupoIdx, setBuscaGrupoIdx] = useState(null);
-  const [showNovoGrupo, setShowNovoGrupo] = useState(false);
-  const [novoGrupoNome, setNovoGrupoNome] = useState("");
+  const [showNovaSecaoDialog, setShowNovaSecaoDialog] = useState(false);
+  const [novaSecaoNome, setNovaSecaoNome] = useState("");
   const [filtroDia, setFiltroDia] = useState("todos");
 
   const margem = margemEvento || 0;
@@ -129,6 +132,7 @@ export default function EtapaCardapio({
   }, [grupos]);
 
   const custoTotal = gruposCalc.reduce((s, g) => s + g.itens.reduce((s2, i) => s2 + i.custo, 0), 0);
+  const custoPorPessoa = totalPessoas > 0 ? custoTotal / totalPessoas : 0;
 
   // Gerar config para salvar
   const buildConfig = () => ({
@@ -178,11 +182,13 @@ export default function EtapaCardapio({
     }));
   };
 
-  const addGrupoCustom = () => {
-    if (!novoGrupoNome.trim()) return;
-    setGrupos(prev => [...prev, { nome: novoGrupoNome.trim(), itens: [] }]);
-    setNovoGrupoNome("");
-    setShowNovoGrupo(false);
+  const confirmarNovaSecao = () => {
+    if (!novaSecaoNome.trim()) return;
+    const novoIndex = grupos.length;
+    setGrupos(prev => [...prev, { nome: novaSecaoNome.trim(), itens: [] }]);
+    setNovaSecaoNome("");
+    setShowNovaSecaoDialog(false);
+    setBuscaGrupoIdx(novoIndex);
   };
 
   const handleSalvar = () => onSalvar(buildConfig());
@@ -211,6 +217,9 @@ export default function EtapaCardapio({
         {diasUsados.length > 0 && (
           <CardapioSeletorDia dias={diasUsados} value={filtroDia} onChange={setFiltroDia} />
         )}
+        <span className="ml-auto text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{fmtRs(custoPorPessoa)}</span> · custo por pessoa
+        </span>
       </div>
 
       {/* Barra de cores do cardápio */}
@@ -227,23 +236,8 @@ export default function EtapaCardapio({
         onRemoveItem={removeItem}
         onMoveItem={moveItem}
         onAddPrato={(gi) => setBuscaGrupoIdx(gi)}
+        onNovaSecao={() => setShowNovaSecaoDialog(true)}
       />
-
-      {/* Adicionar tipo de refeição */}
-      {showNovoGrupo ? (
-        <div className="flex items-center gap-2 p-2 rounded-lg border border-dashed">
-          <Input placeholder="Nome do grupo" value={novoGrupoNome}
-            onChange={e => setNovoGrupoNome(e.target.value)} autoFocus
-            onKeyDown={e => e.key === "Enter" && addGrupoCustom()} />
-          <Button size="sm" onClick={addGrupoCustom}>OK</Button>
-          <Button size="sm" variant="ghost" onClick={() => setShowNovoGrupo(false)}>Cancelar</Button>
-        </div>
-      ) : (
-        <Button variant="outline" size="sm" className="w-full gap-1 border-dashed"
-          onClick={() => setShowNovoGrupo(true)}>
-          <Plus className="w-4 h-4" /> Adicionar tipo de refeição
-        </Button>
-      )}
 
       {/* Botões */}
       <div className="flex flex-col gap-2 pt-2">
@@ -276,6 +270,22 @@ export default function EtapaCardapio({
         receitas={receitas}
         title="Adicionar prato"
       />
+
+      {/* Dialog de nova seção (a partir do fluxo de Adicionar prato) */}
+      <Dialog open={showNovaSecaoDialog} onOpenChange={setShowNovaSecaoDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova seção</DialogTitle>
+          </DialogHeader>
+          <Input placeholder="Nome da seção" value={novaSecaoNome}
+            onChange={e => setNovaSecaoNome(e.target.value)} autoFocus
+            onKeyDown={e => e.key === "Enter" && confirmarNovaSecao()} />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setShowNovaSecaoDialog(false)}>Cancelar</Button>
+            <Button onClick={confirmarNovaSecao}>Criar e adicionar prato</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

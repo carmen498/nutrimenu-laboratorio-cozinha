@@ -19,7 +19,7 @@ function fmtNomePrato(nome) {
 // mostra a participação do prato no custo total do evento.
 export default function EtapaCardapioTabela({
   gruposCalc, totalPessoas, custoTotal, margemEvento = 0, filtroDia = "todos",
-  onUpdateItem, onRemoveItem, onMoveItem, onAddPrato,
+  onUpdateItem, onRemoveItem, onMoveItem, onAddPrato, onNovaSecao,
 }) {
   const [filtroSecao, setFiltroSecao] = useState("todas");
   const [selectedKey, setSelectedKey] = useState(null);
@@ -37,7 +37,6 @@ export default function EtapaCardapioTabela({
   const handleSelect = (id) => setSelectedKey(prev => prev === id ? null : id);
 
   const totalKgGeral = gruposCalc.reduce((s, g) => s + g.actualKg, 0);
-  const custoPorPessoa = totalPessoas > 0 ? custoTotal / totalPessoas : 0;
 
   const pratosSemCusto = gruposCalc.flatMap(g => g.itens).filter(i => i.sem_custo && i.receita_id);
 
@@ -125,7 +124,7 @@ export default function EtapaCardapioTabela({
           <div className="w-20 shrink-0" />
           <div className="w-20 text-right shrink-0 text-sm font-semibold">{fmtKg(totalKgGeral)}</div>
           <div className="text-right shrink-0 text-sm font-semibold whitespace-nowrap">
-            {fmtRs(custoTotal)} ({fmtRs(custoPorPessoa)}/pessoa)
+            {fmtRs(custoTotal)}
           </div>
         </div>
       </div>
@@ -141,6 +140,7 @@ export default function EtapaCardapioTabela({
           {gruposCalc.map((g, gi) => (
             <DropdownMenuItem key={g.nome + gi} onClick={() => onAddPrato(gi)}>{g.nome}</DropdownMenuItem>
           ))}
+          <DropdownMenuItem onClick={onNovaSecao}>➕ Nova seção...</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
