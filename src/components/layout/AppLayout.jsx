@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, PieChart, Utensils } from "lucide-react";
+import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, PieChart, Utensils, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ const navItems = [
   { path: "/percapita", label: "Per Capita", icon: Gauge },
   { path: "/medidas-caseiras", label: "Medidas", icon: Utensils },
   { path: "/relatorio-categorias", label: "Relatório", icon: PieChart },
+  { path: "/auditoria-rendimento", label: "Auditoria", icon: AlertTriangle },
 ];
 
 export default function AppLayout() {

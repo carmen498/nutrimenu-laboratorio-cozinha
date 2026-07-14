@@ -26,6 +26,15 @@ import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
 
+// Custo AO VIVO (mesmo caminho de cálculo do Evento): nunca lê o campo cache
+// CardapioReceita.custo_total — sempre deriva de Receita.custo_total + rendimento atual.
+function custoAoVivo(cr, receitaMap, ingredientesPorReceita) {
+  const rec = receitaMap[cr.receita_id];
+  if (!rec) return 0;
+  const ingr = ingredientesPorReceita[cr.receita_id] || [];
+  return custoEscalado(rec, ingr, Number(cr.quantidade_total_g) || 0);
+}
+
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
   { key: "quarta", label: "Qua" }, { key: "quinta", label: "Qui" },
@@ -88,6 +97,7 @@ export default function CardapioAberto() {
 
   const [insumos, setInsumos] = useState([]);
   const [insumosGlobais, setInsumosGlobais] = useState([]);
+  const [ingredientesPorReceita, setIngredientesPorReceita] = useState({});
 
   const [showVenda, setShowVenda] = useState(false);
   const [markup, setMarkup] = useState(30);
@@ -113,15 +123,21 @@ export default function CardapioAberto() {
     return map;
   }, [todasReceitas]);
 
+  // Vista de exibição: mesma lista de receitas do cardápio, mas com custo_total
+  // recalculado AO VIVO (nunca lê o cache CardapioReceita.custo_total).
+  const receitasView = useMemo(() => {
+    return receitas.map(r => ({ ...r, custo_total: custoAoVivo(r, receitaMap, ingredientesPorReceita) }));
+  }, [receitas, receitaMap, ingredientesPorReceita]);
+
   const calcs = useMemo(() => {
-    const custoReceitas = receitas.reduce((s, r) => s + (Number(r.custo_total) || 0), 0);
+    const custoReceitas = receitasView.reduce((s, r) => s + (Number(r.custo_total) || 0), 0);
     const custoInsumos = insumos.reduce((s, i) => s + (Number(i.custo_total) || 0), 0);
     const total = custoReceitas + custoInsumos;
     const porUnidade = num > 0 ? total / num : 0;
     const precoVenda = markup > 0 ? porUnidade * (1 + markup / 100) : 0;
     const lucro = precoVenda - porUnidade;
     return { custoReceitas, custoInsumos, total, porUnidade, precoVenda, lucro };
-  }, [receitas, insumos, num, markup]);
+  }, [receitasView, insumos, num, markup]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -147,6 +163,15 @@ export default function CardapioAberto() {
       setAllTags(tags || []);
       setCardapioTags(cTags || []);
       setFiltroDia("todos");
+
+      // Carrega ingredientes de cada receita do cardápio, para calcular custo ao vivo
+      const receitaIds = [...new Set((recs || []).map(r => r.receita_id).filter(Boolean))];
+      const ingredientesArrays = await Promise.all(
+        receitaIds.map(rid => base44.entities.IngredienteReceita.filter({ receita_id: rid }, "ordem", 200))
+      );
+      const ingredientesMap = {};
+      receitaIds.forEach((rid, i) => { ingredientesMap[rid] = ingredientesArrays[i] || []; });
+      setIngredientesPorReceita(ingredientesMap);
     } catch (e) { console.error(e); }
     setLoading(false);
   }, [id]);
@@ -213,6 +238,10 @@ export default function CardapioAberto() {
     setReceitas(prev => [...prev, criada]);
     setShowAddReceita(false); setBuscaReceita("");
     recalcularCusto(criada, receita.id);
+    if (!ingredientesPorReceita[receita.id]) {
+      const ingr = await base44.entities.IngredienteReceita.filter({ receita_id: receita.id }, "ordem", 200);
+      setIngredientesPorReceita(prev => ({ ...prev, [receita.id]: ingr }));
+    }
   };
 
   const removeReceita = async (recId) => {
@@ -249,7 +278,7 @@ export default function CardapioAberto() {
       const qt = Number(cr.quantidade_total_g) || 0;
       const custoEsc = custoEscalado(rec, ingredientes, qt);
       await base44.entities.CardapioReceita.update(cr.id, { custo_total: custoEsc });
-      setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc } : r));
+      setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc, quantidade_total_g: qt } : r));
     } catch (e) { console.error(e); }
   };
 
@@ -507,7 +536,7 @@ export default function CardapioAberto() {
         <h2 className="font-display font-semibold text-lg mb-4">Receitas</h2>
 
         <CardapioTabelaReceitas
-          receitas={receitas}
+          receitas={receitasView}
           receitaMap={receitaMap}
           isBuffet={isBuffet}
           num={num}
@@ -586,7 +615,7 @@ export default function CardapioAberto() {
         <h2 className="font-display font-semibold text-lg mb-4">Resumo de Custos</h2>
         <div className="space-y-2 text-sm">
           <p className="text-muted-foreground font-medium mb-2">Receitas:</p>
-          {receitas.map(rec => (
+          {receitasView.map(rec => (
             <div key={rec.id} className="flex justify-between text-muted-foreground ml-2">
               <span className="truncate mr-4">{rec.receita_nome}</span>
               <span className="font-medium">R$ {Number(rec.custo_total || 0).toFixed(2)}</span>

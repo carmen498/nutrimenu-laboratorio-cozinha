@@ -22,6 +22,7 @@ import ExportarReceita from '@/pages/ExportarReceita';
 import PerCapita from '@/pages/PerCapita';
 import RelatorioCategorias from '@/pages/RelatorioCategorias';
 import MedidasCaseiras from '@/pages/MedidasCaseiras';
+import AuditoriaRendimento from '@/pages/AuditoriaRendimento';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
           <Route path="/percapita" element={<PerCapita />} />
           <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
           <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
+          <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
