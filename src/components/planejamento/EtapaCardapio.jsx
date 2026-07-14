@@ -4,7 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShoppingCart, ArrowLeft, ArrowRight } from "lucide-react";
+import { ShoppingCart, ArrowLeft, ArrowRight, Plus, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
@@ -37,6 +40,10 @@ function initGrupos(config) {
 }
 
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
+function fmtNomePrato(nome) {
+  if (!nome) return "";
+  return nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+}
 
 function pcSugeridoReceita(receita) {
   if (receita?.per_capita_g) return receita.per_capita_g;
@@ -54,6 +61,7 @@ export default function EtapaCardapio({
   const [showNovaSecaoDialog, setShowNovaSecaoDialog] = useState(false);
   const [novaSecaoNome, setNovaSecaoNome] = useState("");
   const [filtroDia, setFiltroDia] = useState("todos");
+  const [avisoExpandido, setAvisoExpandido] = useState(false);
 
   const margem = margemEvento || 0;
 
@@ -133,6 +141,11 @@ export default function EtapaCardapio({
 
   const custoTotal = gruposCalc.reduce((s, g) => s + g.itens.reduce((s2, i) => s2 + i.custo, 0), 0);
   const custoPorPessoa = totalPessoas > 0 ? custoTotal / totalPessoas : 0;
+  const pratosSemCusto = gruposCalc.flatMap(g => g.itens).filter(i => i.sem_custo && i.receita_id);
+  const nomesSemCusto = pratosSemCusto.slice(0, 3).map(i => fmtNomePrato(i.receita_nome));
+  const textoSemCusto = pratosSemCusto.length > 3
+    ? `${nomesSemCusto.join(", ")} e mais ${pratosSemCusto.length - 3}`
+    : nomesSemCusto.join(", ");
 
   // Gerar config para salvar
   const buildConfig = () => ({
@@ -222,22 +235,56 @@ export default function EtapaCardapio({
         </span>
       </div>
 
-      {/* Barra de cores do cardápio */}
-      <BarraCoresCardapio gruposCalc={gruposCalc} receitaMap={receitaMap} />
-
       {/* Tabela de pratos (sem faixas de seção) */}
       <EtapaCardapioTabela
         gruposCalc={gruposCalc}
-        totalPessoas={totalPessoas}
         custoTotal={custoTotal}
-        margemEvento={margem}
         filtroDia={filtroDia}
         onUpdateItem={updateItem}
         onRemoveItem={removeItem}
         onMoveItem={moveItem}
-        onAddPrato={(gi) => setBuscaGrupoIdx(gi)}
-        onNovaSecao={() => setShowNovaSecaoDialog(true)}
       />
+
+      {/* Barra de cores do cardápio: entre a tabela e o botão de adicionar prato */}
+      <BarraCoresCardapio gruposCalc={gruposCalc} receitaMap={receitaMap} />
+
+      {/* Botão único: Adicionar prato (pergunta a seção de destino) */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full gap-1 border-dashed">
+            <Plus className="w-4 h-4" /> Adicionar prato
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          {gruposCalc.map((g, gi) => (
+            <DropdownMenuItem key={g.nome + gi} onClick={() => setBuscaGrupoIdx(gi)}>{g.nome}</DropdownMenuItem>
+          ))}
+          <DropdownMenuItem onClick={() => setShowNovaSecaoDialog(true)}>➕ Nova seção...</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Aviso consolidado de custo */}
+      {pratosSemCusto.length > 0 && (
+        <div>
+          <button
+            onClick={() => setAvisoExpandido(v => !v)}
+            className="w-full flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-left"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span className="flex-1">
+              ⚠ {pratosSemCusto.length} {pratosSemCusto.length === 1 ? "prato" : "pratos"} sem custo completo: {textoSemCusto}
+            </span>
+            {avisoExpandido ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {avisoExpandido && (
+            <div className="px-3 py-2 text-xs text-amber-800 bg-amber-50/60 border-x border-b border-amber-200 rounded-b-lg space-y-0.5">
+              {pratosSemCusto.map((i, idx) => (
+                <div key={idx}>{i.receita_nome}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Botões */}
       <div className="flex flex-col gap-2 pt-2">

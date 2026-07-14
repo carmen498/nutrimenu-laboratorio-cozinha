@@ -11,11 +11,11 @@ function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
 export default function CardapioPratoLinha({
   rec, descritivo, pcSuffix, kg, pct, selected, onSelect,
   onUpdatePC, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown,
-  temDias, diasOptions, refeicoesOptions, onUpdateField, semCusto,
+  temDias, diasOptions, refeicoesOptions, onUpdateField, semCusto, showTrashInRow,
 }) {
   return (
     <div
-      className={`transition-colors cursor-pointer ${selected ? "bg-accent" : "hover:bg-secondary/30"}`}
+      className={`group transition-colors cursor-pointer ${selected ? "bg-accent" : "hover:bg-secondary/30"}`}
       onClick={() => onSelect(rec.id)}
     >
       <div className="flex items-center gap-3 px-3 py-2.5">
@@ -42,6 +42,18 @@ export default function CardapioPratoLinha({
           {semCusto ? "—" : fmtRs(rec.custo_total)}
         </span>
         <span className="text-xs text-muted-foreground w-14 text-right shrink-0">{fmtPct(pct)}</span>
+        {showTrashInRow && (
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              if (window.confirm("Remover este prato do cardápio? A receita continua existindo.")) onRemove();
+            }}
+            title="Remover prato do cardápio"
+            className="shrink-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity no-print"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {selected && (
@@ -69,9 +81,11 @@ export default function CardapioPratoLinha({
           <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!canMoveDown} onClick={onMoveDown}>
             <ChevronDown className="w-4 h-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {!showTrashInRow && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       )}
     </div>

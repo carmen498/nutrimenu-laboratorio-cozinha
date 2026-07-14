@@ -13,7 +13,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
-  ArrowLeft, Trash2, ShoppingCart, Download,
+  ArrowLeft, Trash2, ShoppingCart, Download, Plus,
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
   GlassWater, Sun, Sparkles, MapPin, MessageCircle
 } from "lucide-react";
@@ -548,11 +548,6 @@ export default function CardapioAberto() {
           onUpdateReceita={updateReceita}
           onRemoveReceita={removeReceita}
           onMoveReceita={moveReceita}
-          onOpenAddReceita={async () => {
-            const todas = await base44.entities.Receita.list("nome", 200);
-            setTodasReceitas(todas || []);
-            setShowAddReceita(true);
-          }}
         />
 
         {/* Barra de cores + alerta de monotonia visual */}
@@ -561,6 +556,15 @@ export default function CardapioAberto() {
             <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
           </div>
         )}
+
+        <Button variant="ghost" size="sm" className="w-full text-xs gap-1 mt-2 no-print"
+          onClick={async () => {
+            const todas = await base44.entities.Receita.list("nome", 200);
+            setTodasReceitas(todas || []);
+            setShowAddReceita(true);
+          }}>
+          <Plus className="w-3.5 h-3.5" /> Adicionar item
+        </Button>
       </div>
 
       {/* BLOCO 3 — Insumos */}

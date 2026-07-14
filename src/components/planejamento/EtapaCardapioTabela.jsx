@@ -1,29 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { Plus, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import CardapioPratoLinha from "@/components/cardapio/CardapioPratoLinha";
 
 function fmtKg(v) { return (v || 0).toFixed(2).replace(".", ",") + " kg"; }
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
-function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
-function fmtNomePrato(nome) {
-  if (!nome) return "";
-  return nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
-}
 
 // Tabela de pratos do Evento (Etapa 3): apenas lista de pratos, sem faixas de seção
 // nem % de distribuição — seções servem só como rótulo/filtro. Coluna "% custo"
 // mostra a participação do prato no custo total do evento.
 export default function EtapaCardapioTabela({
-  gruposCalc, totalPessoas, custoTotal, margemEvento = 0, filtroDia = "todos",
-  onUpdateItem, onRemoveItem, onMoveItem, onAddPrato, onNovaSecao,
+  gruposCalc, custoTotal, filtroDia = "todos",
+  onUpdateItem, onRemoveItem, onMoveItem,
 }) {
   const [filtroSecao, setFiltroSecao] = useState("todas");
   const [selectedKey, setSelectedKey] = useState(null);
-  const [avisoExpandido, setAvisoExpandido] = useState(false);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -38,8 +27,6 @@ export default function EtapaCardapioTabela({
 
   const totalKgGeral = gruposCalc.reduce((s, g) => s + g.actualKg, 0);
 
-  const pratosSemCusto = gruposCalc.flatMap(g => g.itens).filter(i => i.sem_custo && i.receita_id);
-
   const secoesVisiveis = gruposCalc.filter(g => filtroSecao === "todas" || g.nome === filtroSecao);
   const linhas = [];
   secoesVisiveis.forEach(g => {
@@ -49,11 +36,6 @@ export default function EtapaCardapioTabela({
       linhas.push({ item, grupoIdx, ii, key: `${grupoIdx}-${ii}` });
     });
   });
-
-  const nomesSemCusto = pratosSemCusto.slice(0, 3).map(i => fmtNomePrato(i.receita_nome));
-  const textoSemCusto = pratosSemCusto.length > 3
-    ? `${nomesSemCusto.join(", ")} e mais ${pratosSemCusto.length - 3}`
-    : nomesSemCusto.join(", ");
 
   return (
     <div ref={rootRef}>
@@ -127,44 +109,6 @@ export default function EtapaCardapioTabela({
           <div className="w-14 shrink-0" />
         </div>
       </div>
-
-      {/* Botão único: Adicionar prato (pergunta a seção de destino) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full gap-1 border-dashed mt-2">
-            <Plus className="w-4 h-4" /> Adicionar prato
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          {gruposCalc.map((g, gi) => (
-            <DropdownMenuItem key={g.nome + gi} onClick={() => onAddPrato(gi)}>{g.nome}</DropdownMenuItem>
-          ))}
-          <DropdownMenuItem onClick={onNovaSecao}>➕ Nova seção...</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Aviso consolidado de custo */}
-      {pratosSemCusto.length > 0 && (
-        <div className="mt-2">
-          <button
-            onClick={() => setAvisoExpandido(v => !v)}
-            className="w-full flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-left"
-          >
-            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-            <span className="flex-1">
-              ⚠ {pratosSemCusto.length} {pratosSemCusto.length === 1 ? "prato" : "pratos"} sem custo completo: {textoSemCusto}
-            </span>
-            {avisoExpandido ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
-          {avisoExpandido && (
-            <div className="px-3 py-2 text-xs text-amber-800 bg-amber-50/60 border-x border-b border-amber-200 rounded-b-lg space-y-0.5">
-              {pratosSemCusto.map((i, idx) => (
-                <div key={idx}>{i.receita_nome}</div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
