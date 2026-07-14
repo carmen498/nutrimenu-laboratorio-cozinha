@@ -36,6 +36,8 @@ import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
+import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 
 export default function ReceitaAberta() {
@@ -940,18 +942,30 @@ REGRAS:
               <Switch checked={!!receita.revisar} onCheckedChange={handleToggleRevisar} className="scale-90" />
               <span className={`text-xs font-medium ${receita.revisar ? "text-amber-700" : "text-muted-foreground"}`}>A revisar</span>
             </div>
-            {receita.rendimento_total > 0 && (
-              <span className="text-sm text-muted-foreground">
-                Rendimento (PDP): {formatWeight(receita.rendimento_total, receita.unidade_base)}
-              </span>
-            )}
-            <div className="flex items-center gap-1.5" title={getCorLabelCompleto(receita.cor_predominante)}>
-              <span
-                className="w-4 h-4 rounded-full border border-black/15 shrink-0"
-                style={{ backgroundColor: getCorHex(receita.cor_predominante) }}
-              />
-              <span className="text-xs text-muted-foreground">{getCorLabelCompleto(receita.cor_predominante)}</span>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md hover:bg-muted/50 transition-colors"
+                  title="Clique para alterar a cor"
+                >
+                  <span
+                    className="w-4 h-4 rounded-full border border-black/15 shrink-0"
+                    style={{ backgroundColor: getCorHex(receita.cor_predominante) }}
+                  />
+                  <span className="text-xs text-muted-foreground">{getCorLabelCompleto(receita.cor_predominante)}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="start">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Cor predominante do prato</p>
+                <CorPredominantePicker
+                  value={receita.cor_predominante}
+                  onChange={async (val) => {
+                    await base44.entities.Receita.update(id, { cor_predominante: val });
+                    qc.invalidateQueries({ queryKey: ["receita", id] });
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           {/* Line 3: Tags */}
           <TagList

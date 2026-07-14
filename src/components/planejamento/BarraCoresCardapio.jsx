@@ -8,33 +8,25 @@ export default function BarraCoresCardapio({ gruposCalc, receitaMap }) {
     const familyCounts = {};
     const familyLabel = {};
     let semCor = 0;
-    const coloredSegments = [];
 
-    for (const item of allItems) {
+    const total = allItems.length;
+
+    // Um segmento por prato, na ordem original do cardápio
+    const segments = allItems.map((item, i) => {
       const rec = receitaMap[item.receita_id];
       const corKey = rec?.cor_predominante;
       const familia = getCorFamiliaKey(corKey);
+      const nome = item.receita_nome || rec?.nome || "Prato";
       if (familia) {
         familyCounts[familia] = (familyCounts[familia] || 0) + 1;
         familyLabel[familia] = getCorLabel(corKey);
-        coloredSegments.push({ familia, hex: getCorHex(corKey) });
-      } else {
-        semCor++;
+        return { key: `${item.id || i}`, color: getCorHex(corKey), pct: total > 0 ? (1 / total) * 100 : 0, nome };
       }
-    }
+      semCor++;
+      return { key: `${item.id || i}`, color: COR_SEM_COR, pct: total > 0 ? (1 / total) * 100 : 0, nome };
+    });
 
-    const totalComCor = coloredSegments.length;
-    const total = totalComCor + semCor;
-
-    // Um segmento por prato colorido (pintado no tom específico), na ordem original
-    const segments = coloredSegments.map((s, i) => ({
-      key: `${s.familia}-${i}`,
-      color: s.hex,
-      pct: total > 0 ? (1 / total) * 100 : 0,
-    }));
-    if (semCor > 0) {
-      segments.push({ key: "sem_cor", color: COR_SEM_COR, pct: total > 0 ? (semCor / total) * 100 : 0 });
-    }
+    const totalComCor = total - semCor;
 
     // Legenda agrupada por família
     const legenda = Object.entries(familyCounts).map(([familia, count]) => ({
@@ -77,6 +69,7 @@ export default function BarraCoresCardapio({ gruposCalc, receitaMap }) {
         {segments.map((seg) => (
           <div
             key={seg.key}
+            title={seg.nome}
             className="transition-all duration-300 border-r last:border-r-0 border-black/10"
             style={{ width: `${seg.pct}%`, backgroundColor: seg.color }}
           />
