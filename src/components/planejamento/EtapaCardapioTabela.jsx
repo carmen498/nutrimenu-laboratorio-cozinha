@@ -9,6 +9,10 @@ import CardapioPratoLinha from "@/components/cardapio/CardapioPratoLinha";
 function fmtKg(v) { return (v || 0).toFixed(2).replace(".", ",") + " kg"; }
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
+function fmtNomePrato(nome) {
+  if (!nome) return "";
+  return nome.charAt(0).toUpperCase() + nome.slice(1).toLowerCase();
+}
 
 // Tabela de pratos do Evento (Etapa 3): apenas lista de pratos, sem faixas de seção
 // nem % de distribuição — seções servem só como rótulo/filtro. Coluna "% custo"
@@ -47,9 +51,10 @@ export default function EtapaCardapioTabela({
     });
   });
 
-  const secaoAtiva = filtroSecao !== "todas" ? gruposCalc.find(g => g.nome === filtroSecao) : null;
-  const custoSecao = secaoAtiva ? secaoAtiva.itens.reduce((s, i) => s + i.custo, 0) : 0;
-  const pctSecao = secaoAtiva && custoTotal > 0 ? (custoSecao / custoTotal) * 100 : 0;
+  const nomesSemCusto = pratosSemCusto.slice(0, 3).map(i => fmtNomePrato(i.receita_nome));
+  const textoSemCusto = pratosSemCusto.length > 3
+    ? `${nomesSemCusto.join(", ")} e mais ${pratosSemCusto.length - 3}`
+    : nomesSemCusto.join(", ");
 
   return (
     <div ref={rootRef}>
@@ -139,7 +144,7 @@ export default function EtapaCardapioTabela({
           >
             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
             <span className="flex-1">
-              ⚠ {pratosSemCusto.length} {pratosSemCusto.length === 1 ? "prato" : "pratos"} sem custo completo · ver detalhes
+              ⚠ {pratosSemCusto.length} {pratosSemCusto.length === 1 ? "prato" : "pratos"} sem custo completo: {textoSemCusto}
             </span>
             {avisoExpandido ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
           </button>
@@ -153,15 +158,7 @@ export default function EtapaCardapioTabela({
         </div>
       )}
 
-      {/* Faixa-resumo da seção filtrada */}
-      {secaoAtiva && (
-        <div className="flex items-center justify-between px-3 py-2 mt-2 bg-primary/5 border border-primary/20 rounded-lg text-sm">
-          <span className="font-medium">{secaoAtiva.nome}</span>
-          <span className="font-semibold">{fmtRs(custoSecao)} · {fmtPct(pctSecao)} do custo do evento</span>
-        </div>
-      )}
-
-      {/* Rodapé */}
+      {/* Rodapé: única linha de total */}
       <div className="flex items-center justify-between px-3 py-3 mt-2 bg-secondary/40 rounded-lg text-sm">
         <span className="font-semibold">Total do evento · {totalPessoas} pessoas · margem {margemEvento}%</span>
         <span className="font-semibold text-right">
