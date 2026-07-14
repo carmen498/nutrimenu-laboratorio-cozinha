@@ -1,67 +1,62 @@
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
-import { CORES_RECEITA, COR_SEM_COR, getCorLabel } from "@/lib/coresReceita";
+import { getCorHex, getCorLabel, getCorFamiliaKey, COR_SEM_COR } from "@/lib/coresReceita";
 
 export default function BarraCoresCardapio({ gruposCalc, receitaMap }) {
-  const { segments, alertaCor, totalComCor, totalSemCor, total } = useMemo(() => {
+  const { segments, legenda, alertaCor, total } = useMemo(() => {
     const allItems = gruposCalc.flatMap((g) => g.itens);
-    const counts = {};
+    const familyCounts = {};
+    const familyLabel = {};
     let semCor = 0;
+    const coloredSegments = [];
 
     for (const item of allItems) {
       const rec = receitaMap[item.receita_id];
-      const cor = rec?.cor_predominante;
-      if (cor && CORES_RECEITA[cor]) {
-        counts[cor] = (counts[cor] || 0) + 1;
+      const corKey = rec?.cor_predominante;
+      const familia = getCorFamiliaKey(corKey);
+      if (familia) {
+        familyCounts[familia] = (familyCounts[familia] || 0) + 1;
+        familyLabel[familia] = getCorLabel(corKey);
+        coloredSegments.push({ familia, hex: getCorHex(corKey) });
       } else {
         semCor++;
       }
     }
 
-    const totalComCor = Object.values(counts).reduce((s, v) => s + v, 0);
-    const totalSemCor = semCor;
-    const total = totalComCor + totalSemCor;
+    const totalComCor = coloredSegments.length;
+    const total = totalComCor + semCor;
 
-    const segments = [];
-    for (const [corKey, corDef] of Object.entries(CORES_RECEITA)) {
-      if (counts[corKey]) {
-        segments.push({
-          key: corKey,
-          label: corDef.label,
-          color: corDef.hex,
-          count: counts[corKey],
-          pct: total > 0 ? (counts[corKey] / total) * 100 : 0,
-        });
-      }
-    }
+    // Um segmento por prato colorido (pintado no tom específico), na ordem original
+    const segments = coloredSegments.map((s, i) => ({
+      key: `${s.familia}-${i}`,
+      color: s.hex,
+      pct: total > 0 ? (1 / total) * 100 : 0,
+    }));
     if (semCor > 0) {
-      segments.push({
-        key: "sem_cor",
-        label: "Sem cor",
-        color: COR_SEM_COR,
-        count: semCor,
-        pct: total > 0 ? (semCor / total) * 100 : 0,
-      });
+      segments.push({ key: "sem_cor", color: COR_SEM_COR, pct: total > 0 ? (semCor / total) * 100 : 0 });
     }
+
+    // Legenda agrupada por família
+    const legenda = Object.entries(familyCounts).map(([familia, count]) => ({
+      key: familia,
+      label: familyLabel[familia],
+      count,
+      color: getCorHex(familia),
+    }));
+    if (semCor > 0) legenda.push({ key: "sem_cor", label: "Sem cor", count: semCor, color: COR_SEM_COR });
 
     let alertaCor = null;
     if (totalComCor > 0) {
-      for (const [corKey, count] of Object.entries(counts)) {
+      for (const [familia, count] of Object.entries(familyCounts)) {
         const pct = (count / totalComCor) * 100;
         if (pct >= 60) {
-          alertaCor = {
-            cor: corKey,
-            label: getCorLabel(corKey),
-            pct,
-            count,
-            totalComCor,
-          };
+          alertaCor = { label: familyLabel[familia], pct, count, totalComCor };
           break;
         }
       }
     }
 
-    return { segments, alertaCor, totalComCor, totalSemCor, total };
+    return { segments, legenda, alertaCor, total };
   }, [gruposCalc, receitaMap]);
 
   if (total === 0) return null;
@@ -77,28 +72,27 @@ export default function BarraCoresCardapio({ gruposCalc, receitaMap }) {
         </span>
       </div>
 
-      {/* Color bar */}
+      {/* Color bar: um segmento por prato, pintado no tom específico */}
       <div className="flex h-6 rounded-md overflow-hidden border border-border">
         {segments.map((seg) => (
           <div
             key={seg.key}
-            className={`transition-all duration-300 ${seg.key === "branco_creme" ? "border-r border-l border-black/15" : ""}`}
+            className="transition-all duration-300 border-r last:border-r-0 border-black/10"
             style={{ width: `${seg.pct}%`, backgroundColor: seg.color }}
-            title={`${seg.label}: ${seg.count} (${seg.pct.toFixed(0)}%)`}
           />
         ))}
       </div>
 
-      {/* Legend */}
+      {/* Legend: agrupada por família */}
       <div className="flex flex-wrap gap-x-3 gap-y-1">
-        {segments.map((seg) => (
-          <div key={seg.key} className="flex items-center gap-1 text-[10px]">
+        {legenda.map((leg) => (
+          <div key={leg.key} className="flex items-center gap-1 text-[10px]">
             <span
               className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0"
-              style={{ backgroundColor: seg.color }}
+              style={{ backgroundColor: leg.color }}
             />
-            <span className="text-muted-foreground">{seg.label}</span>
-            <span className="font-medium tabular-nums">{seg.count}</span>
+            <span className="text-muted-foreground">{leg.label}</span>
+            <span className="font-medium tabular-nums">{leg.count}</span>
           </div>
         ))}
       </div>

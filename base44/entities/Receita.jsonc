@@ -61,7 +61,12 @@
     "mostrar_fc": {
       "type": "boolean",
       "default": false,
-      "description": "Exibir coluna Comprar (com Fator de Corre\u00e7\u00e3o) na ficha da receita"
+      "description": "Exibir colunas FC e Peso Bruto na tabela de ingredientes da ficha"
+    },
+    "mostrar_medida_caseira": {
+      "type": "boolean",
+      "default": false,
+      "description": "Exibir coluna Medida Caseira na tabela de ingredientes da ficha"
     },
     "foto_url": {
       "type": "string",
@@ -98,17 +103,7 @@
     },
     "cor_predominante": {
       "type": "string",
-      "enum": [
-        "verde",
-        "vermelho",
-        "laranja",
-        "amarelo",
-        "marrom_dourado",
-        "branco_creme",
-        "rose",
-        "roxo"
-      ],
-      "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio (vazio = sem cor)"
+      "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio. Formato: `familia__tom` (ex: verde__escuro). Vazio = sem cor."
     }
   },
   "required": [
