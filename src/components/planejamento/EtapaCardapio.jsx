@@ -12,7 +12,15 @@ import { sugerirPerCapita } from "@/lib/perCapitaData";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import EtapaCardapioTabela from "@/components/planejamento/EtapaCardapioTabela";
+import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import { toast } from "sonner";
+
+const DIAS = [
+  { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
+  { key: "quarta", label: "Qua" }, { key: "quinta", label: "Qui" },
+  { key: "sexta", label: "Sex" }, { key: "sabado", label: "Sáb" },
+  { key: "domingo", label: "Dom" },
+];
 
 const GRUPOS_PADRAO = [
   { nome: "Entrada", percentual: 15, is_sobremesa: false },
@@ -62,12 +70,13 @@ function fmtPct(v) { return (v || 0).toFixed(0) + "%"; }
 export default function EtapaCardapio({
   totalComMargemKg, totalPessoas, cardapioConfig,
   onSalvar, onGerarListaCompras, onVoltar, salvando,
-  docesBebidas, onGruposChange, onAvancar
+  docesBebidas, onGruposChange, onAvancar, onAjustarPessoas
 }) {
   const [grupos, setGrupos] = useState(() => initGrupos(cardapioConfig));
   const [buscaGrupoIdx, setBuscaGrupoIdx] = useState(null);
   const [showNovoGrupo, setShowNovoGrupo] = useState(false);
   const [novoGrupoNome, setNovoGrupoNome] = useState("");
+  const [filtroDia, setFiltroDia] = useState("todos");
 
   // Re-init quando cardapioConfig mudar (ex: ao abrir edição)
   useEffect(() => {
@@ -129,6 +138,13 @@ export default function EtapaCardapio({
       })));
     }
   }, [gruposCalc, onGruposChange]);
+
+  // Dias usados nos itens do cardápio (apenas se algum item tiver dia_semana definido)
+  const diasUsados = useMemo(() => {
+    const set = new Set();
+    grupos.forEach(g => g.itens.forEach(i => { if (i.dia_semana) set.add(i.dia_semana); }));
+    return DIAS.filter(d => set.has(d.key));
+  }, [grupos]);
 
   const somaPct = grupos.filter(g => !g.is_sobremesa).reduce((s, g) => s + (g.percentual || 0), 0);
   const pctOk = Math.abs(somaPct - 100) < 0.5;
@@ -219,6 +235,21 @@ export default function EtapaCardapio({
         </div>
       </div>
 
+      {/* Pílula de pessoas + seletor de dia (mesmos controles do Cardápio Simples) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 bg-secondary rounded-full px-3 py-2">
+          <Button variant="ghost" size="icon" className="h-7 w-7"
+            onClick={() => onAjustarPessoas?.(-1)} disabled={totalPessoas <= 0}>−</Button>
+          <span className="text-lg font-bold min-w-[2rem] text-center">{totalPessoas}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7"
+            onClick={() => onAjustarPessoas?.(1)}>+</Button>
+          <span className="text-sm text-muted-foreground ml-1">pessoas</span>
+        </div>
+        {diasUsados.length > 0 && (
+          <CardapioSeletorDia dias={diasUsados} value={filtroDia} onChange={setFiltroDia} />
+        )}
+      </div>
+
       {/* Aviso se % não fecha */}
       {!pctOk && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
@@ -238,6 +269,7 @@ export default function EtapaCardapio({
         gruposCalc={gruposCalc}
         totalPessoas={totalPessoas}
         custoTotal={custoTotal}
+        filtroDia={filtroDia}
         onUpdateItem={updateItem}
         onRemoveItem={removeItem}
         onMoveItem={moveItem}

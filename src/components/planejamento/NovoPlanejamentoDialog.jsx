@@ -102,6 +102,24 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
   const etapa1Valida = nome.trim() && tipoPlanejamento;
 
+  // Ajusta o total de pessoas (mesmo dado da Etapa 2), cascateando homens > mulheres > crianças ao reduzir
+  const ajustarPessoas = (delta) => {
+    if (!delta) return;
+    if (delta > 0) {
+      setHomens(homens + delta);
+      return;
+    }
+    let restante = -delta;
+    const tirarHomens = Math.min(homens, restante);
+    restante -= tirarHomens;
+    const tirarMulheres = Math.min(mulheres, restante);
+    restante -= tirarMulheres;
+    const tirarCriancas = Math.min(criancas, restante);
+    setHomens(homens - tirarHomens);
+    setMulheres(mulheres - tirarMulheres);
+    setCriancas(criancas - tirarCriancas);
+  };
+
   const buildDados = (configOverride) => ({
     nome: nome.trim(),
     tipo_planejamento: tipoPlanejamento,
@@ -380,6 +398,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
             onAvancar={() => setEtapa(4)}
             docesBebidas={docesBebidas}
             onGruposChange={setGruposConfig}
+            onAjustarPessoas={ajustarPessoas}
             salvando={salvando}
           />
         )}

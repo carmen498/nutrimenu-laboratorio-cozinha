@@ -9,7 +9,7 @@ function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 // mas com % de seção editável (gravado em grupo.percentual) e sem filtro de dia
 // (o Evento não tem dimensão de dia por item).
 export default function EtapaCardapioTabela({
-  gruposCalc, totalPessoas, custoTotal,
+  gruposCalc, totalPessoas, custoTotal, filtroDia = "todos",
   onUpdateItem, onRemoveItem, onMoveItem, onOpenAddReceita,
   onChangePct, onChangeNomeSecao, onRemoveSecao,
 }) {
@@ -79,10 +79,13 @@ export default function EtapaCardapioTabela({
                   onRemoveSection={() => onRemoveSecao(grupoIdx)}
                   onAddItem={() => onOpenAddReceita(grupoIdx)}
                 />
-                {g.itens.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-2">Nenhum item nesta seção.</p>
-                ) : (
-                  g.itens.map((item, ii) => {
+                {(() => {
+                  const itensVisiveis = g.itens.filter(i => filtroDia === "todos" || i.dia_semana === filtroDia);
+                  if (itensVisiveis.length === 0) {
+                    return <p className="text-xs text-muted-foreground text-center py-2">Nenhum item nesta seção.</p>;
+                  }
+                  return g.itens.map((item, ii) => {
+                    if (filtroDia !== "todos" && item.dia_semana !== filtroDia) return null;
                     const key = `${grupoIdx}-${ii}`;
                     const pct = custoTotal > 0 ? (item.custo / custoTotal) * 100 : 0;
                     return (
@@ -110,8 +113,8 @@ export default function EtapaCardapioTabela({
                         temDias={false}
                       />
                     );
-                  })
-                )}
+                  });
+                })()}
               </div>
             );
           })}
