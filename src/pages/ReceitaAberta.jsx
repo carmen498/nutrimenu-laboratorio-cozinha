@@ -35,6 +35,7 @@ import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
+import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 
 export default function ReceitaAberta() {
@@ -71,6 +72,7 @@ export default function ReceitaAberta() {
   const [editingNota, setEditingNota] = useState(false);
   const [notaDraft, setNotaDraft] = useState("");
   const [mostrarFC, setMostrarFC] = useState(false);
+  const [mostrarMedidaCaseira, setMostrarMedidaCaseira] = useState(false);
   const [cadastrarMedidaIng, setCadastrarMedidaIng] = useState(null);
   const [editarMedidaMc, setEditarMedidaMc] = useState(null);
   const [editingMedidaId, setEditingMedidaId] = useState(null);
@@ -141,9 +143,18 @@ export default function ReceitaAberta() {
     if (receita) setMostrarFC(!!receita.mostrar_fc);
   }, [receita]);
 
+  useEffect(() => {
+    if (receita) setMostrarMedidaCaseira(!!receita.mostrar_medida_caseira);
+  }, [receita]);
+
   const handleToggleFC = async (val) => {
     setMostrarFC(val);
     await base44.entities.Receita.update(id, { mostrar_fc: val });
+  };
+
+  const handleToggleMedidaCaseira = async (val) => {
+    setMostrarMedidaCaseira(val);
+    await base44.entities.Receita.update(id, { mostrar_medida_caseira: val });
   };
 
   const handleToggleRevisar = async (val) => {
@@ -446,6 +457,16 @@ export default function ReceitaAberta() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingQtdId(null);
+    },
+  });
+
+  const updateFCMut = useMutation({
+    mutationFn: async ({ ingId, fator_correcao }) => {
+      await base44.entities.Ingrediente.update(ingId, { fator_correcao });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      toast.success("Fator de correção atualizado em todas as receitas!");
     },
   });
 
@@ -1014,7 +1035,11 @@ REGRAS:
             </Button>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
               <Switch checked={mostrarFC} onCheckedChange={handleToggleFC} className="scale-90" />
-              <span className="text-xs text-muted-foreground font-medium">Aplicar FC</span>
+              <span className="text-xs text-muted-foreground font-medium">FC</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
+              <Switch checked={mostrarMedidaCaseira} onCheckedChange={handleToggleMedidaCaseira} className="scale-90" />
+              <span className="text-xs text-muted-foreground font-medium">Medida caseira</span>
             </div>
             <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}>
               <Plus className="w-4 h-4 mr-1" /> Sub-título
@@ -1036,620 +1061,56 @@ REGRAS:
           </Card>
         ) : (
           <div className="space-y-2">
-            {/* Header */}
-            <div className="hidden md:grid grid-cols-12 gap-2 px-3 text-xs text-muted-foreground font-medium">
-              <div className={mostrarFC ? "col-span-3" : "col-span-3"}>Ingrediente</div>
-              <div className={mostrarFC ? "col-span-2 text-center" : "col-span-3 text-center"}>Quantidade</div>
-              {mostrarFC && <div className="col-span-2 text-center">Comprar</div>}
-              <div className="col-span-2 text-right">Custo</div>
-              <div className="col-span-3"></div>
-            </div>
-
-            <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="ingredientes">
-              {(provided, snapshot) => (
-                <div ref={provided.innerRef} {...provided.droppableProps} className={`space-y-2 transition-colors rounded-lg ${snapshot.isDraggingOver ? "bg-primary/5 p-1 ring-1 ring-primary/20" : ""}`}>
-            {itensFichaAgrupada.map((item, idx) => {
-              const isQtdZero = !item.isGrupo && (item.quantidade_por_porcao || 0) === 0;
-
-              // Grupo header
-              if (item.isGrupo) {
-                return (
-                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
-                  <Card className="p-3 bg-primary/20 border-primary/40 border-dashed">
-                    <div className="flex items-center gap-2">
-                      {editingGrupoId === item.id ? (
-                        <>
-                          <Input
-                            className="h-8 text-sm font-bold flex-1"
-                            value={editingGrupoTitulo}
-                            onChange={(e) => setEditingGrupoTitulo(e.target.value.toUpperCase())}
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && editingGrupoTitulo.trim()) {
-                                updateGrupoMut.mutate({ itemId: item.id, titulo: editingGrupoTitulo.trim().toUpperCase() });
-                              }
-                              if (e.key === "Escape") setEditingGrupoId(null);
-                            }}
-                          />
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                            if (editingGrupoTitulo.trim()) updateGrupoMut.mutate({ itemId: item.id, titulo: editingGrupoTitulo.trim().toUpperCase() });
-                            else setEditingGrupoId(null);
-                          }}>
-                            <Check className="w-4 h-4 text-green-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingGrupoId(null)}>
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <span className="flex-1 font-bold text-base text-primary uppercase tracking-wide px-1">{item.titulo_grupo}</span>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground disabled:opacity-30" disabled={findBlocoIdx(idx) <= 0} onClick={() => handleMove(idx, -1)} title="Mover bloco (divisor + ingredientes)">
-                              <ArrowUp className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground disabled:opacity-30" disabled={findBlocoIdx(idx) >= blocos.length - 1} onClick={() => handleMove(idx, 1)} title="Mover bloco (divisor + ingredientes)">
-                              <ArrowDown className="w-4 h-4" />
-                            </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => { setEditingGrupoId(item.id); setEditingGrupoTitulo(item.titulo_grupo); }} title="Editar título">
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover sub-título">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </Card>
-                  </DraggableRow>
-                );
-              }
-
-              if (item.isNA) {
-                return (
-                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
-                  <Card className="p-2 bg-primary/5 border-primary/20 border-dashed">
-                    <div className="flex items-center gap-2">
-                      {convertingNAId === item.id ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <Input
-                            className="h-8 text-sm font-bold flex-1"
-                            value={convertingNATitulo}
-                            onChange={(e) => setConvertingNATitulo(e.target.value.toUpperCase())}
-                            placeholder="Digite o nome do sub-título..."
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && convertingNATitulo.trim()) {
-                                convertToGrupoMut.mutate({ itemId: item.id, titulo: convertingNATitulo.trim().toUpperCase() });
-                              }
-                              if (e.key === "Escape") { setConvertingNAId(null); setConvertingNATitulo(""); }
-                            }}
-                          />
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
-                            if (convertingNATitulo.trim()) convertToGrupoMut.mutate({ itemId: item.id, titulo: convertingNATitulo.trim().toUpperCase() });
-                            else { setConvertingNAId(null); setConvertingNATitulo(""); }
-                          }}>
-                            <Check className="w-3 h-3 text-green-600" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setConvertingNAId(null); setConvertingNATitulo(""); }}>
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <span className="flex-1 text-sm text-muted-foreground italic">N/A — sem nome</span>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:text-primary/80" onClick={() => { setConvertingNAId(item.id); setConvertingNATitulo(item.ingrediente_nome === "N/A" ? "" : item.ingrediente_nome); }} title="Converter para sub-título">
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                        </>
-                      )}
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
-                        <ArrowUp className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
-                        <ArrowDown className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </Card>
-                  </DraggableRow>
-                );
-              }
-
-              if (item.isSubreceita) {
-                return (
-                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
-                  <Card className="p-3 bg-amber-50/70 border-amber-200/60">
-                    {/* Desktop */}
-                    <div className="hidden md:grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-3">
-                        <div className="flex items-center gap-1.5">
-                          <ChefHat className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                          <div>
-                            <p className="font-medium text-sm">{item.subreceita_nome}</p>
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5 border-amber-300 text-amber-700 bg-amber-100/50">Preparar antes</Badge>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={mostrarFC ? "col-span-2" : "col-span-3"}>
-                        {editingQtdId === item.id ? (
-                          <div className="flex items-center gap-1 justify-center">
-                            <Input
-                              type="number"
-                              className="h-7 w-20 text-sm text-center"
-                              value={editingQtdValue}
-                              onChange={(e) => setEditingQtdValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleConfirmQtd(item.id);
-                                if (e.key === "Escape") setEditingQtdId(null);
-                              }}
-                              autoFocus
-                            />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
-                              <Check className="w-3 h-3 text-green-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
-                              <X className="w-3 h-3 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <button
-                            className="text-sm font-medium hover:underline hover:text-primary transition-colors"
-                            onClick={() => {
-                              setEditingQtdId(item.id);
-                              setEditingQtdValue(item.qtdNova.toFixed(0));
-                            }}
-                            title="Clique para editar a quantidade"
-                          >
-                            {formatWeight(item.qtdNova, receita.unidade_base)}
-                          </button>
-                        )}
-                      </div>
-                      {mostrarFC && <div className="col-span-2"></div>}
-                      <div className="col-span-2 text-right">
-                        <span className="text-sm text-muted-foreground">—</span>
-                      </div>
-                      <div className="col-span-3 flex justify-end gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
-                          <ArrowUp className="w-3 h-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
-                          <ArrowDown className="w-3 h-3" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSubreceitaMut.mutate(item.id)} title="Remover sub-receita e ingredientes">
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    {/* Mobile */}
-                    <div className="md:hidden">
-                      <div className="flex items-center gap-1.5 mb-2">
-                        <ChefHat className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                        <div>
-                          <p className="font-medium text-sm">{item.subreceita_nome}</p>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5 border-amber-300 text-amber-700 bg-amber-100/50">Preparar antes</Badge>
-                        </div>
-                      </div>
-                      <div className="flex items-start justify-between">
-                        <div className="flex gap-0.5">
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
-                            <Pencil className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
-                            <ArrowUp className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
-                            <ArrowDown className="w-3 h-3" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteSubreceitaMut.mutate(item.id)} title="Remover sub-receita e ingredientes">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                            </div>
-                            </div>
-                            <div className="flex justify-between mt-2 text-xs items-center">
-                          <span className="text-muted-foreground">Quantidade: </span>
-                          {editingQtdId === item.id ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              className="h-7 w-16 text-xs text-center"
-                              value={editingQtdValue}
-                              onChange={(e) => setEditingQtdValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleConfirmQtd(item.id);
-                                if (e.key === "Escape") setEditingQtdId(null);
-                              }}
-                              autoFocus
-                            />
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
-                              <Check className="w-3 h-3 text-green-600" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
-                              <X className="w-3 h-3 text-muted-foreground" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <button
-                            className="hover:underline hover:text-primary font-medium"
-                            onClick={() => {
-                              setEditingQtdId(item.id);
-                              setEditingQtdValue(item.qtdNova.toFixed(0));
-                            }}
-                          >
-                            {formatWeight(item.qtdNova, receita.unidade_base)}
-                          </button>
-                        )}
-                      </div>
-                      {fator !== 1 && (
-                        <p className="text-xs text-muted-foreground mt-0.5">original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</p>
-                      )}
-                      <div className="flex justify-between mt-1 text-xs">
-                        <div></div>
-                        <span className="text-muted-foreground">—</span>
-                      </div>
-                    </div>
-                  </Card>
-                  </DraggableRow>
-                );
-              }
-
-              return (
-              <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
-              <Card className={`p-3 ${isQtdZero ? "border-amber-400 bg-amber-50/60" : ""} ${item.isChildOfSubreceita ? "ml-6 border-l-4 border-l-amber-300 bg-amber-50/30" : ""}`}>
-                {/* Desktop */}
-                <div className="hidden md:grid grid-cols-12 gap-2 items-center">
-                  <div className="col-span-3">
-                    {editingIngId === item.id ? (
-                      <div className="relative">
-                        <div className="flex items-center gap-1">
-                          <Input
-                            placeholder="Buscar ingrediente..."
-                            value={ingSearch}
-                            onChange={(e) => setIngSearch(e.target.value)}
-                            className="h-7 text-sm flex-1"
-                            autoFocus
-                            onKeyDown={(e) => { if (e.key === "Escape") { setEditingIngId(null); setIngSearch(""); } }}
-                          />
-                          <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => { setEditingIngId(null); setIngSearch(""); }}>
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                        {ingSearch && (
-                          <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
-                            {ingredientesDB
-                              .filter(ing => ing.nome.toLowerCase().includes(ingSearch.toLowerCase()))
-                              .slice(0, 20)
-                              .map(ing => (
-                                <button
-                                  key={`ing-${ing.id}`}
-                                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
-                                  onClick={() => replaceIngMut.mutate({
-                                    itemId: item.id,
-                                    newIngredienteId: ing.id,
-                                    newIngredienteNome: ing.nome
-                                  })}
-                                >
-                                  {ing.nome}
-                                </button>
-                              ))
-                            }
-                            {receitasBasicas
-                              .filter(r => r.nome.toUpperCase().includes(ingSearch.toUpperCase()))
-                              .slice(0, 10)
-                              .map(r => (
-                                <button
-                                  key={`rec-${r.id}`}
-                                  className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center justify-between"
-                                  onClick={() => replaceWithSubreceitaMut.mutate({
-                                    itemId: item.id,
-                                    receitaId: r.id,
-                                    receitaNome: r.nome
-                                  })}
-                                >
-                                  <span className="flex items-center gap-1">
-                                    <ChefHat className="w-3 h-3 text-primary" />
-                                    {r.nome}
-                                  </span>
-                                  <Badge variant="secondary" className="text-[10px] px-1 py-0">Receita</Badge>
-                                </button>
-                              ))
-                            }
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        <p className="font-medium text-sm">{item.ing?.nome || item.ingrediente_nome}</p>
-                        {(() => {
-                          const md = getMedidaDisplay(item);
-                          if (md?.texto) {
-                            if (editingMedidaId === item.id) {
-                              const mc = medidaByIngrediente[item.ing.id];
-                              const ute = uteMap[mc?.utensilio];
-                              return (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <input
-                                    type="number"
-                                    className="h-6 w-12 text-xs border rounded px-1"
-                                    value={medidaInputValue}
-                                    onChange={(e) => setMedidaInputValue(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        const n = parseFloat(medidaInputValue);
-                                        const g = converterMedidaParaGramas(n, mc);
-                                        if (g) {
-                                          const baseTotal = (receita?.porcoes_base || 1) * fator;
-                                          updateQtdMut.mutate({ itemId: item.id, quantidade_por_porcao: baseTotal > 0 ? g / baseTotal : g });
-                                        }
-                                        setEditingMedidaId(null);
-                                      }
-                                      if (e.key === "Escape") setEditingMedidaId(null);
-                                    }}
-                                    autoFocus
-                                  />
-                                  <span className="text-xs text-muted-foreground">{ute?.descricao_plural || ute?.descricao_singular || ""}</span>
-                                </div>
-                              );
-                            }
-                            const mcEdit = medidaByIngrediente[item.ing.id];
-                            return (
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <button
-                                  className="text-xs text-primary/70 hover:text-primary"
-                                  onClick={() => { setEditingMedidaId(item.id); setMedidaInputValue(""); }}
-                                  title="Clique para digitar em medida caseira"
-                                >
-                                  {md.texto}
-                                </button>
-                                {mcEdit && (
-                                  <button
-                                    className="text-xs text-primary/40 hover:text-primary underline"
-                                    onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(mcEdit); }}
-                                    title="Editar utensílio/referência da medida"
-                                  >
-                                    editar
-                                  </button>
-                                )}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-                        {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
-                        {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
-                      </>
-                    )}
-                  </div>
-                  <div className={`${mostrarFC ? "col-span-2" : "col-span-3"} text-center`}>
-                    {editingQtdId === item.id ? (
-                      <div className="flex items-center gap-1 justify-center">
-                        <Input
-                          type="number"
-                          className="h-7 w-20 text-sm text-center"
-                          value={editingQtdValue}
-                          onChange={(e) => setEditingQtdValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleConfirmQtd(item.id);
-                            if (e.key === "Escape") setEditingQtdId(null);
-                          }}
-                          autoFocus
-                        />
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
-                          <Check className="w-3 h-3 text-green-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
-                          <X className="w-3 h-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <button
-                          className={`text-sm hover:underline hover:text-primary transition-colors ${isQtdZero ? "text-amber-600 font-medium" : "font-medium"}`}
-                          onClick={() => {
-                            setEditingQtdId(item.id);
-                            setEditingQtdValue(item.qtdNova.toFixed(0));
-                          }}
-                          title="Clique para editar a quantidade"
-                        >
-                          {formatWeight(item.qtdNova, receita.unidade_base)}
-                        </button>
-                        {fator !== 1 && (
-                          <p className="text-xs text-muted-foreground mt-0.5">original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {mostrarFC && (
-                    <div className="col-span-2 text-center text-sm text-muted-foreground">
-                      {formatWeight(item.qtdComprar, receita.unidade_base)}
-                    </div>
-                  )}
-                  <div className="col-span-2 text-right">
-                    <span className={`text-sm font-semibold ${formatCustoItem(item).className}`}>
-                      {formatCustoItem(item).text}
-                    </span>
-                  </div>
-                  <div className="col-span-3 flex justify-end gap-0.5">
-
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
-                      <Pencil className="w-3 h-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
-                      <ArrowUp className="w-3 h-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
-                      <ArrowDown className="w-3 h-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-
-                </div>
-                {/* Mobile */}
-                <div className="md:hidden">
-                  {editingIngId === item.id ? (
-                    <div className="relative mb-2">
-                      <div className="flex items-center gap-1">
-                        <Input
-                          placeholder="Buscar ingrediente..."
-                          value={ingSearch}
-                          onChange={(e) => setIngSearch(e.target.value)}
-                          className="h-8 text-sm flex-1"
-                          autoFocus
-                          onKeyDown={(e) => { if (e.key === "Escape") { setEditingIngId(null); setIngSearch(""); } }}
-                        />
-                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => { setEditingIngId(null); setIngSearch(""); }}>
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                      {ingSearch && (
-                        <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
-                          {ingredientesDB
-                            .filter(ing => ing.nome.toLowerCase().includes(ingSearch.toLowerCase()))
-                            .slice(0, 20)
-                            .map(ing => (
-                              <button
-                                key={`ing-m-${ing.id}`}
-                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
-                                onClick={() => replaceIngMut.mutate({
-                                  itemId: item.id,
-                                  newIngredienteId: ing.id,
-                                  newIngredienteNome: ing.nome
-                                })}
-                              >
-                                {ing.nome}
-                              </button>
-                            ))
-                          }
-                          {receitasBasicas
-                            .filter(r => r.nome.toUpperCase().includes(ingSearch.toUpperCase()))
-                            .slice(0, 10)
-                            .map(r => (
-                              <button
-                                key={`rec-m-${r.id}`}
-                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center justify-between"
-                                onClick={() => replaceWithSubreceitaMut.mutate({
-                                  itemId: item.id,
-                                  receitaId: r.id,
-                                  receitaNome: r.nome
-                                })}
-                              >
-                                <span className="flex items-center gap-1">
-                                  <ChefHat className="w-3 h-3 text-primary" />
-                                  {r.nome}
-                                </span>
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0">Receita</Badge>
-                              </button>
-                            ))
-                          }
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="font-medium text-sm">{item.ing?.nome || item.ingrediente_nome}</p>
-                      {(() => {
-                        const mdM = getMedidaDisplay(item);
-                        if (mdM?.texto) {
-                          const mcM = medidaByIngrediente[item.ing.id];
-                          return (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-muted-foreground">{mdM.texto}</span>
-                              {mcM && (
-                                <button
-                                  className="text-xs text-primary/50 hover:text-primary underline"
-                                  onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(mcM); }}
-                                >
-                                  editar
-                                </button>
-                              )}
-                            </div>
-                          );
-                        }
-                        return null;
-                      })()}
-                      {item.pre_preparo && <p className="text-xs text-muted-foreground">{item.pre_preparo}</p>}
-                      {isQtdZero && <p className="text-xs text-amber-600 font-medium mt-0.5">Quantidade não informada — toque para editar</p>}
-                    </div>
-                  )}
-                  <div className="flex items-start justify-between">
-                    <div className="flex gap-0.5">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
-                        <Pencil className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima">
-                        <ArrowUp className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo">
-                        <ArrowDown className="w-3 h-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItemOrGrupoMut.mutate(item.id)} title="Remover ingrediente">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                      </div>
-                      </div>
-
-                  <div className="flex justify-between mt-2 text-xs items-center">
-                    <span className="text-muted-foreground">Quantidade: </span>
-                    {editingQtdId === item.id ? (
-                      <div className="flex items-center gap-1">
-                        <Input
-                          type="number"
-                          className="h-7 w-16 text-xs text-center"
-                          value={editingQtdValue}
-                          onChange={(e) => setEditingQtdValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleConfirmQtd(item.id);
-                            if (e.key === "Escape") setEditingQtdId(null);
-                          }}
-                          autoFocus
-                        />
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}>
-                          <Check className="w-3 h-3 text-green-600" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditingQtdId(null)}>
-                          <X className="w-3 h-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <button
-                        className={`hover:underline hover:text-primary font-medium ${isQtdZero ? "text-amber-600" : ""}`}
-                        onClick={() => {
-                          setEditingQtdId(item.id);
-                          setEditingQtdValue(item.qtdNova.toFixed(0));
-                        }}
-                      >
-                        {formatWeight(item.qtdNova, receita.unidade_base)}
-                      </button>
-                    )}
-                  </div>
-                  {fator !== 1 && (
-                    <p className="text-xs text-muted-foreground mt-0.5">original: {formatWeight(item.qtdOriginal, receita.unidade_base)}</p>
-                  )}
-                  <div className="flex justify-between mt-1 text-xs">
-                    <div>
-                      {mostrarFC && <span className="text-muted-foreground">Comprar: {formatWeight(item.qtdComprar, receita.unidade_base)}</span>}
-                    </div>
-                    <span className={`font-bold ${formatCustoItem(item).className}`}>
-                      {formatCustoItem(item).text}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-              </DraggableRow>
-              );
-            })}
-            {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+            <TabelaIngredientesReceita
+              itens={itensFichaAgrupada}
+              receita={receita}
+              fator={fator}
+              mostrarFC={mostrarFC}
+              mostrarMedidaCaseira={mostrarMedidaCaseira}
+              blocos={blocos}
+              findBlocoIdx={findBlocoIdx}
+              medidaByIngrediente={medidaByIngrediente}
+              uteMap={uteMap}
+              getMedidaDisplay={getMedidaDisplay}
+              editingQtdId={editingQtdId}
+              editingQtdValue={editingQtdValue}
+              setEditingQtdId={setEditingQtdId}
+              setEditingQtdValue={setEditingQtdValue}
+              handleConfirmQtd={handleConfirmQtd}
+              editingIngId={editingIngId}
+              ingSearch={ingSearch}
+              setEditingIngId={setEditingIngId}
+              setIngSearch={setIngSearch}
+              ingredientesDB={ingredientesDB}
+              receitasBasicas={receitasBasicas}
+              replaceIngMut={replaceIngMut}
+              replaceWithSubreceitaMut={replaceWithSubreceitaMut}
+              editingGrupoId={editingGrupoId}
+              editingGrupoTitulo={editingGrupoTitulo}
+              setEditingGrupoId={setEditingGrupoId}
+              setEditingGrupoTitulo={setEditingGrupoTitulo}
+              updateGrupoMut={updateGrupoMut}
+              convertingNAId={convertingNAId}
+              convertingNATitulo={convertingNATitulo}
+              setConvertingNAId={setConvertingNAId}
+              setConvertingNATitulo={setConvertingNATitulo}
+              convertToGrupoMut={convertToGrupoMut}
+              editingMedidaId={editingMedidaId}
+              medidaInputValue={medidaInputValue}
+              setEditingMedidaId={setEditingMedidaId}
+              setMedidaInputValue={setMedidaInputValue}
+              updateQtdMut={updateQtdMut}
+              setCadastrarMedidaIng={setCadastrarMedidaIng}
+              setEditarMedidaMc={setEditarMedidaMc}
+              setEditingItem={setEditingItem}
+              deleteItemOrGrupoMut={deleteItemOrGrupoMut}
+              deleteSubreceitaMut={deleteSubreceitaMut}
+              updateFCMut={updateFCMut}
+              handleMove={handleMove}
+              handleDragEnd={handleDragEnd}
+              formatWeight={formatWeight}
+              formatCustoItem={formatCustoItem}
+            />
 
             {pendingGrupo && (
               <div className="flex items-stretch gap-0.5">
