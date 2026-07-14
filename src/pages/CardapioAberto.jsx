@@ -24,6 +24,7 @@ import AddInsumoBanco from "@/components/cardapio/AddInsumoBanco";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
+import { custoEscalado } from "@/lib/custoReceita";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -242,10 +243,9 @@ export default function CardapioAberto() {
     try {
       const rec = await base44.entities.Receita.get(receitaId);
       if (!rec) return;
-      const rend = Number(rec.rendimento_total) || 1;
+      const ingredientes = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId }, "ordem", 200);
       const qt = Number(cr.quantidade_total_g) || 0;
-      const fator = qt / rend;
-      const custoEsc = (Number(rec.custo_total) || 0) * fator;
+      const custoEsc = custoEscalado(rec, ingredientes, qt);
       await base44.entities.CardapioReceita.update(cr.id, { custo_total: custoEsc });
       setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc } : r));
     } catch (e) { console.error(e); }

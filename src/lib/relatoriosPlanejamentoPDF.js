@@ -1,5 +1,6 @@
 import { jsPDF } from "jspdf";
 import { base44 } from "@/api/base44Client";
+import { custoPorKgPronto } from "@/lib/custoReceita";
 
 // ─── Format helpers ───
 function fmtKg(v) {
@@ -21,17 +22,6 @@ function fmtData(iso) {
   } catch {
     return "—";
   }
-}
-
-function custoPorKgPronto(receita) {
-  if (!receita) return 0;
-  if (receita.rendimento_total > 0 && receita.custo_total > 0) {
-    return receita.custo_total / (receita.rendimento_total / 1000);
-  }
-  if (receita.custo_por_porcao > 0 && receita.porcoes_base > 0 && receita.rendimento_total > 0) {
-    return (receita.custo_por_porcao * receita.porcoes_base) / (receita.rendimento_total / 1000);
-  }
-  return 0;
 }
 
 // ─── Data Loading (READ-ONLY — no creates/updates/deletes) ───
@@ -365,14 +355,14 @@ export function gerarRelatorioFichaCustos(planejamento, dados) {
   const margin = 14;
   let y = drawHeader(doc, planejamento, "Ficha de Custos");
 
-  const { config, receitaMap } = dados;
+  const { config, receitaMap, ingredientesPorReceita } = dados;
   const grupos = (config.grupos || []).filter(g => (g.itens || []).length > 0);
 
   // First pass: calculate all costs to get total
   const gruposCalc = grupos.map(g => {
     const itens = (g.itens || []).map(item => {
       const rec = receitaMap[item.receita_id];
-      const custoKg = custoPorKgPronto(rec);
+      const custoKg = custoPorKgPronto(rec, ingredientesPorReceita?.[item.receita_id]);
       const custo = custoKg * (item.qtd_kg || 0);
       return { ...item, custo, custoKg, semCusto: custoKg === 0 };
     });

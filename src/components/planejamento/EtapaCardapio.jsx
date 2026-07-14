@@ -9,6 +9,7 @@ import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import EtapaCardapioTabela from "@/components/planejamento/EtapaCardapioTabela";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
+import { custoPorKgPronto } from "@/lib/custoReceita";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -32,17 +33,6 @@ function initGrupos(config) {
     }));
   }
   return NOMES_SECAO_PADRAO.map(nome => ({ nome, itens: [] }));
-}
-
-function custoPorKgPronto(receita) {
-  if (!receita) return 0;
-  if (receita.rendimento_total > 0 && receita.custo_total > 0) {
-    return receita.custo_total / (receita.rendimento_total / 1000);
-  }
-  if (receita.custo_por_porcao > 0 && receita.porcoes_base > 0 && receita.rendimento_total > 0) {
-    return (receita.custo_por_porcao * receita.porcoes_base) / (receita.rendimento_total / 1000);
-  }
-  return 0;
 }
 
 function pcSugeridoReceita(receita) {
@@ -82,6 +72,20 @@ export default function EtapaCardapio({
     return map;
   }, [receitas]);
 
+  const { data: todosIngredientesReceita = [] } = useQuery({
+    queryKey: ["ingredientesReceitaTodos"],
+    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 2000),
+  });
+
+  const ingredientesPorReceita = useMemo(() => {
+    const map = {};
+    todosIngredientesReceita.forEach(i => {
+      if (!map[i.receita_id]) map[i.receita_id] = [];
+      map[i.receita_id].push(i);
+    });
+    return map;
+  }, [todosIngredientesReceita]);
+
   // Cálculo de produção: kg do prato = pessoas × PC × (1 + margem%), soma direta (sem distribuição por seção)
   const gruposCalc = useMemo(() => {
     return grupos.map(g => {
@@ -91,14 +95,14 @@ export default function EtapaCardapio({
         const autoKg = (totalPessoas * pc_g * (1 + margem / 100)) / 1000;
         const qtd_kg = item.qtd_kg_manual != null ? item.qtd_kg_manual : autoKg;
         const porcoes = pc_g > 0 ? Math.round((qtd_kg * 1000) / pc_g) : 0;
-        const custoKg = custoPorKgPronto(rec);
+        const custoKg = custoPorKgPronto(rec, ingredientesPorReceita[item.receita_id]);
         const custo = custoKg * qtd_kg;
         return { ...item, qtd_kg, pc_g, porcoes, custo, custo_kg: custoKg, sem_custo: custoKg === 0 };
       });
       const actualKg = itens.reduce((s, i) => s + i.qtd_kg, 0);
       return { ...g, actualKg, itens };
     });
-  }, [grupos, totalPessoas, margem, receitaMap]);
+  }, [grupos, totalPessoas, margem, receitaMap, ingredientesPorReceita]);
 
   // Push grupos config para o parent (necessário para salvar na Etapa 4)
   useEffect(() => {
