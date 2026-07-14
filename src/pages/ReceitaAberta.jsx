@@ -34,6 +34,7 @@ import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
+import EscaladorReceita from "@/components/receita/EscaladorReceita";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -61,8 +62,6 @@ export default function ReceitaAberta() {
   const [localFavoritando, setLocalFavoritando] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [pdpValue, setPdpValue] = useState("");
-  const [editingPC, setEditingPC] = useState(false);
-  const [pcValue, setPcValue] = useState("");
   const [editingPreparo, setEditingPreparo] = useState(false);
   const [preparoDraft, setPreparoDraft] = useState("");
   const [editingDescritivo, setEditingDescritivo] = useState(false);
@@ -203,21 +202,33 @@ export default function ReceitaAberta() {
 
   const perCapitaAtual = receita?.per_capita_g || perCapitaSugerido?.g || null;
 
-  const handleSavePC = async (val) => {
-    if (!isNaN(val) && val > 0) {
-      await base44.entities.Receita.update(id, { per_capita_g: val });
-      qc.invalidateQueries({ queryKey: ["receita", id] });
-      setEditingPC(false);
-      toast.success("Per capita atualizado!");
-    } else {
-      setEditingPC(false);
+  // Inicializa a quantidade total (PC × porções) assim que os dados carregam
+  useEffect(() => {
+    if (receita && porcoes !== null && quantidadeTotal === null && perCapitaAtual > 0) {
+      setQuantidadeTotal(Math.round(perCapitaAtual * porcoes));
     }
+  }, [receita, porcoes, perCapitaAtual, quantidadeTotal]);
+
+  // Escalador: PC é a âncora, nunca recalculado automaticamente
+  const commitPC = async (newPC) => {
+    const val = Math.max(1, Math.round(newPC));
+    setQuantidadeTotal(Math.round(val * (porcoes || 1)));
+    await base44.entities.Receita.update(id, { per_capita_g: val });
+    qc.invalidateQueries({ queryKey: ["receita", id] });
   };
 
-  const handlePCChange = (newPC) => {
-    const val = Math.max(1, Math.round(newPC));
-    setPcValue(String(val));
-    handleSavePC(val);
+  const commitPorcoes = (newPorcoes) => {
+    const val = Math.max(1, Math.round(newPorcoes));
+    setPorcoes(val);
+    const pc = perCapitaAtual || 0;
+    if (pc > 0) setQuantidadeTotal(Math.round(val * pc));
+  };
+
+  const commitTotalGrams = (grams) => {
+    const g = Math.max(0, Math.round(grams));
+    setQuantidadeTotal(g);
+    const pc = perCapitaAtual || 0;
+    if (pc > 0) setPorcoes(Math.max(0, Math.floor(g / pc)));
   };
 
   const handleSavePreparo = async () => {
@@ -228,39 +239,6 @@ export default function ReceitaAberta() {
       toast.success("Modo de preparo atualizado!");
     } catch (err) {
       toast.error("Erro ao salvar: " + (err.message || ""));
-    }
-  };
-
-  const rendPorPorcao = receita && receita.porcoes_base > 0 ? (receita.rendimento_total || 0) / receita.porcoes_base : 0;
-
-  const parseKgInput = (input) => {
-    if (typeof input === "number") return input;
-    const cleaned = String(input).trim().toLowerCase().replace(/\s/g, "");
-    const kgMatch = cleaned.match(/^([\d.,]+)kg$/);
-    if (kgMatch) {
-      const val = parseFloat(kgMatch[1].replace(",", "."));
-      return Math.round(val * 1000);
-    }
-    return Math.max(1, parseInt(cleaned, 10) || 1);
-  };
-
-  const handleQuantidadeChange = (rawInput) => {
-    if (!rawInput || String(rawInput).trim() === "") {
-      setQuantidadeTotal(null);
-      return;
-    }
-    const newQtd = parseKgInput(rawInput);
-    setQuantidadeTotal(newQtd);
-    if (rendPorPorcao > 0) {
-      const newP = Math.max(1, Math.round(newQtd / rendPorPorcao));
-      setPorcoes(newP);
-    }
-  };
-
-  const handlePorcoesChange = (newPorcoes) => {
-    setPorcoes(newPorcoes);
-    if (rendPorPorcao > 0) {
-      setQuantidadeTotal(Math.round(newPorcoes * rendPorPorcao));
     }
   };
 
@@ -960,49 +938,6 @@ REGRAS:
               }}
             />
           </div>
-          {/* PC recomendado */}
-          {perCapitaAtual > 0 && (
-            <div className="flex items-center gap-2 text-sm mt-0.5">
-              <span className="text-muted-foreground">PC recomendado:</span>
-              {editingPC ? (
-                <div className="flex items-center gap-1">
-                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePCChange(perCapitaAtual - 10)}>
-                    <Minus className="w-3.5 h-3.5" />
-                  </Button>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={pcValue}
-                    onChange={(e) => setPcValue(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleSavePC(parseInt(pcValue) || 0); if (e.key === "Escape") setEditingPC(false); }}
-                    className="h-8 w-20 text-center text-sm font-bold"
-                    autoFocus
-                  />
-                  <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePCChange(perCapitaAtual + 10)}>
-                    <Plus className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSavePC(parseInt(pcValue) || 0)}>
-                    <Check className="w-3.5 h-3.5 text-green-600" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingPC(false)}>
-                    <X className="w-3.5 h-3.5 text-muted-foreground" />
-                  </Button>
-                </div>
-              ) : (
-                <button
-                  className="font-bold text-primary hover:underline flex items-center gap-1"
-                  onClick={() => { setPcValue(String(perCapitaAtual)); setEditingPC(true); }}
-                  title={receita.per_capita_g ? "Valor personalizado — clique para editar" : "Valor sugerido — clique para editar"}
-                >
-                  {perCapitaAtual}g/pessoa
-                  {perCapitaSugerido?.medida && false && <span className="font-normal text-muted-foreground text-xs">· {perCapitaSugerido.medida}</span>}
-                  {receita.per_capita_g && <Badge variant="outline" className="text-[10px] px-1 py-0 ml-1 border-amber-300 text-amber-700 bg-amber-100/50">personalizado</Badge>}
-                  {!receita.per_capita_g && <span className="text-[10px] text-muted-foreground ml-1">(sugerido)</span>}
-                  <Pencil className="w-3 h-3 text-muted-foreground" />
-                </button>
-              )}
-            </div>
-          )}
         </div>
         {/* Right block: Photo */}
         {receita.foto_url ? (
@@ -1023,57 +958,15 @@ REGRAS:
         )}
       </div>
 
-      {/* Portion scaler */}
-      <Card className="p-4 bg-primary/5 border-primary/20">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Left: Quantidade total (g) */}
-          <div>
-            <Label className="text-sm font-semibold">Quantidade desejada (g)?</Label>
-            <Input
-              type="text"
-              inputMode="numeric"
-              placeholder="ex: 11.500"
-              value={quantidadeTotal ? Math.round(quantidadeTotal) : ""}
-              onChange={(e) => handleQuantidadeChange(e.target.value)}
-              className="text-center text-lg font-bold h-10 mt-1"
-            />
-            <p className="text-xs text-muted-foreground mt-1 text-center">
-              {quantidadeTotal
-                ? `${quantidadeTotal.toLocaleString("pt-BR")}g = ${parseFloat((quantidadeTotal / 1000).toFixed(3)).toString().replace(".", ",")} kg`
-                : "ex: 11.500g = 11,5 kg"}
-            </p>
-          </div>
-          {/* Right: Porções */}
-          <div>
-            <Label className="text-sm font-semibold">Quantas porções?</Label>
-            <div className="flex items-center gap-2 mt-1">
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePorcoesChange(Math.max(1, (porcoes || 1) - 1))}>
-                <Minus className="w-4 h-4" />
-              </Button>
-              <Input
-                type="number"
-                min={1}
-                value={porcoes || ""}
-                onChange={(e) => {
-                  const val = Math.max(1, parseInt(e.target.value) || 1);
-                  handlePorcoesChange(val);
-                }}
-                className="text-center text-lg font-bold h-10 flex-1"
-              />
-              <Button variant="outline" size="icon" className="h-10 w-10 shrink-0" onClick={() => handlePorcoesChange((porcoes || 1) + 1)}>
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {fator !== 1 && (
-              <p className="text-xs text-muted-foreground mt-1 text-center">
-                <Badge variant="secondary" className="text-xs">×{fator.toFixed(1)}</Badge>
-              </p>
-            )}
-          </div>
-        </div>
-      </Card>
-
-
+      {/* Escalador da receita: PC × Porções = Total */}
+      <EscaladorReceita
+        pc={perCapitaAtual || 0}
+        porcoes={porcoes}
+        quantidadeTotalG={quantidadeTotal}
+        onChangePC={commitPC}
+        onChangePorcoes={commitPorcoes}
+        onChangeTotalG={commitTotalGrams}
+      />
 
       {/* Ingredients table */}
       <div>
