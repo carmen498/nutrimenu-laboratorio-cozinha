@@ -43,6 +43,7 @@ export default function ReceitaAberta() {
   const qc = useQueryClient();
   const [porcoes, setPorcoes] = useState(null);
   const [quantidadeTotal, setQuantidadeTotal] = useState(null);
+  const [pcLocal, setPcLocal] = useState(null);
   const [showAddIng, setShowAddIng] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showMargin, setShowMargin] = useState(false);
@@ -131,12 +132,6 @@ export default function ReceitaAberta() {
   });
 
   useEffect(() => {
-    if (receita && porcoes === null) {
-      setPorcoes(receita.porcoes_base || 1);
-    }
-  }, [receita]);
-
-  useEffect(() => {
     if (receita && receita.rendimento_total > 0 && pdpValue === "") {
       setPdpValue(String(receita.rendimento_total));
     }
@@ -201,36 +196,56 @@ export default function ReceitaAberta() {
     return { g: sug, medida: info?.medida || "" };
   }, [receita]);
 
-  const perCapitaAtual = receita?.per_capita_g || perCapitaSugerido?.g || null;
+  // Estado inicial do escalador: DESCREVE a receita cadastrada (rendimento PDP + PC gravado),
+  // nunca escala nada por conta própria.
+  const estadoInicialEscala = useMemo(() => {
+    if (!receita) return null;
+    const pcInit = receita.per_capita_g || perCapitaSugerido?.g || 0;
+    const totalInit = receita.rendimento_total || 0;
+    const porcoesInit = pcInit > 0 && totalInit > 0
+      ? +(totalInit / pcInit).toFixed(1)
+      : (receita.porcoes_base || 1);
+    return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
+  }, [receita, perCapitaSugerido]);
 
-  // Inicializa a quantidade total (PC × porções) assim que os dados carregam
+  // Inicializa o escalador uma única vez (por abertura da ficha) com o estado inicial
   useEffect(() => {
-    if (receita && porcoes !== null && quantidadeTotal === null && perCapitaAtual > 0) {
-      setQuantidadeTotal(Math.round(perCapitaAtual * porcoes));
+    if (estadoInicialEscala && pcLocal === null) {
+      setPcLocal(estadoInicialEscala.pc);
+      setQuantidadeTotal(estadoInicialEscala.quantidadeTotal);
+      setPorcoes(estadoInicialEscala.porcoes);
     }
-  }, [receita, porcoes, perCapitaAtual, quantidadeTotal]);
+  }, [estadoInicialEscala, pcLocal]);
 
-  // Escalador: PC é a âncora, nunca recalculado automaticamente
-  const commitPC = async (newPC) => {
+  // Escala é efêmera (somente visualização) — nunca grava na receita
+  const commitPC = (newPC) => {
     const val = Math.max(1, Math.round(newPC));
+    setPcLocal(val);
     setQuantidadeTotal(Math.round(val * (porcoes || 1)));
-    await base44.entities.Receita.update(id, { per_capita_g: val });
-    qc.invalidateQueries({ queryKey: ["receita", id] });
   };
 
   const commitPorcoes = (newPorcoes) => {
     const val = Math.max(1, Math.round(newPorcoes));
     setPorcoes(val);
-    const pc = perCapitaAtual || 0;
+    const pc = pcLocal || 0;
     if (pc > 0) setQuantidadeTotal(Math.round(val * pc));
   };
 
   const commitTotalGrams = (grams) => {
     const g = Math.max(0, Math.round(grams));
     setQuantidadeTotal(g);
-    const pc = perCapitaAtual || 0;
+    const pc = pcLocal || 0;
     if (pc > 0) setPorcoes(Math.max(0, Math.floor(g / pc)));
   };
+
+  const handleRestaurarEscala = () => {
+    if (!estadoInicialEscala) return;
+    setPcLocal(estadoInicialEscala.pc);
+    setQuantidadeTotal(estadoInicialEscala.quantidadeTotal);
+    setPorcoes(estadoInicialEscala.porcoes);
+  };
+
+  const isEscalado = !!(estadoInicialEscala && Math.abs((quantidadeTotal || 0) - (estadoInicialEscala.quantidadeTotal || 0)) > 0.5);
 
   const handleSavePreparo = async () => {
     try {
@@ -968,12 +983,14 @@ REGRAS:
 
       {/* Escalador da receita: PC × Porções = Total */}
       <EscaladorReceita
-        pc={perCapitaAtual || 0}
+        pc={pcLocal || 0}
         porcoes={porcoes}
         quantidadeTotalG={quantidadeTotal}
         onChangePC={commitPC}
         onChangePorcoes={commitPorcoes}
         onChangeTotalG={commitTotalGrams}
+        isEscalado={isEscalado}
+        onRestore={handleRestaurarEscala}
       />
 
       {/* Ingredients table */}

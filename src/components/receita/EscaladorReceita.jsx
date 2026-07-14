@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, RotateCcw } from "lucide-react";
 
 function useSyncedText(value, formatFn) {
   const [text, setText] = useState(formatFn(value));
@@ -58,11 +58,22 @@ const parseDecimal = (t) => {
   return isNaN(n) ? null : n;
 };
 
-export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChangePC, onChangePorcoes, onChangeTotalG }) {
+export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChangePC, onChangePorcoes, onChangeTotalG, isEscalado, onRestore }) {
   const totalKg = (quantidadeTotalG || 0) / 1000;
 
   return (
     <div className="rounded-xl border bg-card p-4">
+      {isEscalado && (
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={onRestore}
+            className="text-xs text-muted-foreground hover:text-primary underline flex items-center gap-1"
+            title="Descartar a escala e voltar aos valores cadastrados da receita"
+          >
+            <RotateCcw className="w-3 h-3" /> Restaurar original
+          </button>
+        </div>
+      )}
       <div className="flex items-stretch gap-2">
         <StepCard
           label="PC recomendado"
@@ -81,8 +92,8 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           step={1}
           onStep={(delta) => onChangePorcoes(Math.max(1, (porcoes || 0) + delta))}
           onCommit={(v) => onChangePorcoes(Math.max(1, Math.round(v)))}
-          formatDisplay={(v) => (v > 0 ? String(Math.round(v)) : "")}
-          parseInput={(t) => { const n = parseInt(t, 10); return isNaN(n) ? null : n; }}
+          formatDisplay={(v) => (v > 0 ? (Number.isInteger(v) ? String(v) : v.toFixed(1).replace(".", ",")) : "")}
+          parseInput={parseDecimal}
         />
         <div className="flex items-center justify-center px-1 text-xl font-bold text-muted-foreground">=</div>
         <StepCard
@@ -94,7 +105,7 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           highlight
           onStep={(delta) => onChangeTotalG(Math.max(0, (quantidadeTotalG || 0) + delta * 1000))}
           onCommit={(v) => onChangeTotalG(Math.max(0, Math.round(v * 1000)))}
-          formatDisplay={(v) => (v > 0 ? v.toFixed(1).replace(".", ",") : "")}
+          formatDisplay={(v) => (v > 0 ? (v < 1 ? v.toFixed(2).replace(".", ",") : v.toFixed(1).replace(".", ",")) : "")}
           parseInput={parseDecimal}
         />
       </div>
