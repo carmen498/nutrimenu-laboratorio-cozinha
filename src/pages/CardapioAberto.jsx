@@ -54,6 +54,8 @@ const UNIDADE_LABEL = {
 
 const TIPOS_COM_DIAS = ["diario", "semanal", "fim_de_semana"];
 
+function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
+
 const INSUMOS_SUGESTOES = {
   marmitas: [{ nome: "Marmita descartável", unidade: "un", preco_unitario: 0 }],
   happy_hour: [
@@ -449,6 +451,11 @@ export default function CardapioAberto() {
             {temDias && diasUsados.length > 0 && (
               <CardapioSeletorDia dias={diasUsados} value={filtroDia} onChange={setFiltroDia} />
             )}
+            <span className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">
+                {fmtRs(num > 0 ? calcs.custoReceitas / num : 0)}
+              </span> · custo por {isBuffet ? "un" : "pessoa"}
+            </span>
           </div>
         </div>
         {isBuffet && (

@@ -118,14 +118,13 @@ export default function EtapaCardapioTabela({
             );
           })
         )}
-        {/* Linha de total: última linha da tabela */}
+        {/* Linha de total: mesma grade de colunas das linhas de prato (flex-1 | w-20 | w-20 | w-20 | w-14) */}
         <div className="flex items-center gap-3 px-3 py-3 border-t-2 border-border bg-secondary/50">
           <div className="flex-1 min-w-0 text-sm font-semibold">Total</div>
           <div className="w-20 shrink-0" />
           <div className="w-20 text-right shrink-0 text-sm font-semibold">{fmtKg(totalKgGeral)}</div>
-          <div className="text-right shrink-0 text-sm font-semibold whitespace-nowrap">
-            {fmtRs(custoTotal)}
-          </div>
+          <div className="w-20 text-right shrink-0 text-sm font-semibold whitespace-nowrap">{fmtRs(custoTotal)}</div>
+          <div className="w-14 shrink-0" />
         </div>
       </div>
 

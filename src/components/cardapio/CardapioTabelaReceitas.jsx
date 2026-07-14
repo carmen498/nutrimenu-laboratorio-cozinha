@@ -51,7 +51,6 @@ export default function CardapioTabelaReceitas({
     .filter(s => s.itens.length > 0), [categorias, filtradas]);
 
   const totalKg = receitas.reduce((s, r) => s + kgOf(r), 0);
-  const custoPorPessoa = num > 0 ? custoReceitasTotal / num : 0;
   const pcSuffix = isBuffet ? "kg/un" : `g/${cardapioTipo === "marmitas" ? "marm" : "pessoa"}`;
 
   const handleSelect = (id) => setSelectedId(prev => prev === id ? null : id);
@@ -126,16 +125,14 @@ export default function CardapioTabelaReceitas({
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* Rodapé */}
-      {receitas.length > 0 && (
-        <div className="flex items-center justify-between px-3 py-3 mt-2 bg-secondary/40 rounded-lg text-sm">
-          <span className="font-semibold">Total · {num} {isBuffet ? "kg/un" : "pessoas"}</span>
-          <span className="font-semibold text-right">
-            {fmtKg(totalKg)} · {fmtRs(custoReceitasTotal)} ({fmtRs(custoPorPessoa)}/{isBuffet ? "un" : "pessoa"})
-          </span>
+          {/* Linha de total: mesma grade de colunas das linhas de receita (flex-1 | w-20 | w-20 | w-20 | w-14) */}
+          <div className="flex items-center gap-3 px-3 py-3 border-t-2 border-border bg-secondary/50">
+            <div className="flex-1 min-w-0 text-sm font-semibold">Total</div>
+            <div className="w-20 shrink-0" />
+            <div className="w-20 text-right shrink-0 text-sm font-semibold">{fmtKg(totalKg)}</div>
+            <div className="w-20 text-right shrink-0 text-sm font-semibold whitespace-nowrap">{fmtRs(custoReceitasTotal)}</div>
+            <div className="w-14 shrink-0" />
+          </div>
         </div>
       )}
 
