@@ -1,20 +1,25 @@
 import { useState, useRef, useEffect } from "react";
-import CardapioSecaoLinha from "@/components/cardapio/CardapioSecaoLinha";
+import { Plus, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import CardapioPratoLinha from "@/components/cardapio/CardapioPratoLinha";
 
 function fmtKg(v) { return (v || 0).toFixed(2).replace(".", ",") + " kg"; }
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
+function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
 
-// Reutiliza CardapioSecaoLinha + CardapioPratoLinha (mesma tabela da Parte 1),
-// mas com % de seção editável (gravado em grupo.percentual) e sem filtro de dia
-// (o Evento não tem dimensão de dia por item).
+// Tabela de pratos do Evento (Etapa 3): apenas lista de pratos, sem faixas de seção
+// nem % de distribuição — seções servem só como rótulo/filtro. Coluna "% custo"
+// mostra a participação do prato no custo total do evento.
 export default function EtapaCardapioTabela({
-  gruposCalc, totalPessoas, custoTotal, filtroDia = "todos",
-  onUpdateItem, onRemoveItem, onMoveItem, onOpenAddReceita,
-  onChangePct, onChangeNomeSecao, onRemoveSecao,
+  gruposCalc, totalPessoas, custoTotal, margemEvento = 0, filtroDia = "todos",
+  onUpdateItem, onRemoveItem, onMoveItem, onAddPrato,
 }) {
   const [filtroSecao, setFiltroSecao] = useState("todas");
   const [selectedKey, setSelectedKey] = useState(null);
+  const [avisoExpandido, setAvisoExpandido] = useState(false);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -27,13 +32,28 @@ export default function EtapaCardapioTabela({
 
   const handleSelect = (id) => setSelectedKey(prev => prev === id ? null : id);
 
-  const secoesVisiveis = gruposCalc.filter(g => filtroSecao === "todas" || g.nome === filtroSecao);
   const totalKgGeral = gruposCalc.reduce((s, g) => s + g.actualKg, 0);
   const custoPorPessoa = totalPessoas > 0 ? custoTotal / totalPessoas : 0;
 
+  const pratosSemCusto = gruposCalc.flatMap(g => g.itens).filter(i => i.sem_custo && i.receita_id);
+
+  const secoesVisiveis = gruposCalc.filter(g => filtroSecao === "todas" || g.nome === filtroSecao);
+  const linhas = [];
+  secoesVisiveis.forEach(g => {
+    const grupoIdx = gruposCalc.indexOf(g);
+    g.itens.forEach((item, ii) => {
+      if (filtroDia !== "todos" && item.dia_semana !== filtroDia) return;
+      linhas.push({ item, grupoIdx, ii, key: `${grupoIdx}-${ii}` });
+    });
+  });
+
+  const secaoAtiva = filtroSecao !== "todas" ? gruposCalc.find(g => g.nome === filtroSecao) : null;
+  const custoSecao = secaoAtiva ? secaoAtiva.itens.reduce((s, i) => s + i.custo, 0) : 0;
+  const pctSecao = secaoAtiva && custoTotal > 0 ? (custoSecao / custoTotal) * 100 : 0;
+
   return (
     <div ref={rootRef}>
-      {/* Chips de seção */}
+      {/* Chips de seção (apenas filtro/organização, sem números) */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         <button
           onClick={() => setFiltroSecao("todas")}
@@ -55,75 +75,95 @@ export default function EtapaCardapioTabela({
       {/* Cabeçalho de colunas */}
       <div className="hidden sm:flex items-center gap-3 px-3 pb-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
         <div className="flex-1">Prato</div>
-        <div className="w-20 text-center">PC (g)</div>
+        <div className="w-20 text-center">PC g/p</div>
         <div className="w-20 text-right">kg</div>
         <div className="w-20 text-right">R$</div>
-        <div className="w-14 text-right">%</div>
+        <div className="w-14 text-right">% custo</div>
       </div>
 
-      {secoesVisiveis.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">Nenhuma seção encontrada.</p>
+      {linhas.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">Nenhum prato adicionado ainda.</p>
       ) : (
         <div className="rounded-lg border border-border overflow-hidden">
-          {secoesVisiveis.map((g) => {
-            const grupoIdx = gruposCalc.indexOf(g);
+          {linhas.map(({ item, grupoIdx, ii, key }) => {
+            const pct = custoTotal > 0 ? (item.custo / custoTotal) * 100 : 0;
             return (
-              <div key={g.nome + grupoIdx}>
-                <CardapioSecaoLinha
-                  nome={g.nome}
-                  kg={g.actualKg}
-                  pct={g.percentual}
-                  editablePct
-                  onChangePct={(v) => onChangePct(grupoIdx, v)}
-                  onChangeNome={(v) => onChangeNomeSecao(grupoIdx, v)}
-                  onRemoveSection={() => onRemoveSecao(grupoIdx)}
-                  onAddItem={() => onOpenAddReceita(grupoIdx)}
-                />
-                {(() => {
-                  const itensVisiveis = g.itens.filter(i => filtroDia === "todos" || i.dia_semana === filtroDia);
-                  if (itensVisiveis.length === 0) {
-                    return <p className="text-xs text-muted-foreground text-center py-2">Nenhum item nesta seção.</p>;
-                  }
-                  return g.itens.map((item, ii) => {
-                    if (filtroDia !== "todos" && item.dia_semana !== filtroDia) return null;
-                    const key = `${grupoIdx}-${ii}`;
-                    const pct = custoTotal > 0 ? (item.custo / custoTotal) * 100 : 0;
-                    return (
-                      <CardapioPratoLinha
-                        key={key}
-                        rec={{
-                          id: key,
-                          receita_id: item.receita_id,
-                          receita_nome: item.receita_nome,
-                          per_capita_g: item.pc_g,
-                          custo_total: item.custo,
-                        }}
-                        pcSuffix="g/pessoa"
-                        kg={item.qtd_kg}
-                        pct={pct}
-                        semCusto={item.sem_custo}
-                        selected={selectedKey === key}
-                        onSelect={handleSelect}
-                        onUpdatePC={(val) => onUpdateItem(grupoIdx, ii, { pc_g: val })}
-                        onRemove={() => onRemoveItem(grupoIdx, ii)}
-                        onMoveUp={() => onMoveItem(grupoIdx, ii, -1)}
-                        onMoveDown={() => onMoveItem(grupoIdx, ii, 1)}
-                        canMoveUp={ii > 0}
-                        canMoveDown={ii < g.itens.length - 1}
-                        temDias={false}
-                      />
-                    );
-                  });
-                })()}
-              </div>
+              <CardapioPratoLinha
+                key={key}
+                rec={{
+                  id: key,
+                  receita_id: item.receita_id,
+                  receita_nome: item.receita_nome,
+                  per_capita_g: item.pc_g,
+                  custo_total: item.custo,
+                }}
+                pcSuffix="g/pessoa"
+                kg={item.qtd_kg}
+                pct={pct}
+                semCusto={item.sem_custo}
+                selected={selectedKey === key}
+                onSelect={handleSelect}
+                onUpdatePC={(val) => onUpdateItem(grupoIdx, ii, { pc_g: val })}
+                onRemove={() => onRemoveItem(grupoIdx, ii)}
+                onMoveUp={() => onMoveItem(grupoIdx, ii, -1)}
+                onMoveDown={() => onMoveItem(grupoIdx, ii, 1)}
+                canMoveUp={ii > 0}
+                canMoveDown={ii < (gruposCalc[grupoIdx]?.itens.length || 0) - 1}
+                temDias={false}
+              />
             );
           })}
         </div>
       )}
 
+      {/* Botão único: Adicionar prato (pergunta a seção de destino) */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="w-full gap-1 border-dashed mt-2">
+            <Plus className="w-4 h-4" /> Adicionar prato
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          {gruposCalc.map((g, gi) => (
+            <DropdownMenuItem key={g.nome + gi} onClick={() => onAddPrato(gi)}>{g.nome}</DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Aviso consolidado de custo */}
+      {pratosSemCusto.length > 0 && (
+        <div className="mt-2">
+          <button
+            onClick={() => setAvisoExpandido(v => !v)}
+            className="w-full flex items-center gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-left"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+            <span className="flex-1">
+              ⚠ {pratosSemCusto.length} {pratosSemCusto.length === 1 ? "prato" : "pratos"} sem custo completo · ver detalhes
+            </span>
+            {avisoExpandido ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+          {avisoExpandido && (
+            <div className="px-3 py-2 text-xs text-amber-800 bg-amber-50/60 border-x border-b border-amber-200 rounded-b-lg space-y-0.5">
+              {pratosSemCusto.map((i, idx) => (
+                <div key={idx}>{i.receita_nome}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Faixa-resumo da seção filtrada */}
+      {secaoAtiva && (
+        <div className="flex items-center justify-between px-3 py-2 mt-2 bg-primary/5 border border-primary/20 rounded-lg text-sm">
+          <span className="font-medium">{secaoAtiva.nome}</span>
+          <span className="font-semibold">{fmtRs(custoSecao)} · {fmtPct(pctSecao)} do custo do evento</span>
+        </div>
+      )}
+
       {/* Rodapé */}
       <div className="flex items-center justify-between px-3 py-3 mt-2 bg-secondary/40 rounded-lg text-sm">
-        <span className="font-semibold">Total · {totalPessoas} pessoas</span>
+        <span className="font-semibold">Total do evento · {totalPessoas} pessoas · margem {margemEvento}%</span>
         <span className="font-semibold text-right">
           {fmtKg(totalKgGeral)} · {fmtRs(custoTotal)} ({fmtRs(custoPorPessoa)}/pessoa)
         </span>

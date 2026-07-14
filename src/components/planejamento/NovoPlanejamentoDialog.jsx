@@ -38,6 +38,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
   // Etapa 3 — Cardápio
   const [cardapioConfig, setCardapioConfig] = useState(null);
+  const [margemEvento, setMargemEvento] = useState(0);
   // Etapa 4 — Doces & Bebidas (estado lifted — compartilhado entre Etapa 3 e 4)
   const [docesBebidas, setDocesBebidas] = useState([]);
   // Grupos config recebido da EtapaCardapio (necessário para salvar na Etapa 4)
@@ -64,6 +65,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setPcMulheres(planejamentoEdicao.per_capita_mulheres_g || 400);
       setPcCriancas(planejamentoEdicao.per_capita_criancas_g || 300);
       setMargem(planejamentoEdicao.margem_seguranca_pct || 20);
+      setMargemEvento(planejamentoEdicao.margem_seguranca_evento_pct || 0);
       // Carregar cardápio salvo
       if (planejamentoEdicao.cardapio_config) {
         try {
@@ -82,6 +84,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setHorario(""); setDuracao("");
       setHomens(0); setMulheres(0); setCriancas(0);
       setPcHomens(600); setPcMulheres(400); setPcCriancas(300); setMargem(20);
+      setMargemEvento(0);
       setCardapioConfig(null);
       setDocesBebidas([]);
       setGruposConfig([]);
@@ -133,6 +136,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
     per_capita_mulheres_g: pcMulheres,
     per_capita_criancas_g: pcCriancas,
     margem_seguranca_pct: margem,
+    margem_seguranca_evento_pct: margemEvento,
     total_base_kg: parseFloat(totalBaseKg.toFixed(2)),
     total_com_margem_kg: parseFloat(totalComMargemKg.toFixed(2)),
     total_pessoas: totalPessoas,
@@ -389,9 +393,10 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
 
         {etapa === 3 && (
           <EtapaCardapio
-            totalComMargemKg={totalComMargemKg}
             totalPessoas={totalPessoas}
             cardapioConfig={cardapioConfig}
+            margemEvento={margemEvento}
+            onMargemEventoChange={setMargemEvento}
             onSalvar={handleSalvar}
             onGerarListaCompras={handleGerarListaCompras}
             onVoltar={() => setEtapa(2)}

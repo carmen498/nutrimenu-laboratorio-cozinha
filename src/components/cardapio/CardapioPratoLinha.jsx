@@ -28,7 +28,6 @@ export default function CardapioPratoLinha({
             {rec.receita_nome?.toUpperCase?.() || rec.receita_nome}
           </Link>
           {descritivo && <p className="text-xs text-muted-foreground italic truncate">{descritivo}</p>}
-          {semCusto && <p className="text-[10px] text-amber-600">sem custo cadastrado</p>}
         </div>
         <div className="shrink-0 w-20 text-center" onClick={e => e.stopPropagation()}>
           <Input

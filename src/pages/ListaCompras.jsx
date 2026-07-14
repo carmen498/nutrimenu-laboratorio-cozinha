@@ -36,6 +36,7 @@ export default function ListaCompras() {
   const [planejamentoOrigem, setPlanejamentoOrigem] = useState(null);
   const [docesBebidas, setDocesBebidas] = useState([]);
   const [totalPessoasEvento, setTotalPessoasEvento] = useState(0);
+  const [margemEventoPct, setMargemEventoPct] = useState(0);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
@@ -74,6 +75,7 @@ export default function ListaCompras() {
       setPlanejamentoOrigem(planejamentoId);
       base44.entities.Planejamento.get(planejamentoId).then(p => {
         setTotalPessoasEvento(p.total_pessoas || 0);
+        setMargemEventoPct(p.margem_seguranca_evento_pct || 0);
         if (!p?.cardapio_config) return;
         try {
           const config = typeof p.cardapio_config === "string"
@@ -253,6 +255,11 @@ export default function ListaCompras() {
           {margemSeguranca > 0 && (
             <span className="text-xs text-muted-foreground">
               Quantidades ajustadas com +{margemSeguranca}%
+            </span>
+          )}
+          {planejamentoOrigem && (
+            <span className="text-xs text-muted-foreground w-full">
+              Quantidades já incluem {margemEventoPct}% de margem do evento.
             </span>
           )}
           {Object.keys(comprarManual).length > 0 && (
