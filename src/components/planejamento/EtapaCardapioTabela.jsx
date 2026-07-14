@@ -86,11 +86,11 @@ export default function EtapaCardapioTabela({
         <div className="w-14 text-right">% custo</div>
       </div>
 
-      {linhas.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">Nenhum prato adicionado ainda.</p>
-      ) : (
-        <div className="rounded-lg border border-border overflow-hidden">
-          {linhas.map(({ item, grupoIdx, ii, key }) => {
+      <div className="rounded-lg border border-border overflow-hidden">
+        {linhas.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Nenhum prato adicionado ainda.</p>
+        ) : (
+          linhas.map(({ item, grupoIdx, ii, key }) => {
             const pct = custoTotal > 0 ? (item.custo / custoTotal) * 100 : 0;
             return (
               <CardapioPratoLinha
@@ -117,9 +117,18 @@ export default function EtapaCardapioTabela({
                 temDias={false}
               />
             );
-          })}
+          })
+        )}
+        {/* Linha de total: última linha da tabela */}
+        <div className="flex items-center gap-3 px-3 py-3 border-t-2 border-border bg-secondary/50">
+          <div className="flex-1 min-w-0 text-sm font-semibold">Total</div>
+          <div className="w-20 shrink-0" />
+          <div className="w-20 text-right shrink-0 text-sm font-semibold">{fmtKg(totalKgGeral)}</div>
+          <div className="text-right shrink-0 text-sm font-semibold whitespace-nowrap">
+            {fmtRs(custoTotal)} ({fmtRs(custoPorPessoa)}/pessoa)
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Botão único: Adicionar prato (pergunta a seção de destino) */}
       <DropdownMenu>
@@ -157,14 +166,6 @@ export default function EtapaCardapioTabela({
           )}
         </div>
       )}
-
-      {/* Rodapé: única linha de total */}
-      <div className="flex items-center justify-between px-3 py-3 mt-2 bg-secondary/40 rounded-lg text-sm">
-        <span className="font-semibold">Total do evento · {totalPessoas} pessoas · margem {margemEvento}%</span>
-        <span className="font-semibold text-right">
-          {fmtKg(totalKgGeral)} · {fmtRs(custoTotal)} ({fmtRs(custoPorPessoa)}/pessoa)
-        </span>
-      </div>
     </div>
   );
 }
