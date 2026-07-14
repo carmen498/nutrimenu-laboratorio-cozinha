@@ -1,12 +1,12 @@
 export const CORES_RECEITA = {
-  branco_bege: { label: "Branco/Bege", hex: "#F0E6D2" },
-  amarelo: { label: "Amarelo", hex: "#FFD54F" },
-  laranja: { label: "Laranja", hex: "#FF8A65" },
-  vermelho: { label: "Vermelho", hex: "#E53935" },
-  verde: { label: "Verde", hex: "#66BB6A" },
-  marrom_dourado: { label: "Marrom/Dourado", hex: "#8D6E63" },
-  roxo_rosa: { label: "Roxo/Rosa", hex: "#C477B0" },
-  preto_escuro: { label: "Preto/Escuro", hex: "#37474F" },
+  verde: { label: "Verde", hex: "#4E7C4A" },
+  vermelho: { label: "Vermelho", hex: "#B33A3A" },
+  laranja: { label: "Laranja", hex: "#D97B2E" },
+  amarelo: { label: "Amarelo", hex: "#E0B33C" },
+  marrom_dourado: { label: "Marrom/Dourado", hex: "#8A5A33" },
+  branco_creme: { label: "Branco/Creme", hex: "#F0E8D8" },
+  rose: { label: "Rosé", hex: "#E8909F" },
+  roxo: { label: "Roxo", hex: "#6B4A78" },
 };
 
 export const CORES_RECEITA_LIST = Object.entries(CORES_RECEITA).map(([key, val]) => ({
@@ -14,7 +14,7 @@ export const CORES_RECEITA_LIST = Object.entries(CORES_RECEITA).map(([key, val])
   ...val,
 }));
 
-export const COR_SEM_COR = "#D6D3D1";
+export const COR_SEM_COR = "#D5D2C8";
 
 export function getCorHex(key) {
   return CORES_RECEITA[key]?.hex || COR_SEM_COR;

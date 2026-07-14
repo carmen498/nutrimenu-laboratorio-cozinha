@@ -82,7 +82,7 @@ export default function BarraCoresCardapio({ gruposCalc, receitaMap }) {
         {segments.map((seg) => (
           <div
             key={seg.key}
-            className="transition-all duration-300"
+            className={`transition-all duration-300 ${seg.key === "branco_creme" ? "border-r border-l border-black/15" : ""}`}
             style={{ width: `${seg.pct}%`, backgroundColor: seg.color }}
             title={`${seg.label}: ${seg.count} (${seg.pct.toFixed(0)}%)`}
           />

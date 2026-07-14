@@ -99,16 +99,16 @@
     "cor_predominante": {
       "type": "string",
       "enum": [
-        "branco_bege",
-        "amarelo",
-        "laranja",
-        "vermelho",
         "verde",
+        "vermelho",
+        "laranja",
+        "amarelo",
         "marrom_dourado",
-        "roxo_rosa",
-        "preto_escuro"
+        "branco_creme",
+        "rose",
+        "roxo"
       ],
-      "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio"
+      "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio (vazio = sem cor)"
     }
   },
   "required": [
