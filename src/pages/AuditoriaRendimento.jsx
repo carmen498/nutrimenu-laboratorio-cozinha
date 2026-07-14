@@ -1,17 +1,26 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, Link as LinkIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, AlertTriangle, Link as LinkIcon, Wand2, History } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
 
-// Relatório SOMENTE LEITURA — não altera nenhum dado.
-// Sinaliza receitas com rendimento_total suspeito (provável erro de unidade, ex: kg em vez de g):
+// Relatório de rendimento_total suspeito (provável erro de unidade, ex: kg em vez de g):
 // - rendimento_total < 100 (quase certamente gravado em kg)
 // - rendimento_total < soma dos pesos dos próprios ingredientes (não pode ser menor que os insumos que a compõem)
+// O botão "Corrigir rendimentos" ajusta rendimento_total = soma dos ingredientes para
+// toda receita com rendimento zerado ou menor que a soma dos insumos (ver função
+// corrigirRendimentoReceitas). Cada correção gera um registro persistente em
+// CorrecaoRendimentoLog, exibido abaixo.
 
 export default function AuditoriaRendimento() {
+  const [corrigindo, setCorrigindo] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: receitas = [], isLoading: l1 } = useQuery({
     queryKey: ["receitas"],
     queryFn: () => base44.entities.Receita.list("-nome", 2000),
@@ -20,6 +29,11 @@ export default function AuditoriaRendimento() {
   const { data: itens = [], isLoading: l2 } = useQuery({
     queryKey: ["ingredientesReceitaTodos"],
     queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 5000),
+  });
+
+  const { data: logs = [], isLoading: l3 } = useQuery({
+    queryKey: ["correcaoRendimentoLog"],
+    queryFn: () => base44.entities.CorrecaoRendimentoLog.list("-created_date", 500),
   });
 
   const isLoading = l1 || l2;
@@ -49,6 +63,27 @@ export default function AuditoriaRendimento() {
       .sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
   }, [receitas, somaPorReceita]);
 
+  const handleCorrigir = async () => {
+    setCorrigindo(true);
+    try {
+      const res = await base44.functions.invoke("corrigirRendimentoReceitas", {});
+      const { total_corrigido = 0 } = res?.data || {};
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["receitas"] }),
+        queryClient.invalidateQueries({ queryKey: ["ingredientesReceitaTodos"] }),
+        queryClient.invalidateQueries({ queryKey: ["correcaoRendimentoLog"] }),
+      ]);
+      toast({
+        title: "Correção concluída",
+        description: `${total_corrigido} receita${total_corrigido !== 1 ? "s" : ""} corrigida${total_corrigido !== 1 ? "s" : ""}. Veja o relatório abaixo.`,
+      });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Erro ao corrigir", description: error.message });
+    } finally {
+      setCorrigindo(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -59,15 +94,20 @@ export default function AuditoriaRendimento() {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      <div>
-        <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-          <AlertTriangle className="w-6 h-6 text-amber-500" />
-          Auditoria de Rendimento
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Relatório apenas leitura. Lista receitas com rendimento_total suspeito (possível erro de unidade — kg em vez de g).
-          Nenhum dado é alterado aqui.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-bold flex items-center gap-2">
+            <AlertTriangle className="w-6 h-6 text-amber-500" />
+            Auditoria de Rendimento
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Lista receitas com rendimento_total suspeito (possível erro de unidade — kg em vez de g).
+          </p>
+        </div>
+        <Button onClick={handleCorrigir} disabled={corrigindo} className="gap-2">
+          {corrigindo ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+          Corrigir rendimentos
+        </Button>
       </div>
 
       <Badge variant="outline" className="text-xs">{suspeitas.length} receita{suspeitas.length !== 1 ? "s" : ""} suspeita{suspeitas.length !== 1 ? "s" : ""}</Badge>
@@ -99,6 +139,41 @@ export default function AuditoriaRendimento() {
           ))}
         </div>
       )}
+
+      <div className="pt-4">
+        <h2 className="font-display text-lg font-bold flex items-center gap-2">
+          <History className="w-5 h-5 text-primary" />
+          Relatório de Correções (persistente)
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1 mb-2">
+          Histórico de toda correção de rendimento_total já aplicada, com valores antes e depois.
+        </p>
+
+        {l3 ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+        ) : logs.length === 0 ? (
+          <Card className="p-6 text-center text-muted-foreground text-sm">Nenhuma correção executada ainda.</Card>
+        ) : (
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="hidden sm:flex items-center gap-3 px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide bg-secondary/50">
+              <div className="flex-1">Receita</div>
+              <div className="w-28 text-right">Antes</div>
+              <div className="w-28 text-right">Depois</div>
+              <div className="w-40 text-right">Data/hora</div>
+            </div>
+            {logs.map(log => (
+              <div key={log.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 px-3 py-2.5 border-t border-border">
+                <div className="flex-1 min-w-0 text-sm font-medium">{log.receita_nome}</div>
+                <div className="w-full sm:w-28 text-right text-sm text-muted-foreground">{Number(log.rendimento_anterior).toLocaleString("pt-BR")} g</div>
+                <div className="w-full sm:w-28 text-right text-sm font-semibold">{Number(log.rendimento_novo).toLocaleString("pt-BR")} g</div>
+                <div className="w-full sm:w-40 text-right text-xs text-muted-foreground">
+                  {log.created_date ? new Date(log.created_date).toLocaleString("pt-BR") : "-"}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
