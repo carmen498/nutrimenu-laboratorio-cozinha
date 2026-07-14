@@ -35,7 +35,7 @@ import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
-import { getCorHex, getCorLabel } from "@/lib/coresReceita";
+import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -924,12 +924,12 @@ REGRAS:
                 Rendimento (PDP): {formatWeight(receita.rendimento_total, receita.unidade_base)}
               </span>
             )}
-            <div className="flex items-center gap-1.5" title={getCorLabel(receita.cor_predominante)}>
+            <div className="flex items-center gap-1.5" title={getCorLabelCompleto(receita.cor_predominante)}>
               <span
                 className="w-4 h-4 rounded-full border border-black/15 shrink-0"
                 style={{ backgroundColor: getCorHex(receita.cor_predominante) }}
               />
-              <span className="text-xs text-muted-foreground">{getCorLabel(receita.cor_predominante)}</span>
+              <span className="text-xs text-muted-foreground">{getCorLabelCompleto(receita.cor_predominante)}</span>
             </div>
           </div>
           {/* Line 3: Tags */}
