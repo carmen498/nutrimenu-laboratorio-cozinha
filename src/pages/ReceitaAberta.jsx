@@ -1045,7 +1045,7 @@ REGRAS:
               Ordenar por preparo
             </Button>
             <Button size="sm" variant="outline" onClick={() => setShowMedidasReceita(true)}>
-              <Scale className="w-4 h-4 mr-1" /> Medida Caseira
+              <Scale className="w-4 h-4 mr-1" /> Cadastrar medidas
             </Button>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
               <Switch checked={mostrarFC} onCheckedChange={handleToggleFC} className="scale-90" />
