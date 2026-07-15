@@ -125,7 +125,9 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
               onChange={(e) => setSoGramas(e.target.checked)}
               className="w-4 h-4 rounded"
             />
-            <span className="text-sm">Só gramas (conversor nunca exibe medida caseira para este alimento)</span>
+            <span className="text-sm" title="Marcado, este ingrediente mostra apenas o peso em g; a medida caseira não é exibida nas fichas.">
+              Exibir só gramas (oculta a medida caseira)
+            </span>
           </label>
         </div>
         <DialogFooter>

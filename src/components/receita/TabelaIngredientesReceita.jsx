@@ -290,7 +290,11 @@ export default function TabelaIngredientesReceita({
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-muted-foreground/50">—</span>
                         {item.ing && (
-                          <button className="text-muted-foreground/60 hover:text-primary" onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(null); }} title="Cadastrar medida caseira">
+                          <button
+                            className="text-muted-foreground/60 hover:text-primary"
+                            onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(medidaByIngrediente[item.ing.id] || null); }}
+                            title={medidaByIngrediente[item.ing.id] ? "Editar utensílio/referência" : "Cadastrar medida caseira"}
+                          >
                             <Pencil className="w-3 h-3" />
                           </button>
                         )}

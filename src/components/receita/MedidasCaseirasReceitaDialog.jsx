@@ -120,7 +120,7 @@ export default function MedidasCaseirasReceitaDialog({
             <div className="col-span-4">Ingrediente · Medida atual</div>
             <div className="col-span-5">Utensílio</div>
             <div className="col-span-2 text-center">Ref. (g)</div>
-            <div className="col-span-1 text-center" title="Só gramas">só g</div>
+            <div className="col-span-1 text-center" title="Marcado, este ingrediente mostra apenas o peso em g; a medida caseira não é exibida nas fichas.">só gramas</div>
           </div>
           {itens.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-4">Nenhum ingrediente na receita.</p>
@@ -167,7 +167,7 @@ export default function MedidasCaseirasReceitaDialog({
                     checked={row.soGramas}
                     onChange={e => updateRow(item.ing.id, { soGramas: e.target.checked })}
                     className="w-4 h-4"
-                    title="Só gramas — conversor nunca exibe medida caseira"
+                    title="Marcado, este ingrediente mostra apenas o peso em g; a medida caseira não é exibida nas fichas."
                   />
                 </div>
               </div>
