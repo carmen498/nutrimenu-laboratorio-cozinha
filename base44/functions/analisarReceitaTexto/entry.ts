@@ -64,7 +64,9 @@ Deno.serve(async (req) => {
           categoria = line.slice(line.indexOf(':') + 1).trim();
           continue;
         }
-        if (upperNoAcc.startsWith('PORCAO:') || upperNoAcc.startsWith('PORCOES:')) {
+        // PC: é o campo atual (grava em per_capita_g). PORÇÃO:/PORÇÕES: é o nome
+        // antigo do mesmo campo — mantido como alias, NUNCA como número de porções.
+        if (upperNoAcc.startsWith('PC:') || upperNoAcc.startsWith('PORCAO:') || upperNoAcc.startsWith('PORCOES:')) {
           const val = line.slice(line.indexOf(':') + 1).trim();
           porcao = parseFloat(val.replace(',', '.')) || 0;
           continue;

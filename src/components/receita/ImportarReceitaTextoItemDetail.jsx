@@ -16,7 +16,7 @@ export default function ImportarReceitaTextoItemDetail({ item }) {
           <p className="font-semibold">{CATEGORIAS.includes(item.categoria) ? item.categoria : (item.categoria || "— (Revisar)")}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Porção</p>
+          <p className="text-xs text-muted-foreground">PC</p>
           <p className="font-semibold">{item.porcao ? `${item.porcao}g` : "—"}</p>
         </div>
       </div>

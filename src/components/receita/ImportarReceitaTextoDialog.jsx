@@ -13,7 +13,7 @@ import ImportarReceitaTextoItemDetail from "@/components/receita/ImportarReceita
 
 const PLACEHOLDER = `RECEITA: CONSOMÊ DE CARNE
 CATEGORIA: Sopas e Caldos
-PORÇÃO: 400
+PC: 400
 INGREDIENTES:
 Cebola | picada | 30
 Sal | temperar | 2
@@ -194,7 +194,7 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
                 <ClipboardPaste className="w-5 h-5 text-primary" /> Importar Receita (colar texto)
               </DialogTitle>
               <DialogDescription>
-                Cole uma ou várias receitas no formato estruturado (RECEITA, CATEGORIA, PORÇÃO, INGREDIENTES, MODO DE PREPARO, NOTA).
+                Cole uma ou várias receitas no formato estruturado (RECEITA, CATEGORIA, PC, INGREDIENTES, MODO DE PREPARO, NOTA).
                 Cada linha "RECEITA:" inicia uma nova receita — ou envie um arquivo .txt com o mesmo conteúdo.
               </DialogDescription>
             </DialogHeader>
