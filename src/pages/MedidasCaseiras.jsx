@@ -7,9 +7,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Pencil, Trash2, Upload, Check, X, Utensils } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Upload, Check, X, Utensils, Download } from "lucide-react";
 import { toast } from "sonner";
 import ImportarMedidasDialog from "@/components/medida/ImportarMedidasDialog";
+import { downloadCsv } from "@/lib/exportCsv";
 
 export default function MedidasCaseiras() {
   const [tab, setTab] = useState("utensilios");
@@ -235,6 +236,23 @@ export default function MedidasCaseiras() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setShowImport(true)} className="gap-1">
               <Upload className="w-4 h-4" /> Importar CSV
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => downloadCsv(
+                "medidas_caseiras.csv",
+                ["ingrediente_nome", "utensilio_simbolo", "referencia_g", "medida_pronto_g", "so_gramas"],
+                medidas.map((m) => [
+                  ingMap[m.alimento]?.nome || "",
+                  uteMap[m.utensilio]?.simbolo || "",
+                  m.referencia_g,
+                  m.medida_pronto_g,
+                  m.so_gramas ? "true" : "false",
+                ])
+              )}
+              className="gap-1"
+            >
+              <Download className="w-4 h-4" /> Exportar CSV
             </Button>
             <Button onClick={startNewMedida} className="gap-1">
               <Plus className="w-4 h-4" /> Nova Medida

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power, Tags } from "lucide-react";
+import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power, Tags, Download } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
@@ -16,6 +16,7 @@ import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialo
 import HistoricoAtualizacoesDialog from "@/components/ingrediente/HistoricoAtualizacoesDialog";
 import ExcluirIngredienteDialog from "@/components/ingrediente/ExcluirIngredienteDialog";
 import { exportarIngredientesPDF } from "@/lib/exportarIngredientesPDF";
+import { downloadCsv } from "@/lib/exportCsv";
 import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
 import ImportarSinonimosDialog from "@/components/ingrediente/ImportarSinonimosDialog";
 import ImportarIngredientesDialog from "@/components/ingrediente/ImportarIngredientesDialog";
@@ -268,6 +269,17 @@ export default function Ingredientes() {
           </Button>
           <Button variant="outline" size="sm" onClick={() => exportarIngredientesPDF(ingredientes)}>
             <FileText className="w-4 h-4 mr-1" /> PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadCsv(
+              "ingredientes.csv",
+              ["nome", "categoria", "unidade_compra", "peso_embalagem_g", "preco_embalagem_rs", "preco_por_g_rs", "fator_correcao"],
+              ingredientes.map((i) => [i.nome, i.categoria, i.unidade_compra, i.peso_embalagem_g, i.preco_embalagem_rs, i.preco_por_g_rs, i.fator_correcao])
+            )}
+          >
+            <Download className="w-4 h-4 mr-1" /> Exportar CSV
           </Button>
           <Button variant="outline" size="sm" onClick={() => navigate("/lista-compras")}>
             <ShoppingCart className="w-4 h-4 mr-1" /> Reposição
