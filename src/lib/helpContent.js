@@ -8,7 +8,7 @@ export const helpContent = {
         a: "O ideal é começar cadastrando seus ingredientes em Ingredientes > Novo Ingrediente. Depois, crie suas receitas em Receitas > Nova Receita. Com receitas e ingredientes no sistema, você já pode calcular custos automaticamente e montar cardápios.",
       },
       {
-        q: "O que significa 'Cozinha que se Multiplica'?",
+        q: "O que significa 'Receitas que se Multiplicam'?",
         a: "É o lema do Laboratório de Cozinha: a ideia de que uma receita bem planejada pode ser escalada para qualquer número de pessoas, com custos proporcionais e desperdício zero. O app faz essa multiplicação automaticamente.",
       },
       {
