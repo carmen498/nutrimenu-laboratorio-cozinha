@@ -21,6 +21,7 @@ import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
 import ImportarSinonimosDialog from "@/components/ingrediente/ImportarSinonimosDialog";
 import ImportarIngredientesDialog from "@/components/ingrediente/ImportarIngredientesDialog";
 import SinonimosSection from "@/components/ingrediente/SinonimosSection";
+import RelatorioLotePrecosDialog from "@/components/ingrediente/RelatorioLotePrecosDialog";
 
 const GRUPOS_INGREDIENTES = [
   { nome: "Carnes e Ovos",            icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["Carnes e Ovos"] },
@@ -56,6 +57,7 @@ export default function Ingredientes() {
   const [showFavoritos, setShowFavoritos] = useState(false);
   const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
   const [showHistorico, setShowHistorico] = useState(false);
+  const [showRelatorioLote, setShowRelatorioLote] = useState(false);
   const [buscaInterna, setBuscaInterna] = useState("");
   const [autoUpdateAtiva, setAutoUpdateAtiva] = useState(false);
   const [togglingAuto, setTogglingAuto] = useState(false);
@@ -290,6 +292,9 @@ export default function Ingredientes() {
           <Button variant="outline" size="sm" onClick={() => setShowImportSinonimos(true)}>
             <Tags className="w-4 h-4 mr-1" /> Sinônimos
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowRelatorioLote(true)}>
+            <History className="w-4 h-4 mr-1" /> Relatório de lote
+          </Button>
           <Button size="sm" onClick={() => { setEditItem(null); setShowForm(true); }}>
             <Plus className="w-4 h-4 mr-1" /> Novo
           </Button>
@@ -489,6 +494,9 @@ export default function Ingredientes() {
         onClose={() => setShowHistorico(false)}
         logs={historicoLogs}
       />
+
+      {/* Relatório da atualização em lote de preços zerados */}
+      <RelatorioLotePrecosDialog open={showRelatorioLote} onClose={() => setShowRelatorioLote(false)} />
     </div>
   );
 }
