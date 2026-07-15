@@ -102,7 +102,7 @@ export default function AuditoriaRendimento() {
       ]);
       toast({
         title: "Correção concluída",
-        description: `${total_corrigido} receita${total_corrigido !== 1 ? "s" : ""} corrigida${total_corrigido !== 1 ? "s" : ""} (das 11 afetadas pela importação).`,
+        description: `${total_corrigido} receita${total_corrigido !== 1 ? "s" : ""} corrigida${total_corrigido !== 1 ? "s" : ""} (8 Sopas + 23 Aves afetadas pela importação).`,
       });
     } catch (error) {
       toast({ variant: "destructive", title: "Erro ao corrigir", description: error.message });
@@ -210,12 +210,12 @@ export default function AuditoriaRendimento() {
               Correção de Importação (porcoes_base)
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Correção pontual das 11 receitas (8 Sopas e 3 Aves) cujo porcoes_base foi corrompido pelo importador de texto.
+              Correção das receitas (8 Sopas e 23 Aves) cujo porcoes_base foi corrompido pelo importador de texto.
             </p>
           </div>
           <Button onClick={handleCorrigirPorcoes} disabled={corrigindoPorcoes} variant="outline" className="gap-2">
             {corrigindoPorcoes ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-            Corrigir importação (11 receitas)
+            Corrigir importação (Sopas + Aves)
           </Button>
         </div>
 
