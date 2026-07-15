@@ -1,0 +1,42 @@
+{
+  "name": "CorrecaoPorcoesBaseLog",
+  "type": "object",
+  "properties": {
+    "receita_id": {
+      "type": "string",
+      "description": "ID da receita corrigida"
+    },
+    "receita_nome": {
+      "type": "string",
+      "description": "Nome da receita (cache)"
+    },
+    "porcoes_base_anterior": {
+      "type": "number",
+      "description": "Valor de porcoes_base antes da corre\u00e7\u00e3o"
+    },
+    "porcoes_base_novo": {
+      "type": "number",
+      "description": "Valor de porcoes_base depois da corre\u00e7\u00e3o"
+    },
+    "per_capita_g_anterior": {
+      "type": "number",
+      "description": "Valor de per_capita_g antes da corre\u00e7\u00e3o (null se n\u00e3o preenchido)"
+    },
+    "per_capita_g_novo": {
+      "type": "number",
+      "description": "Valor de per_capita_g depois da corre\u00e7\u00e3o (null se n\u00e3o alterado)"
+    },
+    "rendimento_total_anterior": {
+      "type": "number",
+      "description": "Valor de rendimento_total antes da corre\u00e7\u00e3o"
+    },
+    "rendimento_total_novo": {
+      "type": "number",
+      "description": "Valor de rendimento_total depois da corre\u00e7\u00e3o (soma dos ingredientes)"
+    }
+  },
+  "required": [
+    "receita_id",
+    "receita_nome"
+  ]
+}
