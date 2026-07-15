@@ -5,10 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, ArrowLeftRight, X } from "lucide-react";
+import { Search, ArrowLeftRight, X, DollarSign } from "lucide-react";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 
-export default function EditItemDialog({ open, onClose, item, porcoesBase, fator, onSave, saving }) {
+export default function EditItemDialog({ open, onClose, item, porcoesBase, fator, onSave, saving, onEditPrice }) {
   const [qtd, setQtd] = useState("");
   const [prePreparo, setPrePreparo] = useState("");
   const [novoIng, setNovoIng] = useState(null);
@@ -58,6 +58,18 @@ export default function EditItemDialog({ open, onClose, item, porcoesBase, fator
           <DialogTitle className="font-display">Editar — {isSubreceita ? item.subreceita_nome : (item.ingrediente_nome || item.ing?.nome)}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {isIngrediente && item.ing && !novoIng && (
+            <div className="p-2.5 bg-muted/50 rounded-lg flex items-center justify-between gap-2">
+              <p className="text-xs text-muted-foreground">
+                Preço atual: <span className="font-medium text-foreground">
+                  {item.ing.preco_por_g_rs > 0 ? `R$ ${item.ing.preco_por_g_rs.toFixed(4).replace(".", ",")}/g` : "não cadastrado"}
+                </span>
+              </p>
+              <Button variant="outline" size="sm" className="h-7 text-xs shrink-0" onClick={() => onEditPrice(item.ing)}>
+                <DollarSign className="w-3.5 h-3.5 mr-1" /> Editar cadastro do ingrediente
+              </Button>
+            </div>
+          )}
           {isIngrediente && (
             <div>
               {novoIng ? (

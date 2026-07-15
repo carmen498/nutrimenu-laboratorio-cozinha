@@ -544,18 +544,13 @@ export default function CardapioAberto() {
           temDias={temDias}
           diasOptions={diasDisponiveis ? diasDisponiveis.map(k => DIAS.find(d => d.key === k)).filter(Boolean) : DIAS}
           custoReceitasTotal={calcs.custoReceitas}
+          custoInsumos={calcs.custoInsumos}
+          custoProducaoTotal={calcs.total}
           filtroDia={filtroDia}
           onUpdateReceita={updateReceita}
           onRemoveReceita={removeReceita}
           onMoveReceita={moveReceita}
         />
-
-        {/* Barra de cores + alerta de monotonia visual */}
-        {receitas.length > 0 && (
-          <div className="mt-4">
-            <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
-          </div>
-        )}
 
         <Button variant="ghost" size="sm" className="w-full text-xs gap-1 mt-2 no-print"
           onClick={async () => {
@@ -565,6 +560,13 @@ export default function CardapioAberto() {
           }}>
           <Plus className="w-3.5 h-3.5" /> Adicionar item
         </Button>
+
+        {/* Barra de cores + alerta de monotonia visual */}
+        {receitas.length > 0 && (
+          <div className="mt-4">
+            <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
+          </div>
+        )}
       </div>
 
       {/* BLOCO 3 — Insumos */}
@@ -612,32 +614,6 @@ export default function CardapioAberto() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* BLOCO 4 — Resumo de custos */}
-      <div className="bg-card rounded-xl border border-border shadow-sm p-5 mb-4 print:shadow-none print:border-0">
-        <h2 className="font-display font-semibold text-lg mb-4">Resumo de Custos</h2>
-        <div className="space-y-2 text-sm">
-          <p className="text-muted-foreground font-medium mb-2">Receitas:</p>
-          {receitasView.map(rec => (
-            <div key={rec.id} className="flex justify-between text-muted-foreground ml-2">
-              <span className="truncate mr-4">{rec.receita_nome}</span>
-              <span className="font-medium">R$ {Number(rec.custo_total || 0).toFixed(2)}</span>
-            </div>
-          ))}
-          <div className="flex justify-between text-muted-foreground">
-            <span>Insumos e embalagens</span>
-            <span className="font-medium">R$ {calcs.custoInsumos.toFixed(2)}</span>
-          </div>
-          <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold text-base">
-            <span>Custo total de produção</span>
-            <span>R$ {calcs.total.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-muted-foreground">
-            <span>Custo por {unidadeLabel === "kg" ? "kg" : unidadeLabel === "marmitas" ? "marmita" : "pessoa"}</span>
-            <span className="font-medium">R$ {calcs.porUnidade.toFixed(2)}</span>
-          </div>
-        </div>
       </div>
 
       {/* BLOCO 5 — Venda */}

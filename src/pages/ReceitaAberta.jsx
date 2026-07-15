@@ -1431,6 +1431,7 @@ REGRAS:
           fator={fator}
           onSave={(data) => updateItemMut.mutate(data)}
           saving={updateItemMut.isPending}
+          onEditPrice={(ing) => setEditingPrice({ ing })}
         />
       )}
 
@@ -1520,7 +1521,7 @@ function EditPriceDialog({ open, onClose, item, ing, onSave, saving }) {
         </DialogHeader>
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800">Este preço será atualizado em todas as receitas que usam {ing.nome}.</p>
+          <p className="text-xs text-amber-800">O preço é do cadastro geral — alterar afeta todas as receitas que o usam.</p>
         </div>
         <CalculadoraCusto
           initialQuantidade={ing?.peso_embalagem_g || ""}

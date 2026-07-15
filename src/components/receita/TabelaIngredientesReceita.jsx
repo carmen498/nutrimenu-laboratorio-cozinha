@@ -29,6 +29,10 @@ export default function TabelaIngredientesReceita({
 }) {
   const gridTemplate = buildGridTemplate(mostrarFC, mostrarMedidaCaseira);
 
+  const totalPesoLiq = itens.filter(i => !i.isGrupo).reduce((s, i) => s + (i.qtdNova || 0), 0);
+  const totalPBruto = itens.filter(i => !i.isGrupo).reduce((s, i) => s + (i.qtdComprar || 0), 0);
+  const totalCusto = itens.reduce((s, i) => s + (i.custo || 0), 0);
+
   const converterMedidaParaGramasInline = (n, mc) => {
     if (!mc) return 0;
     if (mc.equivalencia_g) return n * mc.equivalencia_g;
@@ -358,6 +362,21 @@ export default function TabelaIngredientesReceita({
           )}
         </Droppable>
       </DragDropContext>
+
+      {/* Total row — mesmo grid das linhas, reflete escala e toggles */}
+      <div className="flex items-stretch gap-0.5 mt-1">
+        <div className="w-8 shrink-0" />
+        <div className="flex-1 min-w-0 grid gap-2 px-2 py-2 border-t-2 border-border bg-secondary/50 rounded-md" style={{ gridTemplateColumns: gridTemplate }}>
+          <div className="text-sm font-semibold">Total</div>
+          <div />
+          <div className="text-right text-sm font-semibold">{totalPesoLiq.toFixed(0)}</div>
+          {mostrarFC && <div />}
+          {mostrarFC && <div className="text-right text-sm font-semibold">{formatWeight(totalPBruto, receita.unidade_base)}</div>}
+          {mostrarMedidaCaseira && <div />}
+          <div className="text-right text-sm font-semibold text-primary">R$ {totalCusto.toFixed(2).replace(".", ",")}</div>
+          <div />
+        </div>
+      </div>
     </div>
   );
 }
