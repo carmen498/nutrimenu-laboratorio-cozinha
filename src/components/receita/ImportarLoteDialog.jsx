@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 import { buscarFuzzy, removerMarca } from "@/lib/normalizarNome";
+import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
+import ImportarLoteReport from "@/components/receita/ImportarLoteReport";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -59,7 +61,9 @@ REGRAS DE EXTRAÇÃO:
 
 8. CATEGORIA DA RECEITA: deduza do nome e ingredientes (ex: "Carnes, Bovina", "Confeitaria, Doces e Docinhos"). Se incerto, use string vazia. IMPORTANTE: se a receita tiver MAIS DE 2 ingredientes claramente da categoria DOCES (chocolate, cacau, açúcar, baunilha, chantilly, doce de leite, leite condensado, glucose, mel, gelatina, coco ralado, goiabada, frutas cristalizadas, etc.), sugira APENAS "Sobremesas" ou "Pães e Bolos" — NUNCA "Prato Principal", "Acompanhamento", "Entradas", "Carnes, Bovina" ou qualquer outra categoria que não seja doce.
 
-9. INGREDIENTES AMBÍGUOS ("X ou Y"): se um ingrediente estiver escrito como "X ou Y" (ex: "manteiga ou margarina"), NÃO escolha um — transcreva o nome COMPLETO "X ou Y" como nome. O sistema detectará e pedirá que o usuário escolha.
+9. PER CAPITA (PC): se o texto tiver uma linha "PC:", "PORÇÃO:" ou "PORÇÕES:" (dois-pontos seguido de valor numérico em gramas), esse valor é o per_capita_g da receita — NUNCA o número de porções. Extraia para o campo per_capita_g. NÃO use esse valor para porcoes_base.
+
+10. INGREDIENTES AMBÍGUOS ("X ou Y"): se um ingrediente estiver escrito como "X ou Y" (ex: "manteiga ou margarina"), NÃO escolha um — transcreva o nome COMPLETO "X ou Y" como nome. O sistema detectará e pedirá que o usuário escolha.
 
 CONTEÚDO:
 `;
@@ -140,6 +144,24 @@ const compareNormalized = (a, b) => {
   return norm(a) === norm(b);
 };
 
+const normWords = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/g, " ").split(/\s+/).filter(Boolean);
+
+// Mapeia a categoria em texto livre (extraída pela IA) para o valor MAIS PRÓXIMO do enum válido.
+// Nunca retorna uma categoria nova/inválida.
+const matchCategoria = (categoriaTexto) => {
+  if (!categoriaTexto) return CATEGORIAS[0];
+  const exata = CATEGORIAS.find((c) => compareNormalized(c, categoriaTexto));
+  if (exata) return exata;
+  const palavras = new Set(normWords(categoriaTexto));
+  let melhor = CATEGORIAS[0];
+  let melhorScore = -1;
+  for (const c of CATEGORIAS) {
+    const score = normWords(c).filter((p) => palavras.has(p)).length;
+    if (score > melhorScore) { melhorScore = score; melhor = c; }
+  }
+  return melhor;
+};
+
 export default function ImportarLoteDialog({ open, onClose }) {
   const [tab, setTab] = useState(TABS.PASTE);
   const [texto, setTexto] = useState("");
@@ -150,6 +172,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState(null);
   const fileInputRef = useRef(null);
   const qc = useQueryClient();
 
@@ -161,6 +184,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
     setLoading(false);
     setLoadingStep("");
     setImporting(false);
+    setImportReport(null);
   };
 
   const handleClose = () => {
@@ -192,6 +216,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
             nome: { type: "string" },
             categoria: { type: "string" },
             porcoes_base: { type: "number" },
+            per_capita_g: { type: "number", description: "Valor do campo PC:/PORÇÃO:/PORÇÕES: do texto, em gramas — nunca o número de porções" },
             rendimento_g: { type: "number" },
             modo_preparo: { type: "string", description: "Lista numerada, UM verbo por item no INFINITIVO (Derreter, Bater). Sem imperativo, sem marcas/equipamentos, sem dicas. Cada passo autossuficiente com objeto breve." },
             ingredientes: {
@@ -371,6 +396,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
 
       let created = 0, updated = 0, skipped = 0, ambiguos = 0;
       const processedNames = new Set();
+      const substituicoesCategoria = [];
 
       for (const item of result.receitas) {
         const nome = (item.nome || "").trim();
@@ -385,12 +411,17 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           ? juntarPassos(formatarModoPreparo(item.modo_preparo))
           : "";
 
-        const semCategoria = !item.categoria || item.categoria.trim() === "";
+        const rendimentoCalc = (item.ingredientes || []).reduce((acc, i) => acc + (i.tipo === "grupo" ? 0 : (i.quantidade_g || 0)), 0);
+        const categoriaFinal = matchCategoria(item.categoria);
+        if (item.categoria && !compareNormalized(item.categoria, categoriaFinal)) {
+          substituicoesCategoria.push({ receita: nome.toUpperCase(), original: item.categoria, usada: categoriaFinal });
+        }
         const payload = {
           nome: nome.toUpperCase(),
-          categorias: semCategoria ? [] : [item.categoria],
-          porcoes_base: item.porcoes_base || 1,
-          rendimento_total: item.rendimento_g || 0,
+          categorias: [categoriaFinal],
+          porcoes_base: 1,
+          per_capita_g: item.per_capita_g || null,
+          rendimento_total: rendimentoCalc,
           unidade_base: "g",
           modo_preparo: modoPreparo,
           revisar: false,
@@ -541,12 +572,10 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         }
       }
 
-      const ambMsg = ambiguos > 0 ? ` · ${ambiguos} ambíguo(s) (X ou Y) — defina manualmente depois` : "";
-      toast.success(`Importação concluída! ${created} criadas, ${updated} atualizadas, ${skipped} ignoradas.${ambMsg}`);
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      handleClose();
+      setImportReport({ created, updated, skipped, ambiguos, substituicoesCategoria });
     } catch (err) {
       toast.error("Erro na importação: " + err.message);
     } finally {
@@ -602,8 +631,11 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           </div>
         )}
 
+        {/* Import report */}
+        {importReport && <ImportarLoteReport report={importReport} onClose={handleClose} />}
+
         {/* Result state */}
-        {result && !loading && (
+        {!importReport && result && !loading && (
           <div className="space-y-3">
             <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
@@ -632,7 +664,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         )}
 
         {/* Content area */}
-        {!result && !error && (
+        {!importReport && !result && !error && (
           <>
             {tab === TABS.PASTE ? (
               <div className="space-y-1.5">
@@ -689,7 +721,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         )}
 
         {/* Footer */}
-        {!result && !error && (
+        {!importReport && !result && !error && (
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>
             <Button onClick={handleIdentify} disabled={!hasContent || loading}>
