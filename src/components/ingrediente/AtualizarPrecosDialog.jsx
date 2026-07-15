@@ -235,6 +235,7 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
           preco_por_kg: parseFloat(res.preco_sugerido_por_kg.toFixed(2)),
           variacao_percentual: variacao,
           fonte: "IA web",
+          fornecedor: ing?.fornecedor || "",
         });
 
         await base44.entities.Ingrediente.update(res.id, {
@@ -244,7 +245,7 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
           fonte_preco: "IA web",
           preco_medio_nacional: res.preco_sugerido_por_kg,
           variacao_percentual: variacao,
-          historico_precos: historico.slice(0, 5),
+          historico_precos: historico,
         });
         atualizados++;
         await new Promise((r) => setTimeout(r, 250));

@@ -84,9 +84,13 @@
       "type": "string",
       "description": "Estado do usu\u00e1rio para pre\u00e7os regionalizados (uso futuro CONAB/CEASA)"
     },
+    "fornecedor": {
+      "type": "string",
+      "description": "Nome do fornecedor atual do ingrediente"
+    },
     "historico_precos": {
       "type": "array",
-      "description": "Hist\u00f3rico de pre\u00e7os (\u00faltimas 5 atualiza\u00e7\u00f5es)",
+      "description": "Hist\u00f3rico de pre\u00e7os (todas as atualiza\u00e7\u00f5es)",
       "items": {
         "type": "object",
         "properties": {
@@ -101,6 +105,9 @@
             "type": "number"
           },
           "fonte": {
+            "type": "string"
+          },
+          "fornecedor": {
             "type": "string"
           }
         }

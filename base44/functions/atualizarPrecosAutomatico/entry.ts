@@ -136,7 +136,8 @@ Deno.serve(async (req) => {
           data: now,
           preco_por_kg: precoSugeridoPorKg,
           variacao_percentual: variacao,
-          fonte: "IA web (automático)"
+          fonte: "IA web (automático)",
+          fornecedor: ing.fornecedor || ""
         });
 
         await base44.asServiceRole.entities.Ingrediente.update(ing.id, {
@@ -146,7 +147,7 @@ Deno.serve(async (req) => {
           fonte_preco: "IA web",
           preco_medio_nacional: precoSugeridoPorKg,
           variacao_percentual: variacao,
-          historico_precos: historico.slice(0, 5)
+          historico_precos: historico
         });
         totalAtualizado++;
         await new Promise(r => setTimeout(r, 250));

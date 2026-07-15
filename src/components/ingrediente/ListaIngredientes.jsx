@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Pencil, Trash2, Star } from "lucide-react";
@@ -98,14 +99,14 @@ export default function ListaIngredientes({
         style={{ minHeight: "44px" }}
       >
         <div className="flex-1 min-w-0" style={{ flexBasis: "40%" }}>
-          <p className="text-sm font-medium truncate">
+          <Link to={`/ingrediente/${ing.id}`} className="text-sm font-medium truncate hover:underline hover:text-primary block">
             {ing.nome}
             {(ing.fator_correcao && ing.fator_correcao !== 1.0) && (
               <span className="ml-1.5 text-[11px] text-muted-foreground font-normal">
                 FC {String(ing.fator_correcao).replace(".", ",")}
               </span>
             )}
-          </p>
+          </Link>
         </div>
         <div className="text-xs text-muted-foreground whitespace-nowrap" style={{ flexBasis: "25%" }}>
           {formatIngredientPrice(ing)}
