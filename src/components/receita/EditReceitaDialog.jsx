@@ -170,6 +170,10 @@ ${form.modo_preparo}`,
             </div>
           </div>
           <div>
+            <Label>PC recomendado (g/porção)</Label>
+            <Input type="number" min={1} value={form.per_capita_g || ""} onChange={(e) => setForm({ ...form, per_capita_g: parseFloat(e.target.value) || null })} placeholder="Ex: 150" />
+          </div>
+          <div>
             <div className="flex items-center justify-between mb-1">
               <Label>Modo de preparo</Label>
               <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleRewritePrep} disabled={rewritingPrep || !form.modo_preparo?.trim()}>
