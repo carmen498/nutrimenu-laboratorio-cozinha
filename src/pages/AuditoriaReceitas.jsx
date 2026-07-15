@@ -5,13 +5,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, ClipboardCheck, Link as LinkIcon, Download } from "lucide-react";
+import { Loader2, ClipboardCheck, Link as LinkIcon, Download, Wand2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { auditarReceitas, TIPOS_PROBLEMA } from "@/lib/auditoriaReceitas";
 import { downloadCsv } from "@/lib/exportCsv";
+import PreencherPerCapitaDialog from "@/components/auditoria/PreencherPerCapitaDialog";
 
 export default function AuditoriaReceitas() {
   const [filtro, setFiltro] = useState("todos");
+  const [pcDialogOpen, setPcDialogOpen] = useState(false);
 
   const { data: receitas = [], isLoading: l1 } = useQuery({
     queryKey: ["receitas"],
@@ -75,10 +77,17 @@ export default function AuditoriaReceitas() {
             Relatório de sanidade, somente leitura — nenhum dado é alterado aqui.
           </p>
         </div>
-        <Button onClick={handleExportCsv} variant="outline" className="gap-2">
-          <Download className="w-4 h-4" /> Exportar CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setPcDialogOpen(true)} variant="outline" className="gap-2">
+            <Wand2 className="w-4 h-4" /> Preencher PC por categoria
+          </Button>
+          <Button onClick={handleExportCsv} variant="outline" className="gap-2">
+            <Download className="w-4 h-4" /> Exportar CSV
+          </Button>
+        </div>
       </div>
+
+      <PreencherPerCapitaDialog open={pcDialogOpen} onOpenChange={setPcDialogOpen} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Select value={filtro} onValueChange={setFiltro}>
