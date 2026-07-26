@@ -7,11 +7,11 @@ import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
 
 function buildGridTemplate(mostrarFC, mostrarMedidaCaseira) {
-  const cols = ["minmax(160px,2fr)", "minmax(110px,1.1fr)", "100px"];
-  if (mostrarFC) cols.push("70px", "100px");
-  cols.push("90px", "70px");
-  if (mostrarMedidaCaseira) cols.push("150px");
-  cols.push("170px");
+  const cols = ["minmax(160px,18fr)", "minmax(90px,11fr)", "minmax(70px,8fr)"];
+  if (mostrarFC) cols.push("minmax(56px,6fr)", "minmax(80px,9fr)");
+  cols.push("minmax(80px,9fr)", "minmax(50px,6fr)");
+  if (mostrarMedidaCaseira) cols.push("minmax(170px,22fr)");
+  cols.push("minmax(150px,11fr)");
   return cols.join(" ");
 }
 
@@ -55,7 +55,7 @@ export default function TabelaIngredientesReceita({
           <div>INGREDIENTE</div>
           <div>PREPARO</div>
           <div className="text-right">PESO LÍQ. (g)</div>
-          {mostrarFC && <div className="text-right">FC</div>}
+          {mostrarFC && <div className="text-center">FC</div>}
           {mostrarFC && <div className="text-right">P. BRUTO (g)</div>}
           <div className="text-right">R$</div>
           <div className="text-right">%</div>
@@ -323,12 +323,12 @@ export default function TabelaIngredientesReceita({
                         <div className="text-xs text-muted-foreground">{!item.isSubreceita ? (item.pre_preparo || "") : ""}</div>
                         <div>{pesoLiqCell}</div>
                         {mostrarFC && (
-                          <div className="text-right">
+                          <div className="flex justify-center">
                             {item.isSubreceita ? <span className="text-sm text-muted-foreground">—</span> : (
                               <Input
                                 type="number"
                                 step="0.01"
-                                className="h-7 w-16 text-sm text-right ml-auto"
+                                className="h-7 w-14 text-sm text-center"
                                 defaultValue={fc}
                                 key={`${item.id}-${fc}`}
                                 onBlur={(e) => {
