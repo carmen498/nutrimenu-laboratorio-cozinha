@@ -1033,20 +1033,6 @@ REGRAS:
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg font-bold">Ingredientes</h2>
           <div className="flex gap-1 flex-wrap">
-            <Button
-              size="sm"
-              variant={mostrarFC ? "default" : "outline"}
-              className={mostrarFC ? "bg-amber-500 hover:bg-amber-600 border-amber-500" : ""}
-              onClick={handleOrderByPrep}
-              disabled={orderingByPrep || !receita?.modo_preparo}
-              title={mostrarFC ? "Esta receita tem ingredientes com Fator de Correção aplicado" : "Ordenar ingredientes conforme o modo de preparo"}
-            >
-              {orderingByPrep ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <ArrowUpDown className="w-4 h-4 mr-1" />}
-              Ordenar por preparo
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowMedidasReceita(true)}>
-              <Scale className="w-4 h-4 mr-1" /> Cadastrar medidas
-            </Button>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
               <Switch checked={mostrarFC} onCheckedChange={handleToggleFC} className="scale-90" />
               <span className="text-xs text-muted-foreground font-medium">FC</span>
