@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,15 @@ export default function Ingredientes() {
   const [autoUpdateAtiva, setAutoUpdateAtiva] = useState(false);
   const [togglingAuto, setTogglingAuto] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
+
+  useEffect(() => {
+    if (searchParams.get("revisar") === "true") {
+      setShowRevisar(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { data: ingredientes = [], isLoading } = useQuery({
     queryKey: ["ingredientes"],

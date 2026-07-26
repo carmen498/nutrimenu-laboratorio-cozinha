@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Plus, ShoppingCart, Apple, CalendarDays, Gauge, ArrowRight, AlertTriangle, Clock } from "lucide-react";
 
@@ -5,13 +6,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 
 const CORES = {
-  verdeEscuro: "#1B4332",
+  verdeEscuro: "#2A4E3D",
   dourado: "#B8860B",
-  verdeMedio: "#40916C",
-  laranjaSuave: "#F4A261",
-  azulSuave: "#457B9D",
 };
 
 function getProximaSegunda3h() {
@@ -36,6 +35,7 @@ function formatarProximaAtualizacao() {
 }
 
 export default function Home() {
+  const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas-recentes-home"],
@@ -59,8 +59,35 @@ export default function Home() {
     refetchOnMount: "always",
   });
 
-  const formatCurrency = (v) =>
-    v != null ? `R$ ${Number(v).toFixed(2).replace(".", ",")}` : "—";
+  const { data: ultimoLog } = useQuery({
+    queryKey: ["ultimo-log-precos"],
+    queryFn: async () => {
+      const logs = await base44.entities.LogAtualizacaoPrecos.filter({ tipo: "automático" }, "-data_execucao", 1);
+      return logs[0] || null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: autoUpdateStatus } = useQuery({
+    queryKey: ["auto-update-status"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("gerenciarAtualizacaoAutomatica", { acao: "status" });
+      return res.data;
+    },
+  });
+
+  const { data: ingredientesParaDialogo = [] } = useQuery({
+    queryKey: ["ingredientes-para-dialogo-precos"],
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    enabled: showAtualizarPrecos,
+  });
+
+  const autoUpdateAtiva = autoUpdateStatus?.ativa || false;
+
+  const formatarUltimaExecucao = () => {
+    if (!ultimoLog?.data_execucao) return null;
+    return new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+  };
 
   return (
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "1.5rem 1rem 0" }}>
@@ -89,56 +116,55 @@ export default function Home() {
 
       {/* Grid 3×2 de módulos */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {/* Receitas — dark green */}
+        {/* Receitas */}
         <Link to="/receitas">
           <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#1B4332", minHeight: 130 }}>
+            style={{ background: "#4E7C63", minHeight: 130 }}>
             <BookOpen className="w-10 h-10 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-base text-center">Receitas</span>
           </Card>
         </Link>
 
-        {/* Cardápios — medium green */}
+        {/* Cardápios */}
         <Link to="/cardapios">
           <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#40916C", minHeight: 130 }}>
+            style={{ background: "#7FA38C", minHeight: 130 }}>
             <CalendarDays className="w-10 h-10 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-base text-center">Cardápios</span>
           </Card>
         </Link>
 
-        {/* Lista de Compras — light gray */}
+        {/* Carrinho (Lista de Compras) */}
         <Link to="/lista-compras">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border group h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#F5F5F5", borderColor: "#E0E0E0", minHeight: 130 }}>
-            <ShoppingCart className="w-10 h-10 group-hover:scale-110 transition-transform"
-              style={{ color: "#333333" }} />
-            <span className="font-bold text-base text-center" style={{ color: "#333333" }}>Lista de Compras</span>
+          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
+            style={{ background: "#C9A24B", minHeight: 130 }}>
+            <ShoppingCart className="w-10 h-10 group-hover:scale-110 transition-transform" />
+            <span className="font-bold text-base text-center">Carrinho</span>
           </Card>
         </Link>
 
-        {/* Ingredientes — orange */}
+        {/* Ingredientes */}
         <Link to="/ingredientes">
           <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#F4A261", minHeight: 130 }}>
+            style={{ background: "#A5643E", minHeight: 130 }}>
             <Apple className="w-10 h-10 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-base text-center">Ingredientes</span>
           </Card>
         </Link>
 
-        {/* Per Capita — blue */}
+        {/* Per Capita */}
         <Link to="/percapita">
           <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#457B9D", minHeight: 130 }}>
+            style={{ background: "#6B5E4A", minHeight: 130 }}>
             <Gauge className="w-10 h-10 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-base text-center">Per Capita</span>
           </Card>
         </Link>
 
-        {/* Nova Receita — wine #8B3A52 */}
+        {/* Nova Receita */}
         <Link to="/receitas?nova=manual">
           <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#8B3A52", minHeight: 130 }}>
+            style={{ background: "#7A3B3F", minHeight: 130 }}>
             <Plus className="w-10 h-10 group-hover:scale-110 transition-transform" />
             <span className="font-bold text-base text-center">Nova Receita</span>
           </Card>
@@ -224,8 +250,8 @@ export default function Home() {
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Ingredientes a revisar
             </h3>
-            <Link to="/ingredientes" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <Badge className="text-sm px-3 py-1.5" variant={aRevisar.length > 0 ? "destructive" : "secondary"}>
+            <Link to="/ingredientes?revisar=true" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <Badge className="text-sm px-3 py-1.5 border-0 text-white bg-amber-500 hover:bg-amber-500">
                 <AlertTriangle className="w-3.5 h-3.5 mr-1" />
                 {aRevisar.length} {aRevisar.length === 1 ? "item" : "itens"}
               </Badge>
@@ -235,23 +261,43 @@ export default function Home() {
             </Link>
           </Card>
 
-          {/* Próxima atualização de preços */}
+          {/* Atualização de preços — estado real */}
           <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Atualização de preços
             </h3>
-            <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAtualizarPrecos(true)}
+              className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
+            >
               <Clock className="w-5 h-5" style={{ color: CORES.verdeEscuro }} />
               <div>
-                <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
-                  {formatarProximaAtualizacao()}
-                </p>
-                <p className="text-xs text-muted-foreground">Automática · IA web</p>
+                {autoUpdateAtiva ? (
+                  <>
+                    <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
+                      {formatarProximaAtualizacao()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Automática · IA web</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
+                      Pausada{formatarUltimaExecucao() ? ` · última execução ${formatarUltimaExecucao()}` : " · nunca executada"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Toque para atualizar preços manualmente</p>
+                  </>
+                )}
               </div>
-            </div>
+            </button>
           </Card>
         </div>
       </div>
+
+      <AtualizarPrecosDialog
+        open={showAtualizarPrecos}
+        onClose={() => setShowAtualizarPrecos(false)}
+        ingredientes={ingredientesParaDialogo}
+      />
 
       {/* Rodapé */}
       <div className="text-center pt-6 pb-4 border-t" style={{ borderColor: "#E8E0D5" }}>

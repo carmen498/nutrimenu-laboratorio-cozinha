@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, PieChart, Utensils, AlertTriangle, ClipboardCheck } from "lucide-react";
+import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, Utensils, ClipboardCheck } from "lucide-react";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,7 @@ const navItems = [
   { path: "/ingredientes", label: "Ingredientes", icon: Apple },
   { path: "/percapita", label: "Per Capita", icon: Gauge },
   { path: "/medidas-caseiras", label: "Medidas", icon: Utensils },
-  { path: "/relatorio-categorias", label: "Relatório", icon: PieChart },
-  { path: "/auditoria-rendimento", label: "Auditoria", icon: AlertTriangle },
-  { path: "/auditoria-receitas", label: "Aud. Receitas", icon: ClipboardCheck },
+  { path: "/auditorias", label: "Auditorias", icon: ClipboardCheck },
 ];
 
 export default function AppLayout() {
@@ -42,7 +40,7 @@ export default function AppLayout() {
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                       active
                         ? "bg-white/20 text-white"
-                        : "text-white/70 hover:text-white hover:bg-white/10"
+                        : "text-[#D2DCD4] hover:text-white hover:bg-white/10"
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -54,13 +52,13 @@ export default function AppLayout() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-white/70 hover:text-white hover:bg-white/10"
+              className="text-[#D2DCD4] hover:text-white hover:bg-white/10"
               onClick={() => base44.auth.logout()}
             >
               <LogOut className="w-4 h-4" />
             </Button>
             <button
-              className="md:hidden p-2 text-white/80 hover:text-white"
+              className="md:hidden p-2 text-[#D2DCD4] hover:text-white"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -81,7 +79,7 @@ export default function AppLayout() {
                   className={`flex items-center gap-3 px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
                     active
                       ? "bg-white/20 text-white"
-                      : "text-white/70 hover:text-white hover:bg-white/10"
+                      : "text-[#D2DCD4] hover:text-white hover:bg-white/10"
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -134,6 +132,7 @@ export default function AppLayout() {
           if (p === "/medidas-caseiras") return "Medidas Caseiras";
           if (p === "/relatorio-categorias") return "Relatório de Categorias";
           if (p === "/auditoria-receitas") return "Auditoria de Receitas";
+          if (p === "/auditorias") return "Auditorias";
           if (p.startsWith("/exportar/")) return "Exportar Receita";
           return "";
         })()
