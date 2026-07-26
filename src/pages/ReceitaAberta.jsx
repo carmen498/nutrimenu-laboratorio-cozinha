@@ -881,8 +881,8 @@ REGRAS:
     return { text: formatCurrency(item.custo), className: "text-primary" };
   };
   const formatWeight = (g, unit) => {
-    if (unit === "ml") return g >= 1000 ? `${(g / 1000).toFixed(2)} lt` : `${g.toFixed(0)} ml`;
-    return g >= 1000 ? `${(g / 1000).toFixed(2)} kg` : `${g.toFixed(0)} g`;
+    if (unit === "ml") return g >= 1000 ? `${(g / 1000).toFixed(2).replace(".", ",")} lt` : `${g.toFixed(0)} ml`;
+    return g >= 1000 ? `${(g / 1000).toFixed(2).replace(".", ",")} kg` : `${g.toFixed(0)} g`;
   };
 
   if (loadingReceita) {

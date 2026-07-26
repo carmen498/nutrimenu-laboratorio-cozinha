@@ -2,15 +2,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { ChefHat, Pencil, Trash2, ArrowUp, ArrowDown, Check, X } from "lucide-react";
+import { ChefHat, Pencil, Trash2, ArrowUp, ArrowDown, Check, X, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
 
 function buildGridTemplate(mostrarFC, mostrarMedidaCaseira) {
   const cols = ["minmax(160px,2fr)", "minmax(110px,1.1fr)", "100px"];
   if (mostrarFC) cols.push("70px", "100px");
+  cols.push("90px", "70px");
   if (mostrarMedidaCaseira) cols.push("150px");
-  cols.push("90px", "140px");
+  cols.push("170px");
   return cols.join(" ");
 }
 
@@ -33,6 +34,12 @@ export default function TabelaIngredientesReceita({
   const totalPBruto = itens.filter(i => !i.isGrupo).reduce((s, i) => s + (i.qtdComprar || 0), 0);
   const totalCusto = itens.reduce((s, i) => s + (i.custo || 0), 0);
 
+  const formatPercent = (item) => {
+    if (item.isSubreceita) return "—";
+    if (!totalCusto || totalCusto <= 0) return "—";
+    return `${((item.custo / totalCusto) * 100).toFixed(1).replace(".", ",")}%`;
+  };
+
   const converterMedidaParaGramasInline = (n, mc) => {
     if (!mc) return 0;
     if (mc.equivalencia_g) return n * mc.equivalencia_g;
@@ -44,16 +51,16 @@ export default function TabelaIngredientesReceita({
     <div className="overflow-x-auto">
       {/* Header */}
       <div className="flex items-stretch gap-0.5 mb-1">
-        <div className="w-8 shrink-0" />
         <div className="flex-1 min-w-0 grid gap-2 px-2 text-xs text-muted-foreground font-medium border-b pb-2" style={{ gridTemplateColumns: gridTemplate }}>
           <div>INGREDIENTE</div>
           <div>PREPARO</div>
           <div className="text-right">PESO LÍQ. (g)</div>
           {mostrarFC && <div className="text-right">FC</div>}
           {mostrarFC && <div className="text-right">P. BRUTO (g)</div>}
-          {mostrarMedidaCaseira && <div>MEDIDA CASEIRA</div>}
           <div className="text-right">R$</div>
-          <div></div>
+          <div className="text-right">%</div>
+          {mostrarMedidaCaseira && <div>MEDIDA CASEIRA</div>}
+          <div className="text-right">AÇÕES</div>
         </div>
       </div>
 
@@ -305,59 +312,70 @@ export default function TabelaIngredientesReceita({
 
                 const fc = item.ing?.fator_correcao || 1;
 
-                const acoesCell = (
-                  <div className="flex justify-end gap-0.5">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
-                      <Pencil className="w-3 h-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima"><ArrowUp className="w-3 h-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo"><ArrowDown className="w-3 h-3" /></Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => item.isSubreceita ? deleteSubreceitaMut.mutate(item.id) : deleteItemOrGrupoMut.mutate(item.id)} title="Remover">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                );
-
                 return (
-                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id}>
-                    <div
-                      className={`grid gap-2 items-center px-2 py-2 rounded-md border-b border-border/60 ${isQtdZero ? "bg-amber-50/60" : ""} ${item.isChildOfSubreceita ? "ml-6 border-l-4 border-l-amber-300 bg-amber-50/30" : ""} ${item.isSubreceita ? "bg-amber-50/40" : ""}`}
-                      style={{ gridTemplateColumns: gridTemplate }}
-                    >
-                      <div>{nomeCell}</div>
-                      <div className="text-xs text-muted-foreground">{!item.isSubreceita ? (item.pre_preparo || "") : ""}</div>
-                      <div>{pesoLiqCell}</div>
-                      {mostrarFC && (
+                  <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id} handlePosition="end">
+                    {(provided) => (
+                      <div
+                        className={`grid gap-2 items-center px-2 py-2 rounded-md border-b border-border/60 ${isQtdZero ? "bg-amber-50/60" : ""} ${item.isChildOfSubreceita ? "ml-6 border-l-4 border-l-amber-300 bg-amber-50/30" : ""} ${item.isSubreceita ? "bg-amber-50/40" : ""}`}
+                        style={{ gridTemplateColumns: gridTemplate }}
+                      >
+                        <div>{nomeCell}</div>
+                        <div className="text-xs text-muted-foreground">{!item.isSubreceita ? (item.pre_preparo || "") : ""}</div>
+                        <div>{pesoLiqCell}</div>
+                        {mostrarFC && (
+                          <div className="text-right">
+                            {item.isSubreceita ? <span className="text-sm text-muted-foreground">—</span> : (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                className="h-7 w-16 text-sm text-right ml-auto"
+                                defaultValue={fc}
+                                key={`${item.id}-${fc}`}
+                                onBlur={(e) => {
+                                  const val = parseFloat(e.target.value);
+                                  if (!isNaN(val) && val > 0 && item.ing?.id) updateFCMut.mutate({ ingId: item.ing.id, fator_correcao: val });
+                                }}
+                                onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+                              />
+                            )}
+                          </div>
+                        )}
+                        {mostrarFC && (
+                          <div className="text-right text-sm text-muted-foreground">
+                            {item.isSubreceita ? "—" : formatWeight(item.qtdComprar, receita.unidade_base)}
+                          </div>
+                        )}
                         <div className="text-right">
-                          {item.isSubreceita ? <span className="text-sm text-muted-foreground">—</span> : (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              className="h-7 w-16 text-sm text-right ml-auto"
-                              defaultValue={fc}
-                              key={`${item.id}-${fc}`}
-                              onBlur={(e) => {
-                                const val = parseFloat(e.target.value);
-                                if (!isNaN(val) && val > 0 && item.ing?.id) updateFCMut.mutate({ ingId: item.ing.id, fator_correcao: val });
-                              }}
-                              onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-                            />
+                          <span className={`text-sm font-semibold ${formatCustoItem(item).className}`}>
+                            {item.isSubreceita ? "—" : formatCustoItem(item).text}
+                          </span>
+                        </div>
+                        <div className="text-right text-sm text-muted-foreground">{formatPercent(item)}</div>
+                        {mostrarMedidaCaseira && medidaCell}
+                        <div className="flex justify-end gap-0.5">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary" onClick={() => setEditingItem(item)} title="Editar quantidade e pré-preparo">
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, -1)} title="Mover para cima"><ArrowUp className="w-3 h-3" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo"><ArrowDown className="w-3 h-3" /></Button>
+                          {!item.subreceita_parent_id ? (
+                            <button
+                              {...provided.dragHandleProps}
+                              className="flex items-center justify-center h-7 w-7 cursor-grab active:cursor-grabbing text-muted-foreground opacity-40 hover:opacity-100 hover:text-primary transition-all touch-none rounded-md"
+                              title="Arraste para reordenar"
+                              aria-label="Arraste para reordenar"
+                            >
+                              <GripVertical className="w-3.5 h-3.5" />
+                            </button>
+                          ) : (
+                            <div className="w-7 h-7" />
                           )}
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => item.isSubreceita ? deleteSubreceitaMut.mutate(item.id) : deleteItemOrGrupoMut.mutate(item.id)} title="Remover">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
-                      )}
-                      {mostrarFC && (
-                        <div className="text-right text-sm text-muted-foreground">
-                          {item.isSubreceita ? "—" : formatWeight(item.qtdComprar, receita.unidade_base)}
-                        </div>
-                      )}
-                      {mostrarMedidaCaseira && medidaCell}
-                      <div className="text-right">
-                        <span className={`text-sm font-semibold ${formatCustoItem(item).className}`}>
-                          {item.isSubreceita ? "—" : formatCustoItem(item).text}
-                        </span>
                       </div>
-                      <div>{acoesCell}</div>
-                    </div>
+                    )}
                   </DraggableRow>
                 );
               })}
@@ -369,15 +387,15 @@ export default function TabelaIngredientesReceita({
 
       {/* Total row — mesmo grid das linhas, reflete escala e toggles */}
       <div className="flex items-stretch gap-0.5 mt-1">
-        <div className="w-8 shrink-0" />
         <div className="flex-1 min-w-0 grid gap-2 px-2 py-2 border-t-2 border-border bg-secondary/50 rounded-md" style={{ gridTemplateColumns: gridTemplate }}>
           <div className="text-sm font-semibold">Total</div>
           <div />
           <div className="text-right text-sm font-semibold">{totalPesoLiq.toFixed(0)}</div>
           {mostrarFC && <div />}
           {mostrarFC && <div className="text-right text-sm font-semibold">{formatWeight(totalPBruto, receita.unidade_base)}</div>}
-          {mostrarMedidaCaseira && <div />}
           <div className="text-right text-sm font-semibold text-primary">R$ {totalCusto.toFixed(2).replace(".", ",")}</div>
+          <div className="text-right text-sm font-semibold">{totalCusto > 0 ? "100%" : "—"}</div>
+          {mostrarMedidaCaseira && <div />}
           <div />
         </div>
       </div>
