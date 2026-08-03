@@ -73,7 +73,7 @@ export default function Ingredientes() {
 
   const { data: ingredientes = [], isLoading } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
   });
 
   const { data: ultimoLog } = useQuery({

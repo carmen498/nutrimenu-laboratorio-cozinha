@@ -83,7 +83,7 @@ export default function Receitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 1000),
+    queryFn: () => base44.entities.Receita.list("-nome", 5000),
     staleTime: 0,
     refetchOnMount: "always",
   });
@@ -100,17 +100,12 @@ export default function Receitas() {
     staleTime: 0,
   });
 
-  const { data: totalReceitas = 0 } = useQuery({
-    queryKey: ["receitas-count-total"],
-    queryFn: async () => {
-      const t1 = await base44.entities.Receita.list();
-      const t2 = await base44.entities.Receita.filter({});
-      const t3 = await base44.entities.Receita.list("", 9999);
-      return Math.max(t1.length, t2.length, t3.length);
-    },
-    staleTime: 0,
-    refetchOnMount: "always",
-  });
+  const totalReceitas = receitas.length;
+  const [visibleCount, setVisibleCount] = useState(100);
+
+  useEffect(() => {
+    setVisibleCount(100);
+  }, [busca, categoriaSelecionada, showRevisar, showFavoritas, tagFilterIds]);
 
   const duplicarMut = useMutation({
     mutationFn: async (receita) => {
@@ -125,7 +120,6 @@ export default function Receitas() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receitas"] });
-      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       toast.success("Receita duplicada!");
     },
   });
@@ -156,7 +150,6 @@ export default function Receitas() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["receitas"] });
-      qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       toast.success("Receita excluída!");
     },
   });
@@ -419,7 +412,7 @@ export default function Receitas() {
         </div>
       ) : (
         <div className="space-y-1.5">
-          {filtered.sort((a, b) => a.nome?.localeCompare(b.nome)).map((r) => (
+          {filtered.sort((a, b) => a.nome?.localeCompare(b.nome)).slice(0, visibleCount).map((r) => (
             <Link key={r.id} to={`/receita/${r.id}`}>
               <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
                 <div className="min-w-0 flex-1">
@@ -498,6 +491,13 @@ export default function Receitas() {
               </Card>
             </Link>
           ))}
+          {filtered.length > visibleCount && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" onClick={() => setVisibleCount((v) => v + 100)}>
+                Carregar mais ({filtered.length - visibleCount} restantes)
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -639,7 +639,6 @@ function ImportReceitasCsvDialog({ open, onClose }) {
 
         setSummary({ created, updated, skippedDuplicate, errors, duplicateNames, errorNames });
         qc.invalidateQueries({ queryKey: ["receitas"] });
-        qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       } else {
         toast.error("Erro ao processar arquivo: " + (result.details || "formato inválido"));
       }

@@ -40,22 +40,22 @@ export default function ListaCompras() {
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 200),
+    queryFn: () => base44.entities.Receita.list("-updated_date", 5000),
   });
 
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
   });
 
   const { data: allItens = [] } = useQuery({
     queryKey: ["all-itens-receita"],
-    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 2000),
+    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 5000),
   });
 
   const { data: allReceitas = [] } = useQuery({
     queryKey: ["all-receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => base44.entities.Receita.list("-nome", 5000),
   });
 
   // Auto-add recipe from URL params

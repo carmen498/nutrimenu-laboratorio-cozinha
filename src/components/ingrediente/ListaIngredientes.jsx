@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,12 @@ export default function ListaIngredientes({
 }) {
   const [excluirIng, setExcluirIng] = useState(null);
   const [editarAlertIng, setEditarAlertIng] = useState(null);
+  const [limit, setLimit] = useState(150);
   const grupoAtivo = GRUPOS_INGREDIENTES.find((g) => g.nome === accordionAberto);
+
+  useEffect(() => {
+    setLimit(150);
+  }, [accordionAberto, buscaInterna, ingredientes]);
 
   const itemsDoGrupo = useMemo(() => {
     if (!accordionAberto || !grupoAtivo) return [];
@@ -158,7 +163,7 @@ export default function ListaIngredientes({
           </div>
           {itemsDoGrupo.length > 0 ? (
             <div className="bg-card">
-              {itemsDoGrupo.map(renderLinha)}
+              {itemsDoGrupo.slice(0, limit).map(renderLinha)}
             </div>
           ) : (
             <div className="p-8 text-center text-sm text-muted-foreground bg-card">
@@ -166,6 +171,13 @@ export default function ListaIngredientes({
             </div>
           )}
         </div>
+        {itemsDoGrupo.length > limit && (
+          <div className="flex justify-center pt-2">
+            <Button variant="outline" size="sm" onClick={() => setLimit((l) => l + 150)}>
+              Carregar mais ({itemsDoGrupo.length - limit} restantes)
+            </Button>
+          </div>
+        )}
         <ExcluirIngredienteDialog
           open={!!excluirIng}
           onClose={() => setExcluirIng(null)}
@@ -195,11 +207,18 @@ export default function ListaIngredientes({
       );
     }
 
+    const gruposComItens = GRUPOS_INGREDIENTES.filter((g) => todosAgrupados[g.nome]?.length > 0);
+    const totalGeral = gruposComItens.reduce((s, g) => s + (todosAgrupados[g.nome]?.length || 0), 0);
+    let restante = limit;
+
     return (
       <>
         <div className="space-y-6">
-          {GRUPOS_INGREDIENTES.filter((g) => todosAgrupados[g.nome]?.length > 0).map((g) => {
+          {gruposComItens.map((g) => {
             const items = todosAgrupados[g.nome] || [];
+            const visiveis = restante > 0 ? items.slice(0, restante) : [];
+            restante -= visiveis.length;
+            if (visiveis.length === 0) return null;
             return (
               <div key={g.nome} className="rounded-xl border border-border overflow-hidden">
                 <div
@@ -212,12 +231,19 @@ export default function ListaIngredientes({
                   </span>
                 </div>
                 <div className="bg-card">
-                  {items.map(renderLinha)}
+                  {visiveis.map(renderLinha)}
                 </div>
               </div>
             );
           })}
         </div>
+        {totalGeral > limit && (
+          <div className="flex justify-center pt-4">
+            <Button variant="outline" onClick={() => setLimit((l) => l + 150)}>
+              Carregar mais ({totalGeral - limit} restantes)
+            </Button>
+          </div>
+        )}
         <ExcluirIngredienteDialog
           open={!!excluirIng}
           onClose={() => setExcluirIng(null)}

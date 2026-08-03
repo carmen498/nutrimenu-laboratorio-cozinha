@@ -56,7 +56,7 @@ export default function Cardapios() {
     setLoading(true);
     try {
       const [lista, todasTags] = await Promise.all([
-        base44.entities.Cardapio.list("-created_date", 100),
+        base44.entities.Cardapio.list("-created_date", 5000),
         base44.entities.Tag.list("nome", 200),
       ]);
       setCardapios(lista || []);
