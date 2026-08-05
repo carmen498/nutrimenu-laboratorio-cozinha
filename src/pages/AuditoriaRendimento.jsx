@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, AlertTriangle, Link as LinkIcon, Wand2, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 // Relatório de rendimento_total suspeito (provável erro de unidade, ex: kg em vez de g):
 // - rendimento_total < 100 (quase certamente gravado em kg)
@@ -24,12 +25,12 @@ export default function AuditoriaRendimento() {
 
   const { data: receitas = [], isLoading: l1 } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 2000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const { data: itens = [], isLoading: l2 } = useQuery({
     queryKey: ["ingredientesReceitaTodos"],
-    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 5000),
+    queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
   });
 
   const { data: logs = [], isLoading: l3 } = useQuery({

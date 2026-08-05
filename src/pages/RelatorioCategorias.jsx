@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2, ChefHat } from "lucide-react";
 import { getCategorias } from "@/lib/categoriasHelper";
 import { CATEGORIAS, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const CORES_CATEGORIA = {
   "Carne Bovina":                  { bg: "#FFEBEE", texto: "#C62828" },
@@ -33,7 +34,7 @@ const CORES_CATEGORIA = {
 export default function RelatorioCategorias() {
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 2000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const agrupado = useMemo(() => {

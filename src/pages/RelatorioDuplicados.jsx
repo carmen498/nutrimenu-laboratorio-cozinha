@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Download } from "lucide-react";
 import { downloadCsv } from "@/lib/exportCsv";
 import { agruparDuplicados, grupoTemNomeExato } from "@/lib/duplicados";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const formatPrecoKg = (precoPorG) => {
   if (!precoPorG) return "—";
@@ -17,18 +18,18 @@ const formatData = (data) => (data ? new Date(data).toLocaleDateString("pt-BR") 
 
 export default function RelatorioDuplicados() {
   const { data: ingredientes = [], isLoading: loadingIng } = useQuery({
-    queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
+    queryKey: ["ingredientesTodos"],
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: receitas = [], isLoading: loadingRec } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const { data: itensReceita = [] } = useQuery({
-    queryKey: ["all-itens-receita"],
-    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 5000),
+    queryKey: ["ingredientesReceitaTodos"],
+    queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
   });
 
   const contagemIngredientesPorReceita = useMemo(() => {
