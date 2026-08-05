@@ -27,12 +27,12 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
   });
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => base44.entities.Receita.list("-nome", 5000),
   });
 
   const { data: medidas = [] } = useQuery({
