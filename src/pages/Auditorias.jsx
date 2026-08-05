@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, ClipboardCheck, PieChart } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, PieChart, Copy } from "lucide-react";
 import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
 import RelatorioCategorias from "./RelatorioCategorias";
+import RelatorioDuplicados from "./RelatorioDuplicados";
 
-const TABS = ["rendimento", "receitas", "categorias"];
+const TABS = ["rendimento", "receitas", "categorias", "duplicados"];
 
 export default function Auditorias() {
   const [searchParams] = useSearchParams();
@@ -30,6 +31,9 @@ export default function Auditorias() {
           <TabsTrigger value="categorias" className="gap-1.5">
             <PieChart className="w-4 h-4" /> Categorias
           </TabsTrigger>
+          <TabsTrigger value="duplicados" className="gap-1.5">
+            <Copy className="w-4 h-4" /> Duplicados
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="rendimento" className="mt-4">
           <AuditoriaRendimento />
@@ -39,6 +43,9 @@ export default function Auditorias() {
         </TabsContent>
         <TabsContent value="categorias" className="mt-4">
           <RelatorioCategorias />
+        </TabsContent>
+        <TabsContent value="duplicados" className="mt-4">
+          <RelatorioDuplicados />
         </TabsContent>
       </Tabs>
     </div>
