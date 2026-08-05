@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import { auditarReceitas, TIPOS_PROBLEMA } from "@/lib/auditoriaReceitas";
 import { downloadCsv } from "@/lib/exportCsv";
 import PreencherPerCapitaDialog from "@/components/auditoria/PreencherPerCapitaDialog";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function AuditoriaReceitas() {
   const [filtro, setFiltro] = useState("todos");
@@ -17,19 +18,19 @@ export default function AuditoriaReceitas() {
 
   const { data: receitas = [], isLoading: l1 } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 2000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
   const { data: itens = [], isLoading: l2 } = useQuery({
     queryKey: ["ingredientesReceitaTodos"],
-    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 5000),
+    queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
   });
   const { data: ingredientes = [], isLoading: l3 } = useQuery({
     queryKey: ["ingredientesTodos"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 2000),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
   const { data: sinonimos = [], isLoading: l4 } = useQuery({
     queryKey: ["sinonimosIngredientesTodos"],
-    queryFn: () => base44.entities.SinonimosIngredientes.list("-created_date", 5000),
+    queryFn: () => fetchAllPages(base44.entities.SinonimosIngredientes, "-created_date"),
   });
 
   const isLoading = l1 || l2 || l3 || l4;
