@@ -1007,13 +1007,29 @@ REGRAS:
             <img src={receita.foto_url} alt={receita.nome} className="w-full h-full object-cover" />
           </button>
         ) : (
-          <button
-            onClick={() => setShowEdit(true)}
-            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors"
+          <label
+            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors cursor-pointer"
             title="Adicionar foto"
           >
             <Camera className="w-8 h-8 text-muted-foreground/60" />
-          </button>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                try {
+                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                  await base44.entities.Receita.update(id, { foto_url: file_url });
+                  qc.invalidateQueries({ queryKey: ["receita", id] });
+                  toast.success("Foto adicionada!");
+                } catch {
+                  toast.error("Erro ao enviar foto");
+                }
+              }}
+            />
+          </label>
         )}
       </div>
 
