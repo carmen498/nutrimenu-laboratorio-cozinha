@@ -12,6 +12,10 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogCancel, AlertDialogAction
+} from "@/components/ui/alert-dialog";
+import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
   Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star, Scale
 } from "lucide-react";
@@ -81,6 +85,7 @@ export default function ReceitaAberta() {
   const [editingMedidaId, setEditingMedidaId] = useState(null);
   const [medidaInputValue, setMedidaInputValue] = useState("");
   const [showMedidasReceita, setShowMedidasReceita] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -599,6 +604,34 @@ export default function ReceitaAberta() {
     },
   });
 
+  const duplicarReceitaMut = useMutation({
+    mutationFn: async () => {
+      const { id: _id, created_date, updated_date, created_by_id, ...rest } = receita;
+      const nova = await base44.entities.Receita.create({ ...rest, nome: `${receita.nome} (cópia)` });
+      for (const item of itens) {
+        const { id: iid, created_date: cd, updated_date: ud, created_by_id: cb, ...irest } = item;
+        await base44.entities.IngredienteReceita.create({ ...irest, receita_id: nova.id });
+      }
+      return nova;
+    },
+    onSuccess: (nova) => {
+      toast.success("Receita duplicada!");
+      navigate(`/receita/${nova.id}`);
+    },
+  });
+
+  const deleteReceitaMut = useMutation({
+    mutationFn: async () => {
+      const ings = await base44.entities.IngredienteReceita.filter({ receita_id: id });
+      for (const ing of ings) await base44.entities.IngredienteReceita.delete(ing.id);
+      return base44.entities.Receita.delete(id);
+    },
+    onSuccess: () => {
+      toast.success("Receita excluída!");
+      navigate("/receitas");
+    },
+  });
+
   const handleMove = async (idx, dir) => {
     const items = itensFichaAgrupada;
     const item = items[idx];
@@ -928,6 +961,12 @@ REGRAS:
             </button>
             <Button variant="outline" size="sm" onClick={() => setShowEdit(true)}>
               <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => duplicarReceitaMut.mutate()} disabled={duplicarReceitaMut.isPending}>
+              <Copy className="w-3.5 h-3.5 mr-1" /> Duplicar receita
+            </Button>
+            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setShowDeleteConfirm(true)}>
+              <Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir receita
             </Button>
           </div>
           {/* Line 2: Categories + base info */}
@@ -1472,6 +1511,28 @@ REGRAS:
           getMedidaDisplay={getMedidaDisplay}
         />
       )}
+
+      {/* Confirmação de exclusão da receita */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir "{receita.nome}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A receita e todos os seus ingredientes serão excluídos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteReceitaMut.mutate()}
+              disabled={deleteReceitaMut.isPending}
+            >
+              {deleteReceitaMut.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Lightbox */}
       {showLightbox && receita.foto_url && (
