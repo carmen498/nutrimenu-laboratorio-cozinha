@@ -102,6 +102,12 @@ export default function Receitas() {
     staleTime: 0,
   });
 
+  const { data: allItensReceita = [] } = useQuery({
+    queryKey: ["all-itens-receita"],
+    queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
+    staleTime: 60 * 1000,
+  });
+
   const totalReceitas = receitas.length;
   const [visibleCount, setVisibleCount] = useState(100);
 
@@ -156,10 +162,25 @@ export default function Receitas() {
     },
   });
 
+  // Recipes whose ingredients (not the recipe name) match the search text
+  const receitaIdsPorIngrediente = (() => {
+    const termo = normalizarNome(busca);
+    if (!termo) return new Set();
+    const ids = new Set();
+    allItensReceita.forEach((item) => {
+      if (item.ingrediente_nome && normalizarNome(item.ingrediente_nome).includes(termo)) {
+        ids.add(item.receita_id);
+      }
+    });
+    return ids;
+  })();
+
   const filtered = receitas.filter((r) => {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
-    const matchBusca = !busca || normalizarNome(r.nome).includes(normalizarNome(busca));
+    const matchNome = !busca || normalizarNome(r.nome).includes(normalizarNome(busca));
+    const matchIngrediente = !matchNome && receitaIdsPorIngrediente.has(r.id);
+    const matchBusca = matchNome || matchIngrediente;
     const matchCat = !categoriaSelecionada || hasCategoria(r, categoriaSelecionada);
     if (tagFilterIds.length > 0) {
       const tagsForReceita = allReceitaTags.filter(rt => rt.receita_id === r.id);
@@ -429,6 +450,9 @@ export default function Receitas() {
                     <p className="font-medium text-sm truncate">{r.nome}</p>
                     {!isLoading && r.revisar && <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
                   </div>
+                  {busca && receitaIdsPorIngrediente.has(r.id) && !normalizarNome(r.nome).includes(normalizarNome(busca)) && (
+                    <p className="text-[11px] text-primary/80 italic">encontrado por ingrediente</p>
+                  )}
                   <div className="flex items-center gap-2 mt-0.5">
                     {getCategorias(r).length > 0 && (
                       <span className="text-[11px] text-muted-foreground">{getCategorias(r).join(", ")}</span>
