@@ -21,6 +21,7 @@ import Ingredientes from '@/pages/Ingredientes';
 import IngredienteAberto from '@/pages/IngredienteAberto';
 import ListaCompras from '@/pages/ListaCompras';
 import ExportarReceita from '@/pages/ExportarReceita';
+import ReceitaListaCompras from '@/pages/ReceitaListaCompras';
 import FichaTecnicaReceita from '@/pages/FichaTecnicaReceita';
 import PerCapita from '@/pages/PerCapita';
 import RelatorioCategorias from '@/pages/RelatorioCategorias';
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
           <Route path="/ingredientes" element={<Ingredientes />} />
           <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
           <Route path="/lista-compras" element={<ListaCompras />} />
+          <Route path="/receita/:id/lista-compras" element={<ReceitaListaCompras />} />
           <Route path="/exportar/:id" element={<ExportarReceita />} />
           <Route path="/ficha-tecnica/:id" element={<FichaTecnicaReceita />} />
           <Route path="/percapita" element={<PerCapita />} />

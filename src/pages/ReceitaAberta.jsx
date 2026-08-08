@@ -1441,7 +1441,7 @@ REGRAS:
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => navigate(`/lista-compras?receita=${id}&porcoes=${porcoes}`)}>
+        <Button onClick={() => navigate(`/receita/${id}/lista-compras?porcoes=${porcoes}`)}>
           <ShoppingCart className="w-4 h-4 mr-1" /> Gerar lista de compras
         </Button>
         <Button variant="outline" onClick={() => navigate(`/ficha-tecnica/${id}`)}>
