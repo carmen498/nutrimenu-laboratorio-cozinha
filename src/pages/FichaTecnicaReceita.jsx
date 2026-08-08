@@ -3,11 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, Printer, Share2 } from "lucide-react";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { montarFichaTecnica } from "@/lib/fichaTecnicaCalc";
+import { montarTextoCompartilhamentoFicha } from "@/lib/fichaTecnicaShare";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import TabelaFichaTecnica from "@/components/fichaTecnica/TabelaFichaTecnica";
 import TagBadge from "@/components/tags/TagBadge";
@@ -126,6 +127,15 @@ export default function FichaTecnicaReceita() {
   const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
   const formatKg = (g) => `${((g || 0) / 1000).toFixed(2).replace(".", ",")} kg`;
 
+  const handleShare = () => {
+    const text = montarTextoCompartilhamentoFicha({ receita, ficha, passos });
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }
+  };
+
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center gap-2 no-print">
@@ -133,9 +143,14 @@ export default function FichaTecnicaReceita() {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-display text-xl font-bold flex-1">Ficha Técnica</h1>
-        <Button onClick={() => window.print()}>
-          <Printer className="w-4 h-4 mr-1" /> ↓ Exportar PDF
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => window.print()}>
+            <Printer className="w-4 h-4 mr-1" /> ↓ Exportar PDF
+          </Button>
+          <Button variant="outline" onClick={handleShare}>
+            <Share2 className="w-4 h-4 mr-1" /> Compartilhar
+          </Button>
+        </div>
       </div>
 
       <style>{`

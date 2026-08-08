@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, FileText, Share2, ChefHat } from "lucide-react";
-import { toast } from "sonner";
 import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 import { converterGramasParaMedida } from "@/lib/conversorMedidas";
@@ -199,8 +198,7 @@ export default function ExportarReceita() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      navigator.clipboard.writeText(text);
-      toast.success("Receita copiada!");
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     }
   };
 
