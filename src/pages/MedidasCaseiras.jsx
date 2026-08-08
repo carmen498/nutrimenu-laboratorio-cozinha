@@ -11,6 +11,7 @@ import { Search, Plus, Pencil, Trash2, Upload, Check, X, Utensils, Download } fr
 import { toast } from "sonner";
 import ImportarMedidasDialog from "@/components/medida/ImportarMedidasDialog";
 import { downloadCsv } from "@/lib/exportCsv";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function MedidasCaseiras() {
   const [tab, setTab] = useState("utensilios");
@@ -29,7 +30,7 @@ export default function MedidasCaseiras() {
   // --- MedidaCaseira state ---
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes-all"],
-    queryFn: () => base44.entities.Ingrediente.list("nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "nome"),
   });
   const { data: medidas = [] } = useQuery({
     queryKey: ["medidas-caseiras"],

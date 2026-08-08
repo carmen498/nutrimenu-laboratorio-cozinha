@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { ChefHat, ArrowRight } from "lucide-react";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function UsoReceitasCard({ ingrediente }) {
   const { data: itensDoIngrediente = [] } = useQuery({
@@ -13,12 +14,12 @@ export default function UsoReceitasCard({ ingrediente }) {
 
   const { data: todasReceitas = [] } = useQuery({
     queryKey: ["todas-receitas-uso"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const { data: todosIngredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
     staleTime: 60 * 1000,
   });
 

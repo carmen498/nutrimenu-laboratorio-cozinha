@@ -39,6 +39,7 @@ import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesRe
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -94,12 +95,12 @@ export default function ReceitaAberta() {
 
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 200),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const { data: insumosReceita = [] } = useQuery({

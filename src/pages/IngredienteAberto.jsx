@@ -9,6 +9,7 @@ import HistoricoPrecosCard from "@/components/ingrediente/ficha/HistoricoPrecosC
 import UsoReceitasCard from "@/components/ingrediente/ficha/UsoReceitasCard";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function IngredienteAberto() {
   const { id } = useParams();
@@ -26,7 +27,7 @@ export default function IngredienteAberto() {
 
   const { data: todosIngredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const fornecedorSuggestions = [...new Set(

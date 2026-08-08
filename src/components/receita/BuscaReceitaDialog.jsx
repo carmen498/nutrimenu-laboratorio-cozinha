@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const CATS = [
   "Carnes", "Aves", "Peixes e Frutos do Mar", "Ovos",
@@ -21,7 +22,7 @@ export default function BuscaReceitaDialog({
 
   const { data: queryReceitas = [] } = useQuery({
     queryKey: ["receitas-busca"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
     enabled: !propReceitas && open,
   });
   const receitas = propReceitas || queryReceitas;

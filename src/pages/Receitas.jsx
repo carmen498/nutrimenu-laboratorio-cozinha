@@ -21,6 +21,7 @@ import TagBadge from "@/components/tags/TagBadge";
 import { getCorHex } from "@/lib/coresReceita";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const CORES_CATEGORIA = {
   "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -83,7 +84,7 @@ export default function Receitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
     staleTime: 0,
     refetchOnMount: "always",
   });

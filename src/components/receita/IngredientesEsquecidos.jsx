@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const SUGESTOES_PROCESSO = [
   { nome: "Farinha para enfarinhar/espichar massa", busca: ["farinha de trigo", "farinha"] },
@@ -52,7 +53,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
 
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const findIngrediente = (nomeSugestao) => {

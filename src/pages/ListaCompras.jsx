@@ -13,6 +13,7 @@ import { ShoppingCart, Plus, Trash2, FileText, Share2, ChefHat, ArrowLeft, Rotat
 import { Label } from "@/components/ui/label";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import { toast } from "sonner";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const CATEGORIAS_COMPRA = {
   "Carnes e Ovos": "Carnes",
@@ -40,22 +41,22 @@ export default function ListaCompras() {
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-updated_date"),
   });
 
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: allItens = [] } = useQuery({
-    queryKey: ["all-itens-receita"],
-    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 5000),
+    queryKey: ["ingredientesReceitaTodos"],
+    queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
   });
 
   const { data: allReceitas = [] } = useQuery({
-    queryKey: ["all-receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 5000),
+    queryKey: ["receitas"],
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   // Auto-add recipe from URL params

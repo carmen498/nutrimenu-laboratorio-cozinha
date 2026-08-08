@@ -25,6 +25,7 @@ import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 // Custo AO VIVO (mesmo caminho de cálculo do Evento): nunca lê o campo cache
 // CardapioReceita.custo_total — sempre deriva de Receita.custo_total + rendimento atual.
@@ -152,7 +153,7 @@ export default function CardapioAberto() {
         base44.entities.CardapioReceita.filter({ cardapio_id: id }, "ordem", 200),
         base44.entities.CardapioInsumo.filter({ cardapio_id: id }, "created_date", 200),
         base44.entities.Insumo.list("nome", 200),
-        base44.entities.Receita.list("nome", 200),
+        fetchAllPages(base44.entities.Receita, "nome"),
         base44.entities.Tag.list("nome", 200),
         base44.entities.CardapioTag.filter({ cardapio_id: id }, "created_date", 200),
       ]);
@@ -554,7 +555,7 @@ export default function CardapioAberto() {
 
         <Button variant="ghost" size="sm" className="w-full text-xs gap-1 mt-2 no-print"
           onClick={async () => {
-            const todas = await base44.entities.Receita.list("nome", 200);
+            const todas = await fetchAllPages(base44.entities.Receita, "nome");
             setTodasReceitas(todas || []);
             setShowAddReceita(true);
           }}>

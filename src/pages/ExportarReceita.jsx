@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo";
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 import { converterGramasParaMedida } from "@/lib/conversorMedidas";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function ExportarReceita() {
   const { id } = useParams();
@@ -33,7 +34,7 @@ export default function ExportarReceita() {
 
   const { data: todasReceitas = [] } = useQuery({
     queryKey: ["todas-receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const { data: insumosReceita = [] } = useQuery({
@@ -48,7 +49,7 @@ export default function ExportarReceita() {
 
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: medidasCaseiras = [] } = useQuery({

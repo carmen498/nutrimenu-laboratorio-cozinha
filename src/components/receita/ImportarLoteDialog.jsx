@@ -11,6 +11,7 @@ import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 import { buscarFuzzy, removerMarca } from "@/lib/normalizarNome";
 import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import ImportarLoteReport from "@/components/receita/ImportarLoteReport";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -383,14 +384,14 @@ ${RECIPE_EXTRACTION_PROMPT}`,
     if (!result?.receitas?.length) return;
     setImporting(true);
     try {
-      const existingIngredientes = await base44.entities.Ingrediente.list("-nome", 2000);
+      const existingIngredientes = await fetchAllPages(base44.entities.Ingrediente, "-nome");
       const ingredienteMap = {};
       existingIngredientes.forEach(ing => {
         const key = ing.nome?.toLowerCase().trim();
         if (key) ingredienteMap[key] = ing;
       });
 
-      const existingReceitas = await base44.entities.Receita.list("-nome", 500);
+      const existingReceitas = await fetchAllPages(base44.entities.Receita, "-nome");
       const receitaMap = {};
       existingReceitas.forEach(r => { receitaMap[r.nome?.toLowerCase().trim()] = r; });
 

@@ -21,6 +21,7 @@ import ImportarIngredientesDialog from "@/components/ingrediente/ImportarIngredi
 import RelatorioLotePrecosDialog from "@/components/ingrediente/RelatorioLotePrecosDialog";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const GRUPOS_INGREDIENTES = [
   { nome: "Carnes e Ovos",            icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["Carnes e Ovos"] },
@@ -73,7 +74,7 @@ export default function Ingredientes() {
 
   const { data: ingredientes = [], isLoading } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: ultimoLog } = useQuery({

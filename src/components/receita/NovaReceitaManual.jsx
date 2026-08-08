@@ -18,6 +18,7 @@ import TagSelector from "@/components/tags/TagSelector";
 import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function NovaReceitaManual({ open, onClose, onCreated, receitasExistentes = [] }) {
   const [form, setForm] = useState({
@@ -48,12 +49,12 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
 
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const filteredIngs = useMemo(() => {

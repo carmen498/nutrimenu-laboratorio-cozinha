@@ -10,6 +10,7 @@ import { Check, AlertTriangle, Loader2, ClipboardPaste, ChefHat, ChevronDown, Fi
 import { toast } from "sonner";
 import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import ImportarReceitaTextoItemDetail from "@/components/receita/ImportarReceitaTextoItemDetail";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 const PLACEHOLDER = `RECEITA: CONSOMÊ DE CARNE
 CATEGORIA: Sopas e Caldos
@@ -148,7 +149,7 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
     if (!parsedList) return;
     setCreating(true);
     try {
-      const ingredientesDb = await base44.entities.Ingrediente.list("-nome", 500);
+      const ingredientesDb = await fetchAllPages(base44.entities.Ingrediente, "-nome");
       const ingredientesById = {};
       ingredientesDb.forEach((ing) => { ingredientesById[ing.id] = ing; });
 

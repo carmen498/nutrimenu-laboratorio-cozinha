@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
+import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes, unidadeBase }) {
   const [busca, setBusca] = useState("");
@@ -27,12 +28,12 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
 
   const { data: ingredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 5000),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
   const { data: medidas = [] } = useQuery({
