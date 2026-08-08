@@ -458,7 +458,23 @@ export default function Receitas() {
       {selectionMode && (
         <div className="flex items-center justify-between gap-2 p-3 bg-primary/10 border border-primary/30 rounded-xl">
           <span className="text-sm font-medium">{selectedIds.size} receita(s) selecionada(s)</span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedIds(new Set(filtered.map(r => r.id)))}
+            >
+              Selecionar todos
+            </Button>
+            {categoriaSelecionada && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedIds(new Set(filtered.filter(r => hasCategoria(r, categoriaSelecionada)).map(r => r.id)))}
+              >
+                Selecionar por categoria
+              </Button>
+            )}
             <Button size="sm" disabled={selectedIds.size === 0} onClick={() => setShowBulkTag(true)}>
               <Tag className="w-4 h-4 mr-1" /> Aplicar tag
             </Button>
