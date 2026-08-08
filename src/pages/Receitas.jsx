@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -17,6 +18,7 @@ import ImportarLoteDialog from "@/components/receita/ImportarLoteDialog";
 import ImportarReceitaTextoDialog from "@/components/receita/ImportarReceitaTextoDialog";
 import GerenciarTagsDialog from "@/components/receita/GerenciarTagsDialog";
 import QuickTagAssignDialog from "@/components/receita/QuickTagAssignDialog";
+import BulkTagAssignDialog from "@/components/receita/BulkTagAssignDialog";
 import TagBadge from "@/components/tags/TagBadge";
 import { getCorHex } from "@/lib/coresReceita";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
@@ -57,6 +59,9 @@ export default function Receitas() {
   const [showTagPainel, setShowTagPainel] = useState(false);
   const [showGerenciarTags, setShowGerenciarTags] = useState(false);
   const [assignTagsReceita, setAssignTagsReceita] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkTag, setShowBulkTag] = useState(false);
   const tagPanelRef = useRef(null);
   const tagButtonRef = useRef(null);
   const navigate = useNavigate();
@@ -190,6 +195,20 @@ export default function Receitas() {
     return matchBusca && matchCat;
   });
 
+  const toggleSelect = (recId) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(recId)) next.delete(recId);
+      else next.add(recId);
+      return next;
+    });
+  };
+
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "";
 
   const formatYield = (r) => {
@@ -206,6 +225,13 @@ export default function Receitas() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge></h1>
         <div className="flex gap-2">
+          <Button
+            variant={selectionMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => (selectionMode ? exitSelectionMode() : setSelectionMode(true))}
+          >
+            <CheckSquare className="w-4 h-4 mr-1" /> {selectionMode ? "Cancelar seleção" : "Selecionar"}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
@@ -428,6 +454,19 @@ export default function Receitas() {
         </div>
       )}
 
+      {/* Bulk selection action bar */}
+      {selectionMode && (
+        <div className="flex items-center justify-between gap-2 p-3 bg-primary/10 border border-primary/30 rounded-xl">
+          <span className="text-sm font-medium">{selectedIds.size} receita(s) selecionada(s)</span>
+          <div className="flex gap-2">
+            <Button size="sm" disabled={selectedIds.size === 0} onClick={() => setShowBulkTag(true)}>
+              <Tag className="w-4 h-4 mr-1" /> Aplicar tag
+            </Button>
+            <Button size="sm" variant="outline" onClick={exitSelectionMode}>Cancelar</Button>
+          </div>
+        </div>
+      )}
+
       {/* Recipe list */}
       {isLoading ? (
         <div className="flex justify-center py-12">
@@ -436,8 +475,20 @@ export default function Receitas() {
       ) : (
         <div className="space-y-1.5">
           {filtered.sort((a, b) => a.nome?.localeCompare(b.nome)).slice(0, visibleCount).map((r) => (
-            <Link key={r.id} to={`/receita/${r.id}`}>
+            <Link
+              key={r.id}
+              to={`/receita/${r.id}`}
+              onClick={(e) => {
+                if (selectionMode) {
+                  e.preventDefault();
+                  toggleSelect(r.id);
+                }
+              }}
+            >
               <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
+                {selectionMode && (
+                  <Checkbox checked={selectedIds.has(r.id)} className="shrink-0 pointer-events-none" />
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     {r.cor_predominante && (
@@ -575,6 +626,22 @@ export default function Receitas() {
 
       {/* Quick Tag Assign dialog */}
       <QuickTagAssignDialog open={!!assignTagsReceita} onClose={() => setAssignTagsReceita(null)} receita={assignTagsReceita} />
+
+      {/* Bulk Tag Assign dialog */}
+      {showBulkTag && (
+        <BulkTagAssignDialog
+          open={true}
+          onClose={() => setShowBulkTag(false)}
+          receitaIds={Array.from(selectedIds)}
+          tags={tags}
+          allReceitaTags={allReceitaTags}
+          onApplied={() => {
+            qc.invalidateQueries({ queryKey: ["all-receita-tags"] });
+            setShowBulkTag(false);
+            exitSelectionMode();
+          }}
+        />
+      )}
 
     </div>
   );
