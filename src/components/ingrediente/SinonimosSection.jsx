@@ -9,6 +9,7 @@ import { toast } from "sonner";
 export default function SinonimosSection({ ingredienteId, localSinonimos, onLocalChange }) {
   const isLocal = !ingredienteId;
   const [novoSinonimo, setNovoSinonimo] = useState("");
+  const [erro, setErro] = useState(null);
   const qc = useQueryClient();
 
   const { data: sinonimosDb = [] } = useQuery({
@@ -36,10 +37,13 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sinonimos", ingredienteId] });
       setNovoSinonimo("");
+      setErro(null);
       toast.success("Sinônimo adicionado!");
     },
     onError: (err) => {
-      toast.error(err.message || "Erro ao adicionar sinônimo");
+      const msg = err.message || "Erro ao adicionar sinônimo";
+      setErro(msg);
+      toast.error(msg);
     },
   });
 
@@ -54,16 +58,21 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
   const handleAdd = async () => {
     const sin = novoSinonimo.trim();
     if (!sin) return;
+    setErro(null);
     const existeLocal = sinonimos.some(s => s.sinonimo?.toLowerCase().trim() === sin.toLowerCase());
     if (existeLocal) {
-      toast.error("Este sinônimo já existe neste ingrediente");
+      const msg = "Este sinônimo já existe neste ingrediente";
+      setErro(msg);
+      toast.error(msg);
       return;
     }
     if (isLocal) {
       const todos = await base44.entities.SinonimosIngredientes.list("-created_date", 1000);
       const existe = todos.some(s => s.sinonimo?.toLowerCase().trim() === sin.toLowerCase());
       if (existe) {
-        toast.error("Este sinônimo já existe para outro ingrediente");
+        const msg = "Este sinônimo já existe para outro ingrediente";
+        setErro(msg);
+        toast.error(msg);
         return;
       }
       onLocalChange([...(localSinonimos || []), sin]);
@@ -111,7 +120,7 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
       <div className="flex gap-1.5">
         <Input
           value={novoSinonimo}
-          onChange={(e) => setNovoSinonimo(e.target.value)}
+          onChange={(e) => { setNovoSinonimo(e.target.value); setErro(null); }}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
           placeholder="Novo sinônimo..."
           className="h-8 text-xs"
@@ -120,6 +129,9 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
           <Plus className="w-3.5 h-3.5" />
         </Button>
       </div>
+      {erro && (
+        <p className="text-xs text-destructive mt-1">{erro}</p>
+      )}
     </div>
   );
 }
