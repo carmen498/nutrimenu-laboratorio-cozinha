@@ -1,0 +1,63 @@
+{
+  "name": "RelatorioFaxinaCategoriasReceitas",
+  "type": "object",
+  "properties": {
+    "data_execucao": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da execu\u00e7\u00e3o da faxina"
+    },
+    "regras": {
+      "type": "array",
+      "description": "Contagem de receitas migradas por regra (categoria antes \u2192 depois)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "categoria_antes": {
+            "type": "string"
+          },
+          "categoria_depois": {
+            "type": "string"
+          },
+          "receitas_migradas": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "receitas_com_ovos": {
+      "type": "array",
+      "description": "Receitas na categoria 'Ovos' \u2014 n\u00e3o exclu\u00edda pois h\u00e1 receitas vinculadas (decis\u00e3o manual)",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "total_receitas_processadas": {
+      "type": "number",
+      "description": "Total de receitas analisadas"
+    },
+    "total_receitas_alteradas": {
+      "type": "number",
+      "description": "Total de receitas com categorias alteradas nesta execu\u00e7\u00e3o"
+    },
+    "total_cardapio_receita_alteradas": {
+      "type": "number",
+      "description": "Total de registros CardapioReceita com receita_categoria (cache) atualizados"
+    },
+    "total_secoes_evento_renomeadas": {
+      "type": "number",
+      "description": "Total de se\u00e7\u00f5es 'Petiscos' de eventos (Planejamento) renomeadas/mescladas para 'Entradas'"
+    }
+  },
+  "required": [
+    "data_execucao"
+  ]
+}
