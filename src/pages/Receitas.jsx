@@ -22,6 +22,7 @@ import { getCorHex } from "@/lib/coresReceita";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { normalizarNome } from "@/lib/normalizarNome";
 
 const CORES_CATEGORIA = {
   "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -158,7 +159,7 @@ export default function Receitas() {
   const filtered = receitas.filter((r) => {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
-    const matchBusca = !busca || r.nome?.toLowerCase().includes(busca.toLowerCase());
+    const matchBusca = !busca || normalizarNome(r.nome).includes(normalizarNome(busca));
     const matchCat = !categoriaSelecionada || hasCategoria(r, categoriaSelecionada);
     if (tagFilterIds.length > 0) {
       const tagsForReceita = allReceitaTags.filter(rt => rt.receita_id === r.id);
