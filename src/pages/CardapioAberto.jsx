@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -89,6 +90,8 @@ export default function CardapioAberto() {
   const [allTags, setAllTags] = useState([]);
   const [editandoNome, setEditandoNome] = useState(false);
   const [editNome, setEditNome] = useState("");
+  const [editandoObs, setEditandoObs] = useState(false);
+  const [editObs, setEditObs] = useState("");
   const [favLocal, setFavLocal] = useState(false);
 
   const [receitas, setReceitas] = useState([]);
@@ -464,8 +467,30 @@ export default function CardapioAberto() {
                 Editar
               </Button>
             </div>
-            {cardapio.observacoes && (
-              <p className="text-sm text-muted-foreground mt-2">{cardapio.observacoes}</p>
+            {editandoObs ? (
+              <Textarea
+                className="text-sm mt-2"
+                rows={2}
+                placeholder="Notas sobre o cardápio..."
+                value={editObs}
+                onChange={e => setEditObs(e.target.value)}
+                onBlur={() => { saveCardapio("observacoes", editObs); setEditandoObs(false); }}
+                autoFocus
+              />
+            ) : cardapio.observacoes ? (
+              <p
+                className="text-sm text-muted-foreground mt-2 cursor-pointer hover:text-foreground"
+                onClick={() => { setEditObs(cardapio.observacoes || ""); setEditandoObs(true); }}
+              >
+                {cardapio.observacoes}
+              </p>
+            ) : (
+              <button
+                className="text-sm text-muted-foreground/70 hover:text-primary mt-2 no-print"
+                onClick={() => { setEditObs(""); setEditandoObs(true); }}
+              >
+                + Adicionar observações
+              </button>
             )}
           </div>
 
