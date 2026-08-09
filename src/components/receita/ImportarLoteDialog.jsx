@@ -594,9 +594,9 @@ ${RECIPE_EXTRACTION_PROMPT}`,
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-display">Importar receitas em lote</DialogTitle>
+          <DialogTitle className="font-display">Importar com IA (texto ou arquivo)</DialogTitle>
           <DialogDescription>
-            Cole suas receitas ou envie um arquivo. A IA identifica e organiza tudo automaticamente.
+            Cole 1 ou várias receitas, ou envie um arquivo — a IA identifica e organiza.
           </DialogDescription>
         </DialogHeader>
 

@@ -235,14 +235,11 @@ export default function Receitas() {
               <DropdownMenuItem onClick={() => setShowNew("manual")}>
                 <BookOpen className="w-4 h-4 mr-2" /> Cadastrar manualmente
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowNew("ia")}>
-                <Sparkles className="w-4 h-4 mr-2" /> Colar receita (IA estrutura)
-              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowNew("lote")}>
-                <Upload className="w-4 h-4 mr-2" /> Importar em lote
+                <Sparkles className="w-4 h-4 mr-2" /> Importar com IA (texto ou arquivo)
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowNew("texto")}>
-                <ClipboardPaste className="w-4 h-4 mr-2" /> Importar Receita (colar texto)
+                <ClipboardPaste className="w-4 h-4 mr-2" /> Importar formato padrão (PC:)
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

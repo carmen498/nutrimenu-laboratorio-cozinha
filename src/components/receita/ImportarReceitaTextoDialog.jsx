@@ -192,11 +192,10 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
           <>
             <DialogHeader>
               <DialogTitle className="font-display flex items-center gap-2">
-                <ClipboardPaste className="w-5 h-5 text-primary" /> Importar Receita (colar texto)
+                <ClipboardPaste className="w-5 h-5 text-primary" /> Importar formato padrão (PC:)
               </DialogTitle>
               <DialogDescription>
-                Cole uma ou várias receitas no formato estruturado (RECEITA, CATEGORIA, PC, INGREDIENTES, MODO DE PREPARO, NOTA).
-                Cada linha "RECEITA:" inicia uma nova receita — ou envie um arquivo .txt com o mesmo conteúdo.
+                Arquivo .txt no formato padrão: RECEITA:/CATEGORIA:/PC:/INGREDIENTES:/MODO DE PREPARO: — importação exata, sem IA.
               </DialogDescription>
             </DialogHeader>
             <Textarea
