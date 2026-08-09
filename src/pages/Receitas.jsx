@@ -76,12 +76,18 @@ export default function Receitas() {
   useEffect(() => {
     if (!showTagPainel) return;
     const handleClickOutside = (e) => {
-      if (
-        tagPanelRef.current && !tagPanelRef.current.contains(e.target) &&
-        tagButtonRef.current && !tagButtonRef.current.contains(e.target)
-      ) {
-        setShowTagPainel(false);
+      if (tagPanelRef.current?.contains(e.target) || tagButtonRef.current?.contains(e.target)) {
+        return;
       }
+      // Guard against scrollbar interactions: some browsers report the click target
+      // as an element outside the panel (e.g. the document) when dragging the
+      // panel's own scrollbar. Treat clicks whose coordinates fall within the
+      // panel's bounding box (which includes its scrollbar) as "inside".
+      const rect = tagPanelRef.current?.getBoundingClientRect();
+      if (rect && e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+        return;
+      }
+      setShowTagPainel(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -426,7 +432,6 @@ export default function Receitas() {
                             setTagFilterIds(prev =>
                               active ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
                             );
-                            setShowTagPainel(false);
                           }}
                         >
                           {tag.nome}
