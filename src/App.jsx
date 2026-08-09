@@ -40,6 +40,7 @@ import PrePreparosCardapio from '@/pages/PrePreparosCardapio';
 import FichaCustosCardapio from '@/pages/FichaCustosCardapio';
 import ReceitasCardapio from '@/pages/ReceitasCardapio';
 import InsumosEmbalagens from '@/pages/InsumosEmbalagens';
+import RelatorioReceitasPDF from '@/pages/RelatorioReceitasPDF';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -91,6 +92,7 @@ const AuthenticatedApp = () => {
           <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
           <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
           <Route path="/insumos-embalagens" element={<InsumosEmbalagens />} />
+          <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
           <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
           <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
           <Route path="/auditorias" element={<Auditorias />} />

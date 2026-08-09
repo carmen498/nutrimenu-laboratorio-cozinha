@@ -28,7 +28,6 @@ import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { normalizarNome } from "@/lib/normalizarNome";
-import { exportarReceitasPDF } from "@/lib/exportarReceitasPDF";
 
 const CORES_CATEGORIA = {
   "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -248,12 +247,12 @@ export default function Receitas() {
                   <FileText className="w-4 h-4 mr-2" /> PDF de receitas
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
-                  <DropdownMenuItem onClick={() => exportarReceitasPDF(receitas)}>
+                  <DropdownMenuItem onClick={() => navigate("/relatorio-receitas-pdf")}>
                     Todas as receitas
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     disabled={!categoriaSelecionada}
-                    onClick={() => exportarReceitasPDF(receitas, categoriaSelecionada)}
+                    onClick={() => navigate(`/relatorio-receitas-pdf?categoria=${encodeURIComponent(categoriaSelecionada)}`)}
                   >
                     Categoria atual{categoriaSelecionada ? ` (${categoriaSelecionada})` : ""}
                   </DropdownMenuItem>
