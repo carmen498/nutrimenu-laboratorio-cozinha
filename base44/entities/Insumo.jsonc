@@ -16,11 +16,19 @@
     },
     "unidade": {
       "type": "string",
-      "description": "Unidade de medida (cm, folha, unidade, par, etc.)"
+      "description": "Unidade de medida (Folha, Cm, Metro, Unidade, Pacote, etc.)"
+    },
+    "preco_embalagem": {
+      "type": "number",
+      "description": "Pre\u00e7o pago pela embalagem/pacote comprado (R$)"
+    },
+    "quantidade_embalagem": {
+      "type": "number",
+      "description": "Quantidade total de unidades de medida contida na embalagem comprada (ex: 50 folhas)"
     },
     "preco_unitario": {
       "type": "number",
-      "description": "Pre\u00e7o unit\u00e1rio em R$"
+      "description": "Pre\u00e7o por unidade de medida em R$ \u2014 calculado automaticamente (preco_embalagem / quantidade_embalagem), mas pode ser ajustado manualmente"
     }
   },
   "required": [

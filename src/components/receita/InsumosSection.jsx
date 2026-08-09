@@ -210,6 +210,7 @@ export default function InsumosSection({ receitaId }) {
   const custoTotalInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "R$ 0,00";
+  const temPreco = (item) => (item.custo_unitario || 0) > 0;
 
   return (
     <div>
@@ -369,17 +370,17 @@ export default function InsumosSection({ receitaId }) {
                     </div>
                   ) : (
                     <button
-                      className="hover:underline hover:text-primary font-semibold text-primary text-xs"
+                      className={`hover:underline font-semibold text-xs ${temPreco(item) ? "text-primary hover:text-primary" : "text-muted-foreground"}`}
                       onClick={() => { setEditingId(item.id); setEditingCusto(String((item.custo_unitario || 0)).replace(".", ",")); }}
                     >
-                      {formatCurrency(item.custo_unitario || 0)}
+                      {temPreco(item) ? formatCurrency(item.custo_unitario) : "—"}
                     </button>
                   )}
                 </div>
                 <div className="col-span-2 text-right">
                   <div className="flex items-center justify-end gap-0.5">
-                    <span className={`text-xs font-semibold transition-colors duration-300 ${savedCustoId === item.id ? "text-green-600" : "text-primary"}`}>
-                      {formatCurrency(item.custo_total || 0)}
+                    <span className={`text-xs font-semibold transition-colors duration-300 ${!temPreco(item) ? "text-muted-foreground" : savedCustoId === item.id ? "text-green-600" : "text-primary"}`}>
+                      {temPreco(item) ? formatCurrency(item.custo_total || 0) : "—"}
                     </span>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => deleteMut.mutate(item.id)}>
                       <Trash2 className="w-3 h-3" />
@@ -387,6 +388,9 @@ export default function InsumosSection({ receitaId }) {
                   </div>
                 </div>
               </div>
+              {!temPreco(item) && (
+                <p className="text-[10px] text-amber-600 italic mt-1 pl-0.5">sem preço — não soma ao custo</p>
+              )}
             </Card>
           ))}
           <div className="flex justify-end pt-1 pr-2">

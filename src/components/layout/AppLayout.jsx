@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, Utensils, ClipboardCheck } from "lucide-react";
+import { Home, BookOpen, Apple, Menu, X, LogOut, Gauge, CalendarDays, Utensils, ClipboardCheck, Package } from "lucide-react";
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/ingredientes", label: "Ingredientes", icon: Apple },
   { path: "/percapita", label: "Per Capita", icon: Gauge },
   { path: "/medidas-caseiras", label: "Medidas", icon: Utensils },
+  { path: "/insumos-embalagens", label: "Insumos", icon: Package },
   { path: "/auditorias", label: "Auditorias", icon: ClipboardCheck },
 ];
 
@@ -130,6 +131,7 @@ export default function AppLayout() {
           if (p === "/lista-compras") return "Lista de Compras";
           if (p === "/percapita") return "Per Capita";
           if (p === "/medidas-caseiras") return "Medidas Caseiras";
+          if (p === "/insumos-embalagens") return "Insumos e Embalagens";
           if (p === "/relatorio-categorias") return "Relatório de Categorias";
           if (p === "/auditoria-receitas") return "Auditoria de Receitas";
           if (p === "/auditorias") return "Auditorias";

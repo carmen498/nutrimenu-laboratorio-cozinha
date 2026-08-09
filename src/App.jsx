@@ -38,6 +38,7 @@ import OrcamentoEvento from '@/pages/OrcamentoEvento';
 import PrePreparosCardapio from '@/pages/PrePreparosCardapio';
 import FichaCustosCardapio from '@/pages/FichaCustosCardapio';
 import ReceitasCardapio from '@/pages/ReceitasCardapio';
+import InsumosEmbalagens from '@/pages/InsumosEmbalagens';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
           <Route path="/percapita" element={<PerCapita />} />
           <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
           <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
+          <Route path="/insumos-embalagens" element={<InsumosEmbalagens />} />
           <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
           <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
           <Route path="/auditorias" element={<Auditorias />} />

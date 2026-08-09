@@ -13,8 +13,15 @@ export default function AddInsumoBanco({ insumosGlobais, onAdd, onUpdateGlobais 
   const [open, setOpen] = useState(false);
   const [busca, setBusca] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ nome: "", categoria: "material", unidade: "unidade", preco_unitario: 0 });
+  const [form, setForm] = useState({ nome: "", categoria: "material", unidade: "Unidade", preco_embalagem: "", quantidade_embalagem: "" });
   const [saving, setSaving] = useState(false);
+
+  const precoUnitarioCalc = (() => {
+    const preco = parseFloat(String(form.preco_embalagem).replace(",", "."));
+    const qtd = parseFloat(String(form.quantidade_embalagem).replace(",", "."));
+    if (!isNaN(preco) && !isNaN(qtd) && qtd > 0) return preco / qtd;
+    return null;
+  })();
 
   const filtered = useMemo(() => {
     if (!busca.trim()) return insumosGlobais.slice(0, 20);
@@ -39,18 +46,23 @@ export default function AddInsumoBanco({ insumosGlobais, onAdd, onUpdateGlobais 
     if (!form.nome.trim()) return;
     setSaving(true);
     try {
+      const preco_embalagem = form.preco_embalagem !== "" ? parseFloat(String(form.preco_embalagem).replace(",", ".")) : null;
+      const quantidade_embalagem = form.quantidade_embalagem !== "" ? parseFloat(String(form.quantidade_embalagem).replace(",", ".")) : null;
+      const preco_unitario = preco_embalagem != null && quantidade_embalagem > 0 ? parseFloat((preco_embalagem / quantidade_embalagem).toFixed(4)) : 0;
       const novo = await base44.entities.Insumo.create({
         nome: form.nome.trim(),
         categoria: form.categoria,
         unidade: form.unidade,
-        preco_unitario: Number(form.preco_unitario) || 0,
+        preco_embalagem,
+        quantidade_embalagem,
+        preco_unitario,
       });
       onAdd(novo);
       onUpdateGlobais();
       setShowForm(false);
       setOpen(false);
       setBusca("");
-      setForm({ nome: "", categoria: "material", unidade: "unidade", preco_unitario: 0 });
+      setForm({ nome: "", categoria: "material", unidade: "Unidade", preco_embalagem: "", quantidade_embalagem: "" });
       toast.success("Insumo cadastrado!");
     } catch (e) {
       toast.error("Erro ao cadastrar insumo");
@@ -87,7 +99,9 @@ export default function AddInsumoBanco({ insumosGlobais, onAdd, onUpdateGlobais 
                 onClick={() => handleSelect(ins)}
               >
                 <span>{ins.nome}</span>
-                <span className="text-xs text-muted-foreground capitalize">{ins.categoria} · {ins.unidade}</span>
+                <span className="text-xs text-muted-foreground">
+                  {ins.unidade} · {ins.preco_unitario > 0 ? `R$ ${Number(ins.preco_unitario).toFixed(2).replace(".", ",")}` : "sem preço"}
+                </span>
               </button>
             ))}
             {busca.trim() && !hasExactMatch && (
@@ -125,12 +139,29 @@ export default function AddInsumoBanco({ insumosGlobais, onAdd, onUpdateGlobais 
               </Select>
             </div>
             <div>
-              <Label>Unidade</Label>
-              <Input value={form.unidade} onChange={(e) => setForm({ ...form, unidade: e.target.value })} placeholder="unidade, cm, folha, par..." />
+              <Label>Unidade de medida</Label>
+              <Select value={form.unidade} onValueChange={(v) => setForm({ ...form, unidade: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Folha", "Cm", "Metro", "Unidade", "Pacote"].map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Label>Preço unitário (R$)</Label>
-              <Input type="number" step="0.01" value={form.preco_unitario} onChange={(e) => setForm({ ...form, preco_unitario: parseFloat(e.target.value) || 0 })} />
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Preço da embalagem (R$)</Label>
+                <Input type="text" inputMode="decimal" value={form.preco_embalagem} onChange={(e) => setForm({ ...form, preco_embalagem: e.target.value })} placeholder="ex: 12,00" />
+              </div>
+              <div>
+                <Label>Qtd. na embalagem</Label>
+                <Input type="text" inputMode="decimal" value={form.quantidade_embalagem} onChange={(e) => setForm({ ...form, quantidade_embalagem: e.target.value })} placeholder="ex: 50" />
+              </div>
+            </div>
+            <div className="bg-muted/50 rounded-lg p-2 flex items-center justify-between text-sm">
+              <span className="text-xs text-muted-foreground">Preço por unidade (automático)</span>
+              <span className="font-semibold text-primary">
+                {precoUnitarioCalc != null ? `R$ ${precoUnitarioCalc.toFixed(2).replace(".", ",")}` : "—"}
+              </span>
             </div>
           </div>
           <DialogFooter>
