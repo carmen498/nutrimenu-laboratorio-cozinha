@@ -566,6 +566,7 @@ export default function CardapioAberto() {
           receitaMap={receitaMap}
           isBuffet={isBuffet}
           num={num}
+          cardapioNome={cardapio.nome}
           cardapioTipo={cardapio.tipo}
           temDias={temDias}
           diasOptions={diasDisponiveis ? diasDisponiveis.map(k => DIAS.find(d => d.key === k)).filter(Boolean) : DIAS}

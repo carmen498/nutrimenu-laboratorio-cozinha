@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,19 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 export default function ReceitaAberta() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
+
+  // Contexto de origem (cardápio/evento): quando a ficha é aberta a partir de um
+  // cardápio, o escalador abre pré-escalado com o PC e nº de pessoas daquele
+  // cardápio. Nunca é gravado — é puramente de visualização (efêmero).
+  const contextoOrigem = useMemo(() => {
+    const pc = parseFloat(searchParams.get("ctxPc"));
+    const pessoas = parseFloat(searchParams.get("ctxPessoas"));
+    const nome = searchParams.get("ctxNome");
+    if (pc > 0 && pessoas > 0 && nome) return { pc, pessoas, nome };
+    return null;
+  }, [searchParams]);
   const [porcoes, setPorcoes] = useState(null);
   const [quantidadeTotal, setQuantidadeTotal] = useState(null);
   const [pcLocal, setPcLocal] = useState(null);
@@ -227,14 +239,21 @@ export default function ReceitaAberta() {
     return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
   }, [receita, perCapitaSugerido]);
 
-  // Inicializa o escalador uma única vez (por abertura da ficha) com o estado inicial
+  // Inicializa o escalador uma única vez (por abertura da ficha) com o estado inicial —
+  // ou, se a ficha foi aberta a partir de um cardápio/evento, com o contexto de origem.
   useEffect(() => {
     if (estadoInicialEscala && pcLocal === null) {
-      setPcLocal(estadoInicialEscala.pc);
-      setQuantidadeTotal(estadoInicialEscala.quantidadeTotal);
-      setPorcoes(estadoInicialEscala.porcoes);
+      if (contextoOrigem) {
+        setPcLocal(contextoOrigem.pc);
+        setPorcoes(contextoOrigem.pessoas);
+        setQuantidadeTotal(Math.round(contextoOrigem.pc * contextoOrigem.pessoas));
+      } else {
+        setPcLocal(estadoInicialEscala.pc);
+        setQuantidadeTotal(estadoInicialEscala.quantidadeTotal);
+        setPorcoes(estadoInicialEscala.porcoes);
+      }
     }
-  }, [estadoInicialEscala, pcLocal]);
+  }, [estadoInicialEscala, pcLocal, contextoOrigem]);
 
   // Escala é efêmera (somente visualização) — nunca grava na receita
   const commitPC = (newPC) => {
@@ -1071,6 +1090,14 @@ REGRAS:
           </label>
         )}
       </div>
+
+      {/* Selo de contexto: ficha aberta a partir de um cardápio/evento */}
+      {contextoOrigem && isEscalado && (
+        <div className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 w-fit">
+          <Scale className="w-3.5 h-3.5" />
+          escalado para {contextoOrigem.nome} · {contextoOrigem.pessoas} pessoas
+        </div>
+      )}
 
       {/* Escalador da receita: PC × Porções = Total */}
       <EscaladorReceita

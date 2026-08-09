@@ -16,6 +16,7 @@ function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 export default function CardapioTabelaReceitas({
   receitas, receitaMap, isBuffet, num, cardapioTipo, temDias, diasOptions,
   custoReceitasTotal, custoInsumos = 0, custoProducaoTotal = 0, filtroDia, onUpdateReceita, onRemoveReceita, onMoveReceita,
+  cardapioNome,
 }) {
   const [filtroSecao, setFiltroSecao] = useState("todas");
   const [selectedId, setSelectedId] = useState(null);
@@ -109,6 +110,7 @@ export default function CardapioTabelaReceitas({
                 diasOptions={diasOptions}
                 refeicoesOptions={REFEICOES}
                 showTrashInRow
+                contexto={cardapioNome ? { nome: cardapioNome, pessoas: num } : null}
               />
             );
           })}

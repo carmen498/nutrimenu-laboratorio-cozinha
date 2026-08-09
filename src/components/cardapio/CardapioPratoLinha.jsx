@@ -12,7 +12,11 @@ export default function CardapioPratoLinha({
   rec, descritivo, pcSuffix, kg, pct, selected, onSelect,
   onUpdatePC, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown,
   temDias, diasOptions, refeicoesOptions, onUpdateField, semCusto, showTrashInRow,
+  contexto,
 }) {
+  const linkTo = contexto && contexto.nome
+    ? `/receita/${rec.receita_id}?ctxPc=${rec.per_capita_g || 0}&ctxPessoas=${contexto.pessoas || 0}&ctxNome=${encodeURIComponent(contexto.nome)}`
+    : `/receita/${rec.receita_id}`;
   return (
     <div
       className={`group transition-colors cursor-pointer ${selected ? "bg-accent" : "hover:bg-secondary/30"}`}
@@ -21,7 +25,7 @@ export default function CardapioPratoLinha({
       <div className="flex items-center gap-3 px-3 py-2.5">
         <div className="flex-1 min-w-0">
           <Link
-            to={`/receita/${rec.receita_id}`}
+            to={linkTo}
             onClick={e => e.stopPropagation()}
             className="text-sm font-medium text-primary hover:underline truncate block"
           >
