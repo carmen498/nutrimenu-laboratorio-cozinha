@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -193,6 +193,27 @@ export default function MedidasCaseiras() {
 
   const fmtG = (v) => v != null ? (Number.isInteger(v) ? v : v.toFixed(1).replace(".0", "")) : "—";
 
+  const SEM_CATEGORIA = "Sem categoria";
+  const medidasAgrupadas = useMemo(() => {
+    const grupos = {};
+    medidasFiltered.forEach((m) => {
+      const cat = ingMap[m.alimento]?.categoria || SEM_CATEGORIA;
+      if (!grupos[cat]) grupos[cat] = [];
+      grupos[cat].push(m);
+    });
+    const nomes = Object.keys(grupos).sort((a, b) => {
+      if (a === SEM_CATEGORIA) return 1;
+      if (b === SEM_CATEGORIA) return -1;
+      return a.localeCompare(b, "pt-BR");
+    });
+    return nomes.map((categoria) => ({
+      categoria,
+      itens: grupos[categoria].sort((a, b) =>
+        (ingMap[a.alimento]?.nome || "").localeCompare(ingMap[b.alimento]?.nome || "", "pt-BR")
+      ),
+    }));
+  }, [medidasFiltered, ingMap]);
+
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center gap-2">
@@ -324,30 +345,39 @@ export default function MedidasCaseiras() {
               </tr>
             </thead>
             <tbody>
-              {medidasFiltered.map((m, idx) => {
-                const ing = ingMap[m.alimento];
-                const ute = uteMap[m.utensilio];
-                return (
-                  <tr key={m.id} className={`border-b border-border/40 ${idx % 2 === 0 ? "bg-white" : "bg-muted/20"} hover:bg-muted/40`}>
-                    <td className="px-3 py-2 font-medium">{ing?.nome || "—"}</td>
-                    <td className="px-3 py-2">{ute?.simbolo || "—"}</td>
-                    <td className="px-2 py-2 text-right tabular-nums font-semibold" style={{ color: "#1B4332" }}>{fmtG(m.referencia_g)}</td>
-                    <td className="px-2 py-2 text-center">
-                      {m.so_gramas ? <Badge className="bg-amber-100 text-amber-700 border-amber-300">Sim</Badge> : "—"}
-                    </td>
-                    <td className="px-2 py-2">
-                      <div className="flex items-center gap-1 justify-end">
-                        <button className="p-1 rounded hover:bg-muted" onClick={() => startEditMedida(m)} title="Editar">
-                          <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                        </button>
-                        <button className="p-1 rounded hover:bg-red-50" onClick={() => deleteMedida(m)} title="Excluir">
-                          <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
-                        </button>
-                      </div>
+              {medidasAgrupadas.map((grupo) => (
+                <React.Fragment key={grupo.categoria}>
+                  <tr className="bg-muted/60">
+                    <td colSpan={5} className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {grupo.categoria} ({grupo.itens.length})
                     </td>
                   </tr>
-                );
-              })}
+                  {grupo.itens.map((m, idx) => {
+                    const ing = ingMap[m.alimento];
+                    const ute = uteMap[m.utensilio];
+                    return (
+                      <tr key={m.id} className={`border-b border-border/40 ${idx % 2 === 0 ? "bg-white" : "bg-muted/20"} hover:bg-muted/40`}>
+                        <td className="px-3 py-2 font-medium">{ing?.nome || "—"}</td>
+                        <td className="px-3 py-2">{ute?.simbolo || "—"}</td>
+                        <td className="px-2 py-2 text-right tabular-nums font-semibold" style={{ color: "#1B4332" }}>{fmtG(m.referencia_g)}</td>
+                        <td className="px-2 py-2 text-center">
+                          {m.so_gramas ? <Badge className="bg-amber-100 text-amber-700 border-amber-300">Sim</Badge> : "—"}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex items-center gap-1 justify-end">
+                            <button className="p-1 rounded hover:bg-muted" onClick={() => startEditMedida(m)} title="Editar">
+                              <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                            </button>
+                            <button className="p-1 rounded hover:bg-red-50" onClick={() => deleteMedida(m)} title="Excluir">
+                              <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
               {medidasFiltered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center text-muted-foreground py-8 text-sm">
