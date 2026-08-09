@@ -9,6 +9,7 @@ import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
 import SinonimosSection from "@/components/ingrediente/SinonimosSection";
+import { toSentenceCaseName } from "@/lib/textCase";
 
 // Modal "Editar/Novo Ingrediente" — extraído para ser reutilizado pela listagem
 // de Ingredientes e pela ficha do ingrediente. Comportamento inalterado, apenas
@@ -41,7 +42,7 @@ export default function IngredienteFormDialog({ open, onClose, item, onSave, sav
       return;
     }
     setErroQuantidade(null);
-    onSave({ ...form, _novos_sinonimos: novosSinonimos });
+    onSave({ ...form, nome: toSentenceCaseName(form.nome), _novos_sinonimos: novosSinonimos });
   };
 
   const formatCurrency = (v) => v != null ? "R$ " + v.toFixed(2).replace(".", ",") : "—";

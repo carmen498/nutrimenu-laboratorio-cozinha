@@ -195,7 +195,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
   });
 
   const buildDados = (configOverride) => ({
-    nome: nome.trim(),
+    nome: nome.trim().toUpperCase(),
     tipo_planejamento: tipoPlanejamento,
     tipo_servico: tipoServico || "Outro",
     horario_inicio: horario || undefined,

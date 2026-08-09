@@ -18,6 +18,7 @@ import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado, removerMarca } from "@/lib/normalizarNome";
 import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
+import { toSentenceCaseName } from "@/lib/textCase";
 
 // ── Auto-category from ingredients ──
 const categorizarPorIngredientes = (ingredientesNomes) => {
@@ -472,7 +473,7 @@ IMPORTANTE:
             const pesoEmb = estimado?.peso_embalagem_g || unidade.peso_embalagem_g;
             const precoPorG = pesoEmb > 0 ? precoEmb / pesoEmb : 0;
             matchedIng = await base44.entities.Ingrediente.create({
-              nome: nomeCriar,
+              nome: toSentenceCaseName(nomeCriar),
               categoria: "A Revisar",
               unidade_compra: unidade.unidade_compra,
               peso_embalagem_g: pesoEmb,
@@ -613,7 +614,7 @@ Para cada variação, retorne:
             } else {
               const unidade = sugerirUnidadeCompra(nomeBusca);
               found = await base44.entities.Ingrediente.create({
-                nome: nomeBusca,
+                nome: toSentenceCaseName(nomeBusca),
                 categoria: "A Revisar",
                 unidade_compra: unidade.unidade_compra,
                 peso_embalagem_g: unidade.peso_embalagem_g,

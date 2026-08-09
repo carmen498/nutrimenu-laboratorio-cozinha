@@ -437,8 +437,8 @@ export default function CardapioAberto() {
                   className="text-xl font-display font-bold h-10"
                   value={editNome}
                   onChange={e => setEditNome(e.target.value)}
-                  onBlur={() => { saveCardapio("nome", editNome); setEditandoNome(false); }}
-                  onKeyDown={e => { if (e.key === "Enter") { saveCardapio("nome", editNome); setEditandoNome(false); } }}
+                  onBlur={() => { saveCardapio("nome", editNome.trim().toUpperCase()); setEditandoNome(false); }}
+                  onKeyDown={e => { if (e.key === "Enter") { saveCardapio("nome", editNome.trim().toUpperCase()); setEditandoNome(false); } }}
                   autoFocus
                 />
               ) : (

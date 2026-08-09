@@ -108,7 +108,7 @@ export default function Cardapios() {
     setSalvando(true);
     try {
       const c = await base44.entities.Cardapio.create({
-        nome: form.nome.trim(),
+        nome: form.nome.trim().toUpperCase(),
         tipo: form.tipo,
         data: form.data || null,
         observacoes: form.observacoes.trim(),

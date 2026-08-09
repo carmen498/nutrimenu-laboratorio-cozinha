@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { toSentenceCaseName } from "@/lib/textCase";
 
 const CATEGORIAS_ING = [
   "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios", "Panificação e Cereais",
@@ -32,14 +33,15 @@ export default function NovoIngredienteRapido({ open, onClose, nomeSugerido, onC
     if (!form.nome.trim()) { toast.error("Informe o nome do ingrediente"); return; }
     setSaving(true);
     try {
+      const nomeFormatado = toSentenceCaseName(form.nome);
       const peso = parseFloat(form.peso_embalagem_g) || 0;
       const preco = parseFloat(form.preco_embalagem_rs) || 0;
       const fc = parseFloat(form.fator_correcao) || 1;
       const preco_por_g = peso > 0 ? preco / peso : 0;
 
-      const existing = await base44.entities.Ingrediente.filter({ nome: form.nome });
+      const existing = await base44.entities.Ingrediente.filter({ nome: nomeFormatado });
       const ing = await base44.entities.Ingrediente.create({
-        nome: form.nome,
+        nome: nomeFormatado,
         categoria: form.categoria,
         unidade_compra: form.unidade_compra,
         peso_embalagem_g: peso,
@@ -51,7 +53,7 @@ export default function NovoIngredienteRapido({ open, onClose, nomeSugerido, onC
       });
 
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      toast.success(`${form.nome} cadastrado!`);
+      toast.success(`${nomeFormatado} cadastrado!`);
       onCreated(ing);
     } catch {
       toast.error("Erro ao cadastrar ingrediente");
