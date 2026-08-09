@@ -42,6 +42,7 @@ import EscaladorReceita from "@/components/receita/EscaladorReceita";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 
@@ -1471,9 +1472,17 @@ REGRAS:
         <Button onClick={() => navigate(`/receita/${id}/lista-compras?porcoes=${porcoes}`)}>
           <ShoppingCart className="w-4 h-4 mr-1" /> Gerar lista de compras
         </Button>
-        <Button variant="outline" onClick={() => navigate(`/ficha-tecnica/${id}`)}>
-          <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => navigate(`/ficha-tecnica/${id}`)}>Ficha Técnica</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate(`/ficha-custos-receita/${id}`)}>Ficha de Custos</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Dialogs */}

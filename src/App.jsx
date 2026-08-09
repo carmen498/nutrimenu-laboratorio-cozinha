@@ -26,6 +26,7 @@ import ListaCompras from '@/pages/ListaCompras';
 import ExportarReceita from '@/pages/ExportarReceita';
 import ReceitaListaCompras from '@/pages/ReceitaListaCompras';
 import FichaTecnicaReceita from '@/pages/FichaTecnicaReceita';
+import FichaCustosReceita from '@/pages/FichaCustosReceita';
 import PerCapita from '@/pages/PerCapita';
 import RelatorioCategorias from '@/pages/RelatorioCategorias';
 import MedidasCaseiras from '@/pages/MedidasCaseiras';
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/receita/:id/lista-compras" element={<ReceitaListaCompras />} />
           <Route path="/exportar/:id" element={<ExportarReceita />} />
           <Route path="/ficha-tecnica/:id" element={<FichaTecnicaReceita />} />
+          <Route path="/ficha-custos-receita/:id" element={<FichaCustosReceita />} />
           <Route path="/percapita" element={<PerCapita />} />
           <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
           <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
