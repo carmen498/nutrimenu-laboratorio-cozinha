@@ -503,14 +503,24 @@ export default function Receitas() {
             >
               Selecionar todos
             </Button>
-            {categoriaSelecionada && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSelectedIds(new Set(filtered.filter(r => hasCategoria(r, categoriaSelecionada)).map(r => r.id)))}
-              >
-                Selecionar por categoria
-              </Button>
+            {!categoriaSelecionada && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    Selecionar por categoria
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                  {CATEGORIAS_RECEITA.filter(cat => filtered.some(r => hasCategoria(r, cat))).map(cat => (
+                    <DropdownMenuItem
+                      key={cat}
+                      onClick={() => setSelectedIds(new Set(filtered.filter(r => hasCategoria(r, cat)).map(r => r.id)))}
+                    >
+                      {cat}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button size="sm" disabled={selectedIds.size === 0} onClick={() => setShowBulkTag(true)}>
               <Tag className="w-4 h-4 mr-1" /> Aplicar tag
