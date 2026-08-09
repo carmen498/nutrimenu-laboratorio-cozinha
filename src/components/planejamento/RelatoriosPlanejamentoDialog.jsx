@@ -42,6 +42,7 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
   const handlers = dados ? {
     dossie_evento: () => { onClose(); navigate(`/planejamento/${planejamento.id}/dossie`); return false; },
     ficha_cardapio: () => gerarRelatorioProducao(planejamento, dados),
+    orcamento: () => { onClose(); navigate(`/planejamento/${planejamento.id}/orcamento`); return false; },
     pre_preparos: () => { onClose(); navigate(`/planejamento/${planejamento.id}/pre-preparos`); return false; },
     ficha_custos: () => gerarRelatorioFichaCustos(planejamento, dados),
     receitas_cardapio: () => gerarRelatorioReceitas(planejamento, dados),

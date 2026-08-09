@@ -93,6 +93,14 @@
       "type": "number",
       "default": 0,
       "description": "Margem de seguran\u00e7a \u00fanica do card\u00e1pio do evento (Etapa 3), em percentual. C\u00e1lculo: kg do prato = pessoas \u00d7 PC \u00d7 (1 + margem%)"
+    },
+    "observacoes_orcamento": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es comerciais do Or\u00e7amento do evento (documento do cliente) \u2014 distintas das observa\u00e7\u00f5es de produ\u00e7\u00e3o"
+    },
+    "preco_pessoa_orcamento": {
+      "type": "number",
+      "description": "Pre\u00e7o por pessoa digitado na gera\u00e7\u00e3o do Or\u00e7amento do evento (usado quando n\u00e3o h\u00e1 mecanismo de markup ativo)"
     }
   },
   "required": [
