@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Camera, Sparkles, Loader2, Search, Plus, Trash2, X, Check, AlertCircle, ArrowUp, ArrowDown, Pencil } from "lucide-react";
+import { Sparkles, Search, Plus, Minus, Trash2, X, Check, AlertCircle, ArrowUp, ArrowDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
@@ -26,7 +26,6 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     unidade_base: "g", modo_preparo: "", descritivo_menu: "", foto_url: ""
   });
   const [saving, setSaving] = useState(false);
-  const [generatingPhoto, setGeneratingPhoto] = useState(false);
   // Ingredient section state
   const [ingBusca, setIngBusca] = useState("");
   const [selectedIng, setSelectedIng] = useState(null);
@@ -322,35 +321,9 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
   const hasData = !!form.nome?.trim() || addedIngs.length > 0 || !!form.modo_preparo?.trim() || !!form.foto_url || selectedTagIds.length > 0;
   const handleAttemptClose = () => { if (hasData) setShowDiscard(true); else onClose(); };
 
-  const handleUploadPhoto = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setForm({ ...form, foto_url: file_url });
-    } catch {
-      toast.error("Erro ao enviar foto");
-    }
-  };
-
-  const handleGeneratePhoto = async () => {
-    if (!form.nome?.trim()) { toast.error("Informe o nome da receita primeiro"); return; }
-    setGeneratingPhoto(true);
-    try {
-      const { url } = await base44.integrations.Core.GenerateImage({
-        prompt: `Professional food photography of "${form.nome}", Brazilian cuisine, beautifully plated, natural lighting, top-down view, warm colors, appetizing, high quality`
-      });
-      setForm({ ...form, foto_url: url });
-    } catch {
-      toast.error("Erro ao gerar foto");
-    } finally {
-      setGeneratingPhoto(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleAttemptClose(); }}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => { e.preventDefault(); handleAttemptClose(); }}>
+      <DialogContent className="max-w-[800px] max-h-[90vh] overflow-y-auto" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => { e.preventDefault(); handleAttemptClose(); }}>
         <DialogHeader>
           <DialogTitle className="font-display">Nova Receita</DialogTitle>
         </DialogHeader>
@@ -359,19 +332,51 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             <Label>Nome da receita</Label>
             <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value.toUpperCase() })} placeholder="Ex: BOLO DE CENOURA" />
           </div>
-          <div>
-            <Label>Categoria</Label>
-            <CategoriaPicker value={form.categorias || []} onChange={(v) => setForm({ ...form, categorias: v })} />
-          </div>
-          <div>
-            <Label>Unidade base</Label>
-            <Select value={form.unidade_base} onValueChange={(v) => setForm({ ...form, unidade_base: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="g">Gramas (sólidos)</SelectItem>
-                <SelectItem value="ml">Mililitros (líquidos)</SelectItem>
-              </SelectContent>
-            </Select>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <Label>Categoria</Label>
+              <CategoriaPicker value={form.categorias || []} onChange={(v) => setForm({ ...form, categorias: v })} />
+            </div>
+            <div>
+              <Label>Tags</Label>
+              <TagSelector
+                selectedIds={selectedTagIds}
+                onToggle={(tag) => {
+                  setSelectedTagIds(prev =>
+                    prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                  );
+                }}
+              />
+            </div>
+            <div>
+              <Label>Unidade base</Label>
+              <Select value={form.unidade_base} onValueChange={(v) => setForm({ ...form, unidade_base: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="g">Gramas (sólidos)</SelectItem>
+                  <SelectItem value="ml">Mililitros (líquidos)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>PC recomendado</Label>
+              <div className="flex items-center gap-1">
+                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setForm((f) => ({ ...f, per_capita_g: Math.max(0, (f.per_capita_g || 0) - 10) }))}>
+                  <Minus className="w-3.5 h-3.5" />
+                </Button>
+                <Input
+                  type="number"
+                  className="h-9 text-center px-1 flex-1 min-w-0"
+                  value={form.per_capita_g || ""}
+                  onChange={(e) => setForm({ ...form, per_capita_g: parseFloat(e.target.value) || null })}
+                  placeholder="g/porção"
+                />
+                <Button type="button" variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={() => setForm((f) => ({ ...f, per_capita_g: (f.per_capita_g || 0) + 10 }))}>
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
           </div>
           {/* Ingredients section */}
           <div className="pt-2 border-t">
@@ -477,11 +482,11 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
               </div>
             )}
 
-            {/* Add ingredient form (primary action) */}
-            <div className="space-y-2">
+            {/* Add ingredient form (primary action) — single row: busca | quantidade | pré-preparo | + */}
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,2fr)_120px_160px_auto] gap-2 items-start">
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between font-normal" size="sm">
+                  <Button variant="outline" className="w-full justify-between font-normal h-9" size="sm">
                     {selectedIng ? (
                       selectedType === "subreceita" ? (
                         <span className="flex items-center gap-1">
@@ -568,31 +573,25 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
                 </PopoverContent>
               </Popover>
 
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <Input
-                    id="ing-qtd-input"
-                    type="number"
-                    placeholder="Quant. por porção (g)"
-                    value={ingQtd}
-                    onChange={(e) => setIngQtd(e.target.value)}
-                    className="h-9 text-sm"
-                    min={0}
-                    step={0.1}
-                  />
-                </div>
-                <div className="flex-1">
-                  <Input
-                    placeholder="Pré-preparo (opcional)"
-                    value={ingPrePreparo}
-                    onChange={(e) => setIngPrePreparo(e.target.value)}
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <Button size="sm" onClick={handleAddIng} className="shrink-0">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              <Input
+                id="ing-qtd-input"
+                type="number"
+                placeholder="Quant. (g)"
+                value={ingQtd}
+                onChange={(e) => setIngQtd(e.target.value)}
+                className="h-9 text-sm"
+                min={0}
+                step={0.1}
+              />
+              <Input
+                placeholder="Pré-preparo (opcional)"
+                value={ingPrePreparo}
+                onChange={(e) => setIngPrePreparo(e.target.value)}
+                className="h-9 text-sm"
+              />
+              <Button size="sm" onClick={handleAddIng} className="h-9 w-9 p-0 shrink-0">
+                <Plus className="w-4 h-4" />
+              </Button>
             </div>
 
             {/* Add group header (secondary) */}
@@ -622,50 +621,20 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             </div>
           </div>
 
-          <div>
-            <Label>Modo de preparo</Label>
-            <Textarea rows={4} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value.toLowerCase() })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. derreter o chocolate em banho-maria com a manteiga. reservar.\n2. bater os ovos com o açúcar até formar creme fofo.\n3. acrescentar a farinha e mexer até homogeneizar.\n4. assar a 180 °c por 25 minutos."} />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="md:col-span-3">
+              <Label>Modo de preparo</Label>
+              <Textarea rows={6} value={form.modo_preparo} onChange={(e) => setForm({ ...form, modo_preparo: e.target.value.toLowerCase() })} placeholder={"Lista numerada. Verbos no infinitivo. Sem marcas, sem dicas. Ex:\n1. derreter o chocolate em banho-maria com a manteiga. reservar.\n2. bater os ovos com o açúcar até formar creme fofo.\n3. acrescentar a farinha e mexer até homogeneizar.\n4. assar a 180 °c por 25 minutos."} />
+            </div>
 
-          <div>
-            <Label>Descritivo da receita (para Menu)</Label>
-            <Textarea rows={2} value={form.descritivo_menu || ""} onChange={(e) => setForm({ ...form, descritivo_menu: e.target.value })} placeholder="Texto voltado ao cliente final. Ex: Filé mignon grelhado com molho de mostarda e ervas." />
-          </div>
-
-          <div>
-            <Label>Tags</Label>
-            <TagSelector
-              selectedIds={selectedTagIds}
-              onToggle={(tag) => {
-                setSelectedTagIds(prev =>
-                  prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
-                );
-              }}
-            />
-          </div>
-
-          {/* Photo */}
-          <div>
-            <Label>Foto da receita</Label>
-            {form.foto_url && (
-              <img src={form.foto_url} alt="Foto" className="w-full h-40 object-cover rounded-lg mb-2" />
-            )}
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="relative" asChild>
-                <label className="cursor-pointer">
-                  <Camera className="w-4 h-4 mr-1" /> Enviar foto
-                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadPhoto} />
-                </label>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleGeneratePhoto} disabled={generatingPhoto}>
-                {generatingPhoto ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1" />}
-                Gerar com IA
-              </Button>
+            <div className="md:col-span-2">
+              <Label>Descritivo da receita (para Menu)</Label>
+              <Textarea rows={6} value={form.descritivo_menu || ""} onChange={(e) => setForm({ ...form, descritivo_menu: e.target.value })} placeholder="Texto voltado ao cliente final. Ex: Filé mignon grelhado com molho de mostarda e ervas." />
             </div>
           </div>
         </div>
         <div className="mt-3 p-3 bg-accent/50 rounded-lg text-xs text-muted-foreground text-center">
-          Após salvar a receita, você poderá: adicionar/reordenar ingredientes e enviar uma foto.
+          Após salvar, na ficha da receita você poderá: reordenar ingredientes, ajustar medidas e enviar a foto.
         </div>
         <div className="flex gap-2 justify-end mt-4">
           <Button variant="outline" onClick={handleAttemptClose}>Cancelar</Button>
