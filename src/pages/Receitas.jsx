@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste, CheckSquare } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste, CheckSquare, MoreHorizontal, FileText } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -25,6 +28,7 @@ import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { normalizarNome } from "@/lib/normalizarNome";
+import { exportarReceitasPDF } from "@/lib/exportarReceitasPDF";
 
 const CORES_CATEGORIA = {
   "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -231,6 +235,32 @@ export default function Receitas() {
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <MoreHorizontal className="w-4 h-4 mr-1" /> Mais
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Relatórios</DropdownMenuLabel>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <FileText className="w-4 h-4 mr-2" /> PDF de receitas
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem onClick={() => exportarReceitasPDF(receitas)}>
+                    Todas as receitas
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!categoriaSelecionada}
+                    onClick={() => exportarReceitasPDF(receitas, categoriaSelecionada)}
+                  >
+                    Categoria atual{categoriaSelecionada ? ` (${categoriaSelecionada})` : ""}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm">
