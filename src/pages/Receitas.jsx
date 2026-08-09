@@ -210,15 +210,6 @@ export default function Receitas() {
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "";
 
-  const formatYield = (r) => {
-    if (!r.rendimento_total || r.rendimento_total <= 0) return null;
-    const u = r.unidade_base === "ml" ? "ml" : "g";
-    const val = r.rendimento_total >= 1000
-      ? `${(r.rendimento_total / 1000).toFixed(1).replace(".", ",")} ${u === "ml" ? "L" : "kg"}`
-      : `${r.rendimento_total} ${u}`;
-    return val;
-  };
-
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
@@ -314,7 +305,7 @@ export default function Receitas() {
       </button>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
-        {CATEGORIAS_RECEITA.map(cat => {
+        {CATEGORIAS_RECEITA.filter(cat => receitas.filter(r => hasCategoria(r, cat)).length > 0).map(cat => {
           const count = receitas.filter(r => hasCategoria(r, cat)).length;
           const selecionada = categoriaSelecionada === cat;
           const icone = ICONE_CATEGORIA[cat] || "📋";
@@ -500,32 +491,26 @@ export default function Receitas() {
                 }
               }}
             >
-              <Card className="p-3 flex items-center justify-between gap-2 hover:bg-accent/40 transition-colors">
+              <Card className="pl-3 pr-2 py-2.5 flex items-center gap-3 hover:bg-accent/40 transition-colors">
                 {selectionMode && (
                   <Checkbox checked={selectedIds.has(r.id)} className="shrink-0 pointer-events-none" />
                 )}
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    {r.cor_predominante && (
-                      <span
-                        className="w-3 h-3 rounded-full border border-black/10 shrink-0"
-                        style={{ backgroundColor: getCorHex(r.cor_predominante) }}
-                        title={`Cor: ${r.cor_predominante}`}
-                      />
-                    )}
-                    <p className="font-medium text-sm truncate">{r.nome}</p>
-                    {!isLoading && r.revisar && <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
-                  </div>
+                <span
+                  className="w-2.5 h-2.5 rounded-full border border-black/10 shrink-0"
+                  style={{ backgroundColor: r.cor_predominante ? getCorHex(r.cor_predominante) : "#BDBDBD" }}
+                  title={r.cor_predominante ? `Cor: ${r.cor_predominante}` : "Sem cor definida"}
+                />
+                <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <p className="font-medium text-sm">{r.nome}</p>
+                  {r.revisar && <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
                   {busca && receitaIdsPorIngrediente.has(r.id) && !normalizarNome(r.nome).includes(normalizarNome(busca)) && (
-                    <p className="text-[11px] text-primary/80 italic">encontrado por ingrediente</p>
+                    <span className="text-[11px] text-primary/80 italic shrink-0">encontrado por ingrediente</span>
                   )}
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {getCategorias(r).length > 0 && (
-                      <span className="text-[11px] text-muted-foreground">{getCategorias(r).join(", ")}</span>
-                    )}
-                  </div>
+                  {getCategorias(r).length > 0 && (
+                    <span className="text-[11px] text-muted-foreground shrink-0">{getCategorias(r)[0]}</span>
+                  )}
                   {allReceitaTags.filter(rt => rt.receita_id === r.id).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <div className="flex flex-wrap gap-1 shrink-0">
                       {allReceitaTags.filter(rt => rt.receita_id === r.id).map(rt => {
                         const tag = tags.find(t => t.id === rt.tag_id);
                         if (!tag) return null;
@@ -533,19 +518,10 @@ export default function Receitas() {
                       })}
                     </div>
                   )}
-                  <div className="flex items-center gap-3 mt-0.5">
-                    {r.custo_por_porcao != null && r.custo_por_porcao > 0 && (
-                      <span className="text-xs font-bold text-primary">
-                        {formatCurrency(r.custo_por_porcao)} /porção
-                      </span>
-                    )}
-                    {formatYield(r) && (
-                      <span className="text-xs text-muted-foreground">
-                        Rende {formatYield(r)}
-                      </span>
-                    )}
-                  </div>
                 </div>
+                <span className="text-xs font-bold text-primary whitespace-nowrap shrink-0">
+                  {r.custo_por_porcao != null && r.custo_por_porcao > 0 ? `${formatCurrency(r.custo_por_porcao)} /porção` : "—"}
+                </span>
                 <button
                   className={`p-1.5 rounded-full hover:bg-muted shrink-0 ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); favoritarMut.mutate({ id: r.id, favorita: !r.favorita }); }}
