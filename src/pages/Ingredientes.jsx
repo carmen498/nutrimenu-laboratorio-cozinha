@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power, Tags, Download } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
@@ -225,9 +226,24 @@ export default function Ingredientes() {
           <Button variant="outline" size="sm" onClick={() => setShowAtualizarPrecos(true)}>
             <RefreshCw className="w-4 h-4 mr-1" /> Atualizar preços
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportarIngredientesPDF(ingredientes)}>
-            <FileText className="w-4 h-4 mr-1" /> PDF
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <FileText className="w-4 h-4 mr-1" /> PDF
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={() => exportarIngredientesPDF(ingredientes)}>
+                PDF · Todos os ingredientes
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!accordionAberto}
+                onClick={() => exportarIngredientesPDF(ingredientes, accordionAberto)}
+              >
+                PDF · Categoria atual{accordionAberto ? ` (${accordionAberto})` : ""}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="outline"
             size="sm"
