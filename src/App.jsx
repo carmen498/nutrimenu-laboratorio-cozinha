@@ -32,6 +32,7 @@ import MedidasCaseiras from '@/pages/MedidasCaseiras';
 import AuditoriaRendimento from '@/pages/AuditoriaRendimento';
 import AuditoriaReceitas from '@/pages/AuditoriaReceitas';
 import Auditorias from '@/pages/Auditorias';
+import PrePreparosPlanejamento from '@/pages/PrePreparosPlanejamento';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -81,6 +82,7 @@ const AuthenticatedApp = () => {
           <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
           <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
           <Route path="/auditorias" element={<Auditorias />} />
+          <Route path="/planejamento/:id/pre-preparos" element={<PrePreparosPlanejamento />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

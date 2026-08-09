@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
 import {
   carregarDadosRelatorios,
   gerarRelatorioProducao,
   gerarRelatorioReceitas,
-  gerarRelatorioPrePreparos,
   gerarRelatorioFichaCustos,
 } from "@/lib/relatoriosPlanejamentoPDF";
 
 export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamento }) {
+  const navigate = useNavigate();
   const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +40,7 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
   // não existe (fica "em breve"), os outros 4 reutilizam os geradores existentes.
   const handlers = dados ? {
     ficha_cardapio: () => gerarRelatorioProducao(planejamento, dados),
-    pre_preparos: () => gerarRelatorioPrePreparos(planejamento, dados),
+    pre_preparos: () => { onClose(); navigate(`/planejamento/${planejamento.id}/pre-preparos`); return false; },
     ficha_custos: () => gerarRelatorioFichaCustos(planejamento, dados),
     receitas_cardapio: () => gerarRelatorioReceitas(planejamento, dados),
   } : {};
