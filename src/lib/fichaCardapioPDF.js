@@ -1,8 +1,9 @@
 import { jsPDF } from "jspdf";
+import { montarFichaCardapio } from "@/lib/fichaCardapioCalc";
 
 // Ficha do Cardápio — PDF de PRODUÇÃO (sem valores comerciais).
-// Usado pelo botão "PDF" e pelo relatório "Ficha do Cardápio (produção)"
-// no Cardápio aberto. NUNCA inclui custos, %, markup ou cores.
+// Usa montarFichaCardapio como fonte única de dados — os mesmos valores
+// exibidos na tela de pré-visualização (FichaCardapio.jsx).
 
 const VERDE_ESCURO = [42, 78, 61];
 const MARGIN = 14;
@@ -10,12 +11,6 @@ const TOP_START = 20;
 const PAGE_BOTTOM = 275;
 const ROW_H = 7;
 
-function fmtKg(v) {
-  return (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-function fmtG(v) {
-  return Math.round(v || 0).toLocaleString("pt-BR");
-}
 function slugify(s) {
   return (s || "cardapio")
     .toLowerCase()
@@ -25,11 +20,12 @@ function slugify(s) {
 }
 
 export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, tagNomes = [] }) {
+  const ficha = montarFichaCardapio({ cardapio, num, receitasView, insumos, tagNomes });
+
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const rightX = pageWidth - MARGIN;
   let y = TOP_START;
-  const dataEmissao = new Date().toLocaleDateString("pt-BR");
 
   const colReceita = MARGIN + 8;
   const colQtd = rightX;
@@ -45,27 +41,25 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Laboratório de Cozinha · Gastronomia Planejada · emitida em ${dataEmissao}`, MARGIN, y);
+  doc.text(`Laboratório de Cozinha · Gastronomia Planejada · emitida em ${ficha.dataEmissao}`, MARGIN, y);
   y += 10;
 
   // 2. Identificação
   doc.setFont("times", "bold");
   doc.setFontSize(14);
   doc.setTextColor(30, 30, 30);
-  doc.text(cardapio.nome?.toUpperCase?.() || cardapio.nome || "", MARGIN, y);
+  doc.text(ficha.nome, MARGIN, y);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
   doc.setTextColor(...VERDE_ESCURO);
-  doc.text(`${num} pessoas`, rightX, y, { align: "right" });
+  doc.text(`${ficha.numPessoas} pessoas`, rightX, y, { align: "right" });
   y += 6;
 
-  const dataCardapio = cardapio.data ? cardapio.data.split("-").reverse().join("/") : null;
-  const linhaDiscreta = [dataCardapio, tagNomes.length ? tagNomes.join(", ") : null].filter(Boolean).join(" · ");
-  if (linhaDiscreta) {
+  if (ficha.linhaDiscreta) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(120, 120, 120);
-    doc.text(linhaDiscreta, MARGIN, y);
+    doc.text(ficha.linhaDiscreta, MARGIN, y);
     y += 6;
   }
   y += 3;
@@ -94,12 +88,8 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
   // 3. Tabela de produção
   drawHeader();
   doc.setFont("helvetica", "normal");
-  let totalG = 0;
-  (receitasView || []).forEach((r) => {
+  ficha.linhas.forEach((linha) => {
     if (y + ROW_H > PAGE_BOTTOM) novaPagina(true);
-    const qtdG = Number(r.quantidade_total_g) || 0;
-    totalG += qtdG;
-    const pcG = num > 0 ? qtdG / num : 0;
 
     doc.setDrawColor(80);
     doc.setLineWidth(0.3);
@@ -107,16 +97,16 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
 
     doc.setFontSize(9);
     doc.setTextColor(30, 30, 30);
-    let nome = r.receita_nome || "";
+    let nome = linha.nome;
     const maxW = colPC - colReceita - 4;
     if (doc.getTextWidth(nome) > maxW) {
       while (nome.length > 3 && doc.getTextWidth(nome + "...") > maxW) nome = nome.slice(0, -1);
       nome += "...";
     }
     doc.text(nome, colReceita, y);
-    doc.text(`${fmtG(pcG)} g`, colPC, y, { align: "right" });
-    doc.text(`${num}`, colPorcoes, y, { align: "right" });
-    doc.text(`${fmtKg(qtdG / 1000)} kg`, colQtd, y, { align: "right" });
+    doc.text(linha.pcGFmt, colPC, y, { align: "right" });
+    doc.text(`${linha.porcoes}`, colPorcoes, y, { align: "right" });
+    doc.text(linha.kgFmt, colQtd, y, { align: "right" });
 
     y += 5;
     doc.setDrawColor(230);
@@ -129,17 +119,16 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10.5);
   doc.setTextColor(...VERDE_ESCURO);
-  doc.text(`Total de comida ${fmtKg(totalG / 1000)} kg`, rightX, y, { align: "right" });
+  doc.text(`Total de comida ${ficha.totalKgFmt}`, rightX, y, { align: "right" });
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(130, 130, 130);
-  const gPorPessoa = num > 0 ? totalG / num : 0;
-  doc.text(`≈ ${fmtG(gPorPessoa)} g de comida por pessoa`, rightX, y, { align: "right" });
+  doc.text(`≈ ${ficha.gPorPessoaFmt} de comida por pessoa`, rightX, y, { align: "right" });
   y += 10;
 
   // 4. Insumos e embalagens (omitido se vazio)
-  if (insumos && insumos.length > 0) {
+  if (ficha.insumos.length > 0) {
     if (y + 16 > PAGE_BOTTOM) novaPagina(false);
     doc.setFont("times", "bold");
     doc.setFontSize(11.5);
@@ -149,13 +138,12 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(30, 30, 30);
-    insumos.forEach((ins) => {
+    ficha.insumos.forEach((ins) => {
       if (y + 6 > PAGE_BOTTOM) novaPagina(false);
       doc.setDrawColor(80);
       doc.setLineWidth(0.3);
       doc.rect(MARGIN, y - 3.2, 3.2, 3.2);
-      const qtdLabel = `${ins.quantidade || 0} ${ins.unidade || "un"}`;
-      doc.text(`${ins.nome || ""} (${qtdLabel})`, MARGIN + 6, y);
+      doc.text(`${ins.nome} (${ins.qtdLabel})`, MARGIN + 6, y);
       y += 6;
     });
     y += 4;
@@ -168,11 +156,11 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
   doc.setTextColor(...VERDE_ESCURO);
   doc.text("Observações", MARGIN, y);
   y += 7;
-  if (cardapio.observacoes) {
+  if (ficha.observacoes) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(50, 50, 50);
-    const linhas = doc.splitTextToSize(cardapio.observacoes, rightX - MARGIN);
+    const linhas = doc.splitTextToSize(ficha.observacoes, rightX - MARGIN);
     linhas.forEach((linha) => {
       if (y + 5 > PAGE_BOTTOM) novaPagina(false);
       doc.text(linha, MARGIN, y);

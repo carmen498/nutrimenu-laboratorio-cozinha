@@ -23,8 +23,8 @@ export default function RelatoriosDialog({
     }
     setGerando(def.id);
     try {
-      await handler();
-      toast.success("PDF gerado com sucesso!");
+      const resultado = await handler();
+      if (resultado !== false) toast.success("PDF gerado com sucesso!");
     } catch (e) {
       toast.error("Erro ao gerar PDF: " + (e?.message || ""));
     } finally {

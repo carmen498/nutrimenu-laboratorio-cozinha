@@ -28,7 +28,6 @@ import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
 import { fetchAllPages } from "@/lib/fetchAllPages";
-import { gerarFichaCardapioPDF } from "@/lib/fichaCardapioPDF";
 
 // Custo AO VIVO (mesmo caminho de cálculo do Evento): nunca lê o campo cache
 // CardapioReceita.custo_total — sempre deriva de Receita.custo_total + rendimento atual.
@@ -389,16 +388,8 @@ export default function CardapioAberto() {
     setGerandoLista(false);
   };
 
-  // === PDF (Ficha do Cardápio — produção, sem valores comerciais) ===
-  const exportarPDF = () => {
-    gerarFichaCardapioPDF({
-      cardapio,
-      num,
-      receitasView,
-      insumos,
-      tagNomes: cardapioTags.map(ct => ct.tag_nome).filter(Boolean),
-    });
-  };
+  // === Ficha do Cardápio — abre tela de pré-visualização antes do PDF ===
+  const abrirFichaCardapio = () => navigate(`/cardapio/${id}/ficha`);
 
   // === WHATSAPP ===
   const compartilharWhatsApp = () => {
@@ -691,7 +682,7 @@ export default function CardapioAberto() {
 
       {/* Botões de ação */}
       <div className="flex flex-wrap gap-3 mb-8 no-print">
-        <Button variant="outline" className="gap-2" onClick={exportarPDF}>
+        <Button variant="outline" className="gap-2" onClick={abrirFichaCardapio}>
           <Download className="w-4 h-4" /> PDF
         </Button>
         <Button variant="outline" className="gap-2" onClick={compartilharWhatsApp}>
@@ -716,7 +707,7 @@ export default function CardapioAberto() {
           tipoLabel: tipo.label,
           numPessoas: isBuffet ? null : num,
         }}
-        handlers={{ ficha_cardapio: exportarPDF }}
+        handlers={{ ficha_cardapio: () => { setShowRelatorios(false); abrirFichaCardapio(); return false; } }}
       />
 
       {/* Dialog Adicionar Receita */}
