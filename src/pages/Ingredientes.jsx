@@ -12,7 +12,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Upload, AlertTriangle, RefreshCw, History, Star, FileText, ShoppingCart, Tags, Download, MoreHorizontal, Clock } from "lucide-react";
+import { Search, Plus, Upload, AlertTriangle, RefreshCw, History, Star, FileText, ShoppingCart, Tags, Download, MoreHorizontal, Clock, LayoutGrid, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
@@ -356,49 +356,68 @@ export default function Ingredientes() {
         </DropdownMenu>
       </div>
 
-      {/* Categorias — chips neutros roláveis */}
+      {/* Categorias — grade de cards coloridos (mesmo padrão de Receitas) */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
       ) : (
         <>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
-              onClick={() => { setAccordionAberto(null); setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false); }}
-              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap border transition-colors ${
-                nenhumFiltroAtivo
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-muted text-muted-foreground border-transparent hover:bg-accent"
-              }`}
-            >
-              Todas {totalIngredientes}
-            </button>
+          <button
+            onClick={() => { setAccordionAberto(null); setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false); }}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
+              nenhumFiltroAtivo
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-transparent bg-muted hover:bg-accent text-muted-foreground"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            Todos os ingredientes
+            <Badge className="text-[10px] bg-primary/20 text-primary">{totalIngredientes}</Badge>
+          </button>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
             {GRUPOS_INGREDIENTES.map((g) => {
               const count = ingredientes.filter(i => getGrupoFromCategoria(i.categoria) === g.nome).length;
               if (count === 0) return null;
-              const aberto = accordionAberto === g.nome;
-              const isRevisar = g.nome === "A Revisar";
-              const classes = isRevisar
-                ? (aberto ? "bg-amber-600 text-white border-amber-600" : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100")
-                : (aberto ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-transparent hover:bg-accent");
+              const selecionada = accordionAberto === g.nome;
               return (
-                <button
+                <div
                   key={g.nome}
-                  onClick={() => {
-                    setAccordionAberto(aberto ? null : g.nome);
-                    setBuscaInterna("");
-                    setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false);
+                  className="rounded-xl overflow-hidden transition-all"
+                  style={{
+                    backgroundColor: g.cor,
+                    border: selecionada ? `2px solid ${g.corTexto}` : "1px solid hsl(var(--border))",
                   }}
-                  className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap border transition-colors ${classes}`}
                 >
-                  {g.nome} {count}
-                </button>
+                  <button
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:brightness-95"
+                    style={{ backgroundColor: g.cor, color: g.corTexto }}
+                    onClick={() => {
+                      setAccordionAberto(selecionada ? null : g.nome);
+                      setBuscaInterna("");
+                      setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false);
+                    }}
+                  >
+                    <span className="text-lg">{g.icone}</span>
+                    <span className="flex-1 text-sm font-semibold">{g.nome}</span>
+                    <Badge
+                      className="text-[10px] h-5 px-1.5 font-bold border-0"
+                      style={{ backgroundColor: g.corPill, color: g.corPillTexto }}
+                    >
+                      {count}
+                    </Badge>
+                    <ChevronDown
+                      className={`w-4 h-4 shrink-0 transition-transform duration-200 ${selecionada ? "rotate-180" : ""}`}
+                      style={{ opacity: selecionada ? 1 : 0.5 }}
+                    />
+                  </button>
+                </div>
               );
             })}
           </div>
 
-          {/* Listagem compacta abaixo dos chips */}
+          {/* Listagem compacta abaixo dos cards */}
           <ListaIngredientes
             ingredientes={filtered}
             accordionAberto={accordionAberto}
