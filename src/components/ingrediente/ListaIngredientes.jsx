@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Pencil, Trash2, Star } from "lucide-react";
+import { Search, Pencil, Trash2, Star, ShoppingCart } from "lucide-react";
 import ExcluirIngredienteDialog from "@/components/ingrediente/ExcluirIngredienteDialog";
 
 const GRUPOS_INGREDIENTES = [
@@ -39,6 +39,8 @@ export default function ListaIngredientes({
   onDeleteComplete,
   setEditItem,
   setShowForm,
+  onAddToCarrinho,
+  addingCarrinhoId,
 }) {
   const [excluirIng, setExcluirIng] = useState(null);
   const [editarAlertIng, setEditarAlertIng] = useState(null);
@@ -127,6 +129,14 @@ export default function ListaIngredientes({
             title={ing.favorito ? "Remover dos favoritos" : "Marcar como favorito"}
           >
             <Star className={`w-3.5 h-3.5 ${ing.favorito ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+          </button>
+          <button
+            className="p-1 rounded-full hover:bg-muted disabled:opacity-50"
+            onClick={() => onAddToCarrinho(ing)}
+            disabled={addingCarrinhoId === ing.id}
+            title="Adicionar ao carrinho"
+          >
+            <ShoppingCart className={`w-3.5 h-3.5 ${addingCarrinhoId === ing.id ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
           </button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditarAlertIng(ing)}>
             <Pencil className="w-3 h-3" />

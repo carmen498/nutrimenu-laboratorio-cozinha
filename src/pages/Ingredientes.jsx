@@ -50,6 +50,7 @@ const getGrupoFromCategoria = (cat) => {
 };
 
 export default function Ingredientes() {
+  const [addingCarrinhoId, setAddingCarrinhoId] = useState(null);
   const [busca, setBusca] = useState("");
   const [accordionAberto, setAccordionAberto] = useState(null);
   const [editItem, setEditItem] = useState(null);
@@ -135,6 +136,32 @@ export default function Ingredientes() {
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
     },
   });
+
+  const handleAddToCarrinho = async (ing) => {
+    if (addingCarrinhoId) return;
+    setAddingCarrinhoId(ing.id);
+    try {
+      const existentes = await base44.entities.CarrinhoItem.filter({ ingrediente_id: ing.id });
+      if (existentes[0]) {
+        await base44.entities.CarrinhoItem.update(existentes[0].id, {
+          quantidade_embalagens: (existentes[0].quantidade_embalagens || 0) + 1,
+        });
+      } else {
+        await base44.entities.CarrinhoItem.create({
+          ingrediente_id: ing.id,
+          ingrediente_nome: ing.nome,
+          quantidade_embalagens: 1,
+          comprado: false,
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["carrinho-itens"] });
+      toast.success(`${ing.nome} adicionado ao carrinho`);
+    } catch (e) {
+      toast.error("Erro ao adicionar ao carrinho");
+    } finally {
+      setAddingCarrinhoId(null);
+    }
+  };
 
   const handleToggleAutoUpdate = async () => {
     setTogglingAuto(true);
@@ -317,7 +344,7 @@ export default function Ingredientes() {
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Preços e Compra</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigate("/lista-compras")}>
-              <ShoppingCart className="w-4 h-4 mr-2" /> 🛒 Carrinho
+              <ShoppingCart className="w-4 h-4 mr-2" /> Carrinho
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setShowAtualizarPrecos(true)}>
               <RefreshCw className="w-4 h-4 mr-2" /> Atualizar preços
@@ -383,6 +410,8 @@ export default function Ingredientes() {
             onDeleteComplete={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
             setEditItem={setEditItem}
             setShowForm={setShowForm}
+            onAddToCarrinho={handleAddToCarrinho}
+            addingCarrinhoId={addingCarrinhoId}
           />
         </>
       )}

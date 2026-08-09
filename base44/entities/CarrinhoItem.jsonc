@@ -1,0 +1,27 @@
+{
+  "name": "CarrinhoItem",
+  "type": "object",
+  "properties": {
+    "ingrediente_id": {
+      "type": "string",
+      "description": "ID do ingrediente"
+    },
+    "ingrediente_nome": {
+      "type": "string",
+      "description": "Nome do ingrediente (cache)"
+    },
+    "quantidade_embalagens": {
+      "type": "number",
+      "default": 1,
+      "description": "Quantidade em unidades de compra (embalagens), pode ser fracionada (ex: 2.38)"
+    },
+    "comprado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Item j\u00e1 comprado nesta compra"
+    }
+  },
+  "required": [
+    "ingrediente_id"
+  ]
+}

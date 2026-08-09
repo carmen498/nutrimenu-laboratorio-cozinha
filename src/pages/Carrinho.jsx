@@ -1,0 +1,215 @@
+import { useState, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
+import { ShoppingCart, Plus, Trash2, ListX } from "lucide-react";
+import { toast } from "sonner";
+import { fetchAllPages } from "@/lib/fetchAllPages";
+import CarrinhoItemRow from "@/components/carrinho/CarrinhoItemRow";
+import AdicionarReceitaCarrinhoDialog from "@/components/carrinho/AdicionarReceitaCarrinhoDialog";
+
+const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
+
+export default function Carrinho() {
+  const qc = useQueryClient();
+  const [edits, setEdits] = useState({});
+  const [showAddReceita, setShowAddReceita] = useState(false);
+  const [confirmarLimpar, setConfirmarLimpar] = useState(false);
+
+  const { data: itens = [], isLoading } = useQuery({
+    queryKey: ["carrinho-itens"],
+    queryFn: () => fetchAllPages(base44.entities.CarrinhoItem, "-created_date"),
+  });
+
+  const { data: ingredientesDB = [] } = useQuery({
+    queryKey: ["ingredientes"],
+    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
+  });
+
+  const ingMap = useMemo(() => {
+    const map = {};
+    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    return map;
+  }, [ingredientesDB]);
+
+  const invalidar = () => qc.invalidateQueries({ queryKey: ["carrinho-itens"] });
+
+  const getQtd = (item) => {
+    const edit = edits[item.id];
+    if (edit != null) return parseFloat(edit.replace(",", ".")) || 0;
+    return item.quantidade_embalagens || 0;
+  };
+
+  const handleChangeQtd = (item, value) => setEdits((prev) => ({ ...prev, [item.id]: value }));
+
+  const handleBlurQtd = async (item) => {
+    if (edits[item.id] == null) return;
+    const novaQtd = getQtd(item);
+    setEdits((prev) => { const p = { ...prev }; delete p[item.id]; return p; });
+    if (novaQtd === (item.quantidade_embalagens || 0)) return;
+    try {
+      await base44.entities.CarrinhoItem.update(item.id, { quantidade_embalagens: novaQtd });
+      invalidar();
+    } catch (e) { toast.error("Erro ao atualizar quantidade"); }
+  };
+
+  const handleToggleComprado = async (item, comprado) => {
+    try {
+      await base44.entities.CarrinhoItem.update(item.id, { comprado });
+      invalidar();
+    } catch (e) { toast.error("Erro ao atualizar item"); }
+  };
+
+  const handleRemove = async (item) => {
+    try {
+      await base44.entities.CarrinhoItem.delete(item.id);
+      invalidar();
+      toast.success("Item removido do carrinho");
+    } catch (e) { toast.error("Erro ao remover item"); }
+  };
+
+  const handleLimparCarrinho = async () => {
+    setConfirmarLimpar(false);
+    if (itens.length === 0) return;
+    try {
+      await base44.entities.CarrinhoItem.deleteMany({ id: { $in: itens.map((i) => i.id) } });
+      invalidar();
+      toast.success("Carrinho esvaziado");
+    } catch (e) { toast.error("Erro ao limpar carrinho"); }
+  };
+
+  const handleLimparComprados = async () => {
+    const comprados = itens.filter((i) => i.comprado);
+    if (comprados.length === 0) return;
+    try {
+      await base44.entities.CarrinhoItem.deleteMany({ id: { $in: comprados.map((i) => i.id) } });
+      invalidar();
+      toast.success("Itens comprados removidos");
+    } catch (e) { toast.error("Erro ao limpar itens comprados"); }
+  };
+
+  // Agrupamento leve por categoria do ingrediente
+  const grupos = useMemo(() => {
+    const map = {};
+    itens.forEach((item) => {
+      const ing = ingMap[item.ingrediente_id];
+      const cat = ing?.categoria || "Diversos";
+      if (!map[cat]) map[cat] = [];
+      map[cat].push(item);
+    });
+    Object.values(map).forEach((lista) =>
+      lista.sort((a, b) => (ingMap[a.ingrediente_id]?.nome || a.ingrediente_nome || "")
+        .localeCompare(ingMap[b.ingrediente_id]?.nome || b.ingrediente_nome || "")));
+    return Object.keys(map).sort().map((cat) => ({ categoria: cat, itens: map[cat] }));
+  }, [itens, ingMap]);
+
+  const total = useMemo(() => itens.reduce((sum, item) => {
+    const ing = ingMap[item.ingrediente_id];
+    return sum + getQtd(item) * (ing?.preco_embalagem_rs || 0);
+  }, 0), [itens, ingMap, edits]);
+
+  const temComprados = itens.some((i) => i.comprado);
+
+  return (
+    <div className="space-y-4 pb-24 md:pb-8">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="font-display text-2xl font-bold flex items-center gap-2">
+          <ShoppingCart className="w-6 h-6 text-primary" /> Carrinho
+        </h1>
+        <Button size="sm" variant="outline" onClick={() => setShowAddReceita(true)}>
+          <Plus className="w-4 h-4 mr-1" /> Adicionar de uma receita
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+        </div>
+      ) : itens.length === 0 ? (
+        <Card className="p-12 text-center text-muted-foreground">
+          <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+          <p className="text-base">Carrinho vazio — adicione ingredientes pela lista de Ingredientes.</p>
+        </Card>
+      ) : (
+        <>
+          {grupos.map((g) => (
+            <div key={g.categoria}>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {g.categoria}
+              </p>
+              <div className="space-y-1">
+                {g.itens.map((item) => {
+                  const ing = ingMap[item.ingrediente_id];
+                  const qtd = getQtd(item);
+                  const custo = qtd * (ing?.preco_embalagem_rs || 0);
+                  const qtdInput = edits[item.id] ?? String(item.quantidade_embalagens || 0).replace(".", ",");
+                  return (
+                    <CarrinhoItemRow
+                      key={item.id}
+                      item={item}
+                      ingrediente={ing}
+                      qtdInput={qtdInput}
+                      custo={custo}
+                      onChangeQtd={(v) => handleChangeQtd(item, v)}
+                      onBlurQtd={() => handleBlurQtd(item)}
+                      onToggleComprado={(v) => handleToggleComprado(item, v)}
+                      onRemove={() => handleRemove(item)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          <Card className="p-4 bg-primary text-primary-foreground">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">Total da compra</span>
+              <span className="text-xl font-bold">{formatCurrency(total)}</span>
+            </div>
+          </Card>
+
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" className="gap-1" onClick={() => setConfirmarLimpar(true)}>
+              <Trash2 className="w-4 h-4" /> Limpar carrinho
+            </Button>
+            {temComprados && (
+              <Button variant="outline" className="gap-1" onClick={handleLimparComprados}>
+                <ListX className="w-4 h-4" /> Limpar comprados
+              </Button>
+            )}
+          </div>
+        </>
+      )}
+
+      <AdicionarReceitaCarrinhoDialog
+        open={showAddReceita}
+        onClose={() => setShowAddReceita(false)}
+        ingMap={ingMap}
+        itensCarrinho={itens}
+        onAdded={invalidar}
+      />
+
+      <AlertDialog open={confirmarLimpar} onOpenChange={setConfirmarLimpar}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Limpar carrinho?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os itens do carrinho serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLimparCarrinho} className="bg-destructive hover:bg-destructive/90">
+              Limpar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
