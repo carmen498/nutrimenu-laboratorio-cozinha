@@ -18,6 +18,7 @@ import ReceitaAberta from '@/pages/ReceitaAberta';
 import Cardapios from '@/pages/Cardapios';
 import CardapioAberto from '@/pages/CardapioAberto';
 import FichaCardapio from '@/pages/FichaCardapio';
+import OrcamentoCardapio from '@/pages/OrcamentoCardapio';
 import Ingredientes from '@/pages/Ingredientes';
 import IngredienteAberto from '@/pages/IngredienteAberto';
 import DossieIngrediente from '@/pages/DossieIngrediente';
@@ -66,6 +67,7 @@ const AuthenticatedApp = () => {
           <Route path="/cardapios" element={<Cardapios />} />
           <Route path="/cardapio/:id" element={<CardapioAberto />} />
           <Route path="/cardapio/:id/ficha" element={<FichaCardapio />} />
+          <Route path="/cardapio/:id/orcamento" element={<OrcamentoCardapio />} />
           <Route path="/ingredientes" element={<Ingredientes />} />
           <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
           <Route path="/ingrediente/:id/dossie" element={<DossieIngrediente />} />

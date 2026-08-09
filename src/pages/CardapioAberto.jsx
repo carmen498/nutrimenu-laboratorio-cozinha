@@ -27,16 +27,9 @@ import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
+import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { fetchAllPages } from "@/lib/fetchAllPages";
-
-// Custo AO VIVO (mesmo caminho de cálculo do Evento): nunca lê o campo cache
-// CardapioReceita.custo_total — sempre deriva de Receita.custo_total + rendimento atual.
-function custoAoVivo(cr, receitaMap, ingredientesPorReceita) {
-  const rec = receitaMap[cr.receita_id];
-  if (!rec) return 0;
-  const ingr = ingredientesPorReceita[cr.receita_id] || [];
-  return custoEscalado(rec, ingr, Number(cr.quantidade_total_g) || 0);
-}
+import { toast } from "sonner";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -129,21 +122,13 @@ export default function CardapioAberto() {
     return map;
   }, [todasReceitas]);
 
-  // Vista de exibição: mesma lista de receitas do cardápio, mas com custo_total
-  // recalculado AO VIVO (nunca lê o cache CardapioReceita.custo_total).
-  const receitasView = useMemo(() => {
-    return receitas.map(r => ({ ...r, custo_total: custoAoVivo(r, receitaMap, ingredientesPorReceita) }));
-  }, [receitas, receitaMap, ingredientesPorReceita]);
-
-  const calcs = useMemo(() => {
-    const custoReceitas = receitasView.reduce((s, r) => s + (Number(r.custo_total) || 0), 0);
-    const custoInsumos = insumos.reduce((s, i) => s + (Number(i.custo_total) || 0), 0);
-    const total = custoReceitas + custoInsumos;
-    const porUnidade = num > 0 ? total / num : 0;
-    const precoVenda = markup > 0 ? porUnidade * (1 + markup / 100) : 0;
-    const lucro = precoVenda - porUnidade;
-    return { custoReceitas, custoInsumos, total, porUnidade, precoVenda, lucro };
-  }, [receitasView, insumos, num, markup]);
+  // Custo/preço de venda AO VIVO — via helper compartilhado com o Orçamento, para
+  // garantir que ambos exibam exatamente o mesmo valor.
+  const calcs = useMemo(
+    () => calcularCustoCardapio({ receitas, receitaMap, ingredientesPorReceita, insumos, num, markup }),
+    [receitas, receitaMap, ingredientesPorReceita, insumos, num, markup]
+  );
+  const receitasView = calcs.receitasView;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -390,6 +375,16 @@ export default function CardapioAberto() {
 
   // === Ficha do Cardápio — abre tela de pré-visualização antes do PDF ===
   const abrirFichaCardapio = () => navigate(`/cardapio/${id}/ficha`);
+
+  // === Orçamento — exige markup ativo, senão pede para ativar "Quanto cobrar" ===
+  const abrirOrcamento = () => {
+    if (!showVenda || !(markup > 0)) {
+      toast.error('Ative "Quanto cobrar se eu vender?" antes de gerar o Orçamento.');
+      return false;
+    }
+    navigate(`/cardapio/${id}/orcamento`);
+    return false;
+  };
 
   // === WHATSAPP ===
   const compartilharWhatsApp = () => {
@@ -707,7 +702,10 @@ export default function CardapioAberto() {
           tipoLabel: tipo.label,
           numPessoas: isBuffet ? null : num,
         }}
-        handlers={{ ficha_cardapio: () => { setShowRelatorios(false); abrirFichaCardapio(); return false; } }}
+        handlers={{
+          ficha_cardapio: () => { setShowRelatorios(false); abrirFichaCardapio(); return false; },
+          orcamento: () => { setShowRelatorios(false); abrirOrcamento(); return false; },
+        }}
       />
 
       {/* Dialog Adicionar Receita */}
