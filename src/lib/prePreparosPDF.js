@@ -16,8 +16,9 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, "-");
 }
 
-export function gerarPrePreparosPDF(planejamento, relatorio) {
-  const doc = new jsPDF();
+export function gerarPrePreparosPDF(planejamento, relatorio, opts = {}) {
+  const doc = opts.doc || new jsPDF();
+  if (opts.doc) doc.addPage();
   const pageWidth = doc.internal.pageSize.getWidth();
   const rightX = pageWidth - MARGIN;
   let y = TOP_START;
@@ -66,6 +67,7 @@ export function gerarPrePreparosPDF(planejamento, relatorio) {
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
     doc.text("Nenhum pré-preparo encontrado nas receitas deste cardápio.", MARGIN, y);
+    if (opts.doc) return doc;
     doc.save(`pre-preparos-${slugify(planejamento.nome)}.pdf`);
     return;
   }
@@ -166,20 +168,24 @@ export function gerarPrePreparosPDF(planejamento, relatorio) {
     });
   }
 
-  // Rodapé com numeração de páginas
-  const totalPaginas = doc.internal.getNumberOfPages();
-  for (let p = 1; p <= totalPaginas; p++) {
-    doc.setPage(p);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(140, 140, 140);
-    doc.text(
-      `quantidades em peso líquido escalado · bruto indicado quando há fator de correção · pág. ${p}/${totalPaginas}`,
-      pageWidth / 2,
-      292,
-      { align: "center" }
-    );
+  // Rodapé com numeração de páginas — apenas quando gerado isoladamente; quando
+  // anexado ao Dossiê, o rodapé único é aplicado pelo gerador do Dossiê.
+  if (!opts.doc) {
+    const totalPaginas = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPaginas; p++) {
+      doc.setPage(p);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(140, 140, 140);
+      doc.text(
+        `quantidades em peso líquido escalado · bruto indicado quando há fator de correção · pág. ${p}/${totalPaginas}`,
+        pageWidth / 2,
+        292,
+        { align: "center" }
+      );
+    }
   }
 
+  if (opts.doc) return doc;
   doc.save(`pre-preparos-${slugify(planejamento.nome)}.pdf`);
 }

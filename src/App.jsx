@@ -33,6 +33,7 @@ import AuditoriaRendimento from '@/pages/AuditoriaRendimento';
 import AuditoriaReceitas from '@/pages/AuditoriaReceitas';
 import Auditorias from '@/pages/Auditorias';
 import PrePreparosPlanejamento from '@/pages/PrePreparosPlanejamento';
+import DossieEvento from '@/pages/DossieEvento';
 import PrePreparosCardapio from '@/pages/PrePreparosCardapio';
 import FichaCustosCardapio from '@/pages/FichaCustosCardapio';
 import ReceitasCardapio from '@/pages/ReceitasCardapio';
@@ -89,6 +90,7 @@ const AuthenticatedApp = () => {
           <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
           <Route path="/auditorias" element={<Auditorias />} />
           <Route path="/planejamento/:id/pre-preparos" element={<PrePreparosPlanejamento />} />
+          <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

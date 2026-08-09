@@ -9,6 +9,7 @@ import { Settings2, Info, RotateCcw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GerenciarReferenciaDialog from "./GerenciarReferenciaDialog";
 import DecimalInput from "./DecimalInput";
+import { qtdFinalEfetiva, calcRsTotalFinal, unidadeCustoLabel } from "@/lib/docesBebidasCalc";
 
 const TIPO_LABEL = {
   coquetel: "Coquetel",
@@ -20,54 +21,6 @@ const CHIPS = ["todas", "coquetel", "doce", "bebida"];
 const TIPO_ORDER = ["coquetel", "doce", "bebida"];
 
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
-
-function unidadeCustoLabel(unidade) {
-  if (unidade === "ml") return "L";
-  if (unidade === "un") return "un";
-  return "kg";
-}
-
-// ─── Fórmulas originais — NÃO ALTERAR ───
-// Quantidade total bruta na unidade base do item (g/ml/un)
-function calcQtdRaw(item, totalPessoas) {
-  const pct = item.percentual || 0;
-  const media = item.media || 0;
-  return totalPessoas * pct / 100 * media;
-}
-
-// Converte a quantidade bruta para a unidade de custo (kg/L/un)
-function calcQtdConvertida(totalRaw, unidade) {
-  return unidade === "un" ? totalRaw : totalRaw / 1000;
-}
-
-// R$ total do item: qtd convertida × custo unitário (null se sem custo definido)
-function calcRsTotal(item, totalPessoas) {
-  const cu = item.custo_unitario;
-  if (!cu) return null;
-  const raw = calcQtdRaw(item, totalPessoas);
-  const qtd = calcQtdConvertida(raw, item.unidade);
-  return qtd * cu;
-}
-// ─── Fim das fórmulas originais ───
-
-// Quantidade final automática (calculada), arredondada para exibição/edição
-function qtdFinalAutomatica(item, totalPessoas) {
-  const conv = calcQtdConvertida(calcQtdRaw(item, totalPessoas), item.unidade);
-  return item.unidade === "un" ? Math.ceil(conv) : Math.round(conv * 10) / 10;
-}
-
-// Quantidade final efetiva: usa o ajuste manual quando existir, senão a automática
-function qtdFinalEfetiva(item, totalPessoas) {
-  return item.quantidade_ajustada != null ? item.quantidade_ajustada : qtdFinalAutomatica(item, totalPessoas);
-}
-
-// R$ total considerando a quantidade final (ajustada ou automática) — não altera
-// calcRsTotal, apenas usa a mesma multiplicação (qtd × custo) com a qtd efetiva.
-function calcRsTotalFinal(item, totalPessoas) {
-  const cu = item.custo_unitario;
-  if (!cu) return null;
-  return qtdFinalEfetiva(item, totalPessoas) * cu;
-}
 
 export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChange }) {
   const [showGerenciar, setShowGerenciar] = useState(false);

@@ -1,6 +1,16 @@
 // Definição fixa dos 5 relatórios do planejamento (Cardápio aberto e Evento).
 // Ordem e nomes são a fonte única de verdade — usados tanto no Cardápio quanto no Evento.
-import { ClipboardList, Receipt, ChefHat, DollarSign, Printer } from "lucide-react";
+import { ClipboardList, Receipt, ChefHat, DollarSign, Printer, FileText } from "lucide-react";
+
+// Relatório-mestre do Evento — separado de REPORT_DEFS pois usa dados exclusivos
+// do Planejamento (Etapas 1-4: clientes/per capitas), sem equivalente em Cardápio.
+export const DOSSIE_REPORT_DEF = {
+  id: "dossie_evento",
+  titulo: "Dossiê do Evento (relatório-mestre)",
+  descricao: "Página executiva única do evento, com anexos opcionais. Uso interno.",
+  icone: FileText,
+  cor: "bg-primary/5 text-primary border-primary/30",
+};
 
 export const REPORT_DEFS = [
   {

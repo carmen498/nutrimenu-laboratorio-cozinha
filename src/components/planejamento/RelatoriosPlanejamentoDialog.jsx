@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
+import { DOSSIE_REPORT_DEF } from "@/lib/relatoriosDefs";
 import {
   carregarDadosRelatorios,
   gerarRelatorioProducao,
@@ -39,6 +40,7 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
   // Mapeamento dos relatórios já implementados para o Evento — "Orçamento" ainda
   // não existe (fica "em breve"), os outros 4 reutilizam os geradores existentes.
   const handlers = dados ? {
+    dossie_evento: () => { onClose(); navigate(`/planejamento/${planejamento.id}/dossie`); return false; },
     ficha_cardapio: () => gerarRelatorioProducao(planejamento, dados),
     pre_preparos: () => { onClose(); navigate(`/planejamento/${planejamento.id}/pre-preparos`); return false; },
     ficha_custos: () => gerarRelatorioFichaCustos(planejamento, dados),
@@ -59,6 +61,7 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
       handlers={handlers}
       loading={loading}
       emptyMessage={!temCardapio ? "Nenhum cardápio salvo neste evento. Gere o cardápio na Etapa 3 antes de emitir relatórios." : null}
+      extraDefs={[DOSSIE_REPORT_DEF]}
     />
   );
 }

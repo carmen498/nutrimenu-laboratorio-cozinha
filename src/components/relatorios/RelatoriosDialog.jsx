@@ -9,9 +9,10 @@ import CabecalhoRelatorio from "./CabecalhoRelatorio";
 // Menu unificado de Relatórios — mesmas 5 opções, mesma ordem, em Cardápio e Evento.
 // `handlers` só precisa conter os ids já implementados; os demais mostram "em breve".
 export default function RelatoriosDialog({
-  open, onClose, titulo, cabecalho, handlers = {}, loading = false, emptyMessage = null,
+  open, onClose, titulo, cabecalho, handlers = {}, loading = false, emptyMessage = null, extraDefs = [],
 }) {
   const [gerando, setGerando] = useState(null);
+  const defs = [...extraDefs, ...REPORT_DEFS];
 
   const handleClick = async (def) => {
     const handler = handlers[def.id];
@@ -50,7 +51,7 @@ export default function RelatoriosDialog({
           </div>
         ) : (
           <div className="space-y-2">
-            {REPORT_DEFS.map((def) => {
+            {defs.map((def) => {
               const Icon = def.icone;
               const implementado = !!handlers[def.id];
               return (

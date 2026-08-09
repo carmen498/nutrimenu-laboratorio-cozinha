@@ -101,8 +101,9 @@ function checkPageBreak(doc, y, minSpace = 10) {
 }
 
 // ─── Report 1: Produção ───
-export function gerarRelatorioProducao(planejamento, dados) {
-  const doc = new jsPDF();
+export function gerarRelatorioProducao(planejamento, dados, opts = {}) {
+  const doc = opts.doc || new jsPDF();
+  if (opts.doc) doc.addPage();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
   let y = drawHeader(doc, planejamento, "Relatório de Produção");
@@ -201,6 +202,7 @@ export function gerarRelatorioProducao(planejamento, dados) {
     });
   }
 
+  if (opts.doc) return doc;
   doc.save(`relatorio-producao-${(planejamento.nome || "planejamento").replace(/\s+/g, "-").toLowerCase()}.pdf`);
 }
 
