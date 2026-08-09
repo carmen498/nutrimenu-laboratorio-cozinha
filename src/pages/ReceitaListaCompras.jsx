@@ -80,7 +80,7 @@ export default function ReceitaListaCompras() {
     <div className="space-y-4 pb-24 md:pb-8">
       {/* Cabeçalho */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/receita/${id}`)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-display text-xl font-bold flex-1 truncate">{receita.nome}</h1>

@@ -140,7 +140,7 @@ export default function FichaTecnicaReceita() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center gap-2 no-print">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/receita/${id}`)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <h1 className="font-display text-xl font-bold flex-1">Ficha Técnica</h1>
