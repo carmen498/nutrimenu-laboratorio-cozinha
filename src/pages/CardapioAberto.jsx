@@ -16,8 +16,9 @@ import {
 import {
   ArrowLeft, Trash2, ShoppingCart, Download, Plus,
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
-  GlassWater, Sun, Sparkles, MapPin, MessageCircle
+  GlassWater, Sun, Sparkles, MapPin, MessageCircle, FileText
 } from "lucide-react";
+import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
@@ -109,6 +110,7 @@ export default function CardapioAberto() {
   const [showLista, setShowLista] = useState(false);
   const [listaCompras, setListaCompras] = useState([]);
   const [gerandoLista, setGerandoLista] = useState(false);
+  const [showRelatorios, setShowRelatorios] = useState(false);
 
   const [filtroDia, setFiltroDia] = useState("todos");
 
@@ -689,7 +691,24 @@ export default function CardapioAberto() {
         <Button variant="outline" className="gap-2" onClick={gerarListaCompras} disabled={gerandoLista}>
           <ShoppingCart className="w-4 h-4" /> {gerandoLista ? "Gerando..." : "Lista de Compras"}
         </Button>
+        <Button variant="outline" className="gap-2" onClick={() => setShowRelatorios(true)}>
+          <FileText className="w-4 h-4" /> Relatórios
+        </Button>
       </div>
+
+      {/* Dialog Relatórios do Cardápio (casca — geradores entram em prompts separados) */}
+      <RelatoriosDialog
+        open={showRelatorios}
+        onClose={() => setShowRelatorios(false)}
+        titulo="Relatórios do Cardápio"
+        cabecalho={{
+          nome: cardapio.nome,
+          data: cardapio.data ? cardapio.data.split("-").reverse().join("/") : null,
+          tipoLabel: tipo.label,
+          numPessoas: isBuffet ? null : num,
+        }}
+        handlers={{}}
+      />
 
       {/* Dialog Adicionar Receita */}
       <Dialog open={showAddReceita} onOpenChange={setShowAddReceita}>
