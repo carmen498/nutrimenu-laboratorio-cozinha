@@ -234,6 +234,9 @@ export default function Receitas() {
           <Button variant="outline" size="sm" onClick={() => setShowImportCsv(true)}>
             <Upload className="w-4 h-4 mr-1" /> CSV
           </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate("/relatorio-receitas-pdf")}>
+            <FileText className="w-4 h-4 mr-1" /> PDF
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -368,6 +371,19 @@ export default function Receitas() {
                 >
                   {count}
                 </Badge>
+                {selecionada && (
+                  <span
+                    role="button"
+                    title={`Relatório PDF — ${cat}`}
+                    className="p-1 rounded-md hover:bg-black/10 shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/relatorio-receitas-pdf?categoria=${encodeURIComponent(cat)}`);
+                    }}
+                  >
+                    <FileText className="w-4 h-4" style={{ color: cores.corTexto }} />
+                  </span>
+                )}
                 <ChevronDown
                   className={`w-4 h-4 shrink-0 transition-transform duration-200 ${selecionada ? "rotate-180" : ""}`}
                   style={{ opacity: selecionada ? 1 : 0.5 }}
