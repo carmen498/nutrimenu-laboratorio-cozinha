@@ -9,6 +9,7 @@ import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { montarFichaTecnica } from "@/lib/fichaTecnicaCalc";
 import { montarTextoCompartilhamentoFicha } from "@/lib/fichaTecnicaShare";
+import { printarElementoIsolado } from "@/lib/printIsolado";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import TabelaFichaTecnica from "@/components/fichaTecnica/TabelaFichaTecnica";
 import TagBadge from "@/components/tags/TagBadge";
@@ -144,7 +145,7 @@ export default function FichaTecnicaReceita() {
         </Button>
         <h1 className="font-display text-xl font-bold flex-1">Ficha Técnica</h1>
         <div className="flex gap-2">
-          <Button onClick={() => window.print()}>
+          <Button onClick={() => printarElementoIsolado("ficha-tecnica-print-area", "@page { margin: 16mm 12mm; }")}>
             <Printer className="w-4 h-4 mr-1" /> ↓ Exportar PDF
           </Button>
           <Button variant="outline" onClick={handleShare}>
@@ -153,13 +154,7 @@ export default function FichaTecnicaReceita() {
         </div>
       </div>
 
-      <style>{`
-        @media print {
-          @page { margin: 16mm 12mm; }
-        }
-      `}</style>
-
-      <div className="bg-white border rounded-xl overflow-hidden print:border-0 print:rounded-none">
+      <div id="ficha-tecnica-print-area" className="bg-white border rounded-xl overflow-hidden print:border-0 print:rounded-none">
         {/* Cabeçalho timbrado */}
         <div className="bg-primary text-primary-foreground px-6 py-4 flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm">Laboratório de Cozinha · Receitas que se Multiplicam · por Carmen Reinstein</p>
