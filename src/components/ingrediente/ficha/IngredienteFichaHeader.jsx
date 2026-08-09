@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Star, Pencil, AlertTriangle, FileText } from "lucide-react";
+import { ArrowLeft, Star, Pencil, AlertTriangle, FileText, Merge } from "lucide-react";
 
 const isWeightUnit = (u) => ["G", "KG"].includes(u?.toUpperCase());
 const isLiquidUnit = (u) => ["ML", "LT"].includes(u?.toUpperCase());
@@ -11,7 +11,7 @@ function diasDesde(dataIso) {
   return Math.floor((new Date() - new Date(dataIso)) / (1000 * 60 * 60 * 24));
 }
 
-export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggleFavorito, favoritando }) {
+export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggleFavorito, favoritando, onFundir }) {
   const navigate = useNavigate();
   const u = ingrediente.unidade_compra?.toUpperCase();
   const pricePerKg = (ingrediente.preco_por_g_rs || 0) * 1000;
@@ -55,6 +55,9 @@ export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggle
         </div>
         <Button variant="outline" onClick={() => navigate(`/ingrediente/${ingrediente.id}/dossie`)} className="shrink-0">
           <FileText className="w-4 h-4 mr-1" /> Exportar PDF
+        </Button>
+        <Button variant="outline" onClick={onFundir} className="shrink-0">
+          <Merge className="w-4 h-4 mr-1" /> Fundir com outro ingrediente
         </Button>
         <Button onClick={onEditar} className="shrink-0">
           <Pencil className="w-4 h-4 mr-1" /> Editar

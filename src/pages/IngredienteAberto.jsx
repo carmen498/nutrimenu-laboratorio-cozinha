@@ -8,6 +8,7 @@ import MedidaSinonimosCard from "@/components/ingrediente/ficha/MedidaSinonimosC
 import HistoricoPrecosCard from "@/components/ingrediente/ficha/HistoricoPrecosCard";
 import UsoReceitasCard from "@/components/ingrediente/ficha/UsoReceitasCard";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
+import FundirIngredienteDialog from "@/components/ingrediente/FundirIngredienteDialog";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 
@@ -16,6 +17,7 @@ export default function IngredienteAberto() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [showFundir, setShowFundir] = useState(false);
 
   const { data: ingrediente, isLoading } = useQuery({
     queryKey: ["ingrediente", id],
@@ -61,6 +63,7 @@ export default function IngredienteAberto() {
         onEditar={() => setShowForm(true)}
         onToggleFavorito={() => favoritarMut.mutate()}
         favoritando={favoritarMut.isPending}
+        onFundir={() => setShowFundir(true)}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -78,6 +81,15 @@ export default function IngredienteAberto() {
         onSave={(data) => saveMut.mutate(data)}
         saving={saveMut.isPending}
         fornecedorSuggestions={fornecedorSuggestions}
+      />
+
+      <FundirIngredienteDialog
+        open={showFundir}
+        ingrediente={ingrediente}
+        onClose={(fundido) => {
+          setShowFundir(false);
+          if (fundido) navigate("/ingredientes");
+        }}
       />
     </div>
   );
