@@ -8,8 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Upload, ChevronDown, Settings2, AlertTriangle, RefreshCw, Clock, History, Star, LayoutGrid, FileText, ShoppingCart, Power, Tags, Download } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
+} from "@/components/ui/dropdown-menu";
+import { Search, Plus, Upload, AlertTriangle, RefreshCw, History, Star, FileText, ShoppingCart, Tags, Download, MoreHorizontal, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
@@ -215,101 +218,18 @@ export default function Ingredientes() {
   // Total count
   const totalIngredientes = ingredientes.length;
 
+  const nenhumFiltroAtivo = !accordionAberto && !showDesatualizados && !showRevisar && !showFavoritos;
+
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-bold">Ingredientes e Preços <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalIngredientes}</Badge></h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setShowAtualizarPrecos(true)}>
-            <RefreshCw className="w-4 h-4 mr-1" /> Atualizar preços
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FileText className="w-4 h-4 mr-1" /> PDF
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuItem onClick={() => exportarIngredientesPDF(ingredientes)}>
-                PDF · Todos os ingredientes
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!accordionAberto}
-                onClick={() => exportarIngredientesPDF(ingredientes, accordionAberto)}
-              >
-                PDF · Categoria atual{accordionAberto ? ` (${accordionAberto})` : ""}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => downloadCsv(
-              "ingredientes.csv",
-              ["nome", "categoria", "unidade_compra", "peso_embalagem_g", "preco_embalagem_rs", "preco_por_g_rs", "fator_correcao"],
-              ingredientes.map((i) => [i.nome, i.categoria, i.unidade_compra, i.peso_embalagem_g, i.preco_embalagem_rs, i.preco_por_g_rs, i.fator_correcao])
-            )}
-          >
-            <Download className="w-4 h-4 mr-1" /> Exportar CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => navigate("/lista-compras")}>
-            <ShoppingCart className="w-4 h-4 mr-1" /> Reposição
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
-            <Upload className="w-4 h-4 mr-1" /> Importar CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowImportSinonimos(true)}>
-            <Tags className="w-4 h-4 mr-1" /> Sinônimos
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowRelatorioLote(true)}>
-            <History className="w-4 h-4 mr-1" /> Relatório de lote
-          </Button>
-          <Button size="sm" onClick={() => { setEditItem(null); setShowForm(true); }}>
-            <Plus className="w-4 h-4 mr-1" /> Novo
-          </Button>
-        </div>
+      <div>
+        <h1 className="font-display text-2xl font-bold">Ingredientes e Preços <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalIngredientes}</Badge></h1>
+        <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
       </div>
 
-      {/* Status da atualização automática */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <button
-          onClick={() => setShowHistorico(true)}
-          className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-        >
-          <History className="w-3 h-3" />
-          {ultimoLog ? (
-            <>
-              Última execução:{" "}
-              {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
-              {" "}às{" "}
-              {new Date(ultimoLog.data_execucao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-              {" · "}{ultimoLog.total_atualizado} ingredientes atualizados
-            </>
-          ) : (
-            "Atualização automática: toda segunda às 3h · Ainda não executada"
-          )}
-          <span className="underline ml-0.5">Ver histórico</span>
-        </button>
-        <button
-          onClick={handleToggleAutoUpdate}
-          disabled={togglingAuto}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-            autoUpdateAtiva
-              ? "bg-green-100 text-green-700 hover:bg-green-200"
-              : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-          }`}
-        >
-          <Power className="w-3.5 h-3.5" />
-          {autoUpdateAtiva ? "ATIVA" : "PAUSADA"}
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-2">
-        <div className="relative flex-1">
+      {/* Linha única de comando */}
+      <div className="flex gap-2 items-center flex-wrap">
+        <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar ingrediente..."
@@ -334,7 +254,7 @@ export default function Ingredientes() {
           className={showDesatualizados ? "bg-red-600 hover:bg-red-700" : ""}
         >
           <Clock className="w-4 h-4 mr-1" />
-          Desatualizados
+          Desatualizados {countDesatualizados}
         </Button>
         <Button
           variant={showRevisar ? "default" : "outline"}
@@ -343,86 +263,115 @@ export default function Ingredientes() {
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
-          Revisar
+          A revisar {ingredientes.filter(i => i.revisar === true).length}
         </Button>
+        <Button size="sm" onClick={() => { setEditItem(null); setShowForm(true); }}>
+          <Plus className="w-4 h-4 mr-1" /> Novo
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <MoreHorizontal className="w-4 h-4 mr-1" /> Mais
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Relatórios</DropdownMenuLabel>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <FileText className="w-4 h-4 mr-2" /> PDF de ingredientes
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => exportarIngredientesPDF(ingredientes)}>
+                  Todos os ingredientes
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={!accordionAberto}
+                  onClick={() => exportarIngredientesPDF(ingredientes, accordionAberto)}
+                >
+                  Categoria atual{accordionAberto ? ` (${accordionAberto})` : ""}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuItem onClick={() => setShowRelatorioLote(true)}>
+              <History className="w-4 h-4 mr-2" /> Relatório de lote
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Dados</DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => downloadCsv(
+                "ingredientes.csv",
+                ["nome", "categoria", "unidade_compra", "peso_embalagem_g", "preco_embalagem_rs", "preco_por_g_rs", "fator_correcao"],
+                ingredientes.map((i) => [i.nome, i.categoria, i.unidade_compra, i.peso_embalagem_g, i.preco_embalagem_rs, i.preco_por_g_rs, i.fator_correcao])
+              )}
+            >
+              <Download className="w-4 h-4 mr-2" /> Exportar CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowImport(true)}>
+              <Upload className="w-4 h-4 mr-2" /> Importar CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowImportSinonimos(true)}>
+              <Tags className="w-4 h-4 mr-2" /> Sinônimos
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Preços e Compra</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => navigate("/lista-compras")}>
+              <ShoppingCart className="w-4 h-4 mr-2" /> 🛒 Carrinho
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setShowAtualizarPrecos(true)}>
+              <RefreshCw className="w-4 h-4 mr-2" /> Atualizar preços
+              {!autoUpdateAtiva && (
+                <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5">pausada</Badge>
+              )}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Stale price alert banner */}
-      {!showDesatualizados && countDesatualizados > 0 && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-            <p className="text-sm text-red-800">
-              <strong>{countDesatualizados} ingredientes</strong> com preço desatualizado (90+ dias). Atualizar agora?
-            </p>
-          </div>
-          <Button size="sm" variant="outline" className="border-red-300 text-red-700 hover:bg-red-100 shrink-0" onClick={() => setShowAtualizarPrecos(true)}>
-            <RefreshCw className="w-4 h-4 mr-1" /> Atualizar
-          </Button>
-        </div>
-      )}
-
-      {/* Todas as categorias button */}
-      <button
-        onClick={() => { setAccordionAberto(null); setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false); }}
-        className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
-          !accordionAberto && !showDesatualizados && !showRevisar && !showFavoritos
-            ? "border-primary bg-primary/10 text-primary"
-            : "border-transparent bg-muted hover:bg-accent text-muted-foreground"
-        }`}
-      >
-        <LayoutGrid className="w-4 h-4" />
-        Todas as categorias
-        <Badge className="text-[10px] bg-primary/20 text-primary">{totalIngredientes}</Badge>
-      </button>
-
-      {/* Accordion grid */}
+      {/* Categorias — chips neutros roláveis */}
       {isLoading ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
       ) : (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            <button
+              onClick={() => { setAccordionAberto(null); setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false); }}
+              className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap border transition-colors ${
+                nenhumFiltroAtivo
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-muted text-muted-foreground border-transparent hover:bg-accent"
+              }`}
+            >
+              Todas {totalIngredientes}
+            </button>
             {GRUPOS_INGREDIENTES.map((g) => {
               const count = ingredientes.filter(i => getGrupoFromCategoria(i.categoria) === g.nome).length;
+              if (count === 0) return null;
               const aberto = accordionAberto === g.nome;
+              const isRevisar = g.nome === "A Revisar";
+              const classes = isRevisar
+                ? (aberto ? "bg-amber-600 text-white border-amber-600" : "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100")
+                : (aberto ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-transparent hover:bg-accent");
               return (
-                <div
+                <button
                   key={g.nome}
-                  className="rounded-xl overflow-hidden transition-all"
-                  style={{
-                    backgroundColor: g.cor,
-                    border: aberto ? `2px solid ${g.corTexto}` : "1px solid hsl(var(--border))",
+                  onClick={() => {
+                    setAccordionAberto(aberto ? null : g.nome);
+                    setBuscaInterna("");
+                    setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false);
                   }}
+                  className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap border transition-colors ${classes}`}
                 >
-                  <button
-                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:brightness-95"
-                    style={{ backgroundColor: g.cor, color: g.corTexto }}
-                    onClick={() => {
-                      setAccordionAberto(aberto ? null : g.nome);
-                      setBuscaInterna("");
-                    }}
-                  >
-                    <span className="text-lg">{g.icone}</span>
-                    <span className="flex-1 text-sm font-semibold">{g.nome}</span>
-                    <Badge
-                      className="text-[10px] h-5 px-1.5 font-bold border-0"
-                      style={{ backgroundColor: g.corPill, color: g.corPillTexto }}
-                    >
-                      {count}
-                    </Badge>
-                    <ChevronDown
-                      className={`w-4 h-4 shrink-0 transition-transform duration-200 ${aberto ? "rotate-180" : ""}`}
-                      style={{ opacity: aberto ? 1 : 0.5 }}
-                    />
-                  </button>
-                </div>
+                  {g.nome} {count}
+                </button>
               );
             })}
           </div>
 
-          {/* Listagem compacta abaixo do grid */}
+          {/* Listagem compacta abaixo dos chips */}
           <ListaIngredientes
             ingredientes={filtered}
             accordionAberto={accordionAberto}
@@ -459,7 +408,16 @@ export default function Ingredientes() {
       <ImportarSinonimosDialog open={showImportSinonimos} onClose={() => setShowImportSinonimos(false)} />
 
       {/* Update Prices Dialog */}
-      <AtualizarPrecosDialog open={showAtualizarPrecos} onClose={() => setShowAtualizarPrecos(false)} ingredientes={ingredientes} />
+      <AtualizarPrecosDialog
+        open={showAtualizarPrecos}
+        onClose={() => setShowAtualizarPrecos(false)}
+        ingredientes={ingredientes}
+        ultimoLog={ultimoLog}
+        autoUpdateAtiva={autoUpdateAtiva}
+        togglingAuto={togglingAuto}
+        onToggleAutoUpdate={handleToggleAutoUpdate}
+        onVerHistorico={() => setShowHistorico(true)}
+      />
 
       {/* Histórico de atualizações automáticas */}
       <HistoricoAtualizacoesDialog

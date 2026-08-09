@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, AlertTriangle, Check, Pause, Play, Clock, Zap } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, Check, Pause, Play, Clock, Zap, History, Power } from "lucide-react";
 import { toast } from "sonner";
 
 // Categorias com badge ⚡ (oscilam frequentemente)
@@ -13,7 +13,16 @@ const CATS_OSCILANTES = ["Carnes e Ovos", "Peixes e Frutos do Mar", "Laticínios
 
 const isOscilante = (cat) => CATS_OSCILANTES.includes(cat);
 
-export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
+export default function AtualizarPrecosDialog({
+  open,
+  onClose,
+  ingredientes,
+  ultimoLog,
+  autoUpdateAtiva,
+  togglingAuto,
+  onToggleAutoUpdate,
+  onVerHistorico,
+}) {
   const qc = useQueryClient();
   const [step, setStep] = useState("categories"); // categories | loading | results
   const [selectAll, setSelectAll] = useState(false);
@@ -340,6 +349,40 @@ export default function AtualizarPrecosDialog({ open, onClose, ingredientes }) {
         {/* ── Step: Category Selection ── */}
         {step === "categories" && (
           <div className="space-y-5">
+            {/* Status da atualização automática */}
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b">
+              <button
+                onClick={onVerHistorico}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              >
+                <History className="w-3 h-3" />
+                {ultimoLog ? (
+                  <>
+                    Última execução:{" "}
+                    {new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
+                    {" "}às{" "}
+                    {new Date(ultimoLog.data_execucao).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {" · "}{ultimoLog.total_atualizado} ingredientes atualizados
+                  </>
+                ) : (
+                  "Atualização automática: toda segunda às 3h · Ainda não executada"
+                )}
+                <span className="underline ml-0.5">Ver histórico</span>
+              </button>
+              <button
+                onClick={onToggleAutoUpdate}
+                disabled={togglingAuto}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  autoUpdateAtiva
+                    ? "bg-green-100 text-green-700 hover:bg-green-200"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                <Power className="w-3.5 h-3.5" />
+                {autoUpdateAtiva ? "ATIVA" : "PAUSADA"}
+              </button>
+            </div>
+
             {/* Painel superior — todos */}
             <button
               onClick={handleSelectAll}

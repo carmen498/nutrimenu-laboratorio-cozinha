@@ -77,22 +77,22 @@ export default function ListaIngredientes({
   const renderLinha = (ing) => {
     const dias = diasDesdeAtualizacao(ing);
     let statusEl;
-    if (ing.preco_atualizado_em && dias !== null && dias <= 30) {
+    if (ing.preco_atualizado_em && dias !== null && dias <= 90) {
       statusEl = (
         <span className="text-green-600 text-xs whitespace-nowrap">
-          🟢 {new Date(ing.preco_atualizado_em).toLocaleDateString("pt-BR")}
+          ● {new Date(ing.preco_atualizado_em).toLocaleDateString("pt-BR")}
         </span>
       );
-    } else if (ing.preco_atualizado_em && dias !== null && dias <= 90) {
+    } else if (ing.preco_atualizado_em && dias !== null) {
       statusEl = (
-        <span className="text-amber-600 text-xs whitespace-nowrap">
-          🟡 {new Date(ing.preco_atualizado_em).toLocaleDateString("pt-BR")}
+        <span className="text-amber-600 text-xs font-medium whitespace-nowrap">
+          ● {new Date(ing.preco_atualizado_em).toLocaleDateString("pt-BR")}
         </span>
       );
     } else {
       statusEl = (
-        <span className="text-red-600 text-xs font-medium whitespace-nowrap">
-          🔴 Desatualizado
+        <span className="text-amber-600 text-xs font-medium whitespace-nowrap">
+          ● nunca atualizado
         </span>
       );
     }
