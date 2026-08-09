@@ -341,10 +341,13 @@ export default function Receitas() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
         {CATEGORIAS_RECEITA.filter(cat => receitas.filter(r => hasCategoria(r, cat)).length > 0).map(cat => {
-          const count = receitas.filter(r => hasCategoria(r, cat)).length;
+          const receitasCategoria = receitas.filter(r => hasCategoria(r, cat));
+          const count = receitasCategoria.length;
           const selecionada = categoriaSelecionada === cat;
           const icone = ICONE_CATEGORIA[cat] || "📋";
           const cores = CORES_CATEGORIA[cat] || { cor: "#F5F5F5", corTexto: "#424242", corPill: "#E0E0E0", corPillTexto: "#212121" };
+          const selecionadosNaCategoria = selectionMode ? receitasCategoria.filter(r => selectedIds.has(r.id)).length : 0;
+          const checkedCategoria = selecionadosNaCategoria === 0 ? false : (selecionadosNaCategoria === count ? true : "indeterminate");
           return (
             <div
               key={cat}
@@ -363,6 +366,22 @@ export default function Receitas() {
                   setShowTagPainel(false);
                 }}
               >
+                {selectionMode && (
+                  <span onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <Checkbox
+                      checked={checkedCategoria}
+                      onCheckedChange={(value) => {
+                        setSelectedIds(prev => {
+                          const next = new Set(prev);
+                          const ids = receitasCategoria.map(r => r.id);
+                          if (value === true) ids.forEach(id => next.add(id));
+                          else ids.forEach(id => next.delete(id));
+                          return next;
+                        });
+                      }}
+                    />
+                  </span>
+                )}
                 <span className="text-lg">{icone}</span>
                 <span className="flex-1 text-sm font-semibold">{cat}</span>
                 <Badge
@@ -503,25 +522,7 @@ export default function Receitas() {
             >
               Selecionar todos
             </Button>
-            {!categoriaSelecionada && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    Selecionar por categoria
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-                  {CATEGORIAS_RECEITA.filter(cat => filtered.some(r => hasCategoria(r, cat))).map(cat => (
-                    <DropdownMenuItem
-                      key={cat}
-                      onClick={() => setSelectedIds(new Set(filtered.filter(r => hasCategoria(r, cat)).map(r => r.id)))}
-                    >
-                      {cat}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+
             <Button size="sm" disabled={selectedIds.size === 0} onClick={() => setShowBulkTag(true)}>
               <Tag className="w-4 h-4 mr-1" /> Aplicar tag
             </Button>
