@@ -28,6 +28,7 @@ import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { gerarFichaCardapioPDF } from "@/lib/fichaCardapioPDF";
 
 // Custo AO VIVO (mesmo caminho de cálculo do Evento): nunca lê o campo cache
 // CardapioReceita.custo_total — sempre deriva de Receita.custo_total + rendimento atual.
@@ -388,8 +389,16 @@ export default function CardapioAberto() {
     setGerandoLista(false);
   };
 
-  // === PDF ===
-  const exportarPDF = () => window.print();
+  // === PDF (Ficha do Cardápio — produção, sem valores comerciais) ===
+  const exportarPDF = () => {
+    gerarFichaCardapioPDF({
+      cardapio,
+      num,
+      receitasView,
+      insumos,
+      tagNomes: cardapioTags.map(ct => ct.tag_nome).filter(Boolean),
+    });
+  };
 
   // === WHATSAPP ===
   const compartilharWhatsApp = () => {
@@ -707,7 +716,7 @@ export default function CardapioAberto() {
           tipoLabel: tipo.label,
           numPessoas: isBuffet ? null : num,
         }}
-        handlers={{}}
+        handlers={{ ficha_cardapio: exportarPDF }}
       />
 
       {/* Dialog Adicionar Receita */}
