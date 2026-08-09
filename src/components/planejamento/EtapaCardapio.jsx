@@ -1,14 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShoppingCart, ArrowLeft, ArrowRight, Plus, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
+import { secaoSugeridaReceita } from "@/lib/secaoReceita";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import EtapaCardapioTabela from "@/components/planejamento/EtapaCardapioTabela";
@@ -21,23 +17,6 @@ const DIAS = [
   { key: "sexta", label: "Sex" }, { key: "sabado", label: "Sáb" },
   { key: "domingo", label: "Dom" },
 ];
-
-const NOMES_SECAO_PADRAO = ["Entrada", "Prato Principal", "Guarnição", "Arroz/Massas", "Saladas", "Sobremesa"];
-
-function initGrupos(config) {
-  if (config?.grupos?.length) {
-    return config.grupos.map(g => ({
-      nome: g.nome,
-      itens: (g.itens || []).map(i => ({
-        receita_id: i.receita_id,
-        receita_nome: i.receita_nome,
-        pc_g: i.pc_g,
-        qtd_kg_manual: i.qtd_kg_manual ?? null,
-      })),
-    }));
-  }
-  return NOMES_SECAO_PADRAO.map(nome => ({ nome, itens: [] }));
-}
 
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 function fmtNomePrato(nome) {
@@ -52,25 +31,17 @@ function pcSugeridoReceita(receita) {
 }
 
 export default function EtapaCardapio({
-  totalPessoas, cardapioConfig, margemEvento, onMargemEventoChange,
+  totalPessoas, grupos, onGruposUpdate, margemEvento, onMargemEventoChange,
   onSalvar, onGerarListaCompras, onVoltar, salvando,
   docesBebidas, onGruposChange, onAvancar, onAjustarPessoas
 }) {
-  const [grupos, setGrupos] = useState(() => initGrupos(cardapioConfig));
-  const [buscaGrupoIdx, setBuscaGrupoIdx] = useState(null);
-  const [showNovaSecaoDialog, setShowNovaSecaoDialog] = useState(false);
-  const [novaSecaoNome, setNovaSecaoNome] = useState("");
+  const setGrupos = onGruposUpdate;
+  const [buscaAberta, setBuscaAberta] = useState(false);
+  const [secaoPendente, setSecaoPendente] = useState(null);
   const [filtroDia, setFiltroDia] = useState("todos");
   const [avisoExpandido, setAvisoExpandido] = useState(false);
 
   const margem = margemEvento || 0;
-
-  // Re-init quando cardapioConfig mudar (ex: ao abrir edição)
-  useEffect(() => {
-    if (cardapioConfig) {
-      setGrupos(initGrupos(cardapioConfig));
-    }
-  }, [cardapioConfig]);
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
@@ -115,22 +86,22 @@ export default function EtapaCardapio({
     });
   }, [grupos, totalPessoas, margem, receitaMap, ingredientesPorReceita]);
 
-  // Push grupos config para o parent (necessário para salvar na Etapa 4)
+  // Push grupos config para o parent (necessário para salvar na Etapa 4, e também
+  // como snapshot do rascunho quando o Salvar Evento é usado a partir das Etapas 1/2)
+  const gruposConfigMemo = useMemo(() => gruposCalc.map(g => ({
+    nome: g.nome,
+    itens: g.itens.map(i => ({
+      receita_id: i.receita_id,
+      receita_nome: i.receita_nome,
+      pc_g: i.pc_g,
+      qtd_kg: parseFloat(i.qtd_kg.toFixed(3)),
+      qtd_kg_manual: i.qtd_kg_manual,
+      porcoes: i.porcoes,
+    })),
+  })), [gruposCalc]);
   useEffect(() => {
-    if (onGruposChange) {
-      onGruposChange(gruposCalc.map(g => ({
-        nome: g.nome,
-        itens: g.itens.map(i => ({
-          receita_id: i.receita_id,
-          receita_nome: i.receita_nome,
-          pc_g: i.pc_g,
-          qtd_kg: parseFloat(i.qtd_kg.toFixed(3)),
-          qtd_kg_manual: i.qtd_kg_manual,
-          porcoes: i.porcoes,
-        })),
-      })));
-    }
-  }, [gruposCalc, onGruposChange]);
+    if (onGruposChange) onGruposChange(gruposConfigMemo);
+  }, [gruposConfigMemo, onGruposChange]);
 
   // Dias usados nos itens do cardápio (apenas se algum item tiver dia_semana definido)
   const diasUsados = useMemo(() => {
@@ -149,27 +120,27 @@ export default function EtapaCardapio({
 
   // Gerar config para salvar
   const buildConfig = () => ({
-    grupos: gruposCalc.map(g => ({
-      nome: g.nome,
-      itens: g.itens.map(i => ({
-        receita_id: i.receita_id,
-        receita_nome: i.receita_nome,
-        pc_g: i.pc_g,
-        qtd_kg: parseFloat(i.qtd_kg.toFixed(3)),
-        qtd_kg_manual: i.qtd_kg_manual,
-        porcoes: i.porcoes,
-      })),
-    })),
+    grupos: gruposConfigMemo,
     doces_bebidas: docesBebidas,
   });
 
   // Handlers
-  const addItem = (grupoIdx, receita) => {
+  const addItem = (receita) => {
     const pc = pcSugeridoReceita(receita);
-    setGrupos(prev => prev.map((g, i) => i === grupoIdx
-      ? { ...g, itens: [...g.itens, { receita_id: receita.id, receita_nome: receita.nome, pc_g: pc, qtd_kg_manual: null }] }
-      : g));
-    setBuscaGrupoIdx(null);
+    const secaoAlvo = secaoPendente || secaoSugeridaReceita(receita);
+    setGrupos(prev => {
+      let idx = prev.findIndex(g => g.nome === secaoAlvo);
+      let next = prev;
+      if (idx === -1) {
+        next = [...prev, { nome: secaoAlvo, itens: [] }];
+        idx = next.length - 1;
+      }
+      return next.map((g, i) => i === idx
+        ? { ...g, itens: [...g.itens, { receita_id: receita.id, receita_nome: receita.nome, pc_g: pc, qtd_kg_manual: null }] }
+        : g);
+    });
+    setSecaoPendente(null);
+    setBuscaAberta(false);
   };
 
   const updateItem = (grupoIdx, itemIdx, patch) => {
@@ -195,26 +166,27 @@ export default function EtapaCardapio({
     }));
   };
 
-  const confirmarNovaSecao = () => {
-    if (!novaSecaoNome.trim()) return;
-    const novoIndex = grupos.length;
-    setGrupos(prev => [...prev, { nome: novaSecaoNome.trim(), itens: [] }]);
-    setNovaSecaoNome("");
-    setShowNovaSecaoDialog(false);
-    setBuscaGrupoIdx(novoIndex);
-  };
-
   const handleSalvar = () => onSalvar(buildConfig());
   const handleGerarLista = () => onGerarListaCompras(buildConfig());
 
   return (
     <div className="space-y-4">
-      {/* Pílulas: pessoas + margem de segurança + seletor de dia */}
+      {/* Pílulas: pessoas + margem de segurança + seletor de dia (digitáveis diretamente) */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-2 bg-secondary rounded-full px-3 py-2">
           <Button variant="ghost" size="icon" className="h-7 w-7"
             onClick={() => onAjustarPessoas?.(-1)} disabled={totalPessoas <= 0}>−</Button>
-          <span className="text-lg font-bold min-w-[2rem] text-center">{totalPessoas}</span>
+          <input
+            type="text" inputMode="numeric"
+            className="text-lg font-bold w-12 text-center bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-ring rounded"
+            value={totalPessoas}
+            onChange={(e) => {
+              const digits = e.target.value.replace(/\D/g, "");
+              const val = digits === "" ? 0 : parseInt(digits, 10);
+              onAjustarPessoas?.(val - totalPessoas);
+            }}
+            onFocus={(e) => e.target.select()}
+          />
           <Button variant="ghost" size="icon" className="h-7 w-7"
             onClick={() => onAjustarPessoas?.(1)}>+</Button>
           <span className="text-sm text-muted-foreground ml-1">pessoas</span>
@@ -222,7 +194,19 @@ export default function EtapaCardapio({
         <div className="flex items-center gap-2 bg-secondary rounded-full px-3 py-2">
           <Button variant="ghost" size="icon" className="h-7 w-7"
             onClick={() => onMargemEventoChange?.(Math.max(0, margem - 5))} disabled={margem <= 0}>−</Button>
-          <span className="text-lg font-bold min-w-[2.5rem] text-center">{margem}%</span>
+          <div className="flex items-center">
+            <input
+              type="text" inputMode="numeric"
+              className="text-lg font-bold w-10 text-center bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-ring rounded"
+              value={margem}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, "");
+                onMargemEventoChange?.(digits === "" ? 0 : Math.max(0, parseInt(digits, 10)));
+              }}
+              onFocus={(e) => e.target.select()}
+            />
+            <span className="text-lg font-bold">%</span>
+          </div>
           <Button variant="ghost" size="icon" className="h-7 w-7"
             onClick={() => onMargemEventoChange?.(margem + 5)}>+</Button>
           <span className="text-sm text-muted-foreground ml-1">margem de segurança</span>
@@ -245,23 +229,13 @@ export default function EtapaCardapio({
         onMoveItem={moveItem}
       />
 
-      {/* Barra de cores do cardápio: entre a tabela e o botão de adicionar prato */}
-      <BarraCoresCardapio gruposCalc={gruposCalc} receitaMap={receitaMap} />
+      {/* Botão único: Adicionar prato — abre direto o seletor de receitas (busca + categorias) */}
+      <Button variant="outline" size="sm" className="w-full gap-1 border-dashed" onClick={() => setBuscaAberta(true)}>
+        <Plus className="w-4 h-4" /> Adicionar prato
+      </Button>
 
-      {/* Botão único: Adicionar prato (pergunta a seção de destino) */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="w-full gap-1 border-dashed">
-            <Plus className="w-4 h-4" /> Adicionar prato
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          {gruposCalc.map((g, gi) => (
-            <DropdownMenuItem key={g.nome + gi} onClick={() => setBuscaGrupoIdx(gi)}>{g.nome}</DropdownMenuItem>
-          ))}
-          <DropdownMenuItem onClick={() => setShowNovaSecaoDialog(true)}>➕ Nova seção...</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Barra de cores do cardápio: depois do botão de adicionar prato */}
+      <BarraCoresCardapio gruposCalc={gruposCalc} receitaMap={receitaMap} />
 
       {/* Aviso consolidado de custo */}
       {pratosSemCusto.length > 0 && (
@@ -309,30 +283,17 @@ export default function EtapaCardapio({
         </div>
       </div>
 
-      {/* Dialog de busca de receitas */}
+      {/* Dialog de busca de receitas — abre direto, sem menu prévio de seção.
+          A seção é atribuída automaticamente pela categoria da receita; o
+          usuário pode opcionalmente criar uma nova seção dentro do próprio seletor. */}
       <BuscaReceitaDialog
-        open={buscaGrupoIdx !== null}
-        onClose={() => setBuscaGrupoIdx(null)}
-        onSelect={(r) => addItem(buscaGrupoIdx, r)}
+        open={buscaAberta}
+        onClose={() => { setBuscaAberta(false); setSecaoPendente(null); }}
+        onSelect={addItem}
         receitas={receitas}
         title="Adicionar prato"
+        onCreateSection={(nomeSecao) => setSecaoPendente(nomeSecao)}
       />
-
-      {/* Dialog de nova seção (a partir do fluxo de Adicionar prato) */}
-      <Dialog open={showNovaSecaoDialog} onOpenChange={setShowNovaSecaoDialog}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Nova seção</DialogTitle>
-          </DialogHeader>
-          <Input placeholder="Nome da seção" value={novaSecaoNome}
-            onChange={e => setNovaSecaoNome(e.target.value)} autoFocus
-            onKeyDown={e => e.key === "Enter" && confirmarNovaSecao()} />
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={() => setShowNovaSecaoDialog(false)}>Cancelar</Button>
-            <Button onClick={confirmarNovaSecao}>Criar e adicionar prato</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

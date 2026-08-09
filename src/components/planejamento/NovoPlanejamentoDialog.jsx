@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -10,15 +10,33 @@ import { Plus, Minus, Clock, Info, Check, ArrowRight, ArrowLeft } from "lucide-r
 import { toast } from "sonner";
 import EtapaCardapio from "./EtapaCardapio";
 import EtapaDocesBebidas from "./EtapaDocesBebidas";
+import { salvarRascunhoEvento, lerRascunhoEvento, limparRascunhoEvento } from "@/lib/eventoRascunho";
 
 const TIPOS_PLANEJAMENTO = ["Almoço", "Jantar", "Coquetel", "Data Comemorativa", "Confraternização", "Outro"];
 const TIPOS_SERVICO = ["Bufê", "Empratado", "À La Carte", "Refeição Familiar", "Self-Service", "Outro"];
 
 const PADROES = { homens: 600, mulheres: 400, criancas: 300 };
+const NOMES_SECAO_PADRAO = ["Entrada", "Prato Principal", "Guarnição", "Arroz/Massas", "Saladas", "Sobremesa"];
+
+function initGrupos(config) {
+  if (config?.grupos?.length) {
+    return config.grupos.map(g => ({
+      nome: g.nome,
+      itens: (g.itens || []).map(i => ({
+        receita_id: i.receita_id,
+        receita_nome: i.receita_nome,
+        pc_g: i.pc_g,
+        qtd_kg_manual: i.qtd_kg_manual ?? null,
+      })),
+    }));
+  }
+  return NOMES_SECAO_PADRAO.map(nome => ({ nome, itens: [] }));
+}
 
 export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planejamentoEdicao }) {
   const [etapa, setEtapa] = useState(1);
   const [salvando, setSalvando] = useState(false);
+  const hydratedRef = useRef(false);
 
   // Etapa 1 — Contexto
   const [nome, setNome] = useState("");
@@ -36,20 +54,48 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
   const [pcCriancas, setPcCriancas] = useState(300);
   const [margem, setMargem] = useState(20);
 
-  // Etapa 3 — Cardápio
-  const [cardapioConfig, setCardapioConfig] = useState(null);
+  // Etapa 3 — Cardápio (grupos = estado bruto dos pratos, controlado aqui para
+  // sobreviver a uma navegação de página inteira, ex: abrir uma receita)
+  const [grupos, setGrupos] = useState(() => initGrupos(null));
   const [margemEvento, setMargemEvento] = useState(0);
   // Etapa 4 — Doces & Bebidas (estado lifted — compartilhado entre Etapa 3 e 4)
   const [docesBebidas, setDocesBebidas] = useState([]);
-  // Grupos config recebido da EtapaCardapio (necessário para salvar na Etapa 4)
+  // Snapshot calculado dos grupos (vindo da EtapaCardapio), usado para montar o
+  // cardapio_config ao salvar a partir de qualquer etapa
   const [gruposConfig, setGruposConfig] = useState([]);
   const navigate = useNavigate();
 
-  // Carregar dados ao abrir (useEffect — onOpenChange do Radix não dispara quando open é controlado externamente)
+  // Carregar dados ao abrir — prioriza um rascunho salvo (retomada após navegação
+  // para uma receita), senão carrega do planejamento em edição ou começa vazio.
   useEffect(() => {
     if (!open) return;
+    const targetId = planejamentoEdicao?.id || null;
+    const draft = lerRascunhoEvento();
+    const draftMatches = draft && (draft.planejamentoId || null) === targetId;
+
+    if (draftMatches) {
+      setEtapa(draft.etapa || (planejamentoEdicao ? 3 : 1));
+      setNome(draft.nome || "");
+      setTipoPlanejamento(draft.tipoPlanejamento || "");
+      setTipoServico(draft.tipoServico || "");
+      setHorario(draft.horario || "");
+      setDuracao(draft.duracao || "");
+      setHomens(draft.homens || 0);
+      setMulheres(draft.mulheres || 0);
+      setCriancas(draft.criancas || 0);
+      setPcHomens(draft.pcHomens || 600);
+      setPcMulheres(draft.pcMulheres || 400);
+      setPcCriancas(draft.pcCriancas || 300);
+      setMargem(draft.margem ?? 20);
+      setMargemEvento(draft.margemEvento || 0);
+      setGrupos(draft.grupos && draft.grupos.length ? draft.grupos : initGrupos(null));
+      setDocesBebidas(draft.docesBebidas || []);
+      setGruposConfig(draft.gruposConfig || []);
+      hydratedRef.current = true;
+      return;
+    }
+
     if (planejamentoEdicao) {
-      // Edição: abre na última etapa relevante (3 se cardápio salvo, senão 2)
       const hasCardapio = !!planejamentoEdicao.cardapio_config;
       setEtapa(hasCardapio ? 3 : 2);
       setGruposConfig([]);
@@ -66,18 +112,16 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setPcCriancas(planejamentoEdicao.per_capita_criancas_g || 300);
       setMargem(planejamentoEdicao.margem_seguranca_pct || 20);
       setMargemEvento(planejamentoEdicao.margem_seguranca_evento_pct || 0);
-      // Carregar cardápio salvo
+      let config = null;
       if (planejamentoEdicao.cardapio_config) {
         try {
-          const config = typeof planejamentoEdicao.cardapio_config === "string"
+          config = typeof planejamentoEdicao.cardapio_config === "string"
             ? JSON.parse(planejamentoEdicao.cardapio_config)
             : planejamentoEdicao.cardapio_config;
-          setCardapioConfig(config);
-          setDocesBebidas(config.doces_bebidas || []);
-        } catch (e) { setCardapioConfig(null); setDocesBebidas([]); }
-      } else {
-        setCardapioConfig(null);
+        } catch (e) { config = null; }
       }
+      setGrupos(initGrupos(config));
+      setDocesBebidas(config?.doces_bebidas || []);
     } else {
       setEtapa(1);
       setNome(""); setTipoPlanejamento(""); setTipoServico("");
@@ -85,13 +129,34 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
       setHomens(0); setMulheres(0); setCriancas(0);
       setPcHomens(600); setPcMulheres(400); setPcCriancas(300); setMargem(20);
       setMargemEvento(0);
-      setCardapioConfig(null);
+      setGrupos(initGrupos(null));
       setDocesBebidas([]);
       setGruposConfig([]);
     }
+    hydratedRef.current = true;
   }, [open, planejamentoEdicao]);
 
-  const handleClose = (v) => { if (!v) onClose(); };
+  // Persiste o rascunho continuamente (sessionStorage) enquanto o diálogo está
+  // aberto, para sobreviver a uma navegação de página inteira e voltar intacto.
+  useEffect(() => {
+    if (!open || !hydratedRef.current) return;
+    salvarRascunhoEvento({
+      planejamentoId: planejamentoEdicao?.id || null,
+      etapa, nome, tipoPlanejamento, tipoServico, horario, duracao,
+      homens, mulheres, criancas, pcHomens, pcMulheres, pcCriancas, margem, margemEvento,
+      grupos, docesBebidas, gruposConfig,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, planejamentoEdicao, etapa, nome, tipoPlanejamento, tipoServico, horario, duracao,
+      homens, mulheres, criancas, pcHomens, pcMulheres, pcCriancas, margem, margemEvento,
+      grupos, docesBebidas, gruposConfig]);
+
+  const handleClose = (v) => {
+    if (!v) {
+      limparRascunhoEvento();
+      onClose();
+    }
+  };
 
   const totalPessoas = homens + mulheres + criancas;
   const totalBaseKg = useMemo(() =>
@@ -123,10 +188,16 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
     setCriancas(criancas - tirarCriancas);
   };
 
+  // Config atual (bruto + calculado) para gravar em cardapio_config a partir de qualquer etapa
+  const buildConfigFromState = () => ({
+    grupos: gruposConfig.length > 0 ? gruposConfig : grupos.map(g => ({ nome: g.nome, itens: g.itens })),
+    doces_bebidas: docesBebidas,
+  });
+
   const buildDados = (configOverride) => ({
     nome: nome.trim(),
     tipo_planejamento: tipoPlanejamento,
-    tipo_servico: tipoServico || undefined,
+    tipo_servico: tipoServico || "Outro",
     horario_inicio: horario || undefined,
     duracao_horas: duracao ? parseFloat(duracao.replace(",", ".")) : undefined,
     qtd_homens: homens,
@@ -140,7 +211,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
     total_base_kg: parseFloat(totalBaseKg.toFixed(2)),
     total_com_margem_kg: parseFloat(totalComMargemKg.toFixed(2)),
     total_pessoas: totalPessoas,
-    cardapio_config: configOverride ? JSON.stringify(configOverride) : (cardapioConfig ? JSON.stringify(cardapioConfig) : undefined),
+    cardapio_config: JSON.stringify(configOverride || buildConfigFromState()),
   });
 
   const handleSalvar = async (configOverride) => {
@@ -154,6 +225,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
         await base44.entities.Planejamento.create(dados);
         toast.success("Evento salvo!");
       }
+      limparRascunhoEvento();
       onSaved?.();
       onClose();
     } catch (e) {
@@ -176,6 +248,7 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
         savedId = created.id;
       }
       setSalvando(false);
+      limparRascunhoEvento();
       onClose();
       onSaved?.();
       navigate(`/lista-compras?planejamento=${savedId}`);
@@ -193,7 +266,16 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
           onClick={() => onChange(Math.max(0, value - 1))} disabled={value <= 0}>
           <Minus className="w-4 h-4" />
         </Button>
-        <span className="w-10 text-center text-lg font-semibold tabular-nums">{value}</span>
+        <input
+          type="text" inputMode="numeric"
+          className="w-12 text-center text-lg font-semibold tabular-nums bg-transparent border-0 focus:outline-none focus:ring-1 focus:ring-ring rounded"
+          value={value}
+          onChange={(e) => {
+            const digits = e.target.value.replace(/\D/g, "");
+            onChange(digits === "" ? 0 : Math.max(0, parseInt(digits, 10)));
+          }}
+          onFocus={(e) => e.target.select()}
+        />
         <Button variant="outline" size="icon" className="h-8 w-8"
           onClick={() => onChange(value + 1)}>
           <Plus className="w-4 h-4" />
@@ -323,7 +405,10 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
               </div>
             )}
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-between pt-2">
+              <Button variant="secondary" onClick={() => handleSalvar()} disabled={!etapa1Valida || salvando}>
+                {salvando ? "Salvando..." : "Salvar Evento"}
+              </Button>
               <Button onClick={() => setEtapa(2)} disabled={!etapa1Valida} className="gap-1">
                 Próximo: Clientes <ArrowRight className="w-4 h-4" />
               </Button>
@@ -380,9 +465,12 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
               </div>
             </div>
 
-            <div className="flex justify-between pt-2">
+            <div className="flex justify-between items-center pt-2 gap-2">
               <Button variant="outline" onClick={() => setEtapa(1)} className="gap-1">
                 <ArrowLeft className="w-4 h-4" /> Voltar
+              </Button>
+              <Button variant="secondary" onClick={() => handleSalvar()} disabled={!etapa1Valida || salvando}>
+                {salvando ? "Salvando..." : "Salvar Evento"}
               </Button>
               <Button onClick={() => setEtapa(3)} disabled={!etapa1Valida} className="gap-1">
                 Cardápio <ArrowRight className="w-4 h-4" />
@@ -394,7 +482,8 @@ export default function NovoPlanejamentoDialog({ open, onClose, onSaved, planeja
         {etapa === 3 && (
           <EtapaCardapio
             totalPessoas={totalPessoas}
-            cardapioConfig={cardapioConfig}
+            grupos={grupos}
+            onGruposUpdate={setGrupos}
             margemEvento={margemEvento}
             onMargemEventoChange={setMargemEvento}
             onSalvar={handleSalvar}

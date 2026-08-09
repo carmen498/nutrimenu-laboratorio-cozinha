@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown, ClipboardList } from "lucide-react";
 import ListaPlanejamentos from "@/components/planejamento/ListaPlanejamentos";
+import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 
 const TIPOS_CARDAPIO = [
   { nome: "Diário",        key: "diario",        icone: "🏠", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
@@ -50,7 +51,9 @@ export default function Cardapios() {
   const [form, setForm] = useState({ nome: "", tipo: "", data: "", observacoes: "" });
   const [salvando, setSalvando] = useState(false);
   const [favPending, setFavPending] = useState({});
-  const [aba, setAba] = useState("cardapios"); // cardapios | planejamentos
+  // Se houver um rascunho de evento pendente (ex: usuário abriu uma receita a
+  // partir do Assistente do Evento e voltou), reabre direto na aba Eventos.
+  const [aba, setAba] = useState(() => (lerRascunhoEvento() ? "planejamentos" : "cardapios"));
 
   const load = async () => {
     setLoading(true);

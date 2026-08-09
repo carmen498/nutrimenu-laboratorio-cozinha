@@ -957,7 +957,7 @@ REGRAS:
         <div className="flex-1 min-w-0 space-y-2 pr-3">
           {/* Line 1: Name + actions */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/receitas")}>
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="font-display text-xl font-bold truncate">{receita.nome}</h1>

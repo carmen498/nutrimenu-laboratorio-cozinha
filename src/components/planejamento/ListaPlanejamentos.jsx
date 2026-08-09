@@ -14,14 +14,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import NovoPlanejamentoDialog from "./NovoPlanejamentoDialog";
 import RelatoriosPlanejamentoDialog from "./RelatoriosPlanejamentoDialog";
+import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 
 export default function ListaPlanejamentos() {
   const navigate = useNavigate();
   const [planejamentos, setPlanejamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
-  const [showDialog, setShowDialog] = useState(false);
-  const [edicao, setEdicao] = useState(null);
+  // Retoma automaticamente o Assistente do Evento se houver um rascunho pendente
+  // (ex: o usuário abriu uma receita a partir de um prato do evento e voltou).
+  const rascunhoPendente = lerRascunhoEvento();
+  const [showDialog, setShowDialog] = useState(!!rascunhoPendente);
+  const [edicao, setEdicao] = useState(() =>
+    rascunhoPendente?.planejamentoId ? { id: rascunhoPendente.planejamentoId } : null
+  );
   const [excluirItem, setExcluirItem] = useState(null);
   const [relatorioItem, setRelatorioItem] = useState(null);
 
