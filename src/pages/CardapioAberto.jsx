@@ -705,6 +705,7 @@ export default function CardapioAberto() {
         handlers={{
           ficha_cardapio: () => { setShowRelatorios(false); abrirFichaCardapio(); return false; },
           orcamento: () => { setShowRelatorios(false); abrirOrcamento(); return false; },
+          pre_preparos: () => { setShowRelatorios(false); navigate(`/cardapio/${id}/pre-preparos`); return false; },
         }}
       />
 

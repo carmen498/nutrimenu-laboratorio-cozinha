@@ -33,6 +33,7 @@ import AuditoriaRendimento from '@/pages/AuditoriaRendimento';
 import AuditoriaReceitas from '@/pages/AuditoriaReceitas';
 import Auditorias from '@/pages/Auditorias';
 import PrePreparosPlanejamento from '@/pages/PrePreparosPlanejamento';
+import PrePreparosCardapio from '@/pages/PrePreparosCardapio';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
           <Route path="/cardapio/:id" element={<CardapioAberto />} />
           <Route path="/cardapio/:id/ficha" element={<FichaCardapio />} />
           <Route path="/cardapio/:id/orcamento" element={<OrcamentoCardapio />} />
+          <Route path="/cardapio/:id/pre-preparos" element={<PrePreparosCardapio />} />
           <Route path="/ingredientes" element={<Ingredientes />} />
           <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
           <Route path="/ingrediente/:id/dossie" element={<DossieIngrediente />} />
