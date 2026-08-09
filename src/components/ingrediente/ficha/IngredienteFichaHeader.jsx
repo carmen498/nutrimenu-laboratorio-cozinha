@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Star, Pencil, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Star, Pencil, AlertTriangle, FileText } from "lucide-react";
 
 const isWeightUnit = (u) => ["G", "KG"].includes(u?.toUpperCase());
 const isLiquidUnit = (u) => ["ML", "LT"].includes(u?.toUpperCase());
@@ -53,6 +53,9 @@ export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggle
             </Badge>
           </div>
         </div>
+        <Button variant="outline" onClick={() => navigate(`/ingrediente/${ingrediente.id}/dossie`)} className="shrink-0">
+          <FileText className="w-4 h-4 mr-1" /> Exportar PDF
+        </Button>
         <Button onClick={onEditar} className="shrink-0">
           <Pencil className="w-4 h-4 mr-1" /> Editar
         </Button>

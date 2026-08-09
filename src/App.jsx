@@ -19,6 +19,7 @@ import Cardapios from '@/pages/Cardapios';
 import CardapioAberto from '@/pages/CardapioAberto';
 import Ingredientes from '@/pages/Ingredientes';
 import IngredienteAberto from '@/pages/IngredienteAberto';
+import DossieIngrediente from '@/pages/DossieIngrediente';
 import ListaCompras from '@/pages/ListaCompras';
 import ExportarReceita from '@/pages/ExportarReceita';
 import ReceitaListaCompras from '@/pages/ReceitaListaCompras';
@@ -65,6 +66,7 @@ const AuthenticatedApp = () => {
           <Route path="/cardapio/:id" element={<CardapioAberto />} />
           <Route path="/ingredientes" element={<Ingredientes />} />
           <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
+          <Route path="/ingrediente/:id/dossie" element={<DossieIngrediente />} />
           <Route path="/lista-compras" element={<ListaCompras />} />
           <Route path="/receita/:id/lista-compras" element={<ReceitaListaCompras />} />
           <Route path="/exportar/:id" element={<ExportarReceita />} />
