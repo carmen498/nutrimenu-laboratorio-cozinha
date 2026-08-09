@@ -5,7 +5,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Settings2 } from "lucide-react";
+import { Settings2, Info, RotateCcw } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import GerenciarReferenciaDialog from "./GerenciarReferenciaDialog";
 import DecimalInput from "./DecimalInput";
 
@@ -20,18 +21,13 @@ const TIPO_ORDER = ["coquetel", "doce", "bebida"];
 
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 
-function fmtQtd(total, unidade) {
-  if (unidade === "ml") return (total / 1000).toFixed(1).replace(".", ",") + " L";
-  if (unidade === "un") return Math.ceil(total) + " un";
-  return (total / 1000).toFixed(1).replace(".", ",") + " kg";
-}
-
 function unidadeCustoLabel(unidade) {
   if (unidade === "ml") return "L";
   if (unidade === "un") return "un";
   return "kg";
 }
 
+// ─── Fórmulas originais — NÃO ALTERAR ───
 // Quantidade total bruta na unidade base do item (g/ml/un)
 function calcQtdRaw(item, totalPessoas) {
   const pct = item.percentual || 0;
@@ -51,6 +47,26 @@ function calcRsTotal(item, totalPessoas) {
   const raw = calcQtdRaw(item, totalPessoas);
   const qtd = calcQtdConvertida(raw, item.unidade);
   return qtd * cu;
+}
+// ─── Fim das fórmulas originais ───
+
+// Quantidade final automática (calculada), arredondada para exibição/edição
+function qtdFinalAutomatica(item, totalPessoas) {
+  const conv = calcQtdConvertida(calcQtdRaw(item, totalPessoas), item.unidade);
+  return item.unidade === "un" ? Math.ceil(conv) : Math.round(conv * 10) / 10;
+}
+
+// Quantidade final efetiva: usa o ajuste manual quando existir, senão a automática
+function qtdFinalEfetiva(item, totalPessoas) {
+  return item.quantidade_ajustada != null ? item.quantidade_ajustada : qtdFinalAutomatica(item, totalPessoas);
+}
+
+// R$ total considerando a quantidade final (ajustada ou automática) — não altera
+// calcRsTotal, apenas usa a mesma multiplicação (qtd × custo) com a qtd efetiva.
+function calcRsTotalFinal(item, totalPessoas) {
+  const cu = item.custo_unitario;
+  if (!cu) return null;
+  return qtdFinalEfetiva(item, totalPessoas) * cu;
 }
 
 export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChange }) {
@@ -80,6 +96,9 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
         percentual: ref.sem_padrao ? null : ref.percentual_padrao,
         media: ref.sem_padrao ? null : ref.media_padrao,
         custo_unitario: null,
+        custo_unitario_input: null,
+        base_custo: "un",
+        quantidade_ajustada: null,
       };
       onChange([...(docesBebidas || []), novo]);
     }
@@ -87,6 +106,28 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
 
   const updateField = (itemName, field, value) => {
     onChange((docesBebidas || []).map(i => i.item === itemName ? { ...i, [field]: value } : i));
+  };
+
+  // Atualiza o valor digitado de custo, convertendo para R$/un quando a base for "cento"
+  const updateCustoInput = (itemName, base, inputValue) => {
+    const custoUnitario = base === "cento" ? (inputValue == null ? null : inputValue / 100) : inputValue;
+    onChange((docesBebidas || []).map(i => i.item === itemName
+      ? { ...i, base_custo: base, custo_unitario_input: inputValue, custo_unitario: custoUnitario }
+      : i));
+  };
+
+  // Troca a base de cotação (un/cento), recalculando o custo unitário efetivo a partir do valor já digitado
+  const updateBaseCusto = (itemName, novoBase) => {
+    onChange((docesBebidas || []).map(i => {
+      if (i.item !== itemName) return i;
+      const inputVal = i.custo_unitario_input ?? i.custo_unitario ?? null;
+      const custoUnitario = novoBase === "cento" ? (inputVal == null ? null : inputVal / 100) : inputVal;
+      return { ...i, base_custo: novoBase, custo_unitario_input: inputVal, custo_unitario: custoUnitario };
+    }));
+  };
+
+  const updateQtdAjustada = (itemName, value) => {
+    onChange((docesBebidas || []).map(i => i.item === itemName ? { ...i, quantidade_ajustada: value } : i));
   };
 
   const groupedRefs = useMemo(() => {
@@ -102,12 +143,20 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
 
   const custoTotalDoces = useMemo(() => {
     return (docesBebidas || []).reduce((s, i) => {
-      const rs = calcRsTotal(i, totalPessoas);
+      const rs = calcRsTotalFinal(i, totalPessoas);
       return s + (rs || 0);
     }, 0);
   }, [docesBebidas, totalPessoas]);
 
+  const custoSubtotalAba = useMemo(() => {
+    if (filtroTipo === "todas") return null;
+    return (docesBebidas || [])
+      .filter(i => i.tipo === filtroTipo)
+      .reduce((s, i) => s + (calcRsTotalFinal(i, totalPessoas) || 0), 0);
+  }, [docesBebidas, totalPessoas, filtroTipo]);
+
   return (
+    <TooltipProvider>
     <div className="rounded-lg border border-border bg-card">
       {/* Cabeçalho único */}
       <div className="p-3 border-b border-border">
@@ -146,10 +195,20 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
         <div className="w-4 shrink-0" />
         <div className="flex-1">Item</div>
         <div className="w-16 text-right shrink-0">PC médio</div>
-        <div className="w-20 text-right shrink-0">Qtd. total</div>
-        <div className="w-40 text-right shrink-0">Custo unit.</div>
+        <div className="w-24 text-right shrink-0">Qtd. final</div>
+        <div className="w-48 text-right shrink-0">Custo unit.</div>
         <div className="w-24 text-right shrink-0">R$ total</div>
-        <div className="w-20 text-right shrink-0">% ref.</div>
+        <div className="w-24 text-right shrink-0 flex items-center justify-end gap-1">
+          % Adesão
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="w-3 h-3 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-[220px] normal-case font-normal">
+              Percentual dos convidados que consomem este item. Ex.: 50% = metade das pessoas.
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       <div className="border-t border-border">
@@ -164,8 +223,9 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
               {items.map(ref => {
                 const sel = selectedMap[ref.item];
                 const isChecked = !!sel;
-                const qtdRaw = isChecked ? calcQtdRaw(sel, totalPessoas) : 0;
-                const rsTotal = isChecked ? calcRsTotal(sel, totalPessoas) : null;
+                const rsTotal = isChecked ? calcRsTotalFinal(sel, totalPessoas) : null;
+                const base = sel?.base_custo || "un";
+                const ajustado = isChecked && sel.quantidade_ajustada != null;
                 return (
                   <div key={ref.id} className="flex items-center gap-3 px-3 py-2.5 border-b border-border last:border-b-0">
                     <Checkbox checked={isChecked} onCheckedChange={() => toggleItem(ref)} className="shrink-0" />
@@ -182,19 +242,47 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
                             onChange={e => updateField(ref.item, "media", e.target.value === "" ? null : parseFloat(e.target.value.replace(",", ".")))}
                             className="h-7 text-sm text-right tabular-nums px-1" placeholder="0" />
                         </div>
-                        <div className="w-20 shrink-0 text-right text-sm font-medium tabular-nums">
-                          {fmtQtd(qtdRaw, ref.unidade)}
+                        <div className="w-24 shrink-0 flex items-center justify-end gap-1">
+                          <DecimalInput
+                            value={qtdFinalEfetiva(sel, totalPessoas)}
+                            onChange={v => updateQtdAjustada(ref.item, v)}
+                            className="w-16 h-7 text-sm text-right tabular-nums px-1" placeholder="0" />
+                          <span className="text-[10px] text-muted-foreground shrink-0">{unidadeCustoLabel(ref.unidade)}</span>
+                          {ajustado && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" onClick={() => updateQtdAjustada(ref.item, null)}
+                                  className="text-muted-foreground hover:text-primary shrink-0">
+                                  <RotateCcw className="w-3 h-3" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="normal-case font-normal">Voltar ao automático</TooltipContent>
+                            </Tooltip>
+                          )}
                         </div>
-                        <div className="w-40 shrink-0 flex items-center justify-end gap-1">
-                          <span className="text-[10px] text-muted-foreground shrink-0">R$/{unidadeCustoLabel(ref.unidade)}</span>
-                          <DecimalInput value={sel.custo_unitario ?? null}
-                            onChange={v => updateField(ref.item, "custo_unitario", v)}
+                        <div className="w-48 shrink-0 flex flex-col items-end gap-0.5">
+                          {ref.unidade === "un" ? (
+                            <div className="flex gap-0.5">
+                              <button type="button" onClick={() => updateBaseCusto(ref.item, "un")}
+                                className={`text-[9px] px-1.5 py-0.5 rounded ${base === "un" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                                R$/un
+                              </button>
+                              <button type="button" onClick={() => updateBaseCusto(ref.item, "cento")}
+                                className={`text-[9px] px-1.5 py-0.5 rounded ${base === "cento" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                                R$/cento
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground shrink-0">R$/{unidadeCustoLabel(ref.unidade)}</span>
+                          )}
+                          <DecimalInput value={sel.custo_unitario_input ?? sel.custo_unitario ?? null}
+                            onChange={v => updateCustoInput(ref.item, base, v)}
                             className="w-24 h-7 text-sm text-right tabular-nums px-1" placeholder="0,00" />
                         </div>
                         <div className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">
                           {rsTotal != null ? fmtRs(rsTotal) : "—"}
                         </div>
-                        <div className="w-20 shrink-0 flex items-center justify-end gap-1">
+                        <div className="w-24 shrink-0 flex items-center justify-end gap-1">
                           <Input type="number" step="0.5" value={sel.percentual ?? ""}
                             onChange={e => updateField(ref.item, "percentual", e.target.value === "" ? null : parseFloat(e.target.value.replace(",", ".")))}
                             className="w-14 h-7 text-sm text-right tabular-nums px-1" placeholder="0" />
@@ -204,10 +292,10 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
                     ) : (
                       <>
                         <div className="w-16 shrink-0" />
-                        <div className="w-20 shrink-0" />
-                        <div className="w-40 shrink-0" />
                         <div className="w-24 shrink-0" />
-                        <div className="w-20 shrink-0" />
+                        <div className="w-48 shrink-0" />
+                        <div className="w-24 shrink-0" />
+                        <div className="w-24 shrink-0" />
                       </>
                     )}
                   </div>
@@ -221,13 +309,25 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
         <div className="flex items-center gap-3 px-3 py-3 border-t-2 border-border bg-secondary/50">
           <div className="w-4 shrink-0" />
           <div className="flex-1 min-w-0 text-sm font-semibold">
-            Total Doces & Bebidas · separado do total de comida
+            {filtroTipo === "todas"
+              ? "Total Doces & Bebidas · separado do total de comida"
+              : `Subtotal ${TIPO_LABEL[filtroTipo]} · total geral à direita`}
           </div>
           <div className="w-16 shrink-0" />
-          <div className="w-20 shrink-0" />
-          <div className="w-40 shrink-0" />
-          <div className="w-24 shrink-0 text-right text-sm font-semibold tabular-nums">{fmtRs(custoTotalDoces)}</div>
-          <div className="w-20 shrink-0" />
+          <div className="w-24 shrink-0" />
+          <div className="w-48 shrink-0" />
+          <div className="w-24 shrink-0 text-right">
+            {filtroTipo !== "todas" && (
+              <div className="text-[9px] text-muted-foreground font-normal uppercase">Subtotal {TIPO_LABEL[filtroTipo]}</div>
+            )}
+            <div className="text-sm font-semibold tabular-nums">
+              {fmtRs(filtroTipo === "todas" ? custoTotalDoces : custoSubtotalAba)}
+            </div>
+            {filtroTipo !== "todas" && (
+              <div className="text-[9px] text-muted-foreground mt-0.5">Total (todas): {fmtRs(custoTotalDoces)}</div>
+            )}
+          </div>
+          <div className="w-24 shrink-0" />
         </div>
       </div>
 
@@ -237,5 +337,6 @@ export default function DocesBebidasSection({ totalPessoas, docesBebidas, onChan
         onChanged={() => refetch()}
       />
     </div>
+    </TooltipProvider>
   );
 }
