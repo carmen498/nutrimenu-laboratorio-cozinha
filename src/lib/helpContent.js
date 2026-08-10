@@ -42,33 +42,6 @@ export const helpContent = {
     { q: "Como gero os relatórios da receita?", a: "'Exportar PDF' → Ficha Técnica ou Ficha de Custos; botão 'Lista de Compras' separado. Todos abrem em pré-visualização antes de baixar, com opção de Compartilhar." }
   ]
 },
-  "Receita": {
-    context:
-      "Esta é a ficha completa da receita, com todos os detalhes: ingredientes com quantidades e custos, sub-receitas, insumos e embalagens, modo de preparo, foto e informações nutricionais estimadas. Você pode editar qualquer campo, ajustar porções e ver o impacto no custo em tempo real.",
-    faqs: [
-      {
-        q: "Como ajustar o número de porções?",
-        a: "Use o controle deslizante de porções no topo da ficha. Os ingredientes estruturais escalam proporcionalmente; os 'a gosto' mantêm a quantidade fixa. O custo total é recalculado automaticamente.",
-      },
-      {
-        q: "O que são ingredientes esquecidos?",
-        a: "São ingredientes mencionados no modo de preparo mas que não foram listados na seção de ingredientes. O sistema detecta e sugere adicioná-los, calculando o custo adicional.",
-      },
-      {
-        q: "Como adicionar uma sub-receita?",
-        a: "Na lista de ingredientes, você pode adicionar itens do tipo 'subreceita'. Isso vincula outra receita do sistema como componente desta. O custo da sub-receita é incorporado ao custo total.",
-      },
-      {
-        q: "Como exportar ou imprimir a receita?",
-        a: "Use o botão Exportar/Imprimir no topo da ficha. Você pode gerar um PDF profissional com a ficha completa ou apenas a lista de ingredientes para compras.",
-      },
-      {
-        q: "Como adicionar foto à receita?",
-        a: "Na seção de foto, você pode fazer upload de uma imagem ou gerar uma foto com IA. A IA cria uma imagem realista do prato pronto baseada nos ingredientes e no modo de preparo.",
-      },
-    ],
-  },
-
   "Cardápios": {
     context:
       "Aqui você monta cardápios para diferentes ocasiões: diários, semanais, fins de semana, eventos especiais, marmitas e buffets. Cada cardápio combina receitas com quantidades per capita, calcula o custo total e sugere preço de venda com markup configurável.",

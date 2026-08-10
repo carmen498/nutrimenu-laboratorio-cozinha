@@ -123,7 +123,7 @@ export default function AppLayout() {
         (() => {
           const p = location.pathname;
           if (p === "/") return "Início";
-          if (p.startsWith("/receita/")) return "Receita";
+          if (p.startsWith("/receita/")) return "Receitas";
           if (p === "/receitas") return "Receitas";
           if (p.startsWith("/cardapio/")) return "Cardápio";
           if (p === "/cardapios") return "Cardápios";
