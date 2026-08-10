@@ -23,22 +23,23 @@ export const helpContent = {
   },
 
   "Receitas": {
-  context: "Banco de receitas com ficha técnica completa: ingredientes, modo de preparo, custo por porção, e relatórios em PDF (Ficha Técnica, Ficha de Custos, Lista de Compras). Toda receita calcula custo automaticamente com base no preço atual dos ingredientes.",
+  context: "Aqui vive o coração do Laboratório de Cozinha: cada receita cadastrada é uma ficha técnica viva, que carrega em si o custo real, o rendimento exato e a memória de como aquele prato nasce — do ingrediente ao modo de preparo. Uma receita bem cadastrada não é só uma lista de itens: é a base que se multiplica em cardápios, eventos e outras receitas, sempre recalculando sozinha quando algo muda ao redor dela.",
   faqs: [
-    { q: "Como vejo o custo de uma receita?", a: "Abra a receita e clique em 'Exportar PDF' → 'Ficha de Custos'. Mostra o custo total, por porção, por kg, e quais ingredientes pesam mais no preço." },
-    { q: "Como gero a ficha técnica em PDF?", a: "Abra a receita e clique em 'Exportar PDF' → 'Ficha Técnica'. Sempre mostra os valores BASE da receita, mesmo se você tiver escalado na tela." },
-    { q: "Como compartilho uma receita?", a: "Na Ficha Técnica ou Ficha de Custos, clique em 'Compartilhar' para enviar o PDF direto por WhatsApp." },
-    { q: "O que é 'Ajustar para peso total'?", a: "Recalcula TODOS os ingredientes proporcionalmente para um novo peso total (ex.: 1kg, 500g) e grava essa mudança de forma permanente na receita. Diferente do escalador do Cardápio, que é temporário." },
-    { q: "Como funcionam PC Recomendado, Nº de Porções e Quantidade Total?", a: "Quantidade Total é sempre a soma real dos ingredientes cadastrados — não muda ao editar o PC. PC Recomendado é o peso ideal por porção, editável livremente. Nº de Porções é calculado automaticamente (Quantidade Total ÷ PC)." },
-    { q: "Por que a receita abre com valores diferentes quando venho de um Cardápio?", a: "É o escalador em contexto: ao abrir uma receita a partir de um Cardápio/Evento, ela mostra os valores escalados para aquele cardápio específico (selo 'escalado para...' no topo). É temporário — clique em 'Restaurar original' para voltar à ficha base, ou abra pela lista de Receitas normalmente." },
-    { q: "Como aplico uma tag em várias receitas de uma vez?", a: "Clique em 'Selecionar', marque as receitas (ou marque o checkbox de uma categoria inteira para selecionar todas dela de uma vez) e clique em 'Aplicar tag'." },
-    { q: "Como gero um relatório com várias receitas de uma categoria?", a: "Clique no botão 'PDF' no topo da lista para gerar de todas as categorias, ou expanda uma categoria e use o ícone de relatório dentro do card para gerar só dela." },
-    { q: "Como excluo ou duplico uma receita?", a: "Abra a receita e use os botões 'Duplicar receita' ou 'Excluir receita' no topo da ficha." },
-    { q: "Como crio uma receita nova a partir de um texto que já tenho?", a: "Use 'Nova Receita' → 'Colar receita (IA estrutura)'. Cole o texto com ingredientes e modo de preparo — a IA organiza automaticamente na ficha. Textos que não parecem receita são recusados, para evitar criar receitas inventadas." },
-    { q: "O que significa a tag 'A revisar'?", a: "Marca receitas com dados incompletos ou pendentes de conferência (ex.: ingrediente sem preço, peso não informado). Use o filtro 'Revisar' para encontrá-las rapidamente." },
-    { q: "Como busco uma receita por um ingrediente específico?", a: "Digite o nome do ingrediente na busca da tela de Receitas — ela também encontra receitas que o contêm, não só pelo nome do prato." },
-    { q: "Como gero a lista de compras de uma receita?", a: "Abra a receita e clique em 'Lista de Compras' — gera a quantidade de cada ingrediente a comprar, já considerando o fator de correção." },
-    { q: "As categorias são fixas?", a: "Sim — as 17 categorias (Carnes, Aves, Peixes e Frutos do Mar, Ovos, Massas/Pastelão/Quiches, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães e Bolos, Sobremesas, Molhos, Acompanhamento, Prato Principal, Entradas, Petiscos, Lanche, Receitas Base) são as únicas disponíveis para manter a organização consistente." }
+    { q: "Como eu cadastro uma receita nova?", a: "Nome (obrigatório) → Categoria, uma das 17 fixas (obrigatório) → PC Recomendado, pode preencher depois → Foto (opcional) → Tags (opcional) → Ingredientes, pelo menos 1 (obrigatório) → Modo de Preparo. Assim que ingredientes e PC estiverem definidos, Quantidade Total e Nº de Porções calculam sozinhos." },
+    { q: "Quais são as formas de criar uma receita?", a: "Manual (campo a campo) · Colar receita (IA estrutura, a partir de um texto com ingredientes e preparo) · Importação em lote (arquivo TXT com várias receitas — se estiver em Word/PDF, peça para o Claude converter primeiro)." },
+    { q: "Como adiciono ingredientes à receita?", a: "Botão '+ Ingrediente', selecionando da lista já cadastrada." },
+    { q: "Como edito um ingrediente já adicionado?", a: "Clique no lápis ao lado dele na tabela." },
+    { q: "Como organizo a receita em sub-títulos (Massa, Recheio etc.)?", a: "Botão '+ Sub-título' — cria um cabeçalho que agrupa ingredientes visualmente. É só organização, não gera subtotal de custo ou peso separado." },
+    { q: "Posso usar uma receita já cadastrada como ingrediente de outra?", a: "Sim — qualquer receita do banco pode compor outra, não só as da categoria 'Receitas Base' (que é só organizacional)." },
+    { q: "Como funciona o PC Recomendado?", a: "Peso ideal por porção, definido por você — não é automático. A tabela Per Capita (menu separado) serve de referência de mercado, mas não preenche esse campo sozinha." },
+    { q: "Como funcionam as tags?", a: "Texto livre — você digita o que quiser, sem lista fixa." },
+    { q: "O app padroniza o texto automaticamente?", a: "Sim — receita, cardápio e sub-título em MAIÚSCULAS; ingrediente com inicial maiúscula, ao salvar." },
+    { q: "Como ajusto o peso total da receita inteira?", a: "Botão 'Ajustar peso total da receita' — recalcula tudo proporcionalmente e grava permanentemente." },
+    { q: "Como excluo, duplico ou edito uma receita?", a: "Editar (grava automático, sem botão Salvar) · Duplicar · Excluir (com confirmação) · Favoritar (estrela) · 'A revisar' · Cor (mesma de Cores do Cardápio) · Adicionar tag." },
+    { q: "Como gero um relatório de várias receitas de uma categoria?", a: "Expanda a categoria e use o botão de relatório dentro do card." },
+    { q: "Como uso Insumos e Embalagens numa receita?", a: "Aparece tanto na receita quanto no Cardápio — você adiciona itens vindos do banco de Insumos (aba própria, com preços cadastrados). Soma separado do custo de ingredientes." },
+    { q: "Como funciona 'Quanto cobrar se eu vender?'", a: "Ajuste a margem (%) pelo slider — preço sugerido por porção calculado em tempo real." },
+    { q: "Como gero os relatórios da receita?", a: "'Exportar PDF' → Ficha Técnica ou Ficha de Custos; botão 'Lista de Compras' separado. Todos abrem em pré-visualização antes de baixar, com opção de Compartilhar." }
   ]
 },
   "Receita": {
