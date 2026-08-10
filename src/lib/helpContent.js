@@ -113,6 +113,17 @@ export const helpContent = {
     { q: "Por que algumas linhas de ingrediente não mostram medida caseira?", a: "Ingredientes sem conversão cadastrada aparecem com traço (—) na coluna Medida Caseira, em vez de um valor." }
   ]
 },
+"Insumos": {
+  context: "Nem tudo que compõe o custo de um prato é ingrediente listado na receita. Água usada no preparo, farinha pra polvilhar a forma, óleo de untar, sal usado durante o cozimento, papel toalha, filme plástico — são os chamados 'itens esquecidos': custos reais que toda ficha técnica malfeita ignora, e que o Laboratório de Cozinha trata como uma categoria própria, com preço e cálculo estruturados: os Insumos e Embalagens.",
+  faqs: [
+    { q: "O que são 'itens esquecidos' e por que viraram Insumos e Embalagens?", a: "São os custos ocultos que toda ficha técnica costuma esquecer — água, farinha de polvilhar, óleo de untar, sal e pimenta usados no preparo, papel toalha, filme plástico, embalagens (com tampa, sem tampa, quadradas, redondas etc.), entre outros. Antes, esse era só um conceito educacional; hoje, o app estrutura isso numa única categoria — 'insumo' e 'embalagem' são cadastrados da mesma forma, sem distinção — com preço calculado e entrando de fato no custo total da receita." },
+    { q: "Como cadastro um insumo novo?", a: "Clique em 'Novo Insumo', preencha Nome e Unidade de medida (obrigatórios), e opcionalmente o Preço da embalagem e a Quantidade total nela — o Preço por unidade calcula automaticamente a partir desses dois valores." },
+    { q: "Como adiciono um insumo a uma receita ou cardápio?", a: "Na seção 'Insumos e Embalagens' da receita ou do cardápio, clique em '+ Banco' e escolha o item." },
+    { q: "O que acontece se um insumo não tiver preço definido?", a: "Aparece com '—' na coluna Preço por unidade e não entra no cálculo do custo total até o preço ser preenchido." },
+    { q: "Insumos entram no custo por porção da receita?", a: "Sim, quando adicionados — somam ao 'Custo total de produção', separado do custo de ingredientes." },
+    { q: "Como excluo ou edito um insumo?", a: "Use o lápis para editar ou a lixeira para excluir, na linha do insumo na lista." }
+  ]
+},
   "Lista de Compras": {
     context:
       "A lista de compras é gerada automaticamente a partir dos seus cardápios. Ela consolida todos os ingredientes necessários, calcula as quantidades com base no número de porções e estima o custo total da compra. Você pode marcar o que já tem em casa.",
