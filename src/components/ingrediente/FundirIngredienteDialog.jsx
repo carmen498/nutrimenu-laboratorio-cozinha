@@ -77,7 +77,7 @@ export default function FundirIngredienteDialog({ open, onClose, ingrediente }) 
           origem_id: ingrediente.id,
           destino_id: destino.id,
           acao: "confirmar_lote",
-          limit: 60,
+          limit: 30,
           failedIds,
         });
         const data = res.data || {};

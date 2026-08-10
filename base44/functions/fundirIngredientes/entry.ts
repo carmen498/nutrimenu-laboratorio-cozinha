@@ -12,6 +12,27 @@ function chunk(arr, size) {
   return out;
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Executa uma operação de escrita com retry/backoff para lidar com rate limit
+// da plataforma quando muitas escritas ocorrem em sequência (fusões grandes).
+async function comRetry(fn, tentativas = 4) {
+  let ultimoErro;
+  for (let i = 0; i < tentativas; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      ultimoErro = err;
+      const isRateLimit = /rate limit/i.test(err.message || "");
+      if (!isRateLimit || i === tentativas - 1) throw err;
+      await sleep(500 * Math.pow(2, i)); // 500ms, 1s, 2s...
+    }
+  }
+  throw ultimoErro;
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -35,7 +56,7 @@ export default async function(req) {
 
     // Processa um lote de linhas ainda pendentes (que não falharam antes).
     if (acao === 'confirmar_lote') {
-      const limit = body.limit || 60;
+      const limit = body.limit || 30;
       const failedIds = Array.isArray(body.failedIds) ? body.failedIds : [];
 
       const todasLinhas = await base44.asServiceRole.entities.IngredienteReceita.filter({
@@ -69,19 +90,20 @@ export default async function(req) {
           const existente = destinoPorReceita[linha.receita_id];
           if (existente && existente.id !== linha.id) {
             const novaQtd = (existente.quantidade_por_porcao || 0) + (linha.quantidade_por_porcao || 0);
-            await base44.asServiceRole.entities.IngredienteReceita.update(existente.id, {
+            await comRetry(() => base44.asServiceRole.entities.IngredienteReceita.update(existente.id, {
               quantidade_por_porcao: novaQtd,
-            });
-            await base44.asServiceRole.entities.IngredienteReceita.delete(linha.id);
+            }));
+            await comRetry(() => base44.asServiceRole.entities.IngredienteReceita.delete(linha.id));
             destinoPorReceita[linha.receita_id] = { id: existente.id, quantidade_por_porcao: novaQtd };
           } else {
-            await base44.asServiceRole.entities.IngredienteReceita.update(linha.id, {
+            await comRetry(() => base44.asServiceRole.entities.IngredienteReceita.update(linha.id, {
               ingrediente_id: destino_id,
               ingrediente_nome: destino.nome,
-            });
+            }));
             destinoPorReceita[linha.receita_id] = { id: linha.id, quantidade_por_porcao: linha.quantidade_por_porcao || 0 };
           }
           processedCount++;
+          await sleep(80); // espaça as escritas para não estourar o limite de requisições
         } catch (err) {
           novasFalhas.push({ linha_id: linha.id, receita_id: linha.receita_id, erro: err.message });
         }
