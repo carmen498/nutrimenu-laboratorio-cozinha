@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Download, ChefHat } from "lucide-react";
+import { ArrowLeft, Download, ChefHat, Share2 } from "lucide-react";
 import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { carregarDadosReceitasCardapio, montarReceitasCardapio } from "@/lib/receitasCardapioCalc";
 import { gerarReceitasCardapioPDF } from "@/lib/receitasCardapioPDF";
@@ -40,6 +40,16 @@ export default function ReceitasCardapio() {
 
   const handleExportar = () => gerarReceitasCardapioPDF(cardapio, relatorio);
 
+  const handleShare = () => {
+    let text = `📖 Receitas do Cardápio — ${cardapio.nome}\n${relatorio.numPessoas || ""}\n\n`;
+    relatorio.sumario.forEach((s) => { text += `• ${s.nome}\n`; });
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }
+  };
+
   return (
     <div className="space-y-4 pb-24 md:pb-8 max-w-3xl mx-auto">
       <div className="flex items-center gap-2 no-print flex-wrap">
@@ -53,6 +63,9 @@ export default function ReceitasCardapio() {
         </label>
         <Button onClick={handleExportar}>
           <Download className="w-4 h-4 mr-1" /> Exportar PDF
+        </Button>
+        <Button variant="outline" onClick={handleShare}>
+          <Share2 className="w-4 h-4 mr-1" /> Compartilhar
         </Button>
       </div>
 

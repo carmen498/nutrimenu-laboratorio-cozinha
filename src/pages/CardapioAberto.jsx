@@ -13,10 +13,11 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   ArrowLeft, Trash2, ShoppingCart, Download, Plus,
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
-  GlassWater, Sun, Sparkles, MapPin, MessageCircle, FileText
+  GlassWater, Sun, Sparkles, MapPin, FileText, Pencil
 } from "lucide-react";
 import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
@@ -104,6 +105,9 @@ export default function CardapioAberto() {
   const [listaCompras, setListaCompras] = useState([]);
   const [gerandoLista, setGerandoLista] = useState(false);
   const [showRelatorios, setShowRelatorios] = useState(false);
+  const [showEditar, setShowEditar] = useState(false);
+  const [editForm, setEditForm] = useState({ nome: "", tipo: "", data: "" });
+  const [salvandoEditar, setSalvandoEditar] = useState(false);
 
   const [filtroDia, setFiltroDia] = useState("todos");
 
@@ -386,11 +390,22 @@ export default function CardapioAberto() {
     return false;
   };
 
-  // === WHATSAPP ===
-  const compartilharWhatsApp = () => {
-    const lbl = UNIDADE_LABEL[cardapio.tipo] || "pessoas";
-    const texto = `📋 ${cardapio.nome}\n${num} ${lbl}\nCusto total: R$ ${calcs.total.toFixed(2)}\nCusto por ${lbl === "kg" ? "kg" : "pessoa"}: R$ ${calcs.porUnidade.toFixed(2)}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`, "_blank");
+  // === EDITAR CARDÁPIO (nome, categoria, data) ===
+  const abrirEditar = () => {
+    setEditForm({ nome: cardapio.nome || "", tipo: cardapio.tipo || "", data: cardapio.data || "" });
+    setShowEditar(true);
+  };
+
+  const salvarEditar = async () => {
+    if (!editForm.nome.trim() || !editForm.tipo) return;
+    setSalvandoEditar(true);
+    try {
+      const upd = { nome: editForm.nome.trim(), tipo: editForm.tipo, data: editForm.data || null };
+      await base44.entities.Cardapio.update(cardapio.id, upd);
+      setCardapio(prev => ({ ...prev, ...upd }));
+      setShowEditar(false);
+    } catch (e) { console.error(e); }
+    setSalvandoEditar(false);
   };
 
   const diasUsados = useMemo(() => {
@@ -459,9 +474,9 @@ export default function CardapioAberto() {
                   {cardapio.data.split("-").reverse().join("/")}
                 </span>
               )}
-              <Button variant="ghost" size="sm" className="text-xs h-7 no-print"
-                onClick={() => { setEditNome(cardapio.nome || ""); setEditandoNome(true); }}>
-                Editar
+              <Button variant="ghost" size="sm" className="text-xs h-7 gap-1 no-print"
+                onClick={abrirEditar}>
+                <Pencil className="w-3 h-3" /> Editar
               </Button>
             </div>
             {editandoObs ? (
@@ -584,13 +599,6 @@ export default function CardapioAberto() {
           }}>
           <Plus className="w-3.5 h-3.5" /> Adicionar item
         </Button>
-
-        {/* Barra de cores + alerta de monotonia visual */}
-        {receitas.length > 0 && (
-          <div className="mt-4">
-            <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
-          </div>
-        )}
       </div>
 
       {/* BLOCO 3 — Insumos */}
@@ -640,6 +648,13 @@ export default function CardapioAberto() {
         )}
       </div>
 
+      {/* BLOCO 4 — Cores do Cardápio */}
+      {receitas.length > 0 && (
+        <div className="mb-4 no-print">
+          <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
+        </div>
+      )}
+
       {/* BLOCO 5 — Venda */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 mb-4 print:shadow-none print:border-0 no-print">
         <div className="flex items-center justify-between mb-3">
@@ -677,12 +692,6 @@ export default function CardapioAberto() {
 
       {/* Botões de ação */}
       <div className="flex flex-wrap gap-3 mb-8 no-print">
-        <Button variant="outline" className="gap-2" onClick={abrirFichaCardapio}>
-          <Download className="w-4 h-4" /> PDF
-        </Button>
-        <Button variant="outline" className="gap-2" onClick={compartilharWhatsApp}>
-          <MessageCircle className="w-4 h-4" /> WhatsApp
-        </Button>
         <Button variant="outline" className="gap-2" onClick={gerarListaCompras} disabled={gerandoLista}>
           <ShoppingCart className="w-4 h-4" /> {gerandoLista ? "Gerando..." : "Lista de Compras"}
         </Button>
@@ -779,6 +788,52 @@ export default function CardapioAberto() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLista(false)}>Fechar</Button>
             <Button onClick={() => window.print()}><Download className="w-4 h-4 mr-1" /> Exportar PDF</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Editar Cardápio */}
+      <Dialog open={showEditar} onOpenChange={setShowEditar}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Cardápio</DialogTitle></DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label htmlFor="edit-nome">Nome *</Label>
+              <Input
+                id="edit-nome"
+                value={editForm.nome}
+                onChange={e => setEditForm(prev => ({ ...prev, nome: e.target.value }))}
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label>Categoria *</Label>
+              <Select value={editForm.tipo} onValueChange={v => setEditForm(prev => ({ ...prev, tipo: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(TIPOS).map(([key, t]) => (
+                    <SelectItem key={key} value={key}>{t.emoji} {t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-data">Data</Label>
+              <Input
+                id="edit-data"
+                type="date"
+                value={editForm.data || ""}
+                onChange={e => setEditForm(prev => ({ ...prev, data: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditar(false)}>Cancelar</Button>
+            <Button onClick={salvarEditar} disabled={salvandoEditar || !editForm.nome.trim() || !editForm.tipo}>
+              {salvandoEditar ? "Salvando..." : "Salvar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

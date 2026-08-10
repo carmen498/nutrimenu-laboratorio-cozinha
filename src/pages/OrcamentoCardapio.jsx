@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Download, MessageCircle } from "lucide-react";
+import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { montarOrcamento } from "@/lib/orcamentoCalc";
@@ -112,7 +112,7 @@ export default function OrcamentoCardapio() {
     });
   };
 
-  const handleWhatsApp = () => {
+  const handleShare = () => {
     let text = `📋 Orçamento — ${cardapio.nome}\n`;
     if (orc.dataEvento) text += `${orc.dataEvento}\n`;
     text += `${orc.numPessoas} ${orc.unidadeLabel}\n\n`;
@@ -120,7 +120,11 @@ export default function OrcamentoCardapio() {
     text += `Total: ${orc.totalFmt}\n\n`;
     text += `Válido por ${validadeDias} dias · condições de pagamento a combinar.\n`;
     text += `(PDF anexo)`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    if (navigator.share) {
+      navigator.share({ text });
+    } else {
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    }
   };
 
   return (
@@ -134,8 +138,8 @@ export default function OrcamentoCardapio() {
           <Button onClick={handleExportar}>
             <Download className="w-4 h-4 mr-1" /> Exportar PDF
           </Button>
-          <Button variant="outline" onClick={handleWhatsApp}>
-            <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+          <Button variant="outline" onClick={handleShare}>
+            <Share2 className="w-4 h-4 mr-1" /> Compartilhar
           </Button>
         </div>
       </div>
