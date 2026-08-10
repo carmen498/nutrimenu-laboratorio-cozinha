@@ -1182,7 +1182,7 @@ REGRAS:
       />
       <div className="flex justify-end -mt-2">
         <Button variant="outline" size="sm" onClick={() => setShowAjustarPeso(true)}>
-          <Scale className="w-3.5 h-3.5 mr-1" /> Ajustar para peso total (permanente)
+          <Scale className="w-3.5 h-3.5 mr-1" /> Ajustar peso total da receita
         </Button>
       </div>
 
