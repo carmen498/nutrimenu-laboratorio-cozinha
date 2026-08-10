@@ -24,7 +24,7 @@ export default function AtualizarPrecosDialog({
   onVerHistorico,
 }) {
   const qc = useQueryClient();
-  const [step, setStep] = useState("categories"); // categories | loading | results
+  const [step, setStep] = useState("categories"); // categories | confirm | loading | results
   const [selectAll, setSelectAll] = useState(false);
   const [selectedCats, setSelectedCats] = useState({});
   const [resultados, setResultados] = useState([]);
@@ -243,7 +243,7 @@ export default function AtualizarPrecosDialog({
           data: now,
           preco_por_kg: parseFloat(res.preco_sugerido_por_kg.toFixed(2)),
           variacao_percentual: variacao,
-          fonte: "IA web",
+          fonte: "IA web manual",
           fornecedor: ing?.fornecedor || "",
         });
 
@@ -455,8 +455,31 @@ export default function AtualizarPrecosDialog({
               <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button onClick={handleBuscarIA} disabled={selectedCount === 0}>
+              <Button onClick={() => setStep("confirm")} disabled={selectedCount === 0}>
                 <Sparkles className="w-4 h-4 mr-1" /> Buscar preços selecionados
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Step: Confirmação de consumo de créditos ── */}
+        {step === "confirm" && (
+          <div className="space-y-4 py-2">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                Isso vai consultar preços via IA web para os ingredientes {selectAll ? "todos" : "selecionados"} e consumir créditos. Deseja continuar?
+              </p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {selectedCount} ingredientes selecionados · estimativa: ~{estimativaMinutos} min
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setStep("categories")}>
+                Cancelar
+              </Button>
+              <Button onClick={handleBuscarIA}>
+                <Sparkles className="w-4 h-4 mr-1" /> Confirmar e buscar
               </Button>
             </div>
           </div>

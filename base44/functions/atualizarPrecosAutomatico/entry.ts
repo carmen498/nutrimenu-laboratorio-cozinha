@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
           data: now,
           preco_por_kg: precoSugeridoPorKg,
           variacao_percentual: variacao,
-          fonte: "IA web (automático)",
+          fonte: "IA web automático",
           fornecedor: ing.fornecedor || ""
         });
 

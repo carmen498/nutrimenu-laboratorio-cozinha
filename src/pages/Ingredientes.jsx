@@ -23,6 +23,7 @@ import ListaIngredientes from "@/components/ingrediente/ListaIngredientes";
 import ImportarSinonimosDialog from "@/components/ingrediente/ImportarSinonimosDialog";
 import ImportarIngredientesDialog from "@/components/ingrediente/ImportarIngredientesDialog";
 import RelatorioLotePrecosDialog from "@/components/ingrediente/RelatorioLotePrecosDialog";
+import AutoUpdateToggle from "@/components/ingrediente/AutoUpdateToggle";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
@@ -355,6 +356,13 @@ export default function Ingredientes() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Toggle sempre visível — atualização automática semanal de preços */}
+      <AutoUpdateToggle
+        ativa={autoUpdateAtiva}
+        toggling={togglingAuto}
+        onToggle={handleToggleAutoUpdate}
+      />
 
       {/* Categorias — grade de cards coloridos (mesmo padrão de Receitas) */}
       {isLoading ? (
