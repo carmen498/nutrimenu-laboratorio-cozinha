@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -232,15 +232,28 @@ export default function ReceitaAberta() {
 
   // Estado inicial do escalador: DESCREVE a receita cadastrada (rendimento PDP + PC gravado),
   // nunca escala nada por conta própria.
+  // Nº de Porções depende do PC estar definido — sem PC, fica em branco (null), nunca cai
+  // para porcoes_base como valor "de mentira".
   const estadoInicialEscala = useMemo(() => {
     if (!receita) return null;
     const pcInit = receita.per_capita_g || perCapitaSugerido?.g || 0;
     const totalInit = receita.rendimento_total || 0;
     const porcoesInit = pcInit > 0 && totalInit > 0
       ? +(totalInit / pcInit).toFixed(2)
-      : (receita.porcoes_base || 1);
+      : null;
     return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
   }, [receita, perCapitaSugerido]);
+
+  // Soma bruta (sem escala) dos pesos líquidos de todos os ingredientes da receita —
+  // usada para manter a Quantidade Total sempre refletindo a lista de ingredientes,
+  // independente do PC Recomendado estar definido ou não.
+  const somaIngredientesRaw = useMemo(() => {
+    if (!receita) return 0;
+    const porcoesBase = receita.porcoes_base || 1;
+    return itens
+      .filter((i) => i.tipo !== "grupo")
+      .reduce((sum, i) => sum + (i.quantidade_por_porcao || 0) * porcoesBase, 0);
+  }, [itens, receita]);
 
   // Inicializa o escalador uma única vez (por abertura da ficha) com o estado inicial —
   // ou, se a ficha foi aberta a partir de um cardápio/evento, com o contexto de origem.
@@ -257,6 +270,42 @@ export default function ReceitaAberta() {
       }
     }
   }, [estadoInicialEscala, pcLocal, contextoOrigem]);
+
+  // Refs para ler os valores mais recentes de dentro do efeito de sincronização
+  // abaixo, sem precisar recriá-lo a cada mudança de PC/Total (evita loop).
+  const pcLocalRef = useRef(pcLocal);
+  useEffect(() => { pcLocalRef.current = pcLocal; }, [pcLocal]);
+  const quantidadeTotalRef = useRef(quantidadeTotal);
+  useEffect(() => { quantidadeTotalRef.current = quantidadeTotal; }, [quantidadeTotal]);
+
+  // Quantidade Total = soma dos pesos líquidos dos ingredientes, SEMPRE que a lista
+  // mudar (adicionar, remover, editar peso) — incondicional, não depende do PC.
+  // Só re-sincroniza automaticamente enquanto o total ainda reflete a soma natural
+  // (ou a receita ainda não tem rendimento_total gravado, caso de receita nova);
+  // uma vez escalado manualmente pelo usuário, para de sobrescrever.
+  const prevRawTotalRef = useRef(null);
+  useEffect(() => {
+    if (!receita || pcLocal === null) return;
+    const rawRounded = Math.round(somaIngredientesRaw);
+    if (prevRawTotalRef.current === null) {
+      prevRawTotalRef.current = rawRounded;
+      if (!receita.rendimento_total && rawRounded > 0) {
+        setQuantidadeTotal(rawRounded);
+        setPorcoes(pcLocalRef.current > 0 ? +(rawRounded / pcLocalRef.current).toFixed(2) : null);
+      }
+      return;
+    }
+    if (rawRounded !== prevRawTotalRef.current) {
+      const prevRaw = prevRawTotalRef.current;
+      prevRawTotalRef.current = rawRounded;
+      const wasTrackingNatural = quantidadeTotalRef.current === prevRaw || !receita.rendimento_total;
+      if (wasTrackingNatural) {
+        setQuantidadeTotal(rawRounded);
+        setPorcoes(pcLocalRef.current > 0 ? +(rawRounded / pcLocalRef.current).toFixed(2) : null);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [somaIngredientesRaw]);
 
   // PC Recomendado é um campo persistido da receita. Editá-lo NUNCA altera a
   // Quantidade Total (rendimento fixo da ficha) — apenas recalcula o Nº de
@@ -285,7 +334,7 @@ export default function ReceitaAberta() {
     const g = Math.max(0, Math.round(grams));
     setQuantidadeTotal(g);
     const pc = pcLocal || 0;
-    if (pc > 0) setPorcoes(Math.max(0, Math.floor(g / pc)));
+    setPorcoes(pc > 0 ? Math.max(0, Math.floor(g / pc)) : null);
   };
 
   // Ajuste permanente do rendimento (sobrescreve pesos na ficha) — sincroniza
@@ -294,7 +343,7 @@ export default function ReceitaAberta() {
     qc.invalidateQueries({ queryKey: ["receita", id] });
     qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     setQuantidadeTotal(novoVal);
-    setPorcoes(pcLocal > 0 ? +(novoVal / pcLocal).toFixed(2) : porcoes);
+    setPorcoes(pcLocal > 0 ? +(novoVal / pcLocal).toFixed(2) : null);
   };
 
   const handleRestaurarEscala = () => {
@@ -1494,7 +1543,7 @@ REGRAS:
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => navigate(`/receita/${id}/lista-compras?porcoes=${porcoes}`)}>
+        <Button onClick={() => navigate(`/receita/${id}/lista-compras?porcoes=${porcoes || receita.porcoes_base || 1}`)}>
           <ShoppingCart className="w-4 h-4 mr-1" /> Gerar lista de compras
         </Button>
         <DropdownMenu>
