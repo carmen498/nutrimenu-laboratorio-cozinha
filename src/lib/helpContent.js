@@ -84,33 +84,26 @@ export const helpContent = {
     ],
   },
 
-  "Ingredientes": {
-    context:
-      "Gerencie seu estoque de ingredientes com informações completas: categoria, unidade de compra, peso da embalagem, preço pago e preço por grama calculado automaticamente. O sistema monitora variações de preço e mantém histórico das últimas atualizações.",
-    faqs: [
-      {
-        q: "Como cadastrar um novo ingrediente?",
-        a: "Clique em Novo Ingrediente, preencha nome, categoria, unidade de compra, peso da embalagem e preço pago. O sistema calcula automaticamente o preço por grama, que é usado no custo das receitas.",
-      },
-      {
-        q: "O que é fator de correção?",
-        a: "É o fator que ajusta o peso bruto para o peso líquido aproveitável. Por exemplo, se 1 kg de cenoura rende 850 g após descascar, o fator é 1,18. O padrão é 1,0 (sem perda).",
-      },
-      {
-        q: "Como funciona a atualização automática de preços?",
-        a: "O sistema roda semanalmente (segunda-feira às 3h da manhã) uma atualização automática que busca preços de referência via IA. Ingredientes com variação superior a 5% são atualizados. Você recebe um relatório por email.",
-      },
-      {
-        q: "Como atualizar preços manualmente?",
-        a: "Use o botão 'Atualizar Preços' e escolha entre atualização manual (você informa os preços) ou via IA (o sistema busca preços de mercado automaticamente). Também é possível editar o preço diretamente na lista.",
-      },
-      {
-        q: "O que significam as fontes de preço (Manual, IA web, CONAB, CEASA)?",
-        a: "Indicam a origem da última atualização: Manual (você digitou), IA web (busca automatizada na internet), CONAB e CEASA (dados oficiais de centrais de abastecimento — em desenvolvimento).",
-      },
-    ],
-  },
-
+   "Ingredientes": {
+  context: "Cada ingrediente aqui carrega um preço vivo — a base sobre a qual todo o app calcula custo. Não é uma lista de compras: é a fonte da verdade que sustenta o custo de cada receita, cardápio e orçamento. Manter os preços em dia aqui é o que garante que tudo o mais no app esteja certo.",
+  faqs: [
+    { q: "Como cadastro um ingrediente novo?", a: "Obrigatório: Nome, Categoria e Unidade de compra. Peso da embalagem, preço e Fator de Correção podem ser preenchidos depois." },
+    { q: "Como edito o preço de um ingrediente?", a: "Clique nele, edite o preço da embalagem — grava automaticamente ao sair do campo, sem botão 'Salvar'." },
+    { q: "O que é o Fator de Correção (FC)?", a: "Percentual de perda no preparo — ex.: 1kg de frango comprado rende 800g limpo = FC 1,25. Não é uma informação obrigatória no cadastro; aparece como uma coluna que pode ser ativada/desativada pelo toggle 'FC' na tela. Para alterar o valor de um ingrediente específico, clique nele e edite o campo — a mudança grava automaticamente e recalcula o peso bruto em todas as receitas que usam aquele ingrediente." },
+    { q: "O que são Sinônimos de um ingrediente?", a: "Termos alternativos (ex.: 'espaguete' e 'talharin') que ajudam o app a reconhecer o ingrediente em buscas e em textos colados para criar receitas." },
+    { q: "Como fundir dois ingredientes duplicados?", a: "Esta funcionalidade ajuda a substituir ingredientes 'ditos semelhantes' em lote — todas as receitas que usam o ingrediente a ser eliminado são sinalizadas na tela antes da confirmação, para você conferir com segurança. Abra a Ficha do ingrediente a eliminar, clique em 'Fundir com outro ingrediente', escolha o destino e confirme. O sistema substitui automaticamente em todas as receitas, mantendo as quantidades originais, e exclui o duplicado do cadastro. Funciona mesmo com ingredientes usados em centenas de receitas." },
+    { q: "Como atualizo o preço de vários ingredientes de uma vez (manual)?", a: "Em 'Mais', clique em 'Atualizar preços', escolha uma categoria, revise os preços sugeridos (fonte e variação %) e clique em 'Aceitar selecionados' ou 'Aceitar todos'. Atenção: esse recurso busca preços via IA web e consome créditos do app a cada execução — use com critério." },
+    { q: "O que é a Atualização Automática de Preços?", a: "Busca preços de mercado via IA web, uma vez por semana. Fica DESLIGADA por padrão e consome créditos — ative só com critério." },
+    { q: "Como importo ingredientes em lote?", a: "Via CSV, no formato padrão: categoria, nome, unidade de compra, peso da embalagem, preço, Fator de Correção." },
+    { q: "O que significa 'nunca atualizado' ou uma data em laranja/vermelho?", a: "Indica que o preço não é atualizado há mais de 90 dias — vale revisar." },
+    { q: "As categorias de ingredientes são fixas?", a: "Sim — categorias fixas, mantendo a organização consistente em todo o app." },
+    { q: "Como excluo ou edito um ingrediente?", a: "Editar grava automático ao sair do campo. Excluir remove definitivamente — se o ingrediente estiver em uso em receitas, use 'Fundir' em vez de excluir direto, para não deixar receitas quebradas." },
+    { q: "Como favorito um ingrediente?", a: "Clique na estrela ☆ ao lado do ingrediente na lista para marcá-lo como favorito e encontrá-lo mais rápido depois." },
+    { q: "Como vejo em quais receitas um ingrediente é usado?", a: "Abra a Ficha do ingrediente — a seção 'Usado em X receitas' lista cada receita, com a quantidade, o custo e o % que aquele ingrediente representa no custo total dela." },
+    { q: "Como gero um relatório PDF de ingredientes?", a: "Menu 'Mais' → 'PDF de ingredientes' → 'Todos' ou 'Categoria atual'." },
+    { q: "Como uso o Carrinho a partir daqui?", a: "Clique no ícone de carrinho ao lado do ingrediente para adicionar 1 embalagem à lista de reposição." }
+  ]
+},
   "Lista de Compras": {
     context:
       "A lista de compras é gerada automaticamente a partir dos seus cardápios. Ela consolida todos os ingredientes necessários, calcula as quantidades com base no número de porções e estima o custo total da compra. Você pode marcar o que já tem em casa.",
