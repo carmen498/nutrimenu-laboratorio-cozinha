@@ -124,32 +124,17 @@ export const helpContent = {
   },
 
   "Per Capita": {
-    context:
-      "Tabela de referência com quantidades per capita (gramas por pessoa) para centenas de preparações culinárias. Os dados vêm da POF IBGE 2017-2018 e de referências de UAN. Você pode filtrar por grupo, buscar por nome e personalizar valores para sua realidade.",
-    faqs: [
-      {
-        q: "O que é per capita?",
-        a: "Per capita é a quantidade média de alimento pronto para consumo por pessoa, expressa em gramas. Esses valores são usados automaticamente nos cardápios para calcular quantidades totais.",
-      },
-      {
-        q: "Como personalizar um valor per capita?",
-        a: "Clique no valor que deseja alterar e digite o novo valor em gramas. Itens personalizados aparecem com o selo 'Personalizado' em destaque. Você pode restaurar o valor original a qualquer momento.",
-      },
-      {
-        q: "Como usar o filtro 'Personalizados por mim'?",
-        a: "Selecione essa opção no dropdown de grupos para ver apenas os itens que você personalizou. Isso facilita revisar e gerenciar seus ajustes.",
-      },
-      {
-        q: "Posso criar novos itens na tabela?",
-        a: "Sim. Use o formulário no topo da tabela para adicionar preparações que não existem na lista padrão. Itens criados por você aparecem com o selo 'Personalizado'.",
-      },
-      {
-        q: "Os valores são baseados em quê?",
-        a: "A tabela padrão usa dados da POF (Pesquisa de Orçamentos Familiares) do IBGE 2017-2018, complementados por referências de UAN e literatura técnica em nutrição. As fontes estão listadas no final da página.",
-      },
-    ],
-  },
-
+  context: "Uma tabela de referência de quanto cada preparação rende por pessoa, baseada em consumo médio brasileiro (POF IBGE + Calculadora Nutrimenu). É consulta, não cálculo automático — você decide o PC de cada receita com base na sua experiência, usando esta tabela como apoio.",
+  faqs: [
+    { q: "Como busco um item na tabela?", a: "Use a busca por nome, ou filtre por grupo no menu suspenso (ex.: 'Receitas do dia-a-dia')." },
+    { q: "Como edito o valor de um item?", a: "Clique no lápis ao lado do valor em gramas." },
+    { q: "O que é a 'Medida caseira de referência'?", a: "Mostra a mesma quantidade em unidades práticas do dia a dia (ex.: '3 colheres de sopa cheia'), para facilitar a visualização sem precisar pesar." },
+    { q: "Posso adicionar um item novo à tabela?", a: "Sim, use o botão 'Adicionar Item' — o item novo entra dentro de um grupo já existente (não é possível criar um grupo novo)." },
+    { q: "Posso excluir um item?", a: "Não. Por ser uma tabela de referência, ela não tem exclusão — apenas edição e adição, para preservar a base de consulta." },
+    { q: "Como exporto a tabela?", a: "Botão 'Exportar PDF' no topo." },
+    { q: "Os valores daqui atualizam o PC das minhas receitas automaticamente?", a: "Não — é só referência de consulta. O PC de cada receita é definido manualmente na própria ficha dela." }
+  ]
+},
   "Relatório de Categorias": {
     context:
       "Relatório que agrupa todas as receitas por categoria, mostrando a contagem e a lista de nomes em cada uma. Permite exportar os dados em CSV para análise externa.",
