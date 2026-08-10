@@ -235,7 +235,7 @@ export default function ReceitaAberta() {
     const pcInit = receita.per_capita_g || perCapitaSugerido?.g || 0;
     const totalInit = receita.rendimento_total || 0;
     const porcoesInit = pcInit > 0 && totalInit > 0
-      ? +(totalInit / pcInit).toFixed(1)
+      ? +(totalInit / pcInit).toFixed(2)
       : (receita.porcoes_base || 1);
     return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
   }, [receita, perCapitaSugerido]);
@@ -256,11 +256,20 @@ export default function ReceitaAberta() {
     }
   }, [estadoInicialEscala, pcLocal, contextoOrigem]);
 
-  // Escala é efêmera (somente visualização) — nunca grava na receita
-  const commitPC = (newPC) => {
+  // PC Recomendado é um campo persistido da receita. Editá-lo NUNCA altera a
+  // Quantidade Total (rendimento fixo da ficha) — apenas recalcula o Nº de
+  // Porções (Quantidade Total ÷ PC) e grava o novo PC na receita.
+  const commitPC = async (newPC) => {
     const val = Math.max(1, Math.round(newPC));
     setPcLocal(val);
-    setQuantidadeTotal(Math.round(val * (porcoes || 1)));
+    const total = quantidadeTotal || 0;
+    if (val > 0 && total > 0) setPorcoes(+(total / val).toFixed(2));
+    try {
+      await base44.entities.Receita.update(id, { per_capita_g: val });
+      qc.invalidateQueries({ queryKey: ["receita", id] });
+    } catch (err) {
+      toast.error("Erro ao salvar PC recomendado: " + (err.message || ""));
+    }
   };
 
   const commitPorcoes = (newPorcoes) => {

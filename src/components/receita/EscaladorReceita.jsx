@@ -92,7 +92,7 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           step={1}
           onStep={(delta) => onChangePorcoes(Math.max(1, (porcoes || 0) + delta))}
           onCommit={(v) => onChangePorcoes(Math.max(1, Math.round(v)))}
-          formatDisplay={(v) => (v > 0 ? (Number.isInteger(v) ? String(v) : v.toFixed(1).replace(".", ",")) : "")}
+          formatDisplay={(v) => (v > 0 ? (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ",")) : "")}
           parseInput={parseDecimal}
         />
         <div className="flex items-center justify-center px-1 text-xl font-bold text-muted-foreground">=</div>

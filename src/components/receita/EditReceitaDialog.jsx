@@ -15,19 +15,12 @@ import TagList from "@/components/tags/TagList";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
-import { getPadraoCategoria, salvarPadraoCategoria } from "@/lib/percapitaCategoriaOverrides";
-import {
-  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
 
 export default function EditReceitaDialog({ open, onClose, receita }) {
   const [form, setForm] = useState({ ...receita });
   const [saving, setSaving] = useState(false);
   const [receitaTags, setReceitaTags] = useState([]);
   const [allTags, setAllTags] = useState([]);
-  const [padraoCategoria, setPadraoCategoria] = useState(null);
-  const [showConfirmPadrao, setShowConfirmPadrao] = useState(false);
 
   useEffect(() => {
     if (!receita?.id || !open) return;
@@ -41,23 +34,12 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
     })();
   }, [receita?.id, open]);
 
-  useEffect(() => {
-    const categoria = (form.categorias || [])[0];
-    if (!categoria || !open) { setPadraoCategoria(null); return; }
-    getPadraoCategoria(categoria).then(setPadraoCategoria);
-  }, [open, JSON.stringify(form.categorias)]);
   const [generatingPhoto, setGeneratingPhoto] = useState(false);
   const [rewritingPrep, setRewritingPrep] = useState(false);
   const qc = useQueryClient();
 
   const handleSave = async () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome"); return; }
-    const categoria = (form.categorias || [])[0];
-    const pcAlterado = form.per_capita_g && Number(form.per_capita_g) !== Number(receita.per_capita_g || 0);
-    if (pcAlterado && categoria && padraoCategoria != null && Number(form.per_capita_g) !== Number(padraoCategoria)) {
-      setShowConfirmPadrao(true);
-      return;
-    }
     await salvarReceita();
   };
 
@@ -78,18 +60,6 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleConfirmPadraoSim = async () => {
-    const categoria = (form.categorias || [])[0];
-    await salvarPadraoCategoria(categoria, form.per_capita_g);
-    setShowConfirmPadrao(false);
-    await salvarReceita();
-  };
-
-  const handleConfirmPadraoNao = async () => {
-    setShowConfirmPadrao(false);
-    await salvarReceita();
   };
 
   const handleUploadPhoto = async (e) => {
@@ -288,21 +258,6 @@ ${form.modo_preparo}`,
           <Button onClick={handleSave} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
         </div>
       </DialogContent>
-
-      <AlertDialog open={showConfirmPadrao} onOpenChange={setShowConfirmPadrao}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Atualizar padrão da categoria?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Deseja atualizar também o padrão desta categoria (ex: {(form.categorias || [])[0]}) na tabela Per Capitas de referência para {form.per_capita_g}g?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleConfirmPadraoNao} disabled={saving}>Não</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmPadraoSim} disabled={saving}>Sim</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </Dialog>
   );
 }
