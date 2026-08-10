@@ -35,6 +35,8 @@ export default function AtualizarPrecosDialog({
   const [pausado, setPausado] = useState(false);
   const pausadoRef = useRef(false);
   const timerRef = useRef(null);
+  const canceladoRef = useRef(false);
+  const emAndamentoRef = useRef(false);
 
   // Compute categories from real data
   const catsMap = useMemo(() => {
@@ -67,6 +69,7 @@ export default function AtualizarPrecosDialog({
       setSelectedCats(init);
       pausadoRef.current = false;
       setPausado(false);
+      canceladoRef.current = false;
     }
   }, [open, catList]);
 
@@ -112,6 +115,12 @@ export default function AtualizarPrecosDialog({
 
   // Buscar preços
   const handleBuscarIA = async () => {
+    if (emAndamentoRef.current) {
+      toast.warning("Uma busca já está em andamento.");
+      return;
+    }
+    emAndamentoRef.current = true;
+    canceladoRef.current = false;
     setStep("loading");
     pausadoRef.current = false;
     const inicio = Date.now();
@@ -133,9 +142,17 @@ export default function AtualizarPrecosDialog({
       const todosResultados = [];
 
       for (let i = 0; i < dados.length; i += CHUNK) {
+        if (canceladoRef.current) {
+          clearInterval(timerRef.current);
+          return;
+        }
         // Check pause
         if (pausadoRef.current) {
           await waitForResume();
+        }
+        if (canceladoRef.current) {
+          clearInterval(timerRef.current);
+          return;
         }
 
         const lote = dados.slice(i, i + CHUNK);
@@ -165,6 +182,11 @@ export default function AtualizarPrecosDialog({
         }
       }
 
+      if (canceladoRef.current) {
+        clearInterval(timerRef.current);
+        return;
+      }
+
       clearInterval(timerRef.current);
       setProgresso({ atual: dados.length, total: dados.length, nomeAtual: "" });
       setTempoDecorrido(Math.floor((Date.now() - inicio) / 1000));
@@ -180,19 +202,32 @@ export default function AtualizarPrecosDialog({
       setStep("results");
     } catch (err) {
       clearInterval(timerRef.current);
-      toast.error("Erro ao buscar preços: " + err.message);
-      setStep("categories");
+      if (!canceladoRef.current) {
+        toast.error("Erro ao buscar preços: " + err.message);
+        setStep("categories");
+      }
+    } finally {
+      emAndamentoRef.current = false;
     }
   };
 
   const waitForResume = () => {
     return new Promise((resolve) => {
       const check = () => {
-        if (!pausadoRef.current) resolve();
+        if (!pausadoRef.current || canceladoRef.current) resolve();
         else setTimeout(check, 200);
       };
       check();
     });
+  };
+
+  // Fecha o modal; se houver busca em andamento, cancela-a corretamente
+  const handleRequestClose = () => {
+    if (step === "loading") {
+      canceladoRef.current = true;
+      pausadoRef.current = false;
+    }
+    onClose();
   };
 
   const handlePause = () => {
@@ -211,6 +246,16 @@ export default function AtualizarPrecosDialog({
   // Apply selected results
   const handleAplicar = async (aplicarTodos) => {
     setAtualizando(true);
+    try {
+      await aplicarPrecos(aplicarTodos);
+    } catch (err) {
+      toast.error("Erro ao aplicar preços: " + (err.message || "tente novamente"));
+    } finally {
+      setAtualizando(false);
+    }
+  };
+
+  const aplicarPrecos = async (aplicarTodos) => {
     const now = new Date().toISOString();
     const idsToUpdate = aplicarTodos
       ? resultados.filter((r) => r.encontrado).map((r) => r.id)
@@ -318,7 +363,6 @@ export default function AtualizarPrecosDialog({
     const msg = `${atualizados} ingredientes atualizados · ${receitasAfetadas.size} receitas recalculadas`;
     if (erros > 0) toast.warning(msg + ` · ${erros} falhas`);
     else toast.success(msg);
-    setAtualizando(false);
     onClose();
   };
 
@@ -336,7 +380,7 @@ export default function AtualizarPrecosDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => !v && handleRequestClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-lg">
@@ -452,7 +496,7 @@ export default function AtualizarPrecosDialog({
             )}
 
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>
+              <Button variant="outline" onClick={handleRequestClose}>
                 Cancelar
               </Button>
               <Button onClick={() => setStep("confirm")} disabled={selectedCount === 0}>
@@ -656,7 +700,7 @@ export default function AtualizarPrecosDialog({
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={onClose}>
+                  <Button variant="outline" onClick={handleRequestClose}>
                     Cancelar
                   </Button>
                   <Button
