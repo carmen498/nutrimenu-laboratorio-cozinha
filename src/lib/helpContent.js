@@ -104,6 +104,15 @@ export const helpContent = {
     { q: "Como uso o Carrinho a partir daqui?", a: "Clique no ícone de carrinho ao lado do ingrediente para adicionar 1 embalagem à lista de reposição." }
   ]
 },
+"Medidas": {
+  context: "A ponte entre a precisão da balança e a praticidade da cozinha: aqui ficam as conversões que permitem que uma receita mostre '3 colheres de sopa' ao lado de '45g', sem você precisar fazer essa conta na cabeça toda vez.",
+  faqs: [
+    { q: "Como funciona a conversão de medida caseira?", a: "Cada ingrediente tem um peso de referência por unidade caseira (ex.: 1 xícara de farinha = 120g). O app usa isso para mostrar a medida junto ao peso em gramas na ficha da receita, quando o toggle 'Medida caseira' está ativado." },
+    { q: "Como edito a conversão de um ingrediente específico?", a: "Você pode editar tanto pela tela de Medidas (buscando o ingrediente) quanto direto pela Ficha do Ingrediente — os dois caminhos levam ao mesmo lugar." },
+    { q: "Posso cadastrar uma medida nova (ex.: '1 pitada', '1 dente')?", a: "Sim — não existe lista fixa de tipos de medida caseira, você pode criar um tipo novo sempre que precisar." },
+    { q: "Por que algumas linhas de ingrediente não mostram medida caseira?", a: "Ingredientes sem conversão cadastrada aparecem com traço (—) na coluna Medida Caseira, em vez de um valor." }
+  ]
+},
   "Lista de Compras": {
     context:
       "A lista de compras é gerada automaticamente a partir dos seus cardápios. Ela consolida todos os ingredientes necessários, calcula as quantidades com base no número de porções e estima o custo total da compra. Você pode marcar o que já tem em casa.",
