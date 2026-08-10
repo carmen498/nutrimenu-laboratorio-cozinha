@@ -30,6 +30,8 @@ export default function AtualizarPrecosDialog({
   const [resultados, setResultados] = useState([]);
   const [selectedResults, setSelectedResults] = useState({});
   const [atualizando, setAtualizando] = useState(false);
+  const [applyProgress, setApplyProgress] = useState({ atual: 0, total: 0 });
+  const [applySummary, setApplySummary] = useState(null);
   const [progresso, setProgresso] = useState({ atual: 0, total: 0, nomeAtual: "" });
   const [tempoDecorrido, setTempoDecorrido] = useState(0);
   const [pausado, setPausado] = useState(false);
@@ -54,16 +56,25 @@ export default function AtualizarPrecosDialog({
     return Object.values(catsMap).sort((a, b) => a.nome.localeCompare(b.nome));
   }, [catsMap]);
 
-  // Reset state on open
+  // Mantém a lista de categorias mais recente sem forçar o reset abaixo a rodar a cada refetch
+  const catListRef = useRef(catList);
+  useEffect(() => {
+    catListRef.current = catList;
+  }, [catList]);
+
+  // Reset state apenas quando o modal é ABERTO — nunca por causa de um refetch de ingredientes
+  // enquanto já está em uso (ex.: a invalidação de queries disparada pela própria gravação de preços).
   useEffect(() => {
     if (open) {
       setStep("categories");
       setResultados([]);
       setSelectedResults({});
       setSelectAll(false);
+      setApplySummary(null);
+      setApplyProgress({ atual: 0, total: 0 });
       // Pré-selecionar categorias oscilantes
       const init = {};
-      catList.forEach((c) => {
+      catListRef.current.forEach((c) => {
         if (isOscilante(c.nome)) init[c.nome] = true;
       });
       setSelectedCats(init);
@@ -71,7 +82,8 @@ export default function AtualizarPrecosDialog({
       setPausado(false);
       canceladoRef.current = false;
     }
-  }, [open, catList]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Cleanup timer
   useEffect(() => {
@@ -243,13 +255,22 @@ export default function AtualizarPrecosDialog({
     }
   };
 
+  // Helper: never let a single request hang the whole process forever
+  const withTimeout = (promise, ms, label) => {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(`Tempo esgotado ao salvar ${label}`)), ms)
+      ),
+    ]);
+  };
+
   // Apply selected results
   const handleAplicar = async (aplicarTodos) => {
     setAtualizando(true);
+    setStep("applying");
     try {
       await aplicarPrecos(aplicarTodos);
-    } catch (err) {
-      toast.error("Erro ao aplicar preços: " + (err.message || "tente novamente"));
     } finally {
       setAtualizando(false);
     }
@@ -261,15 +282,17 @@ export default function AtualizarPrecosDialog({
       ? resultados.filter((r) => r.encontrado).map((r) => r.id)
       : resultados.filter((r) => r.encontrado && selectedResults[r.id]).map((r) => r.id);
 
-    let atualizados = 0;
-    let erros = 0;
-    const receitasAfetadas = new Set();
-
     const toUpdate = resultados.filter(
       (r) => idsToUpdate.includes(r.id) && r.encontrado && r.preco_sugerido_por_g
     );
 
-    for (const res of toUpdate) {
+    let atualizados = 0;
+    const falhas = [];
+    setApplyProgress({ atual: 0, total: toUpdate.length });
+
+    // Cada ingrediente é salvo de forma independente: a falha em um NUNCA impede os demais.
+    for (let idx = 0; idx < toUpdate.length; idx++) {
+      const res = toUpdate[idx];
       try {
         const variacao =
           res.preco_atual > 0
@@ -292,78 +315,110 @@ export default function AtualizarPrecosDialog({
           fornecedor: ing?.fornecedor || "",
         });
 
-        await base44.entities.Ingrediente.update(res.id, {
-          preco_embalagem_rs,
-          preco_por_g_rs: res.preco_sugerido_por_g,
-          preco_atualizado_em: now,
-          fonte_preco: "IA web",
-          preco_medio_nacional: res.preco_sugerido_por_kg,
-          variacao_percentual: variacao,
-          historico_precos: historico,
-        });
+        await withTimeout(
+          base44.entities.Ingrediente.update(res.id, {
+            preco_embalagem_rs,
+            preco_por_g_rs: res.preco_sugerido_por_g,
+            preco_atualizado_em: now,
+            fonte_preco: "IA web",
+            preco_medio_nacional: res.preco_sugerido_por_kg,
+            variacao_percentual: variacao,
+            historico_precos: historico,
+          }),
+          15000,
+          res.nome
+        );
         atualizados++;
-        await new Promise((r) => setTimeout(r, 250));
       } catch (err) {
-        erros++;
-        if (err.message?.includes("ate limit")) {
-          await new Promise((r) => setTimeout(r, 2000));
-        }
+        falhas.push({ nome: res.nome, motivo: err?.message || "erro ao salvar" });
       }
+      setApplyProgress({ atual: idx + 1, total: toUpdate.length });
     }
 
-    // Recalculate affected recipes
+    // Recalcula custo das receitas afetadas — em lote, para não travar com muitas receitas
+    let receitasRecalculadas = 0;
     if (atualizados > 0) {
-      const idsSet = new Set(idsToUpdate);
-      const allItens = [];
-      let skip = 0;
-      while (true) {
-        const batch = await base44.entities.IngredienteReceita.list("-created_date", 200, skip);
-        if (!batch.length) break;
-        allItens.push(...batch);
-        skip += 200;
-      }
-      for (const item of allItens) {
-        if (idsSet.has(item.ingrediente_id)) receitasAfetadas.add(item.receita_id);
-      }
+      try {
+        const idsSet = new Set(idsToUpdate);
+        const allItens = [];
+        let skip = 0;
+        while (true) {
+          const batch = await base44.entities.IngredienteReceita.list("-created_date", 200, skip);
+          if (!batch.length) break;
+          allItens.push(...batch);
+          skip += 200;
+        }
 
-      const allIngs = await base44.entities.Ingrediente.list("-nome", 500);
-      const ingMap = {};
-      allIngs.forEach((i) => {
-        ingMap[i.id] = i;
-      });
+        const receitasAfetadas = new Set();
+        allItens.forEach((item) => {
+          if (idsSet.has(item.ingrediente_id)) receitasAfetadas.add(item.receita_id);
+        });
 
-      for (const recId of receitasAfetadas) {
-        try {
-          const receitas = await base44.entities.Receita.filter({ id: recId });
-          const receita = receitas[0];
-          if (!receita) continue;
-          const recItens = await base44.entities.IngredienteReceita.filter({ receita_id: recId });
+        const allIngs = await base44.entities.Ingrediente.list("-nome", 500);
+        const ingMap = {};
+        allIngs.forEach((i) => (ingMap[i.id] = i));
 
-          let custoIng = 0;
-          for (const item of recItens) {
-            if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
-            const ing = ingMap[item.ingrediente_id];
-            const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
-            custoIng += qtd * (ing?.preco_por_g_rs || 0);
-          }
-          const custoInsumos = receita.custo_insumos || 0;
-          const custoTotal = custoIng + custoInsumos;
-          const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
+        const itensPorReceita = {};
+        allItens.forEach((item) => {
+          if (!receitasAfetadas.has(item.receita_id)) return;
+          if (!itensPorReceita[item.receita_id]) itensPorReceita[item.receita_id] = [];
+          itensPorReceita[item.receita_id].push(item);
+        });
 
-          await base44.entities.Receita.update(recId, {
-            custo_total: parseFloat(custoTotal.toFixed(2)),
-            custo_por_porcao: parseFloat(custoPorcao.toFixed(2)),
-          });
-          await new Promise((r) => setTimeout(r, 150));
-        } catch {}
+        const allReceitas = [];
+        let rSkip = 0;
+        while (true) {
+          const batch = await base44.entities.Receita.list("-created_date", 200, rSkip);
+          if (!batch.length) break;
+          allReceitas.push(...batch);
+          rSkip += 200;
+        }
+        const receitaMap = {};
+        allReceitas.forEach((r) => (receitaMap[r.id] = r));
+
+        const updates = [];
+        for (const recId of receitasAfetadas) {
+          try {
+            const receita = receitaMap[recId];
+            if (!receita) continue;
+            const recItens = itensPorReceita[recId] || [];
+
+            let custoIng = 0;
+            for (const item of recItens) {
+              if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
+              const ing = ingMap[item.ingrediente_id];
+              const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
+              custoIng += qtd * (ing?.preco_por_g_rs || 0);
+            }
+            const custoInsumos = receita.custo_insumos || 0;
+            const custoTotal = custoIng + custoInsumos;
+            const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
+
+            updates.push({
+              id: recId,
+              custo_total: parseFloat(custoTotal.toFixed(2)),
+              custo_por_porcao: parseFloat(custoPorcao.toFixed(2)),
+            });
+          } catch {}
+        }
+
+        if (updates.length > 0) {
+          await base44.entities.Receita.bulkUpdate(updates);
+          receitasRecalculadas = updates.length;
+        }
+      } catch {
+        // Recalculo de receitas é best-effort — nunca deve derrubar o resumo de preços já salvos.
       }
     }
 
     qc.invalidateQueries({ queryKey: ["ingredientes"] });
-    const msg = `${atualizados} ingredientes atualizados · ${receitasAfetadas.size} receitas recalculadas`;
-    if (erros > 0) toast.warning(msg + ` · ${erros} falhas`);
-    else toast.success(msg);
-    onClose();
+    setApplySummary({
+      total: toUpdate.length,
+      atualizados,
+      falhas,
+      receitasRecalculadas,
+    });
+    setStep("summary");
   };
 
   const formatPrice = (v) => (v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "—");
@@ -387,6 +442,8 @@ export default function AtualizarPrecosDialog({
             {step === "categories" && "Atualizar preços"}
             {step === "loading" && "Buscando preços..."}
             {step === "results" && "Revisão de preços encontrados"}
+            {step === "applying" && "Salvando preços..."}
+            {step === "summary" && "Resumo da atualização"}
           </DialogTitle>
         </DialogHeader>
 
@@ -589,6 +646,78 @@ export default function AtualizarPrecosDialog({
             <p className="text-xs text-muted-foreground text-center">
               Processando em lotes de 10 ingredientes — a pausa entra em vigor após o lote atual.
             </p>
+          </div>
+        )}
+
+        {/* ── Step: Applying (saving prices) ── */}
+        {step === "applying" && (
+          <div className="space-y-5 py-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <div>
+                <p className="font-medium">Salvando preços...</p>
+                <p className="text-sm text-muted-foreground">
+                  {applyProgress.atual} de {applyProgress.total} ingredientes salvos
+                </p>
+              </div>
+            </div>
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{
+                  width: applyProgress.total > 0 ? `${(applyProgress.atual / applyProgress.total) * 100}%` : "0%",
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Cada ingrediente é salvo individualmente — você pode fechar esta janela; o processo continua e o resumo ficará disponível no histórico.
+            </p>
+          </div>
+        )}
+
+        {/* ── Step: Apply Summary ── */}
+        {step === "summary" && applySummary && (
+          <div className="space-y-4 py-2">
+            <div
+              className={`p-3 rounded-lg border flex items-start gap-2 ${
+                applySummary.falhas.length > 0
+                  ? "bg-amber-50 border-amber-200"
+                  : "bg-green-50 border-green-200"
+              }`}
+            >
+              {applySummary.falhas.length > 0 ? (
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              ) : (
+                <Check className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+              )}
+              <p className={`text-sm ${applySummary.falhas.length > 0 ? "text-amber-800" : "text-green-800"}`}>
+                {applySummary.atualizados} de {applySummary.total} preços atualizados com sucesso
+                {applySummary.receitasRecalculadas > 0 && ` · ${applySummary.receitasRecalculadas} receitas recalculadas`}
+                .
+              </p>
+            </div>
+
+            {applySummary.falhas.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <p className="text-xs font-medium px-3 py-2 bg-muted">
+                  {applySummary.falhas.length} item(ns) não foram salvos:
+                </p>
+                <ul className="divide-y max-h-48 overflow-y-auto">
+                  {applySummary.falhas.map((f, idx) => (
+                    <li key={idx} className="px-3 py-2 text-sm flex items-start gap-2">
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-600 shrink-0 mt-0.5" />
+                      <span>
+                        <span className="font-medium">{f.nome}</span>: {f.motivo} — tente novamente
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <Button onClick={handleRequestClose}>Fechar</Button>
+            </div>
           </div>
         )}
 
