@@ -23,32 +23,24 @@ export const helpContent = {
   },
 
   "Receitas": {
-    context:
-      "Aqui você gerencia todas as suas receitas: cria novas, edita existentes, duplica, favorita e organiza por categorias e tags. O sistema calcula automaticamente o custo total, custo por porção e permite escalar para qualquer número de pessoas. Você pode criar receitas manualmente ou usar a IA para estruturar uma receita a partir de texto colado.",
-    faqs: [
-      {
-        q: "Como criar uma receita do zero?",
-        a: "Clique em Nova Receita > Manual. Preencha o nome, categorias, número de porções base e adicione os ingredientes um a um. O sistema busca os ingredientes já cadastrados e calcula o custo automaticamente.",
-      },
-      {
-        q: "Como usar a IA para criar uma receita?",
-        a: "Clique em Nova Receita > Com IA. Cole o texto completo da receita (ingredientes + modo de preparo). A IA extrai os ingredientes, quantidades e passos automaticamente. Você revisa e ajusta antes de salvar.",
-      },
-      {
-        q: "O que são tags e para que servem?",
-        a: "Tags ajudam a classificar receitas por restrições alimentares (sem glúten, vegano), métodos de preparo (forno, grelhado) e contexto de uso (festas, marmitas). As tags automáticas incluem Forno, Grelhado, Cozido e Congelável.",
-      },
-      {
-        q: "Como funciona a classificação de ingredientes como Estrutural ou A gosto?",
-        a: "Ingredientes estruturais escalam com o número de porções (ex: arroz, carne). Ingredientes 'a gosto' têm quantidade fixa (ex: sal, pimenta). O botão 'Classificar em Lote' analisa todas as receitas e aplica essa classificação automaticamente.",
-      },
-      {
-        q: "Posso importar várias receitas de uma vez?",
-        a: "Sim. Use o botão 'Importar em Lote' para colar várias receitas de uma vez ou fazer upload de um arquivo (.docx, .pdf, .txt). A IA processa e estrutura todas elas.",
-      },
-    ],
-  },
-
+  context: "Banco de receitas com ficha técnica completa: ingredientes, modo de preparo, custo por porção, e relatórios em PDF (Ficha Técnica, Ficha de Custos, Lista de Compras). Toda receita calcula custo automaticamente com base no preço atual dos ingredientes.",
+  faqs: [
+    { q: "Como vejo o custo de uma receita?", a: "Abra a receita e clique em 'Exportar PDF' → 'Ficha de Custos'. Mostra o custo total, por porção, por kg, e quais ingredientes pesam mais no preço." },
+    { q: "Como gero a ficha técnica em PDF?", a: "Abra a receita e clique em 'Exportar PDF' → 'Ficha Técnica'. Sempre mostra os valores BASE da receita, mesmo se você tiver escalado na tela." },
+    { q: "Como compartilho uma receita?", a: "Na Ficha Técnica ou Ficha de Custos, clique em 'Compartilhar' para enviar o PDF direto por WhatsApp." },
+    { q: "O que é 'Ajustar para peso total'?", a: "Recalcula TODOS os ingredientes proporcionalmente para um novo peso total (ex.: 1kg, 500g) e grava essa mudança de forma permanente na receita. Diferente do escalador do Cardápio, que é temporário." },
+    { q: "Como funcionam PC Recomendado, Nº de Porções e Quantidade Total?", a: "Quantidade Total é sempre a soma real dos ingredientes cadastrados — não muda ao editar o PC. PC Recomendado é o peso ideal por porção, editável livremente. Nº de Porções é calculado automaticamente (Quantidade Total ÷ PC)." },
+    { q: "Por que a receita abre com valores diferentes quando venho de um Cardápio?", a: "É o escalador em contexto: ao abrir uma receita a partir de um Cardápio/Evento, ela mostra os valores escalados para aquele cardápio específico (selo 'escalado para...' no topo). É temporário — clique em 'Restaurar original' para voltar à ficha base, ou abra pela lista de Receitas normalmente." },
+    { q: "Como aplico uma tag em várias receitas de uma vez?", a: "Clique em 'Selecionar', marque as receitas (ou marque o checkbox de uma categoria inteira para selecionar todas dela de uma vez) e clique em 'Aplicar tag'." },
+    { q: "Como gero um relatório com várias receitas de uma categoria?", a: "Clique no botão 'PDF' no topo da lista para gerar de todas as categorias, ou expanda uma categoria e use o ícone de relatório dentro do card para gerar só dela." },
+    { q: "Como excluo ou duplico uma receita?", a: "Abra a receita e use os botões 'Duplicar receita' ou 'Excluir receita' no topo da ficha." },
+    { q: "Como crio uma receita nova a partir de um texto que já tenho?", a: "Use 'Nova Receita' → 'Colar receita (IA estrutura)'. Cole o texto com ingredientes e modo de preparo — a IA organiza automaticamente na ficha. Textos que não parecem receita são recusados, para evitar criar receitas inventadas." },
+    { q: "O que significa a tag 'A revisar'?", a: "Marca receitas com dados incompletos ou pendentes de conferência (ex.: ingrediente sem preço, peso não informado). Use o filtro 'Revisar' para encontrá-las rapidamente." },
+    { q: "Como busco uma receita por um ingrediente específico?", a: "Digite o nome do ingrediente na busca da tela de Receitas — ela também encontra receitas que o contêm, não só pelo nome do prato." },
+    { q: "Como gero a lista de compras de uma receita?", a: "Abra a receita e clique em 'Lista de Compras' — gera a quantidade de cada ingrediente a comprar, já considerando o fator de correção." },
+    { q: "As categorias são fixas?", a: "Sim — as 17 categorias (Carnes, Aves, Peixes e Frutos do Mar, Ovos, Massas/Pastelão/Quiches, Arroz e Risoto, Sopas e Caldos, Leguminosas, Salgadinhos, Pães e Bolos, Sobremesas, Molhos, Acompanhamento, Prato Principal, Entradas, Petiscos, Lanche, Receitas Base) são as únicas disponíveis para manter a organização consistente." }
+  ]
+},
   "Receita": {
     context:
       "Esta é a ficha completa da receita, com todos os detalhes: ingredientes com quantidades e custos, sub-receitas, insumos e embalagens, modo de preparo, foto e informações nutricionais estimadas. Você pode editar qualquer campo, ajustar porções e ver o impacto no custo em tempo real.",
