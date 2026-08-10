@@ -1132,7 +1132,7 @@ REGRAS:
         onRestore={handleRestaurarEscala}
       />
       <div className="flex justify-end -mt-2">
-        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setShowAjustarPeso(true)}>
+        <Button variant="outline" size="sm" onClick={() => setShowAjustarPeso(true)}>
           <Scale className="w-3.5 h-3.5 mr-1" /> Ajustar para peso total (permanente)
         </Button>
       </div>

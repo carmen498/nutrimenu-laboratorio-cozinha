@@ -49,6 +49,9 @@ export default function AjustarPesoTotalDialog({ open, onClose, receitaId, rendi
           <p className="text-sm text-muted-foreground">
             Rendimento atual: <span className="font-semibold">{(rendimentoAtual || 0).toLocaleString("pt-BR")} {unidadeBase || "g"}</span>
           </p>
+          <p className="text-xs text-muted-foreground">
+            Digite o novo peso total desejado. Todos os ingredientes serão recalculados proporcionalmente e a receita será atualizada sempre que este valor for alterado.
+          </p>
           <div>
             <Label>Novo peso total ({unidadeBase || "g"})</Label>
             <Input
