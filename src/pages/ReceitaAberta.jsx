@@ -39,6 +39,7 @@ import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
+import AjustarPesoTotalDialog from "@/components/receita/AjustarPesoTotalDialog";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -99,6 +100,7 @@ export default function ReceitaAberta() {
   const [medidaInputValue, setMedidaInputValue] = useState("");
   const [showMedidasReceita, setShowMedidasReceita] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAjustarPeso, setShowAjustarPeso] = useState(false);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -284,6 +286,15 @@ export default function ReceitaAberta() {
     setQuantidadeTotal(g);
     const pc = pcLocal || 0;
     if (pc > 0) setPorcoes(Math.max(0, Math.floor(g / pc)));
+  };
+
+  // Ajuste permanente do rendimento (sobrescreve pesos na ficha) — sincroniza
+  // o estado ephemeral do escalador com o novo valor gravado, sem reabrir a página.
+  const handleAjustarPesoSuccess = (novoVal) => {
+    qc.invalidateQueries({ queryKey: ["receita", id] });
+    qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    setQuantidadeTotal(novoVal);
+    setPorcoes(pcLocal > 0 ? +(novoVal / pcLocal).toFixed(2) : porcoes);
   };
 
   const handleRestaurarEscala = () => {
@@ -1120,6 +1131,11 @@ REGRAS:
         isEscalado={isEscalado}
         onRestore={handleRestaurarEscala}
       />
+      <div className="flex justify-end -mt-2">
+        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setShowAjustarPeso(true)}>
+          <Scale className="w-3.5 h-3.5 mr-1" /> Ajustar para peso total (permanente)
+        </Button>
+      </div>
 
       {/* Ingredients table */}
       <div>
@@ -1554,6 +1570,18 @@ REGRAS:
           utensilios={utensiliosPadrao}
           uteMap={uteMap}
           getMedidaDisplay={getMedidaDisplay}
+        />
+      )}
+
+      {showAjustarPeso && (
+        <AjustarPesoTotalDialog
+          open={true}
+          onClose={() => setShowAjustarPeso(false)}
+          receitaId={id}
+          rendimentoAtual={receita.rendimento_total}
+          unidadeBase={receita.unidade_base}
+          itens={itens}
+          onSuccess={handleAjustarPesoSuccess}
         />
       )}
 
