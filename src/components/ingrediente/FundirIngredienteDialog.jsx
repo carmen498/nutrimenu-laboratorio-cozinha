@@ -15,6 +15,7 @@ export default function FundirIngredienteDialog({ open, onClose, ingrediente }) 
   const [preview, setPreview] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [progresso, setProgresso] = useState(null); // { processadas, total }
   const [resultado, setResultado] = useState(null);
   const qc = useQueryClient();
 
@@ -59,16 +60,57 @@ export default function FundirIngredienteDialog({ open, onClose, ingrediente }) 
   };
 
   const handleConfirmar = async () => {
-    if (!destino) return;
+    if (!destino || !preview) return;
     setConfirming(true);
+    const total = preview.total || 0;
+    const nomesPorReceita = {};
+    preview.receitas.forEach((r) => { nomesPorReceita[r.receita_id] = r.receita_nome; });
+
+    let processadas = 0;
+    const falhas = [];
+    const failedIds = [];
+    setProgresso({ processadas: 0, total });
+
     try {
-      const res = await base44.functions.invoke("fundirIngredientes", {
-        origem_id: ingrediente.id,
-        destino_id: destino.id,
-        acao: "confirmar",
-      });
-      setResultado(res.data);
-      if (res.data?.success) {
+      while (true) {
+        const res = await base44.functions.invoke("fundirIngredientes", {
+          origem_id: ingrediente.id,
+          destino_id: destino.id,
+          acao: "confirmar_lote",
+          limit: 60,
+          failedIds,
+        });
+        const data = res.data || {};
+        processadas += data.processedCount || 0;
+        (data.novasFalhas || []).forEach((f) => {
+          falhas.push({ receita_id: f.receita_id, receita_nome: nomesPorReceita[f.receita_id] || f.receita_id, erro: f.erro });
+          failedIds.push(f.linha_id);
+        });
+        setProgresso({ processadas: Math.min(processadas + falhas.length, total), total });
+
+        if (data.done) break;
+      }
+
+      let origemExcluido = false;
+      if (falhas.length === 0) {
+        const delRes = await base44.functions.invoke("fundirIngredientes", {
+          origem_id: ingrediente.id,
+          destino_id: destino.id,
+          acao: "excluir_origem",
+        });
+        origemExcluido = !!delRes.data?.success;
+      }
+
+      const resultadoFinal = {
+        success: falhas.length === 0,
+        receitasAtualizadas: processadas,
+        falhas,
+        origemExcluido,
+        origemNome: ingrediente.nome,
+        destinoNome: destino.nome,
+      };
+      setResultado(resultadoFinal);
+      if (resultadoFinal.success) {
         qc.invalidateQueries({ queryKey: ["ingredientes"] });
         qc.invalidateQueries({ queryKey: ["receitas"] });
         qc.invalidateQueries({ queryKey: ["all-itens-receita"] });
@@ -77,6 +119,7 @@ export default function FundirIngredienteDialog({ open, onClose, ingrediente }) 
       toast.error("Erro ao fundir: " + (err.message || ""));
     } finally {
       setConfirming(false);
+      setProgresso(null);
     }
   };
 
@@ -119,7 +162,7 @@ export default function FundirIngredienteDialog({ open, onClose, ingrediente }) 
                 </p>
                 <ul className="list-disc list-inside text-sm text-destructive space-y-0.5 max-h-40 overflow-y-auto">
                   {resultado.falhas.map((f) => (
-                    <li key={f.receita_id}>{f.receita_id}: {f.erro}</li>
+                    <li key={f.receita_id}>{f.receita_nome || f.receita_id}: {f.erro}</li>
                   ))}
                 </ul>
               </div>
@@ -212,6 +255,12 @@ export default function FundirIngredienteDialog({ open, onClose, ingrediente }) 
                 {confirming ? "Fundindo..." : "Confirmar fusão"}
               </Button>
             </div>
+
+            {confirming && progresso && progresso.total > 0 && (
+              <p className="text-sm text-muted-foreground text-center">
+                Processando {progresso.processadas} de {progresso.total} receitas...
+              </p>
+            )}
           </div>
         )}
       </DialogContent>
