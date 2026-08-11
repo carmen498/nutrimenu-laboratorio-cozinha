@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { helpContent } from "@/lib/helpContent";
 
-export default function HelpPanel({ screenName = "" }) {
-  const [open, setOpen] = useState(false);
+export default function HelpPanel({ screenName = "", open: openProp, onOpenChange }) {
+  const [openState, setOpenState] = useState(false);
+  const open = openProp !== undefined ? openProp : openState;
+  const setOpen = onOpenChange || setOpenState;
   const [expandedFaq, setExpandedFaq] = useState(null);
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");

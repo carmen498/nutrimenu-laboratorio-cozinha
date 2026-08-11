@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { BookOpen, Plus, ShoppingCart, Apple, CalendarDays, Gauge, ArrowRight, AlertTriangle, Clock } from "lucide-react";
+import { ArrowRight, AlertTriangle, Clock } from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 import IndicadoresHome from "@/components/home/IndicadoresHome";
+import AcoesPrincipaisHome from "@/components/home/AcoesPrincipaisHome";
+import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -136,6 +138,9 @@ export default function Home() {
         </p>
       </div>
 
+      {/* Ações principais */}
+      <AcoesPrincipaisHome />
+
       {/* Indicadores reais */}
       <IndicadoresHome
         receitas={receitasTodas.length}
@@ -144,63 +149,6 @@ export default function Home() {
         receitasAtualizadas={receitasAtualizadas30d.length}
         loading={carregandoIndicadores}
       />
-
-      {/* Grid 3×2 de módulos */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {/* Receitas */}
-        <Link to="/receitas">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#4E7C63", minHeight: 130 }}>
-            <BookOpen className="w-10 h-10 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-base text-center">Receitas</span>
-          </Card>
-        </Link>
-
-        {/* Cardápios */}
-        <Link to="/cardapios">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#7FA38C", minHeight: 130 }}>
-            <CalendarDays className="w-10 h-10 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-base text-center">Cardápios</span>
-          </Card>
-        </Link>
-
-        {/* Carrinho (Lista de Compras) */}
-        <Link to="/lista-compras">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#C9A24B", minHeight: 130 }}>
-            <ShoppingCart className="w-10 h-10 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-base text-center">Carrinho</span>
-          </Card>
-        </Link>
-
-        {/* Ingredientes */}
-        <Link to="/ingredientes">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#A5643E", minHeight: 130 }}>
-            <Apple className="w-10 h-10 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-base text-center">Ingredientes</span>
-          </Card>
-        </Link>
-
-        {/* Per Capita */}
-        <Link to="/percapita">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#6B5E4A", minHeight: 130 }}>
-            <Gauge className="w-10 h-10 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-base text-center">Per Capita</span>
-          </Card>
-        </Link>
-
-        {/* Nova Receita */}
-        <Link to="/receitas?nova=manual">
-          <Card className="p-6 hover:shadow-xl transition-all cursor-pointer border-0 group text-white h-full flex flex-col items-center justify-center gap-4"
-            style={{ background: "#7A3B3F", minHeight: 130 }}>
-            <Plus className="w-10 h-10 group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-base text-center">Nova Receita</span>
-          </Card>
-        </Link>
-      </div>
 
       {/* Acesso rápido */}
       <div>
@@ -324,6 +272,9 @@ export default function Home() {
           </Card>
         </div>
       </div>
+
+      {/* Integrações da sua Receita — vitrine institucional, sem integração funcional real */}
+      <IntegracoesReceitaHome />
 
       <AtualizarPrecosDialog
         open={showAtualizarPrecos}
