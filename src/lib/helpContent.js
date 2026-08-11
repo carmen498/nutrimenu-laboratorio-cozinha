@@ -42,48 +42,35 @@ export const helpContent = {
     { q: "Como gero os relatórios da receita?", a: "'Exportar PDF' → Ficha Técnica ou Ficha de Custos; botão 'Lista de Compras' separado. Todos abrem em pré-visualização antes de baixar, com opção de Compartilhar." }
   ]
 },
-  "Cardápios": {
-    context:
-      "Aqui você monta cardápios para diferentes ocasiões: diários, semanais, fins de semana, eventos especiais, marmitas e buffets. Cada cardápio combina receitas com quantidades per capita, calcula o custo total e sugere preço de venda com markup configurável.",
-    faqs: [
-      {
-        q: "Como criar um cardápio?",
-        a: "Clique em Novo Cardápio, escolha o tipo (diário, semanal, buffet etc.), defina o número de pessoas e adicione as receitas. O sistema usa os valores da tabela de per capita para calcular as quantidades.",
-      },
-      {
-        q: "O que é markup e como usar?",
-        a: "Markup é o percentual de lucro sobre o custo. Se o custo é R$ 10 e o markup é 100%, o preço sugerido é R$ 20. Você define o markup ideal para cada cardápio.",
-      },
-      {
-        q: "Como funciona o cardápio semanal?",
-        a: "No cardápio semanal, você organiza receitas por dia da semana e por refeição (café da manhã, almoço, lanche, jantar). O sistema calcula automaticamente a lista de compras para a semana inteira.",
-      },
-      {
-        q: "Como gerar a lista de compras a partir de um cardápio?",
-        a: "Abra o cardápio e use o botão 'Gerar Lista de Compras'. O sistema consolida todos os ingredientes de todas as receitas, calcula as quantidades necessárias e cria uma lista pronta para o mercado.",
-      },
-    ],
-  },
-
-  "Cardápio": {
-    context:
-      "Esta é a visão detalhada do cardápio, onde você gerencia as receitas incluídas, ajusta quantidades, vê o custo total consolidado e gera a lista de compras. Para cardápios semanais, você organiza as receitas por dia e refeição.",
-    faqs: [
-      {
-        q: "Como adicionar ou remover receitas do cardápio?",
-        a: "Use o botão 'Adicionar Receita' para buscar e incluir receitas. Para remover, use o ícone de lixeira ao lado de cada receita. O custo total é atualizado automaticamente.",
-      },
-      {
-        q: "Como ajustar a quantidade per capita de uma receita?",
-        a: "Clique no valor de per capita ao lado da receita. Você pode usar o valor padrão da tabela ou definir um valor personalizado para este cardápio específico.",
-      },
-      {
-        q: "Como funciona o preço de venda sugerido?",
-        a: "O preço de venda é calculado como: custo total × (1 + markup/100). Você pode ajustar o markup no topo do cardápio. O preço sugerido aparece destacado no resumo.",
-      },
-    ],
-  },
-
+   "Cardápios e Eventos": {
+  context: "Um Cardápio reúne receitas já cadastradas numa proposta completa — para um dia, uma semana, um evento — e calcula sozinho o peso total, o custo, e os relatórios prontos para cada público: a cozinha que vai produzir, o cliente que vai pagar, e você que precisa saber se vale a pena. Um Evento vai além do cardápio: é o planejamento completo de uma ocasião, do perfil de quem vai ser servido até a última garrafa de bebida. Em quatro etapas — Contexto, Clientes, Cardápio e Doces & Bebidas — o app transforma o número de convidados numa previsão realista de quanto produzir, quanto vai custar e quanta margem de segurança você precisa para não faltar nem sobrar.",
+  faqs: [
+    { q: "Por que os conceitos de Cardápio e Eventos são separados?", a: "Cardápio é a unidade simples — um conjunto de receitas, pessoas, custo. Serve pra qualquer contexto do dia a dia: o cardápio da semana, o cardápio diário de um restaurante, uma refeição pontual. Rápido de montar, sem etapas. Evento é a unidade completa de planejamento comercial — porque um evento (casamento, festa, buffet) não é só 'quais receitas eu vou servir', é um processo com várias camadas de decisão antes de chegar no cardápio: quem são os convidados (Clientes), que margem de segurança você precisa pra não faltar comida (imprevisto, repeteco), e uma categoria à parte que cardápio nenhum trata direito — Doces & Bebidas, que tem lógica de cálculo própria (consumo por pessoa, tipo de bebida), diferente de comida. Cardápio é o miolo que mora dentro de um Evento (na etapa 3), mas Evento carrega responsabilidade que Cardápio sozinho não assume." },
+    { q: "Como crio um cardápio novo?", a: "Nome e Categoria são os campos principais na criação — os demais (pessoas, receitas, insumos) você preenche ao montar o cardápio." },
+    { q: "As categorias de Cardápio são fixas?", a: "Sim — Diário, Semanal, Fim de semana, Especial, Comemoração, Marmitas, Buffet, Happy Hour e Personalizado são as únicas disponíveis." },
+    { q: "Como adiciono receitas ao cardápio?", a: "Use '+ Adicionar item' (ou '+ Adicionar prato' no Evento) na seção Receitas. É possível filtrar por categoria da receita para facilitar a busca." },
+    { q: "Como o Cardápio calcula a quantidade de cada receita?", a: "Ao adicionar uma receita ao cardápio, ela entra com o PC Recomendado já definido na própria ficha da receita — mas esse valor pode ser alterado aqui dentro, específico para este cardápio. A diferença é o conceito: enquanto na receita o PC é uma referência técnica isolada, no Cardápio ele é multiplicado pelo número de pessoas do evento, para que a quantidade total (kg) seja sempre compatível com quantas pessoas você realmente vai servir." },
+    { q: "Posso abrir uma receita de dentro do cardápio para conferir os ingredientes?", a: "Sim. Ao clicar numa receita do cardápio, ela abre já escalada para a quantidade deste cardápio específico — mostrando cada ingrediente na proporção certa, com a indicação 'original: X g' ao lado de cada item. Qualquer ajuste feito nessa visualização fica registrado só para este cardápio, nunca sobrescreve a ficha da receita." },
+    { q: "Como edito a categoria, a data ou o número de pessoas?", a: "Clique em 'Editar' — os campos ficam editáveis. O número de pessoas também pode ser ajustado direto pelos botões '−'/'+' no topo, recalculando o custo por pessoa na hora." },
+    { q: "Por que uma receita abre com valores diferentes quando clico nela a partir do Cardápio?", a: "O escalador em contexto ajusta a receita para o PC e número de pessoas definidos NESTE cardápio — é temporário, a receita original não é alterada." },
+    { q: "O que é 'Cores do Cardápio'?", a: "Mostra a distribuição de cores dos pratos e avisa quando uma cor domina demais o cardápio (ex.: 'Branco/Creme domina 67% dos pratos'), ajudando a evitar uma apresentação visualmente monótona." },
+    { q: "Como adiciono Insumos e Embalagens ao cardápio?", a: "Botão '+ Banco' na seção Insumos e Embalagens, escolhendo do mesmo banco usado nas receitas." },
+    { q: "Como funciona 'Quanto cobrar se eu vender?'", a: "Ajuste a margem (%) — o app mostra custo por unidade, valor da margem e o preço sugerido de venda." },
+    { q: "O que significa o aviso 'prato sem custo completo'?", a: "Indica que algum prato do cardápio/evento tem um ingrediente sem preço cadastrado — o custo total fica subestimado até isso ser corrigido." },
+    { q: "Quais relatórios posso gerar de um Cardápio?", a: "No botão 'Relatórios': Ficha do Cardápio (produção), Orçamento (documento para o cliente, sem custos internos), Pré-preparos (mise en place), Ficha de Custos (uso interno) e Receitas do Cardápio (lista para impressão). Cada um abre em pré-visualização antes de exportar ou compartilhar." },
+    { q: "Como gero a lista de compras?", a: "Botão 'Lista de Compras' — soma os ingredientes de todas as receitas do cardápio/evento." },
+    { q: "Como excluo, duplico ou favorito um Cardápio?", a: "Clique nos '...' ao lado do cardápio na lista para Duplicar ou Excluir. A estrela ☆ marca como favorito." },
+    { q: "Como funcionam as 4 etapas do Evento?", a: "O Evento é montado em sequência: Contexto (o que é o evento) → Clientes (quem vai ser servido) → Cardápio (o que vai ser servido) → Doces & Bebidas (etapa opcional). Você pode salvar o evento a qualquer momento pelo botão 'Salvar Evento', sem precisar completar todas as etapas de uma vez." },
+    { q: "O que preencho na etapa Contexto?", a: "Nome do evento (obrigatório) e Tipo do Planejamento — Almoço, Jantar, Coquetel, Data Comemorativa, Confraternização ou Outro (obrigatório). Também: Tipo de Serviço (Buffet, Empratado, À La Carte, Refeição Familiar, Self-Service ou Outro), Horário de início e Duração em horas — a duração impacta diretamente o cálculo de bebidas e aperitivos na etapa 4." },
+    { q: "Como funciona a etapa Clientes?", a: "Informe quantos Homens, Mulheres e Crianças serão servidos — o total soma automaticamente. Cada grupo tem um Per Capita (g/pessoa) próprio, ajustável pelo slider, com um valor 'padrão' sugerido que você pode alterar conforme sua experiência com aquele público." },
+    { q: "O que é a Margem de Segurança?", a: "Um percentual extra aplicado ao total de comida calculado, para cobrir imprevistos como repeteco ou variação de apetite. O app orienta: 10% para eventos controlados e empratados, 20% para buffet livre ou público variado. Mostra lado a lado o 'Total base (sem margem)' e o 'Total com margem', ambos em kg." },
+    { q: "Como funciona a etapa Cardápio dentro do Evento?", a: "Funciona como um Cardápio comum — adicione pratos, filtre por categoria (Entrada, Prato Principal, Guarnição, Arroz/Massas, Saladas, Sobremesa), ajuste o PC de cada prato, acompanhe o custo total e por pessoa." },
+    { q: "Doces & Bebidas é obrigatório?", a: "Não — é uma etapa opcional. Se você não precisar planejar doces e bebidas separadamente, pode salvar o evento sem completar essa etapa." },
+    { q: "Como funciona a etapa Doces & Bebidas?", a: "Os itens ficam organizados por seção (Coquetel, Doces, Bebidas), cada um com checkbox de seleção, PC Médio, Quantidade Final, Custo Unitário (kg, unidade ou cento, dependendo do item) e % de Adesão — a estimativa de quantos convidados vão consumir aquele item. O custo é calculado separadamente e não soma ao total de comida em kg do Cardápio." },
+    { q: "Como gero a lista de compras do Evento?", a: "Na etapa Cardápio, use o botão 'Salvar e Gerar Lista de Compras' — reúne os ingredientes de todos os pratos do evento." },
+    { q: "Posso editar um evento já salvo?", a: "Sim — reabra o evento e navegue pelas 4 etapas normalmente, usando 'Voltar' ou clicando direto no nome da etapa no topo para pular entre elas." }
+  ]
+},
    "Ingredientes": {
   context: "Cada ingrediente aqui carrega um preço vivo — a base sobre a qual todo o app calcula custo. Não é uma lista de compras: é a fonte da verdade que sustenta o custo de cada receita, cardápio e orçamento. Manter os preços em dia aqui é o que garante que tudo o mais no app esteja certo.",
   faqs: [
