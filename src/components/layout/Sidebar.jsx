@@ -61,7 +61,7 @@ function SidebarContent({ onNavigate, onHelpClick }) {
 
         <div className="pt-3 mt-3 border-t border-sidebar-border space-y-0.5">
           <NavLink to="/lista-compras" icon={ShoppingCart} label="Carrinho" active={isActive("/lista-compras")} onClick={onNavigate} />
-          <DisabledItem icon={History} label="Histórico" />
+          <NavLink to="/historico" icon={History} label="Histórico" active={isActive("/historico")} onClick={onNavigate} />
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
         </div>
