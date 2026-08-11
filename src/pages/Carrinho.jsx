@@ -7,10 +7,11 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart, Trash2, ListX } from "lucide-react";
+import { ShoppingCart, Trash2, ListX, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import CarrinhoItemRow from "@/components/carrinho/CarrinhoItemRow";
+import AdicionarIngredienteCarrinhoDialog from "@/components/carrinho/AdicionarIngredienteCarrinhoDialog";
 
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
@@ -18,6 +19,7 @@ export default function Carrinho() {
   const qc = useQueryClient();
   const [edits, setEdits] = useState({});
   const [confirmarLimpar, setConfirmarLimpar] = useState(false);
+  const [showAdicionar, setShowAdicionar] = useState(false);
 
   const { data: itens = [], isLoading } = useQuery({
     queryKey: ["carrinho-itens"],
@@ -113,12 +115,39 @@ export default function Carrinho() {
 
   const temComprados = itens.some((i) => i.comprado);
 
+  const handleAddIngrediente = async (ing) => {
+    try {
+      const existentes = await base44.entities.CarrinhoItem.filter({ ingrediente_id: ing.id });
+      if (existentes[0]) {
+        await base44.entities.CarrinhoItem.update(existentes[0].id, {
+          quantidade_embalagens: (existentes[0].quantidade_embalagens || 0) + 1,
+        });
+      } else {
+        await base44.entities.CarrinhoItem.create({
+          ingrediente_id: ing.id,
+          ingrediente_nome: ing.nome,
+          quantidade_embalagens: 1,
+          comprado: false,
+        });
+      }
+      invalidar();
+      toast.success(`${ing.nome} adicionado ao carrinho`);
+    } catch (e) {
+      toast.error("Erro ao adicionar ao carrinho");
+    }
+  };
+
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="font-display text-2xl font-bold flex items-center gap-2">
           <ShoppingCart className="w-6 h-6 text-primary" /> Carrinho
         </h1>
+        {itens.length > 0 && (
+          <Button size="sm" className="gap-1" onClick={() => setShowAdicionar(true)}>
+            <Plus className="w-4 h-4" /> Adicionar ingrediente
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -126,7 +155,10 @@ export default function Carrinho() {
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         </div>
       ) : itens.length === 0 ? (
-        <Card className="p-12 text-center text-muted-foreground">
+        <Card
+          className="p-12 text-center text-muted-foreground cursor-pointer hover:bg-accent/40 transition-colors"
+          onClick={() => setShowAdicionar(true)}
+        >
           <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
           <p className="text-base">Selecione os ingredientes para adicionar à sua lista.</p>
         </Card>
@@ -197,6 +229,12 @@ export default function Carrinho() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AdicionarIngredienteCarrinhoDialog
+        open={showAdicionar}
+        onClose={() => setShowAdicionar(false)}
+        onAdd={handleAddIngrediente}
+      />
     </div>
   );
 }
