@@ -17,7 +17,7 @@ export default function AppLayout() {
     if (p.startsWith("/cardapio/")) return "Cardápio";
     if (p === "/cardapios") return "Cardápios";
     if (p === "/ingredientes") return "Ingredientes";
-    if (p === "/lista-compras") return "Lista de Compras";
+    if (p === "/lista-compras") return location.search.includes("planejamento") ? "Lista de Compras" : "Carrinho";
     if (p === "/percapita") return "Per Capita";
     if (p === "/medidas-caseiras") return "Medidas Caseiras";
     if (p === "/insumos-embalagens") return "Insumos e Embalagens";
