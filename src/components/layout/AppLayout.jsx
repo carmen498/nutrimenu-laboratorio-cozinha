@@ -24,6 +24,7 @@ export default function AppLayout() {
     if (p === "/relatorio-categorias") return "Relatório de Categorias";
     if (p === "/auditoria-receitas") return "Auditoria de Receitas";
     if (p === "/auditorias") return "Auditorias";
+    if (p === "/historico") return "Histórico";
     if (p.startsWith("/exportar/")) return "Exportar Receita";
     return "";
   })();

@@ -30,19 +30,6 @@ function NavLink({ to, icon: Icon, label, active, onClick }) {
   );
 }
 
-function DisabledItem({ icon: Icon, label }) {
-  return (
-    <button
-      disabled
-      title="Em breve"
-      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/40 cursor-not-allowed"
-    >
-      <Icon className="w-4 h-4 shrink-0" /> {label}
-      <span className="ml-auto text-[9px] font-semibold uppercase tracking-wide">Em breve</span>
-    </button>
-  );
-}
-
 function SidebarContent({ onNavigate, onHelpClick }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
@@ -61,7 +48,7 @@ function SidebarContent({ onNavigate, onHelpClick }) {
 
         <div className="pt-3 mt-3 border-t border-sidebar-border space-y-0.5">
           <NavLink to="/lista-compras" icon={ShoppingCart} label="Carrinho" active={isActive("/lista-compras")} onClick={onNavigate} />
-          <DisabledItem icon={History} label="Histórico" />
+          <NavLink to="/historico" icon={History} label="Histórico" active={isActive("/historico")} onClick={onNavigate} />
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
         </div>
