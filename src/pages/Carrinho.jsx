@@ -7,18 +7,16 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart, Plus, Trash2, ListX } from "lucide-react";
+import { ShoppingCart, Trash2, ListX } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import CarrinhoItemRow from "@/components/carrinho/CarrinhoItemRow";
-import AdicionarReceitaCarrinhoDialog from "@/components/carrinho/AdicionarReceitaCarrinhoDialog";
 
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
 export default function Carrinho() {
   const qc = useQueryClient();
   const [edits, setEdits] = useState({});
-  const [showAddReceita, setShowAddReceita] = useState(false);
   const [confirmarLimpar, setConfirmarLimpar] = useState(false);
 
   const { data: itens = [], isLoading } = useQuery({
@@ -121,9 +119,6 @@ export default function Carrinho() {
         <h1 className="font-display text-2xl font-bold flex items-center gap-2">
           <ShoppingCart className="w-6 h-6 text-primary" /> Carrinho
         </h1>
-        <Button size="sm" variant="outline" onClick={() => setShowAddReceita(true)}>
-          <Plus className="w-4 h-4 mr-1" /> Adicionar de uma receita
-        </Button>
       </div>
 
       {isLoading ? (
@@ -133,7 +128,7 @@ export default function Carrinho() {
       ) : itens.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-          <p className="text-base">Carrinho vazio — adicione ingredientes pela lista de Ingredientes.</p>
+          <p className="text-base">Selecione os ingredientes para adicionar à sua lista.</p>
         </Card>
       ) : (
         <>
@@ -185,14 +180,6 @@ export default function Carrinho() {
           </div>
         </>
       )}
-
-      <AdicionarReceitaCarrinhoDialog
-        open={showAddReceita}
-        onClose={() => setShowAddReceita(false)}
-        ingMap={ingMap}
-        itensCarrinho={itens}
-        onAdded={invalidar}
-      />
 
       <AlertDialog open={confirmarLimpar} onOpenChange={setConfirmarLimpar}>
         <AlertDialogContent>
