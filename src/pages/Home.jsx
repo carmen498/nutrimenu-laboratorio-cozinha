@@ -68,7 +68,7 @@ export default function Home() {
     (r) => r.updated_date && new Date(r.updated_date) >= ha30Dias
   );
 
-  const receitasRecentes = receitasAtualizadas30d.slice(0, 6);
+  const receitasRecentes = receitasAtualizadas30d.slice(0, 3);
   const cardapios = cardapiosTodos.slice(0, 5);
   const carregandoIndicadores = carregandoReceitas || carregandoCardapios || carregandoIngredientes;
 
@@ -78,7 +78,7 @@ export default function Home() {
     queryKey: ["receitas-destaque-home"],
     queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
   });
-  const receitasVitrine = receitasDestaqueRaw.length >= 3 ? receitasDestaqueRaw.slice(0, 6) : receitasRecentes;
+  const receitasVitrine = receitasDestaqueRaw.length >= 3 ? receitasDestaqueRaw.slice(0, 3) : receitasRecentes;
 
   const { data: aRevisar = [] } = useQuery({
     queryKey: ["ingredientes-revisar-home"],
@@ -204,9 +204,14 @@ export default function Home() {
 
           {/* Receitas atualizadas recentemente / vitrine de destaques manuais */}
           <Card className="p-4 bg-white border md:col-span-2" style={{ borderColor: "#E8E0D5" }}>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Receitas atualizadas recentemente
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                Receitas Recentes
+              </h3>
+              <Link to="/receitas" className="text-xs font-semibold" style={{ color: CORES.verdeEscuro }}>
+                Ver todas
+              </Link>
+            </div>
             {receitasVitrine.length === 0 ? (
               <p className="text-sm text-muted-foreground">Você ainda não possui receitas recentes.</p>
             ) : (
