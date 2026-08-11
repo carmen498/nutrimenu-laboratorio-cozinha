@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
+import IndicadoresHome from "@/components/home/IndicadoresHome";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -37,15 +38,36 @@ function formatarProximaAtualizacao() {
 export default function Home() {
   const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
 
-  const { data: receitas = [] } = useQuery({
-    queryKey: ["receitas-recentes-home"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 3),
+  // Todas as receitas, ordenadas por data real de atualização (updated_date).
+  // Usada para: contagem total, contagem de "atualizadas nos últimos 30 dias"
+  // e a lista de receitas atualizadas recentemente.
+  const { data: receitasTodas = [], isLoading: carregandoReceitas } = useQuery({
+    queryKey: ["receitas-todas-home"],
+    queryFn: () => base44.entities.Receita.list("-updated_date", 5000),
   });
 
-  const { data: cardapios = [] } = useQuery({
-    queryKey: ["cardapios-recentes-home"],
-    queryFn: () => base44.entities.Cardapio.list("-created_date", 2),
+  // Todos os cardápios, ordenados por data real de atualização (updated_date).
+  const { data: cardapiosTodos = [], isLoading: carregandoCardapios } = useQuery({
+    queryKey: ["cardapios-todos-home"],
+    queryFn: () => base44.entities.Cardapio.list("-updated_date", 5000),
   });
+
+  // Todos os ingredientes — usado apenas para a contagem total real.
+  const { data: ingredientesTodos = [], isLoading: carregandoIngredientes } = useQuery({
+    queryKey: ["ingredientes-todos-home"],
+    queryFn: () => base44.entities.Ingrediente.list("-updated_date", 5000),
+  });
+
+  const ha30Dias = new Date();
+  ha30Dias.setDate(ha30Dias.getDate() - 30);
+
+  const receitasAtualizadas30d = receitasTodas.filter(
+    (r) => r.updated_date && new Date(r.updated_date) >= ha30Dias
+  );
+
+  const receitas = receitasAtualizadas30d.slice(0, 5);
+  const cardapios = cardapiosTodos.slice(0, 5);
+  const carregandoIndicadores = carregandoReceitas || carregandoCardapios || carregandoIngredientes;
 
   const { data: aRevisar = [] } = useQuery({
     queryKey: ["ingredientes-revisar-home"],
@@ -113,6 +135,15 @@ export default function Home() {
           O que vamos cozinhar hoje?
         </p>
       </div>
+
+      {/* Indicadores reais */}
+      <IndicadoresHome
+        receitas={receitasTodas.length}
+        ingredientes={ingredientesTodos.length}
+        cardapios={cardapiosTodos.length}
+        receitasAtualizadas={receitasAtualizadas30d.length}
+        loading={carregandoIndicadores}
+      />
 
       {/* Grid 3×2 de módulos */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -199,13 +230,14 @@ export default function Home() {
             </Card>
           )}
 
-          {/* Últimas receitas */}
+          {/* Receitas atualizadas recentemente — não há rastreamento de último acesso,
+              por isso exibimos as receitas com updated_date nos últimos 30 dias */}
           <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Últimas receitas acessadas
+              Receitas atualizadas recentemente
             </h3>
             {receitas.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhuma receita ainda.</p>
+              <p className="text-sm text-muted-foreground">Você ainda não possui receitas recentes.</p>
             ) : (
               <div className="space-y-2">
                 {receitas.map(r => (
@@ -222,13 +254,13 @@ export default function Home() {
             )}
           </Card>
 
-          {/* Últimos cardápios */}
+          {/* Cardápios recentes — ordenados por data real de atualização */}
           <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Últimos cardápios
+              Cardápios recentes
             </h3>
             {cardapios.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum cardápio ainda.</p>
+              <p className="text-sm text-muted-foreground">Nenhum cardápio encontrado.</p>
             ) : (
               <div className="space-y-2">
                 {cardapios.map(c => (
