@@ -7,11 +7,13 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart, Trash2, ListX, Plus } from "lucide-react";
+import { ShoppingCart, Trash2, ListX, Plus, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { printarElementoIsolado } from "@/lib/printIsolado";
 import CarrinhoItemRow from "@/components/carrinho/CarrinhoItemRow";
 import AdicionarIngredienteCarrinhoDialog from "@/components/carrinho/AdicionarIngredienteCarrinhoDialog";
+import CarrinhoPDFPreview from "@/components/carrinho/CarrinhoPDFPreview";
 
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
@@ -20,6 +22,7 @@ export default function Carrinho() {
   const [edits, setEdits] = useState({});
   const [confirmarLimpar, setConfirmarLimpar] = useState(false);
   const [showAdicionar, setShowAdicionar] = useState(false);
+  const [showPreviewPDF, setShowPreviewPDF] = useState(false);
 
   const { data: itens = [], isLoading } = useQuery({
     queryKey: ["carrinho-itens"],
@@ -144,11 +147,34 @@ export default function Carrinho() {
           <ShoppingCart className="w-6 h-6 text-primary" /> Carrinho
         </h1>
         {itens.length > 0 && (
-          <Button size="sm" className="gap-1" onClick={() => setShowAdicionar(true)}>
-            <Plus className="w-4 h-4" /> Adicionar ingrediente
-          </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowPreviewPDF((v) => !v)}>
+              <FileDown className="w-4 h-4" /> Exportar PDF
+            </Button>
+            <Button size="sm" className="gap-1" onClick={() => setShowAdicionar(true)}>
+              <Plus className="w-4 h-4" /> Adicionar ingrediente
+            </Button>
+          </div>
         )}
       </div>
+
+      {showPreviewPDF && itens.length > 0 && (
+        <div className="space-y-2">
+          <CarrinhoPDFPreview grupos={grupos} ingMap={ingMap} getQtd={getQtd} total={total} />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => setShowPreviewPDF(false)}>
+              Fechar pré-visualização
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1"
+              onClick={() => printarElementoIsolado("carrinho-pdf-preview", "@page { margin: 16mm 12mm; }")}
+            >
+              <FileDown className="w-4 h-4" /> Baixar PDF
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex justify-center py-12">

@@ -6,7 +6,7 @@ import { Trash2 } from "lucide-react";
 
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
-function formatEmbalagem(pesoEmbalagemG, unidadeCompra) {
+export function formatEmbalagem(pesoEmbalagemG, unidadeCompra) {
   const u = unidadeCompra?.toUpperCase();
   if (!pesoEmbalagemG) return `1 ${unidadeCompra?.toLowerCase() || "un"}`;
   if (["G", "KG"].includes(u)) {
