@@ -54,17 +54,19 @@ export default function TopBarSearch() {
   const carregando = carregandoReceitas || carregandoIngredientes || carregandoCardapios;
 
   const termoLower = termoBuscado.toLowerCase();
-  const receitasEncontradas = buscaAtiva
-    ? receitas.filter((r) => r.nome?.toLowerCase().includes(termoLower)).slice(0, LIMITE_POR_TIPO)
-    : [];
-  const ingredientesEncontrados = buscaAtiva
-    ? ingredientes.filter((i) => i.nome?.toLowerCase().includes(termoLower)).slice(0, LIMITE_POR_TIPO)
-    : [];
-  const cardapiosEncontrados = buscaAtiva
-    ? cardapios.filter((c) => c.nome?.toLowerCase().includes(termoLower)).slice(0, LIMITE_POR_TIPO)
-    : [];
+  const receitasTodasEncontradas = buscaAtiva ? receitas.filter((r) => r.nome?.toLowerCase().includes(termoLower)) : [];
+  const ingredientesTodosEncontrados = buscaAtiva ? ingredientes.filter((i) => i.nome?.toLowerCase().includes(termoLower)) : [];
+  const cardapiosTodosEncontrados = buscaAtiva ? cardapios.filter((c) => c.nome?.toLowerCase().includes(termoLower)) : [];
+
+  const receitasEncontradas = receitasTodasEncontradas.slice(0, LIMITE_POR_TIPO);
+  const ingredientesEncontrados = ingredientesTodosEncontrados.slice(0, LIMITE_POR_TIPO);
+  const cardapiosEncontrados = cardapiosTodosEncontrados.slice(0, LIMITE_POR_TIPO);
 
   const totalEncontrados = receitasEncontradas.length + ingredientesEncontrados.length + cardapiosEncontrados.length;
+  const houveLimite =
+    receitasTodasEncontradas.length > LIMITE_POR_TIPO ||
+    ingredientesTodosEncontrados.length > LIMITE_POR_TIPO ||
+    cardapiosTodosEncontrados.length > LIMITE_POR_TIPO;
 
   const irPara = (path) => {
     navigate(path);
@@ -142,6 +144,11 @@ export default function TopBarSearch() {
                     </button>
                   ))}
                 </div>
+              )}
+              {houveLimite && (
+                <p className="px-4 py-2 text-xs text-muted-foreground text-center border-t" style={{ borderColor: "#E8E0D5" }}>
+                  Mostrando os 5 primeiros resultados. Refine sua busca para mais precisão.
+                </p>
               )}
             </>
           )}
