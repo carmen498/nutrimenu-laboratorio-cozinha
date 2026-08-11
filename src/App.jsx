@@ -43,6 +43,7 @@ import InsumosEmbalagens from '@/pages/InsumosEmbalagens';
 import Configuracoes from '@/pages/Configuracoes';
 import Historico from '@/pages/Historico';
 import RelatorioReceitasPDF from '@/pages/RelatorioReceitasPDF';
+import Suporte from '@/pages/Suporte';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
           <Route path="/insumos-embalagens" element={<InsumosEmbalagens />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/historico" element={<Historico />} />
+          <Route path="/suporte" element={<Suporte />} />
           <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
           <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
           <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />

@@ -73,9 +73,8 @@ export default function TopBar({ onMenuClick }) {
               <span className="flex items-center gap-2"><User className="w-4 h-4" /> Conta</span>
               <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Em breve</span>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled className="justify-between">
-              <span className="flex items-center gap-2"><LifeBuoy className="w-4 h-4" /> Suporte</span>
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Em breve</span>
+            <DropdownMenuItem onClick={() => navigate("/suporte")}>
+              <LifeBuoy className="w-4 h-4" /> Suporte
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => base44.auth.logout()}>
