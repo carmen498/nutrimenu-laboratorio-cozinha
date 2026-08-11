@@ -111,6 +111,48 @@ export const helpContent = {
     { q: "Como excluo ou edito um insumo?", a: "Use o lápis para editar ou a lixeira para excluir, na linha do insumo na lista." }
   ]
 },
+"Carrinho": {
+  context:
+    "Lista de reposição de ingredientes para compra — centrada em ingredientes individuais, separada das listas de compras geradas por receita ou evento.",
+  faqs: [
+    {
+      q: "Como adiciono um ingrediente ao Carrinho?",
+      a: "Duas formas: 1) Clique no ícone de carrinho no menu lateral esquerdo e selecione os ingredientes que deseja adicionar à lista, um a um. 2) Na aba Ingredientes, busque pelo nome ou filtre por categoria e clique no ícone de carrinho ao lado do item para adicioná-lo à lista. Funciona como uma lista de reposição — os ingredientes vão sendo adicionados e ficam à espera da finalização da compra."
+    },
+    {
+      q: "O Carrinho é a mesma coisa que a Lista de Compras de uma receita?",
+      a: "Não. Lista de Compras é gerada a partir de uma receita ou cardápio específico. O Carrinho é uma lista de reposição geral, editável livremente."
+    },
+    {
+      q: "Como marco um item como já comprado?",
+      a: "Use o círculo ao lado de cada item no Carrinho."
+    },
+    {
+      q: "Como removo um item do Carrinho?",
+      a: "Clique no ícone de lixeira ao lado do item."
+    },
+    {
+      q: "Como limpo o Carrinho inteiro de uma vez?",
+      a: "Use o botão 'Limpar carrinho' no final da lista."
+    },
+    {
+      q: "Como limpo só os itens já marcados como comprados?",
+      a: "Use o botão 'Limpar comprados', ao lado de 'Limpar carrinho'."
+    },
+    {
+      q: "Como o valor total é calculado?",
+      a: "O 'Total da compra' soma o preço de cada item multiplicado pela quantidade definida."
+    },
+    {
+      q: "Como eu exporto minha lista de compras em PDF?",
+      a: "Clique em 'Exportar PDF' no topo da tela Carrinho. Você verá uma pré-visualização da lista antes de baixar o arquivo."
+    },
+    {
+      q: "Os itens do Carrinho ficam salvos se eu sair da tela?",
+      a: "Sim, o Carrinho persiste até você remover os itens manualmente."
+    }
+  ]
+},
   "Lista de Compras": {
     context:
       "A lista de compras é gerada automaticamente a partir dos seus cardápios. Ela consolida todos os ingredientes necessários, calcula as quantidades com base no número de porções e estima o custo total da compra. Você pode marcar o que já tem em casa.",
