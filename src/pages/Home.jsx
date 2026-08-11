@@ -147,13 +147,13 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="h-[280px] md:h-auto rounded-2xl overflow-hidden shadow-lg">
+          <div className="h-[280px] md:h-auto flex items-center justify-center">
             <img
               src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/21e2a78bb_12ImagenscapaInico.png"
               alt="Farinha, ovos e batedor sobre pano de linho"
               width="600"
               height="360"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>
