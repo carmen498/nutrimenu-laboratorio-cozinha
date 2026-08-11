@@ -10,6 +10,7 @@ import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialo
 import IndicadoresHome from "@/components/home/IndicadoresHome";
 import AcoesPrincipaisHome from "@/components/home/AcoesPrincipaisHome";
 import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
+import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -67,9 +68,17 @@ export default function Home() {
     (r) => r.updated_date && new Date(r.updated_date) >= ha30Dias
   );
 
-  const receitas = receitasAtualizadas30d.slice(0, 5);
+  const receitasRecentes = receitasAtualizadas30d.slice(0, 6);
   const cardapios = cardapiosTodos.slice(0, 5);
   const carregandoIndicadores = carregandoReceitas || carregandoCardapios || carregandoIngredientes;
+
+  // Vitrine de receitas: usa as marcadas manualmente como "destaque" se houver 3+,
+  // senão mantém o comportamento atual (mais recentemente atualizadas)
+  const { data: receitasDestaqueRaw = [] } = useQuery({
+    queryKey: ["receitas-destaque-home"],
+    queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
+  });
+  const receitasVitrine = receitasDestaqueRaw.length >= 3 ? receitasDestaqueRaw.slice(0, 6) : receitasRecentes;
 
   const { data: aRevisar = [] } = useQuery({
     queryKey: ["ingredientes-revisar-home"],
@@ -178,25 +187,17 @@ export default function Home() {
             </Card>
           )}
 
-          {/* Receitas atualizadas recentemente — não há rastreamento de último acesso,
-              por isso exibimos as receitas com updated_date nos últimos 30 dias */}
-          <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
+          {/* Receitas atualizadas recentemente / vitrine de destaques manuais */}
+          <Card className="p-4 bg-white border md:col-span-2" style={{ borderColor: "#E8E0D5" }}>
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Receitas atualizadas recentemente
             </h3>
-            {receitas.length === 0 ? (
+            {receitasVitrine.length === 0 ? (
               <p className="text-sm text-muted-foreground">Você ainda não possui receitas recentes.</p>
             ) : (
-              <div className="space-y-2">
-                {receitas.map(r => (
-                  <Link key={r.id} to={`/receita/${r.id}`}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{r.nome?.toUpperCase?.() || r.nome}</p>
-                      <p className="text-xs text-muted-foreground">{r.categoria || ""}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
-                  </Link>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {receitasVitrine.map((r) => (
+                  <ReceitaDestaqueCard key={r.id} receita={r} />
                 ))}
               </div>
             )}

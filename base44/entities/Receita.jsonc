@@ -103,6 +103,11 @@
     "cor_predominante": {
       "type": "string",
       "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio. Formato: `familia__tom` (ex: verde__escuro). Vazio = sem cor."
+    },
+    "destaque": {
+      "type": "boolean",
+      "default": false,
+      "description": "Receita marcada manualmente para aparecer na vitrine 'Receitas em Destaque' da Home"
     }
   },
   "required": [
