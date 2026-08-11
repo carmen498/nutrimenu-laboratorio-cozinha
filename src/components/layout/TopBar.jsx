@@ -33,18 +33,18 @@ export default function TopBar({ onMenuClick }) {
         <div className="w-9 h-9 rounded-md flex items-center justify-center font-display font-bold text-sm bg-white/15 text-white">
           ZR
         </div>
-        <div className="hidden lg:block leading-tight">
+        <div className="hidden lg:flex lg:flex-col lg:justify-center leading-tight">
           <p className="text-xs font-bold tracking-wide text-white">PLATAFORMA ZR</p>
           <p className="text-[10px] text-sidebar-foreground/70">Inteligência para a Indústria de Alimentos</p>
         </div>
       </Link>
 
       <div className="flex-1 max-w-md hidden sm:flex items-center relative ml-4">
-        <Search className="w-4 h-4 absolute left-3 text-white/60 pointer-events-none" />
+        <Search className="w-4 h-4 absolute left-3 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           placeholder="Pesquisar receita, ingrediente, cardápio..."
-          className="w-full h-9 pl-9 pr-3 rounded-md border border-white/20 bg-white/10 text-sm text-white placeholder-white/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
+          className="w-full h-9 pl-9 pr-3 rounded-md border border-transparent bg-white text-sm text-foreground placeholder-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
         />
       </div>
 

@@ -126,8 +126,8 @@ export default function Home() {
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "1.5rem 1rem 0" }}>
       {/* Hero */}
       <div className="pt-8 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center mb-4">
-          <div className="text-left">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+          <div className="text-left flex flex-col justify-center">
             <div className="inline-flex items-center justify-center mb-5">
               <img
                 src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/a5c36b28a_IMAGEMlABORATORIODECOZINHA.png"
@@ -145,10 +145,12 @@ export default function Home() {
               Gastronomia Planejada · por Carmen Reinstein
             </p>
           </div>
-          <div className="h-[280px] md:h-full rounded-2xl overflow-hidden shadow-lg">
+          <div className="h-[280px] md:h-auto rounded-2xl overflow-hidden shadow-lg">
             <img
-              src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/10f74f966_generated_image.png"
+              src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/9f0863f54_generated_image.png"
               alt="Still life de cozinha"
+              width="600"
+              height="360"
               className="w-full h-full object-cover"
             />
           </div>
