@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, AlertTriangle, Clock } from "lucide-react";
+import { ArrowRight, AlertTriangle } from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 import IndicadoresHome from "@/components/home/IndicadoresHome";
 import AcoesPrincipaisHome from "@/components/home/AcoesPrincipaisHome";
 import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
@@ -16,30 +14,7 @@ const CORES = {
   dourado: "#B8860B",
 };
 
-function getProximaSegunda3h() {
-  const now = new Date();
-  const diasAteSegunda = (8 - now.getDay()) % 7 || 7; // 0=dom, 1=seg...
-  const proxima = new Date(now);
-  proxima.setDate(now.getDate() + diasAteSegunda);
-  proxima.setHours(3, 0, 0, 0);
-  // Se já passou dessa segunda 3h, pega a próxima
-  if (proxima <= now) proxima.setDate(proxima.getDate() + 7);
-  return proxima;
-}
-
-function formatarProximaAtualizacao() {
-  const data = getProximaSegunda3h();
-  const hoje = new Date();
-  const diffDias = Math.round((data - hoje) / (1000 * 60 * 60 * 24));
-  if (diffDias === 0) return "Hoje às 3h";
-  if (diffDias === 1) return "Amanhã às 3h";
-  const dias = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
-  return `${dias[data.getDay()]} às 3h`;
-}
-
 export default function Home() {
-  const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
-
   // Todas as receitas, ordenadas por data real de atualização (updated_date).
   // Usada para: contagem total, contagem de "atualizadas nos últimos 30 dias"
   // e a lista de receitas atualizadas recentemente.
@@ -85,36 +60,6 @@ export default function Home() {
     staleTime: 0,
     refetchOnMount: "always",
   });
-
-  const { data: ultimoLog } = useQuery({
-    queryKey: ["ultimo-log-precos"],
-    queryFn: async () => {
-      const logs = await base44.entities.LogAtualizacaoPrecos.filter({ tipo: "automático" }, "-data_execucao", 1);
-      return logs[0] || null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const { data: autoUpdateStatus } = useQuery({
-    queryKey: ["auto-update-status"],
-    queryFn: async () => {
-      const res = await base44.functions.invoke("gerenciarAtualizacaoAutomatica", { acao: "status" });
-      return res.data;
-    },
-  });
-
-  const { data: ingredientesParaDialogo = [] } = useQuery({
-    queryKey: ["ingredientes-para-dialogo-precos"],
-    queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
-    enabled: showAtualizarPrecos,
-  });
-
-  const autoUpdateAtiva = autoUpdateStatus?.ativa || false;
-
-  const formatarUltimaExecucao = () => {
-    if (!ultimoLog?.data_execucao) return null;
-    return new Date(ultimoLog.data_execucao).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
-  };
 
   return (
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "0.25rem 1rem 0" }}>
@@ -220,43 +165,7 @@ export default function Home() {
 
         {/* Integrações da sua Receita — vitrine institucional, sem integração funcional real */}
         <IntegracoesReceitaHome />
-
-        {/* Atualização de preços — estado real */}
-        <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Atualização de preços
-          </h3>
-          <button
-            onClick={() => setShowAtualizarPrecos(true)}
-            className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
-          >
-            <Clock className="w-5 h-5" style={{ color: CORES.verdeEscuro }} />
-            <div>
-              {autoUpdateAtiva ? (
-                <>
-                  <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
-                    {formatarProximaAtualizacao()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Automática · IA web</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
-                    Pausada{formatarUltimaExecucao() ? ` · última execução ${formatarUltimaExecucao()}` : " · nunca executada"}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Toque para atualizar preços manualmente</p>
-                </>
-              )}
-            </div>
-          </button>
-        </Card>
       </div>
-
-      <AtualizarPrecosDialog
-        open={showAtualizarPrecos}
-        onClose={() => setShowAtualizarPrecos(false)}
-        ingredientes={ingredientesParaDialogo}
-      />
 
       {/* Rodapé */}
       <div className="pt-6 pb-4 border-t flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2" style={{ borderColor: "#E8E0D5" }}>
