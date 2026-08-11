@@ -135,11 +135,11 @@ export default function Home() {
                 className="w-[160px] h-[160px] rounded-full object-cover shadow-lg shrink-0"
               />
               <div>
-                <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight"
+                <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap"
                   style={{ color: CORES.verdeEscuro }}>
                   Laboratório de Cozinha
                 </h1>
-                <p className="mt-1 text-3xl font-script" style={{ color: CORES.dourado }}>Receitas que se Multiplicam</p>
+                <p className="mt-1 text-2xl md:text-3xl font-script whitespace-nowrap" style={{ color: CORES.dourado }}>Receitas que se Multiplicam</p>
                 <p className="mt-2 text-sm font-medium italic"
                   style={{ color: CORES.dourado }}>
                   Gastronomia Planejada · por Carmen Reinstein
@@ -153,7 +153,7 @@ export default function Home() {
               alt="Farinha, ovos e batedor sobre pano de linho"
               width="600"
               height="360"
-              className="w-full h-full object-contain"
+              className="w-[82%] h-[82%] object-contain mx-auto"
             />
           </div>
         </div>

@@ -29,7 +29,7 @@ export default function TopBar({ onMenuClick }) {
         <Menu className="w-5 h-5" />
       </button>
 
-      <Link to="/" className="flex items-center gap-2 shrink-0">
+      <Link to="/" className="flex items-center gap-2 shrink-0 md:w-64 md:pr-4 box-border">
         <div className="w-9 h-9 rounded-md flex items-center justify-center font-display font-bold text-sm bg-white/15 text-white">
           ZR
         </div>
@@ -41,7 +41,7 @@ export default function TopBar({ onMenuClick }) {
         </div>
       </Link>
 
-      <div className="flex-1 max-w-md hidden sm:flex items-center relative ml-4">
+      <div className="flex-1 max-w-md hidden sm:flex items-center relative">
         <Search className="w-4 h-4 absolute left-3 text-muted-foreground pointer-events-none" />
         <input
           type="text"
