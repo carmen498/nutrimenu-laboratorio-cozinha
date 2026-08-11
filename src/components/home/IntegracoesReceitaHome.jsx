@@ -10,10 +10,7 @@ export default function IntegracoesReceitaHome() {
       <h3 className="font-display text-lg font-bold mb-1" style={{ color: "#2A4E3D" }}>
         Integrações da sua Receita
       </h3>
-      <p className="text-sm text-muted-foreground">Transforme suas receitas em mais possibilidades.</p>
-      <p className="text-sm font-script italic mb-4" style={{ color: "#B8860B" }}>
-        Da receita ao produto, tudo em um só lugar.
-      </p>
+      <p className="text-sm text-muted-foreground mb-4">Transforme suas receitas em mais possibilidades.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:col-span-2">
           <div className="rounded-lg border p-4 flex flex-col" style={{ borderColor: "#E8E0D5" }}>
@@ -51,7 +48,7 @@ export default function IntegracoesReceitaHome() {
         </div>
         <div className="hidden md:flex items-center justify-center">
           <img
-            src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/aefcb3a8d_13ImagenscapaInico.png"
+            src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/fb8ec3dfe_13ImagenscapaInico.png"
             alt="Bolo de chocolate com frutas vermelhas"
             className="w-full max-h-40 object-contain"
           />
