@@ -69,9 +69,8 @@ export default function TopBar({ onMenuClick }) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="truncate">{user?.full_name || user?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled className="justify-between">
-              <span className="flex items-center gap-2"><User className="w-4 h-4" /> Conta</span>
-              <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">Em breve</span>
+            <DropdownMenuItem onClick={() => navigate("/conta")}>
+              <User className="w-4 h-4" /> Conta
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/suporte")}>
               <LifeBuoy className="w-4 h-4" /> Suporte

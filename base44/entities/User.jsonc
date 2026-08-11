@@ -7,6 +7,14 @@
         "admin",
         "user"
       ]
+    },
+    "telefone_whatsapp": {
+      "type": "string",
+      "description": "Telefone/WhatsApp do usu\u00e1rio (canal de contato principal)"
+    },
+    "empresa": {
+      "type": "string",
+      "description": "Empresa ou neg\u00f3cio do usu\u00e1rio"
     }
   },
   "required": [
