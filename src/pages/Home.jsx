@@ -5,7 +5,6 @@ import { ArrowRight, AlertTriangle, Clock } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
 import IndicadoresHome from "@/components/home/IndicadoresHome";
 import AcoesPrincipaisHome from "@/components/home/AcoesPrincipaisHome";
@@ -68,7 +67,6 @@ export default function Home() {
     (r) => r.updated_date && new Date(r.updated_date) >= ha30Dias
   );
 
-  const cardapios = cardapiosTodos.slice(0, 5);
   const carregandoIndicadores = carregandoReceitas || carregandoCardapios || carregandoIngredientes;
 
   // Vitrine "Fichas Técnicas em Destaque": usa as marcadas manualmente (campo `destaque`),
@@ -80,11 +78,6 @@ export default function Home() {
   });
   const receitasComFoto = receitasTodas.filter((r) => r.foto_url).slice(0, 3);
   const receitasVitrine = receitasDestaqueRaw.length > 0 ? receitasDestaqueRaw.slice(0, 3) : receitasComFoto;
-
-  const { data: aRevisar = [] } = useQuery({
-    queryKey: ["ingredientes-revisar-home"],
-    queryFn: () => base44.entities.Ingrediente.filter({ revisar: true }, "-updated_date", 50),
-  });
 
   const { data: receitasRevisar = [] } = useQuery({
     queryKey: ["receitas-revisar-home"],
@@ -222,45 +215,6 @@ export default function Home() {
                 ))}
               </div>
             )}
-          </Card>
-
-          {/* Cardápios recentes — ordenados por data real de atualização */}
-          <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Cardápios recentes
-            </h3>
-            {cardapios.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum cardápio encontrado.</p>
-            ) : (
-              <div className="space-y-2">
-                {cardapios.map(c => (
-                  <Link key={c.id} to={`/cardapio/${c.id}`}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{c.nome?.toUpperCase?.() || c.nome}</p>
-                      <p className="text-xs text-muted-foreground">{c.tipo || ""}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Ingredientes a revisar */}
-          <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Ingredientes a revisar
-            </h3>
-            <Link to="/ingredientes?revisar=true" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <Badge className="text-sm px-3 py-1.5 border-0 text-white bg-amber-500 hover:bg-amber-500">
-                <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                {aRevisar.length} {aRevisar.length === 1 ? "item" : "itens"}
-              </Badge>
-              <span className="text-sm text-muted-foreground">
-                {aRevisar.length > 0 ? "Precisam de atenção" : "Tudo em dia ✓"}
-              </span>
-            </Link>
           </Card>
 
           {/* Atualização de preços — estado real */}
