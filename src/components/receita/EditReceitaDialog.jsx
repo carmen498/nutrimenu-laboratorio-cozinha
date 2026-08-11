@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Camera, Sparkles, Loader2, Wand2 } from "lucide-react";
 import CategoriaPicker from "@/components/receita/CategoriaPicker";
@@ -230,6 +231,14 @@ ${form.modo_preparo}`,
               value={form.cor_predominante || ""}
               onChange={(v) => setForm({ ...form, cor_predominante: v || undefined })}
             />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3" style={{ borderColor: "#E8E0D5" }}>
+            <div>
+              <Label className="mb-0.5 block">Destaque na Início</Label>
+              <p className="text-xs text-muted-foreground">Exibir esta receita na vitrine "Fichas Técnicas em Destaque" da tela Início</p>
+            </div>
+            <Switch checked={!!form.destaque} onCheckedChange={(v) => setForm({ ...form, destaque: v })} />
           </div>
 
           <div>

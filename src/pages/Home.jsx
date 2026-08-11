@@ -68,17 +68,18 @@ export default function Home() {
     (r) => r.updated_date && new Date(r.updated_date) >= ha30Dias
   );
 
-  const receitasRecentes = receitasAtualizadas30d.slice(0, 3);
   const cardapios = cardapiosTodos.slice(0, 5);
   const carregandoIndicadores = carregandoReceitas || carregandoCardapios || carregandoIngredientes;
 
-  // Vitrine de receitas: usa as marcadas manualmente como "destaque" se houver 3+,
-  // senão mantém o comportamento atual (mais recentemente atualizadas)
+  // Vitrine "Fichas Técnicas em Destaque": usa as marcadas manualmente (campo `destaque`),
+  // as 3 últimas marcadas. Sem nenhuma marcada, cai no fallback: as 3 receitas mais
+  // recentemente atualizadas que tenham foto cadastrada.
   const { data: receitasDestaqueRaw = [] } = useQuery({
     queryKey: ["receitas-destaque-home"],
     queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
   });
-  const receitasVitrine = receitasDestaqueRaw.length >= 3 ? receitasDestaqueRaw.slice(0, 3) : receitasRecentes;
+  const receitasComFoto = receitasTodas.filter((r) => r.foto_url).slice(0, 3);
+  const receitasVitrine = receitasDestaqueRaw.length > 0 ? receitasDestaqueRaw.slice(0, 3) : receitasComFoto;
 
   const { data: aRevisar = [] } = useQuery({
     queryKey: ["ingredientes-revisar-home"],
@@ -202,18 +203,18 @@ export default function Home() {
             </Card>
           )}
 
-          {/* Receitas atualizadas recentemente / vitrine de destaques manuais */}
+          {/* Fichas Técnicas em Destaque: curadoria manual (campo `destaque`) com fallback por foto */}
           <Card className="p-4 bg-white border md:col-span-2" style={{ borderColor: "#E8E0D5" }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Receitas Recentes
+                Fichas Técnicas em Destaque
               </h3>
               <Link to="/receitas" className="text-xs font-semibold" style={{ color: CORES.verdeEscuro }}>
                 Ver todas
               </Link>
             </div>
             {receitasVitrine.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Você ainda não possui receitas recentes.</p>
+              <p className="text-sm text-muted-foreground">Você ainda não possui receitas em destaque.</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {receitasVitrine.map((r) => (
