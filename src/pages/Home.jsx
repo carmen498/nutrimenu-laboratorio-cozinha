@@ -125,8 +125,8 @@ export default function Home() {
   return (
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "1.5rem 1rem 0" }}>
       {/* Hero */}
-      <div className="pt-8 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+      <div className="pt-2 pb-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-1">
           <div className="text-left flex flex-col justify-center">
             <div className="flex items-center gap-5">
               <img
@@ -157,7 +157,7 @@ export default function Home() {
             />
           </div>
         </div>
-        <p className="text-lg text-muted-foreground mt-4 font-medium text-center">
+        <p className="text-lg text-muted-foreground mt-1 font-medium text-center">
           O que vamos cozinhar hoje?
         </p>
       </div>

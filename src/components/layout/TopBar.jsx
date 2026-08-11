@@ -30,7 +30,7 @@ export default function TopBar({ onMenuClick }) {
       </button>
 
       <Link to="/" className="flex items-center gap-2 shrink-0 md:w-64 md:pr-4 box-border">
-        <div className="w-9 h-9 rounded-md flex items-center justify-center font-display font-bold text-sm bg-white/15 text-white">
+        <div className="w-11 h-11 rounded-md flex items-center justify-center font-display font-bold text-base bg-white/15 text-white">
           ZR
         </div>
         <div className="hidden lg:flex lg:flex-col lg:justify-center leading-tight">
