@@ -259,9 +259,12 @@ export default function Home() {
       />
 
       {/* Rodapé */}
-      <div className="text-center pt-6 pb-4 border-t" style={{ borderColor: "#E8E0D5" }}>
-        <p className="text-xs text-muted-foreground italic">
-          Laboratório de Cozinha · Gastronomia Planejada · por Carmen Reinstein · 2026
+      <div className="pt-6 pb-4 border-t flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-2" style={{ borderColor: "#E8E0D5" }}>
+        <p className="text-xs text-muted-foreground text-center sm:text-left">
+          Laboratório de Cozinha é parte da Plataforma ZR · Todos os direitos reservados
+        </p>
+        <p className="text-sm font-script italic" style={{ color: "#B8860B" }}>
+          Boas receitas, sempre! ♥
         </p>
       </div>
     </div>

@@ -63,7 +63,7 @@ function SidebarContent({ onNavigate, onHelpClick }) {
           <NavLink to="/lista-compras" icon={ShoppingCart} label="Carrinho" active={isActive("/lista-compras")} onClick={onNavigate} />
           <DisabledItem icon={History} label="Histórico" />
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
-          <DisabledItem icon={Settings} label="Configurações" />
+          <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
         </div>
       </nav>
 
@@ -84,6 +84,9 @@ function SidebarContent({ onNavigate, onHelpClick }) {
         >
           <LogOut className="w-4 h-4" /> Sair
         </button>
+        <p className="text-center text-[10px] text-sidebar-foreground/60 italic px-2">
+          Mais alimentos bons, negócios mais fortes.
+        </p>
         <p className="text-center text-[10px] text-sidebar-foreground/50 pt-1">Plataforma ZR</p>
       </div>
     </div>
