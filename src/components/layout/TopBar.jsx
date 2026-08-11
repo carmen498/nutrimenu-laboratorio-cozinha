@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Search, Plus, Bell, Menu, ChevronDown, User, LifeBuoy, LogOut } from "lucide-react";
+import { Plus, Bell, Menu, ChevronDown, User, LifeBuoy, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import TopBarSearch from "@/components/layout/TopBarSearch";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -41,14 +42,7 @@ export default function TopBar({ onMenuClick }) {
         </div>
       </Link>
 
-      <div className="flex-1 max-w-md hidden sm:flex items-center relative">
-        <Search className="w-4 h-4 absolute left-3 text-muted-foreground pointer-events-none" />
-        <input
-          type="text"
-          placeholder="Pesquisar receita, ingrediente, cardápio..."
-          className="w-full h-9 pl-9 pr-3 rounded-md border border-transparent bg-white text-sm text-foreground placeholder-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
-        />
-      </div>
+      <TopBarSearch />
 
       <div className="flex items-center gap-2 ml-auto shrink-0">
         <button
