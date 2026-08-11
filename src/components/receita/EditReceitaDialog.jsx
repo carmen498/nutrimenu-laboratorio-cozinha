@@ -16,6 +16,29 @@ import TagList from "@/components/tags/TagList";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
+import { registrarHistorico } from "@/lib/registrarHistorico";
+
+const CAMPO_LABELS = {
+  nome: "Nome",
+  categorias: "Categorias",
+  porcoes_base: "Nº de Porções",
+  rendimento_total: "Rendimento",
+  unidade_base: "Unidade",
+  modo_preparo: "Modo de preparo",
+  foto_url: "Foto",
+  per_capita_g: "Per capita",
+  cor_predominante: "Cor predominante",
+  destaque: "Destaque",
+};
+
+function isEmpty(v) {
+  return v === undefined || v === null || v === "" || v === false;
+}
+function valuesEqual(a, b) {
+  if (Array.isArray(a) || Array.isArray(b)) return JSON.stringify(a || []) === JSON.stringify(b || []);
+  if (isEmpty(a) && isEmpty(b)) return true;
+  return a === b;
+}
 
 export default function EditReceitaDialog({ open, onClose, receita }) {
   const [form, setForm] = useState({ ...receita });
@@ -52,6 +75,10 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
       await base44.entities.Receita.update(receita.id, rest);
+      const alterados = Object.entries(CAMPO_LABELS)
+        .filter(([field]) => !valuesEqual(rest[field], receita[field]))
+        .map(([, label]) => label);
+      if (alterados.length > 0) registrarHistorico(receita.id, rest.nome, alterados);
       qc.invalidateQueries({ queryKey: ["receita", receita.id] });
       qc.invalidateQueries({ queryKey: ["receitas"] });
       toast.success("Receita atualizada!");

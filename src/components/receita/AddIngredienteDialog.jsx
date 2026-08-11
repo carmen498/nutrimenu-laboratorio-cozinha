@@ -13,8 +13,9 @@ import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { registrarHistorico } from "@/lib/registrarHistorico";
 
-export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes, unidadeBase }) {
+export default function AddIngredienteDialog({ open, onClose, receitaId, receitaNome, porcoes, unidadeBase }) {
   const [busca, setBusca] = useState("");
   const [selected, setSelected] = useState(null);
   const [selectedType, setSelectedType] = useState(null); // "ingrediente" | "subreceita"
@@ -92,6 +93,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           ? ` — Rendimento não cadastrado, usando soma dos ingredientes: ${rendimentoEfetivo}g. Ajuste na ficha da receita se necessário.`
           : "";
         toast.success(`Sub-receita ${selected.nome} adicionada${pulledCount > 0 ? ` com ${pulledCount} ingredientes puxados` : ""}!${rendMsg}`);
+        registrarHistorico(receitaId, receitaNome, ["Ingredientes"]);
       } else {
         const qtdGramas = convertToGrams(qty, medidaSel);
         const qtdPorPorcao = qtdGramas / (porcoes || 1);
@@ -105,6 +107,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, porcoes
           ordem: maxOrdem + 10,
         });
         toast.success(`${selected.nome} adicionado!`);
+        registrarHistorico(receitaId, receitaNome, ["Ingredientes"]);
       }
 
       qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });

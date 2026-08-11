@@ -46,6 +46,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { registrarHistorico } from "@/lib/registrarHistorico";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -173,11 +174,13 @@ export default function ReceitaAberta() {
   const handleToggleFC = async (val) => {
     setMostrarFC(val);
     await base44.entities.Receita.update(id, { mostrar_fc: val });
+    registrarHistorico(id, receita?.nome, ["Exibição FC"]);
   };
 
   const handleToggleMedidaCaseira = async (val) => {
     setMostrarMedidaCaseira(val);
     await base44.entities.Receita.update(id, { mostrar_medida_caseira: val });
+    registrarHistorico(id, receita?.nome, ["Medida caseira"]);
   };
 
   const handleToggleRevisar = async (val) => {
@@ -188,6 +191,7 @@ export default function ReceitaAberta() {
   const handleSaveDescritivo = async () => {
     try {
       await base44.entities.Receita.update(id, { descritivo_menu: descritivoDraft });
+      registrarHistorico(id, receita?.nome, ["Descritivo"]);
       qc.invalidateQueries({ queryKey: ["receita", id] });
       setEditingDescritivo(false);
       toast.success("Descritivo atualizado!");
@@ -199,6 +203,7 @@ export default function ReceitaAberta() {
   const handleSaveNota = async () => {
     try {
       await base44.entities.Receita.update(id, { nota: notaDraft });
+      registrarHistorico(id, receita?.nome, ["Nota"]);
       qc.invalidateQueries({ queryKey: ["receita", id] });
       setEditingNota(false);
       toast.success("Nota atualizada!");
@@ -210,6 +215,7 @@ export default function ReceitaAberta() {
   const handleSavePDP = async (val) => {
     if (!isNaN(val) && val > 0) {
       await base44.entities.Receita.update(id, { rendimento_total: val });
+      registrarHistorico(id, receita?.nome, ["Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", id] });
       toast.success("Rendimento atualizado!");
     }
@@ -317,6 +323,7 @@ export default function ReceitaAberta() {
     if (val > 0 && total > 0) setPorcoes(+(total / val).toFixed(2));
     try {
       await base44.entities.Receita.update(id, { per_capita_g: val });
+      registrarHistorico(id, receita?.nome, ["Per capita"]);
       qc.invalidateQueries({ queryKey: ["receita", id] });
     } catch (err) {
       toast.error("Erro ao salvar PC recomendado: " + (err.message || ""));
@@ -358,6 +365,7 @@ export default function ReceitaAberta() {
   const handleSavePreparo = async () => {
     try {
       await base44.entities.Receita.update(id, { modo_preparo: preparoDraft });
+      registrarHistorico(id, receita?.nome, ["Modo de preparo"]);
       qc.invalidateQueries({ queryKey: ["receita", id] });
       setEditingPreparo(false);
       toast.success("Modo de preparo atualizado!");
@@ -552,6 +560,7 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.update(itemId, { quantidade_por_porcao });
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingQtdId(null);
     },
@@ -577,6 +586,7 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.update(itemId, updates);
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingItem(null);
       toast.success("Item atualizado");
@@ -603,6 +613,7 @@ export default function ReceitaAberta() {
       });
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingIngId(null);
       setIngSearch("");
@@ -621,6 +632,7 @@ export default function ReceitaAberta() {
       });
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingIngId(null);
       setIngSearch("");
@@ -639,6 +651,7 @@ export default function ReceitaAberta() {
       });
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setPendingGrupo(false);
       setPendingGrupoTitulo("");
@@ -657,6 +670,7 @@ export default function ReceitaAberta() {
       });
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setConvertingNAId(null);
       setConvertingNATitulo("");
@@ -669,6 +683,7 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.update(itemId, { titulo_grupo: titulo });
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       setEditingGrupoId(null);
     },
@@ -677,6 +692,7 @@ export default function ReceitaAberta() {
   const deleteItemOrGrupoMut = useMutation({
     mutationFn: (itemId) => base44.entities.IngredienteReceita.delete(itemId),
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       toast.success("Item removido");
     },
@@ -688,6 +704,7 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.delete(itemId);
     },
     onSuccess: () => {
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       toast.success("Sub-receita e ingredientes removidos");
     },
@@ -974,6 +991,7 @@ REGRAS:
         await base44.entities.IngredienteReceita.update(finalOrder[i].id, { ordem: i * 10 });
       }
 
+      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
       qc.invalidateQueries({ queryKey: ["itens-receita", id] });
       toast.success("Ingredientes ordenados conforme o modo de preparo. Ajuste manualmente se necessário.");
     } catch (err) {
@@ -1090,6 +1108,7 @@ REGRAS:
                   value={receita.cor_predominante}
                   onChange={async (val) => {
                     await base44.entities.Receita.update(id, { cor_predominante: val });
+                    registrarHistorico(id, receita?.nome, ["Cor predominante"]);
                     qc.invalidateQueries({ queryKey: ["receita", id] });
                   }}
                 />
@@ -1150,6 +1169,7 @@ REGRAS:
                 try {
                   const { file_url } = await base44.integrations.Core.UploadFile({ file });
                   await base44.entities.Receita.update(id, { foto_url: file_url });
+                  registrarHistorico(id, receita?.nome, ["Foto"]);
                   qc.invalidateQueries({ queryKey: ["receita", id] });
                   toast.success("Foto adicionada!");
                 } catch {
@@ -1565,6 +1585,7 @@ REGRAS:
           open={true}
           onClose={() => setShowAddIng(false)}
           receitaId={id}
+          receitaNome={receita.nome}
           porcoes={receita.porcoes_base}
           unidadeBase={receita.unidade_base}
         />
@@ -1671,6 +1692,7 @@ REGRAS:
                     try {
                       const { file_url } = await base44.integrations.Core.UploadFile({ file });
                       await base44.entities.Receita.update(id, { foto_url: file_url });
+                      registrarHistorico(id, receita?.nome, ["Foto"]);
                       qc.invalidateQueries({ queryKey: ["receita", id] });
                       toast.success("Foto atualizada!");
                     } catch { toast.error("Erro ao enviar foto"); }
@@ -1679,6 +1701,7 @@ REGRAS:
               </Button>
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" onClick={async () => {
                 await base44.entities.Receita.update(id, { foto_url: "" });
+                registrarHistorico(id, receita?.nome, ["Foto"]);
                 qc.invalidateQueries({ queryKey: ["receita", id] });
                 setShowLightbox(false);
                 toast.success("Foto removida");
