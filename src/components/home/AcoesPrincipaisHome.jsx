@@ -21,7 +21,7 @@ export default function AcoesPrincipaisHome() {
             style={destaque ? { background: "#1B4332" } : undefined}
           >
             <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${destaque ? "bg-white/15" : "bg-muted"}`}>
-              <Icon className={`w-5 h-5 ${destaque ? "text-white" : "text-primary"}`} />
+              <Icon className={`w-5 h-5 stroke-[1.5] ${destaque ? "text-white" : "text-primary"}`} />
             </div>
             <div>
               <p className="text-sm font-bold">{label}</p>
