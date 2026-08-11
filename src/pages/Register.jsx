@@ -30,7 +30,7 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      await base44.auth.register({ full_name: fullName, email, password });
+      await base44.auth.register({ email, password });
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Falha no cadastro");
@@ -47,9 +47,7 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
-      if (telefone) {
-        await base44.auth.updateMe({ telefone_whatsapp: telefone });
-      }
+      await base44.auth.updateMe({ nome_completo: fullName, telefone_whatsapp: telefone });
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Código de verificação inválido");
