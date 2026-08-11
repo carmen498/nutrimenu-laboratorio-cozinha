@@ -49,17 +49,17 @@ function SidebarContent({ onNavigate, onHelpClick }) {
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
         <NavLink to="/" icon={Home} label="Início" active={isActive("/")} onClick={onNavigate} />
 
-        <p className="px-3 pt-4 pb-1 text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
+        <p className="px-3 pt-3 pb-1 text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
           Laboratório de Cozinha
         </p>
         {laboratorioItems.map((item) => (
           <NavLink key={item.path} to={item.path} icon={item.icon} label={item.label} active={isActive(item.path)} onClick={onNavigate} />
         ))}
 
-        <div className="pt-4 mt-4 border-t border-sidebar-border space-y-1">
+        <div className="pt-3 mt-3 border-t border-sidebar-border space-y-0.5">
           <NavLink to="/lista-compras" icon={ShoppingCart} label="Carrinho" active={isActive("/lista-compras")} onClick={onNavigate} />
           <DisabledItem icon={History} label="Histórico" />
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
@@ -67,8 +67,8 @@ function SidebarContent({ onNavigate, onHelpClick }) {
         </div>
       </nav>
 
-      <div className="p-3 space-y-3 shrink-0">
-        <div className="rounded-lg p-3 bg-sidebar-accent/60">
+      <div className="p-3 space-y-2 shrink-0">
+        <div className="rounded-lg p-2.5 bg-sidebar-accent/60">
           <p className="text-xs font-semibold mb-1">Precisa de ajuda?</p>
           <p className="text-[11px] text-sidebar-foreground/70 mb-2">Acesse nossos guias e artigos de suporte.</p>
           <button

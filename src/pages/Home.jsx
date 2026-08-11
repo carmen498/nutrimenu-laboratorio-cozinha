@@ -168,89 +168,89 @@ export default function Home() {
         loading={carregandoIndicadores}
       />
 
-      {/* Acesso rápido */}
-      <div>
-        <h2 className="font-display text-xl font-bold mb-4" style={{ color: CORES.verdeEscuro }}>
-          Acesso rápido
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Receitas a revisar — destaque */}
-          {receitasRevisar.length > 0 && (
-            <Card className="p-4 border-2 md:col-span-2" style={{ borderColor: "#E8A317", background: "linear-gradient(135deg, #FFFDF5 0%, #FFF8E1 100%)" }}>
-              <Link to="/receitas?revisar=true" className="flex items-center justify-between gap-4 hover:opacity-90 transition-opacity">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#FFF3CD" }}>
-                    <AlertTriangle className="w-5 h-5" style={{ color: "#B8860B" }} />
-                  </div>
-                  <div>
-                    <p className="font-semibold" style={{ color: "#7A5D00" }}>
-                      {receitasRevisar.length} {receitasRevisar.length === 1 ? "receita" : "receitas"} aguardando revisão
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Receitas importadas por IA que precisam da sua conferência
-                    </p>
-                  </div>
+      {/* Receitas a revisar — destaque */}
+      {receitasRevisar.length > 0 && (
+        <div>
+          <h2 className="font-display text-xl font-bold mb-4" style={{ color: CORES.verdeEscuro }}>
+            Acesso rápido
+          </h2>
+          <Card className="p-4 border-2" style={{ borderColor: "#E8A317", background: "linear-gradient(135deg, #FFFDF5 0%, #FFF8E1 100%)" }}>
+            <Link to="/receitas?revisar=true" className="flex items-center justify-between gap-4 hover:opacity-90 transition-opacity">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#FFF3CD" }}>
+                  <AlertTriangle className="w-5 h-5" style={{ color: "#B8860B" }} />
                 </div>
-                <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: "#B8860B" }} />
-              </Link>
-            </Card>
-          )}
-
-          {/* Fichas Técnicas em Destaque: curadoria manual (campo `destaque`) com fallback por foto */}
-          <Card className="p-4 bg-white border md:col-span-2" style={{ borderColor: "#E8E0D5" }}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Fichas Técnicas em Destaque
-              </h3>
-              <Link to="/receitas" className="text-xs font-semibold" style={{ color: CORES.verdeEscuro }}>
-                Ver todas
-              </Link>
-            </div>
-            {receitasVitrine.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Você ainda não possui receitas em destaque.</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {receitasVitrine.map((r) => (
-                  <ReceitaDestaqueCard key={r.id} receita={r} />
-                ))}
+                <div>
+                  <p className="font-semibold" style={{ color: "#7A5D00" }}>
+                    {receitasRevisar.length} {receitasRevisar.length === 1 ? "receita" : "receitas"} aguardando revisão
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Receitas importadas por IA que precisam da sua conferência
+                  </p>
+                </div>
               </div>
-            )}
-          </Card>
-
-          {/* Atualização de preços — estado real */}
-          <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-              Atualização de preços
-            </h3>
-            <button
-              onClick={() => setShowAtualizarPrecos(true)}
-              className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
-            >
-              <Clock className="w-5 h-5" style={{ color: CORES.verdeEscuro }} />
-              <div>
-                {autoUpdateAtiva ? (
-                  <>
-                    <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
-                      {formatarProximaAtualizacao()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Automática · IA web</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
-                      Pausada{formatarUltimaExecucao() ? ` · última execução ${formatarUltimaExecucao()}` : " · nunca executada"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Toque para atualizar preços manualmente</p>
-                  </>
-                )}
-              </div>
-            </button>
+              <ArrowRight className="w-5 h-5 flex-shrink-0" style={{ color: "#B8860B" }} />
+            </Link>
           </Card>
         </div>
-      </div>
+      )}
 
-      {/* Integrações da sua Receita — vitrine institucional, sem integração funcional real */}
-      <IntegracoesReceitaHome />
+      {/* Fichas Técnicas em Destaque, Integrações da sua Receita e Atualização de Preços — agrupados e compactos */}
+      <div className="space-y-4">
+        {/* Fichas Técnicas em Destaque: curadoria manual (campo `destaque`) com fallback por foto */}
+        <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Fichas Técnicas em Destaque
+            </h3>
+            <Link to="/receitas" className="text-xs font-semibold" style={{ color: CORES.verdeEscuro }}>
+              Ver todas
+            </Link>
+          </div>
+          {receitasVitrine.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Você ainda não possui receitas em destaque.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {receitasVitrine.map((r) => (
+                <ReceitaDestaqueCard key={r.id} receita={r} />
+              ))}
+            </div>
+          )}
+        </Card>
+
+        {/* Integrações da sua Receita — vitrine institucional, sem integração funcional real */}
+        <IntegracoesReceitaHome />
+
+        {/* Atualização de preços — estado real */}
+        <Card className="p-4 bg-white border" style={{ borderColor: "#E8E0D5" }}>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Atualização de preços
+          </h3>
+          <button
+            onClick={() => setShowAtualizarPrecos(true)}
+            className="w-full flex items-center gap-3 hover:opacity-80 transition-opacity text-left"
+          >
+            <Clock className="w-5 h-5" style={{ color: CORES.verdeEscuro }} />
+            <div>
+              {autoUpdateAtiva ? (
+                <>
+                  <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
+                    {formatarProximaAtualizacao()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Automática · IA web</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium" style={{ color: CORES.verdeEscuro }}>
+                    Pausada{formatarUltimaExecucao() ? ` · última execução ${formatarUltimaExecucao()}` : " · nunca executada"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Toque para atualizar preços manualmente</p>
+                </>
+              )}
+            </div>
+          </button>
+        </Card>
+      </div>
 
       <AtualizarPrecosDialog
         open={showAtualizarPrecos}
