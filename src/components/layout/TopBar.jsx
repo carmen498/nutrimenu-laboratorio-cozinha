@@ -35,7 +35,9 @@ export default function TopBar({ onMenuClick }) {
         </div>
         <div className="hidden lg:flex lg:flex-col lg:justify-center leading-tight">
           <p className="text-xs font-bold tracking-wide text-white">PLATAFORMA ZR</p>
-          <p className="text-[10px] text-sidebar-foreground/70">Inteligência para a Indústria de Alimentos</p>
+          <p className="text-[10px] text-sidebar-foreground/70 leading-tight">
+            Inteligência para a<br />Indústria de Alimentos
+          </p>
         </div>
       </Link>
 

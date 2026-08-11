@@ -128,27 +128,29 @@ export default function Home() {
       <div className="pt-8 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
           <div className="text-left flex flex-col justify-center">
-            <div className="inline-flex items-center justify-center mb-5">
+            <div className="flex items-center gap-5">
               <img
                 src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/a5c36b28a_IMAGEMlABORATORIODECOZINHA.png"
                 alt="Laboratório de Cozinha"
-                className="w-[160px] h-[160px] rounded-full object-cover shadow-lg"
+                className="w-[160px] h-[160px] rounded-full object-cover shadow-lg shrink-0"
               />
+              <div>
+                <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight"
+                  style={{ color: CORES.verdeEscuro }}>
+                  Laboratório de Cozinha
+                </h1>
+                <p className="mt-1 text-3xl font-script" style={{ color: CORES.dourado }}>Receitas que se Multiplicam</p>
+                <p className="mt-2 text-sm font-medium italic"
+                  style={{ color: CORES.dourado }}>
+                  Gastronomia Planejada · por Carmen Reinstein
+                </p>
+              </div>
             </div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight"
-              style={{ color: CORES.verdeEscuro }}>
-              Laboratório de Cozinha
-            </h1>
-            <p className="mt-1 text-base font-semibold" style={{ color: CORES.dourado }}>Receitas que se Multiplicam</p>
-            <p className="mt-2 text-sm font-medium italic"
-              style={{ color: CORES.dourado }}>
-              Gastronomia Planejada · por Carmen Reinstein
-            </p>
           </div>
           <div className="h-[280px] md:h-auto rounded-2xl overflow-hidden shadow-lg">
             <img
-              src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/9f0863f54_generated_image.png"
-              alt="Still life de cozinha"
+              src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/21e2a78bb_12ImagenscapaInico.png"
+              alt="Farinha, ovos e batedor sobre pano de linho"
               width="600"
               height="360"
               className="w-full h-full object-cover"
