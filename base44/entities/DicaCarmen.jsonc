@@ -1,0 +1,93 @@
+{
+  "name": "DicaCarmen",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo da dica"
+    },
+    "pergunta_gatilho": {
+      "type": "string",
+      "description": "Pergunta que originou a dica (opcional)"
+    },
+    "tema": {
+      "type": "string",
+      "enum": [
+        "Fritura",
+        "Congelamento",
+        "Per Capita",
+        "Precifica\u00e7\u00e3o",
+        "Ingredientes",
+        "Rendimento",
+        "Geral"
+      ],
+      "description": "Tema da dica"
+    },
+    "conteudo": {
+      "type": "string",
+      "description": "Conte\u00fado livre da dica \u2014 teoria, valores e exemplo, sem estrutura fixa"
+    },
+    "imagem_capa": {
+      "type": "string",
+      "description": "URL da imagem de capa (opcional)"
+    },
+    "destaque": {
+      "type": "boolean",
+      "default": false,
+      "description": "Dica marcada para aparecer no carrossel da Home"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "rascunho",
+        "publicado"
+      ],
+      "default": "rascunho",
+      "description": "Status de publica\u00e7\u00e3o da dica"
+    },
+    "data_publicacao": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que a dica foi publicada (preenchida automaticamente)"
+    },
+    "autor": {
+      "type": "string",
+      "default": "Carmen Reinstein, Nutricionista",
+      "description": "Autor fixo da dica"
+    }
+  },
+  "required": [
+    "titulo",
+    "tema",
+    "conteudo"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.status": "publicado"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

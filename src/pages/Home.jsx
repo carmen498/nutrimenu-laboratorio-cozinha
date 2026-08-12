@@ -8,6 +8,7 @@ import IndicadoresHome from "@/components/home/IndicadoresHome";
 import AcoesPrincipaisHome from "@/components/home/AcoesPrincipaisHome";
 import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
 import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
+import DicasCarmenCarousel from "@/components/home/DicasCarmenCarousel";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -162,6 +163,9 @@ export default function Home() {
             </div>
           )}
         </Card>
+
+        {/* Dicas da Carmen — carrossel dinâmico das dicas publicadas em destaque */}
+        <DicasCarmenCarousel />
 
         {/* Integrações da sua Receita — vitrine institucional, sem integração funcional real */}
         <IntegracoesReceitaHome />
