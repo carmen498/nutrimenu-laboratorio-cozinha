@@ -751,7 +751,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
 
       if (result.status === "success" && result.output) {
         const items = Array.isArray(result.output) ? result.output : (result.output.items || []);
-        const existing = await base44.entities.Receita.list("-nome", 500);
+        const existing = await fetchAllPages(base44.entities.Receita, "-nome");
         const existingMap = {};
         existing.forEach((r) => { existingMap[r.nome?.toLowerCase().trim()] = r; });
 
