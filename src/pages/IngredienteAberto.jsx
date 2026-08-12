@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,21 +11,37 @@ import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialo
 import FundirIngredienteDialog from "@/components/ingrediente/FundirIngredienteDialog";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
 
 export default function IngredienteAberto() {
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [showFundir, setShowFundir] = useState(false);
 
-  const { data: ingrediente, isLoading } = useQuery({
+  const { data: ingredienteRaw, isLoading } = useQuery({
     queryKey: ["ingrediente", id],
     queryFn: async () => {
       const r = await base44.entities.Ingrediente.filter({ id });
       return r[0] || null;
     },
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const ingrediente = useMemo(() => {
+    if (!ingredienteRaw) return null;
+    if (isAdmin) return ingredienteRaw;
+    return aplicarPrecosPersonalizados([ingredienteRaw], precosPersonalizados)[0];
+  }, [ingredienteRaw, isAdmin, precosPersonalizados]);
 
   const { data: todosIngredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -41,7 +57,7 @@ export default function IngredienteAberto() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ingrediente", id] }),
   });
 
-  const saveMut = useSalvarIngrediente(() => setShowForm(false));
+  const saveMut = useSalvarIngrediente(() => setShowForm(false), { isAdmin, userId: user?.id });
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
@@ -81,6 +97,7 @@ export default function IngredienteAberto() {
         onSave={(data) => saveMut.mutate(data)}
         saving={saveMut.isPending}
         fornecedorSuggestions={fornecedorSuggestions}
+        isAdmin={isAdmin}
       />
 
       <FundirIngredienteDialog

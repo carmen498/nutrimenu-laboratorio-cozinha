@@ -14,7 +14,7 @@ import { toSentenceCaseName } from "@/lib/textCase";
 // Modal "Editar/Novo Ingrediente" — extraído para ser reutilizado pela listagem
 // de Ingredientes e pela ficha do ingrediente. Comportamento inalterado, apenas
 // com o campo Fornecedor adicionado (abaixo do preço).
-export default function IngredienteFormDialog({ open, onClose, item, onSave, saving, fornecedorSuggestions = [] }) {
+export default function IngredienteFormDialog({ open, onClose, item, onSave, saving, fornecedorSuggestions = [], isAdmin = true }) {
   const [form, setForm] = useState({});
   const [erroQuantidade, setErroQuantidade] = useState(null);
   const [novosSinonimos, setNovosSinonimos] = useState([]);
@@ -88,6 +88,11 @@ export default function IngredienteFormDialog({ open, onClose, item, onSave, sav
               if (peso_embalagem_g > 0) setErroQuantidade(null);
             }}
           />
+          {!isAdmin && (
+            <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1.5">
+              Este preço é pessoal — não altera o cadastro compartilhado nem outros usuários.
+            </p>
+          )}
           {/* Fornecedor */}
           <div>
             <Label>Fornecedor</Label>

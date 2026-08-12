@@ -49,6 +49,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { registrarHistorico } from "@/lib/registrarHistorico";
 import { garantirReceitaEditavel } from "@/lib/forkReceita";
 import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados, salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -122,6 +123,19 @@ export default function ReceitaAberta() {
     queryKey: ["ingredientes"],
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  // Não-admins calculam o custo com o PRÓPRIO preço (quando personalizado);
+  // admins sempre veem/gravam com o preço base do cadastro compartilhado.
+  const ingredientesEfetivos = useMemo(
+    () => (isAdmin ? ingredientesDB : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados)),
+    [ingredientesDB, isAdmin, precosPersonalizados]
+  );
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
@@ -399,9 +413,9 @@ export default function ReceitaAberta() {
 
   const ingMap = useMemo(() => {
     const map = {};
-    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    ingredientesEfetivos.forEach((i) => { map[i.id] = i; });
     return map;
-  }, [ingredientesDB]);
+  }, [ingredientesEfetivos]);
 
   const receitasBasicasMap = useMemo(() => {
     const map = {};
@@ -570,12 +584,17 @@ export default function ReceitaAberta() {
   const updatePriceMut = useMutation({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
       const preco_por_g_rs = peso_embalagem_g > 0 ? preco_embalagem_rs / peso_embalagem_g : 0;
+      if (!isAdmin) {
+        await salvarPrecoPersonalizado({ ingredienteId: ingId, userId: user.id, precoPorGRs: preco_por_g_rs });
+        return;
+      }
       await base44.entities.Ingrediente.update(ingId, { preco_embalagem_rs, peso_embalagem_g, preco_por_g_rs });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      qc.invalidateQueries({ queryKey: ["precos-personalizados"] });
       setEditingPrice(null);
-      toast.success("Preço atualizado em todas as receitas!");
+      toast.success(isAdmin ? "Preço atualizado em todas as receitas!" : "Seu preço pessoal foi salvo!");
     },
   });
 
@@ -1652,6 +1671,7 @@ REGRAS:
           onClose={() => setEditingPrice(null)}
           item={editingPrice}
           ing={editingPrice.ing}
+          isAdmin={isAdmin}
           onSave={(data) => updatePriceMut.mutate(data)}
           saving={updatePriceMut.isPending}
         />
@@ -1756,7 +1776,7 @@ REGRAS:
   );
 }
 
-function EditPriceDialog({ open, onClose, item, ing, onSave, saving }) {
+function EditPriceDialog({ open, onClose, item, ing, isAdmin = true, onSave, saving }) {
   const [peso, setPeso] = useState(ing?.peso_embalagem_g || 0);
   const [preco, setPreco] = useState(ing?.preco_embalagem_rs || 0);
 
@@ -1770,7 +1790,11 @@ function EditPriceDialog({ open, onClose, item, ing, onSave, saving }) {
         </DialogHeader>
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800">O preço é do cadastro geral — alterar afeta todas as receitas que o usam.</p>
+          <p className="text-xs text-amber-800">
+            {isAdmin
+              ? "O preço é do cadastro geral — alterar afeta todas as receitas que o usam."
+              : "Este é o seu preço pessoal — não altera o cadastro compartilhado nem outros usuários."}
+          </p>
         </div>
         <CalculadoraCusto
           initialQuantidade={ing?.peso_embalagem_g || ""}

@@ -27,6 +27,8 @@ import AutoUpdateToggle from "@/components/ingrediente/AutoUpdateToggle";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
 
 const GRUPOS_INGREDIENTES = [
   { nome: "Carnes e Ovos",            icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["Carnes e Ovos"] },
@@ -70,6 +72,8 @@ export default function Ingredientes() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     if (searchParams.get("revisar") === "true") {
@@ -78,10 +82,23 @@ export default function Ingredientes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const { data: ingredientes = [], isLoading } = useQuery({
+  const { data: ingredientesRaw = [], isLoading } = useQuery({
     queryKey: ["ingredientes"],
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  // Não-admins veem o PRÓPRIO preço (quando personalizado) na listagem — nome,
+  // categoria e demais campos continuam vindo do cadastro compartilhado.
+  const ingredientes = useMemo(
+    () => (isAdmin ? ingredientesRaw : aplicarPrecosPersonalizados(ingredientesRaw, precosPersonalizados)),
+    [ingredientesRaw, isAdmin, precosPersonalizados]
+  );
 
   const { data: ultimoLog } = useQuery({
     queryKey: ["ultimo-log-precos"],
@@ -113,7 +130,7 @@ export default function Ingredientes() {
   const saveMut = useSalvarIngrediente(() => {
     setShowForm(false);
     setEditItem(null);
-  });
+  }, { isAdmin, userId: user?.id });
 
   const fornecedorSuggestions = useMemo(() => {
     const set = new Set();
@@ -451,6 +468,7 @@ export default function Ingredientes() {
         onSave={(data) => saveMut.mutate(data)}
         saving={saveMut.isPending}
         fornecedorSuggestions={fornecedorSuggestions}
+        isAdmin={isAdmin}
       />
 
       {/* Import Dialog */}
