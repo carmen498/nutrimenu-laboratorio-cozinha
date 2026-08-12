@@ -241,6 +241,11 @@ export default function ReceitaAberta() {
       await base44.entities.Receita.update(receitaId, { rendimento_total: val });
       registrarHistorico(receitaId, receita?.nome, ["Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
+      // Rendimento (PDP) é o peso real pós-cocção — nunca deve reescalonar os
+      // ingredientes. Sincroniza a Quantidade Total do escalador com o novo
+      // PDP imediatamente, mantendo fator = 1 (ingredientes preservados).
+      setQuantidadeTotal(val);
+      setPorcoes(pcLocal > 0 ? +(val / pcLocal).toFixed(2) : null);
       toast.success("Rendimento atualizado!");
     }
   };
