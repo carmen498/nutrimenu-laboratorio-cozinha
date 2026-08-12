@@ -16,7 +16,7 @@ export async function garantirReceitaEditavel({ receita, itens = [], receitaTags
   if (!receita) return { receitaId: null, mapItemId: (x) => x, forked: false };
 
   if (isAdmin || receita.is_base === false) {
-    return { receitaId: receita.id, mapItemId: (x) => x, forked: false };
+    return { receitaId: receita.id, mapItemId: (x) => x, mapTagId: (x) => x, forked: false };
   }
 
   const { id: _oldId, created_date, updated_date, created_by_id, created_by, is_base, forked_from_id, ...rest } = receita;
@@ -42,19 +42,22 @@ export async function garantirReceitaEditavel({ receita, itens = [], receitaTags
     await base44.entities.IngredienteReceita.bulkUpdate(parentUpdates);
   }
 
+  const tagIdMap = {};
   for (const rt of receitaTags) {
-    await base44.entities.ReceitaTag.create({
+    const novoTag = await base44.entities.ReceitaTag.create({
       receita_id: nova.id,
       tag_id: rt.tag_id,
       tag_nome: rt.tag_nome,
       tag_grupo: rt.tag_grupo,
       tag_cor: rt.tag_cor,
     });
+    tagIdMap[rt.id] = novoTag.id;
   }
 
   return {
     receitaId: nova.id,
     mapItemId: (oldItemId) => idMap[oldItemId] || oldItemId,
+    mapTagId: (oldTagId) => tagIdMap[oldTagId] || oldTagId,
     forked: true,
   };
 }

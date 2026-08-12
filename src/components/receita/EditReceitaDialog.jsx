@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -68,6 +68,25 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
   const [rewritingPrep, setRewritingPrep] = useState(false);
   const qc = useQueryClient();
 
+  // Cópia editável: a primeira gravação (tag, foto ou Salvar) nesta sessão do
+  // diálogo cria a cópia pessoal, se necessário, e todas as gravações
+  // seguintes (incluindo o Salvar final) passam a usar essa mesma cópia.
+  const forkedIdRef = useRef(null);
+  const tagsRef = useRef(receitaTags);
+  useEffect(() => { tagsRef.current = receitaTags; }, [receitaTags]);
+
+  const ensureFork = async () => {
+    if (isAdmin || receita.is_base === false) return { rid: receita.id, mapTagId: (x) => x };
+    if (forkedIdRef.current) return { rid: forkedIdRef.current, mapTagId: (x) => x };
+    const result = await garantirReceitaEditavel({ receita, itens, receitaTags: tagsRef.current, isAdmin });
+    if (result.forked) {
+      forkedIdRef.current = result.receitaId;
+      const rt = await base44.entities.ReceitaTag.filter({ receita_id: result.receitaId }, "created_date", 200);
+      setReceitaTags(rt || []);
+    }
+    return { rid: result.receitaId, mapTagId: result.mapTagId || ((x) => x) };
+  };
+
   const handleSave = async () => {
     if (!form.nome?.trim()) { toast.error("Informe o nome"); return; }
     await salvarReceita();
@@ -81,7 +100,8 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
 
-      const { receitaId, forked } = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin });
+      const { rid: receitaId } = await ensureFork();
+      const forked = receitaId !== receita.id;
       await base44.entities.Receita.update(receitaId, rest);
       const alterados = Object.entries(CAMPO_LABELS)
         .filter(([field]) => !valuesEqual(rest[field], receita[field]))
@@ -237,8 +257,10 @@ ${form.modo_preparo}`,
                 receitaTags={receitaTags}
                 allTags={allTags}
                 onRemove={async (rt) => {
-                  await base44.entities.ReceitaTag.delete(rt.id);
-                  setReceitaTags(prev => prev.filter(r => r.id !== rt.id));
+                  const { rid, mapTagId } = await ensureFork();
+                  await base44.entities.ReceitaTag.delete(mapTagId(rt.id));
+                  const updated = await base44.entities.ReceitaTag.filter({ receita_id: rid }, "created_date", 200);
+                  setReceitaTags(updated || []);
                 }}
               />
             </div>
@@ -246,20 +268,21 @@ ${form.modo_preparo}`,
               <TagSelector
                 selectedIds={receitaTags.map(rt => rt.tag_id)}
                 onToggle={async (tag) => {
-                  const exists = receitaTags.find(rt => rt.tag_id === tag.id);
+                  const { rid, mapTagId } = await ensureFork();
+                  const exists = tagsRef.current.find(rt => rt.tag_id === tag.id);
                   if (exists) {
-                    await base44.entities.ReceitaTag.delete(exists.id);
-                    setReceitaTags(prev => prev.filter(r => r.id !== exists.id));
+                    await base44.entities.ReceitaTag.delete(mapTagId(exists.id));
                   } else {
-                    const novo = await base44.entities.ReceitaTag.create({
-                      receita_id: receita.id,
+                    await base44.entities.ReceitaTag.create({
+                      receita_id: rid,
                       tag_id: tag.id,
                       tag_nome: tag.nome,
                       tag_grupo: tag.grupo,
                       tag_cor: tag.cor,
                     });
-                    setReceitaTags(prev => [...prev, novo]);
                   }
+                  const updated = await base44.entities.ReceitaTag.filter({ receita_id: rid }, "created_date", 200);
+                  setReceitaTags(updated || []);
                 }}
               />
             </div>
