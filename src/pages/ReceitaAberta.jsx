@@ -39,7 +39,6 @@ import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
-import AjustarPesoTotalDialog from "@/components/receita/AjustarPesoTotalDialog";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -106,7 +105,6 @@ export default function ReceitaAberta() {
   const [medidaInputValue, setMedidaInputValue] = useState("");
   const [showMedidasReceita, setShowMedidasReceita] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showAjustarPeso, setShowAjustarPeso] = useState(false);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -378,20 +376,31 @@ export default function ReceitaAberta() {
     if (pc > 0) setQuantidadeTotal(Math.round(val * pc));
   };
 
-  const commitTotalGrams = (grams) => {
+  // Quantidade Total é agora o único controle de reescala — edição aqui
+  // sobrescreve PERMANENTEMENTE os pesos dos ingredientes e o rendimento
+  // da receita (substitui o antigo botão "Ajustar peso total da receita").
+  const commitTotalGrams = async (grams) => {
     const g = Math.max(0, Math.round(grams));
-    setQuantidadeTotal(g);
     const pc = pcLocal || 0;
+    setQuantidadeTotal(g);
     setPorcoes(pc > 0 ? Math.max(0, Math.floor(g / pc)) : null);
-  };
-
-  // Ajuste permanente do rendimento (sobrescreve pesos na ficha) — sincroniza
-  // o estado ephemeral do escalador com o novo valor gravado, sem reabrir a página.
-  const handleAjustarPesoSuccess = (novoVal) => {
-    qc.invalidateQueries({ queryKey: ["receita", id] });
-    qc.invalidateQueries({ queryKey: ["itens-receita", id] });
-    setQuantidadeTotal(novoVal);
-    setPorcoes(pcLocal > 0 ? +(novoVal / pcLocal).toFixed(2) : null);
+    const baseTotal = receita?.rendimento_total || 0;
+    if (baseTotal <= 0 || g === baseTotal) return;
+    try {
+      const { receitaId, mapItemId } = await ensureEditavel();
+      const fatorRescale = g / baseTotal;
+      const updates = itens
+        .filter((i) => i.tipo !== "grupo")
+        .map((i) => ({ id: mapItemId(i.id), quantidade_por_porcao: (i.quantidade_por_porcao || 0) * fatorRescale }));
+      if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
+      await base44.entities.Receita.update(receitaId, { rendimento_total: g });
+      registrarHistorico(receitaId, receita?.nome, ["Ingredientes", "Rendimento"]);
+      qc.invalidateQueries({ queryKey: ["receita", receitaId] });
+      qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
+      toast.success("Peso total ajustado — ingredientes recalculados!");
+    } catch (err) {
+      toast.error("Erro ao ajustar peso total: " + (err.message || ""));
+    }
   };
 
   const handleRestaurarEscala = () => {
@@ -1262,12 +1271,6 @@ REGRAS:
         isEscalado={isEscalado}
         onRestore={handleRestaurarEscala}
       />
-      <div className="flex justify-end -mt-2">
-        <Button variant="outline" size="sm" onClick={() => setShowAjustarPeso(true)}>
-          <Scale className="w-3.5 h-3.5 mr-1" /> Ajustar peso total da receita
-        </Button>
-      </div>
-
       {/* Ingredients table */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -1703,18 +1706,6 @@ REGRAS:
           utensilios={utensiliosPadrao}
           uteMap={uteMap}
           getMedidaDisplay={getMedidaDisplay}
-        />
-      )}
-
-      {showAjustarPeso && (
-        <AjustarPesoTotalDialog
-          open={true}
-          onClose={() => setShowAjustarPeso(false)}
-          receitaId={id}
-          rendimentoAtual={receita.rendimento_total}
-          unidadeBase={receita.unidade_base}
-          itens={itens}
-          onSuccess={handleAjustarPesoSuccess}
         />
       )}
 

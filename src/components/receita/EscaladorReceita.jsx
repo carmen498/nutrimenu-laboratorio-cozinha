@@ -97,7 +97,7 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
         />
         <div className="flex items-center justify-center px-1 text-xl font-bold text-muted-foreground">=</div>
         <StepCard
-          label="Quantidade total"
+          label="Quantidade Total (kg)"
           value={totalKg}
           unit="kg"
           suffix={quantidadeTotalG ? `${Math.round(quantidadeTotalG).toLocaleString("pt-BR")} g` : null}
