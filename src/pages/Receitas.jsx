@@ -781,10 +781,10 @@ function ImportReceitasCsvDialog({ open, onClose }) {
               : (Array.isArray(catsRaw) ? catsRaw : []);
             const payload = { nome: nome.toUpperCase() };
             if (categorias.length > 0) payload.categorias = categorias;
-            if (item.porcoes_base != null) payload.porcoes_base = item.porcoes_base;
-            if (item.rendimento_g != null) payload.rendimento_total = item.rendimento_g;
+            if (item.porcoes_base != null && item.porcoes_base !== "") payload.porcoes_base = item.porcoes_base;
+            if (item.rendimento_g != null && item.rendimento_g !== "") payload.rendimento_total = item.rendimento_g;
             if (item.unidade_base) payload.unidade_base = item.unidade_base;
-            if (item.modo_preparo != null) payload.modo_preparo = item.modo_preparo;
+            if (item.modo_preparo != null && item.modo_preparo !== "") payload.modo_preparo = item.modo_preparo;
             const existingItem = existingMap[nomeKey];
             if (existingItem) {
               await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: false });
