@@ -744,6 +744,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
               rendimento_g: { type: "number" },
               unidade_base: { type: "string" },
               modo_preparo: { type: "string" },
+              per_capita_g: { type: "number" },
             }
           }
         }
@@ -785,6 +786,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
             if (item.rendimento_g != null && item.rendimento_g !== "") payload.rendimento_total = item.rendimento_g;
             if (item.unidade_base) payload.unidade_base = item.unidade_base;
             if (item.modo_preparo != null && item.modo_preparo !== "") payload.modo_preparo = item.modo_preparo;
+            if (item.per_capita_g != null && item.per_capita_g !== "") payload.per_capita_g = item.per_capita_g;
             const existingItem = existingMap[nomeKey];
             if (existingItem) {
               await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: false });
@@ -875,7 +877,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
           <DialogTitle className="font-display">Importar Receitas via CSV</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Selecione o arquivo CSV com as colunas: <strong>nome_receita, categorias, porcoes_base, rendimento_g, modo_preparo</strong>
+          Selecione o arquivo CSV com as colunas: <strong>nome_receita, categorias, porcoes_base, rendimento_g, modo_preparo, per_capita_g</strong>
         </p>
         <p className="text-xs text-muted-foreground">
           Receitas com mesmo nome serão atualizadas. Categorias separadas por vírgula.
