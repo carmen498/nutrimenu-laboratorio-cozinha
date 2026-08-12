@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Search, BookOpen, Apple, CalendarDays } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 
 const LIMITE_POR_TIPO = 5;
 
 export default function TopBarSearch() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const [termo, setTermo] = useState("");
@@ -53,8 +56,21 @@ export default function TopBarSearch() {
 
   const carregando = carregandoReceitas || carregandoIngredientes || carregandoCardapios;
 
+  // Cópias pessoais (forks) do usuário ocupam o lugar da receita original
+  // correspondente nos resultados — evita duplicar e leva à versão dele.
+  const receitasVisiveis = (() => {
+    if (isAdmin) return receitas.filter((r) => r.is_base !== false);
+    const forkPorBase = {};
+    receitas.forEach((r) => {
+      if (r.is_base === false && r.forked_from_id && r.created_by_id === user?.id) {
+        forkPorBase[r.forked_from_id] = r;
+      }
+    });
+    return receitas.filter((r) => r.is_base === true).map((r) => forkPorBase[r.id] || r);
+  })();
+
   const termoLower = termoBuscado.toLowerCase();
-  const receitasTodasEncontradas = buscaAtiva ? receitas.filter((r) => r.nome?.toLowerCase().includes(termoLower)) : [];
+  const receitasTodasEncontradas = buscaAtiva ? receitasVisiveis.filter((r) => r.nome?.toLowerCase().includes(termoLower)) : [];
   const ingredientesTodosEncontrados = buscaAtiva ? ingredientes.filter((i) => i.nome?.toLowerCase().includes(termoLower)) : [];
   const cardapiosTodosEncontrados = buscaAtiva ? cardapios.filter((c) => c.nome?.toLowerCase().includes(termoLower)) : [];
 

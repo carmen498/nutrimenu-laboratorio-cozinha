@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,8 @@ const CORES_CATEGORIA = {
 };
 
 export default function Receitas() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
   const [showNew, setShowNew] = useState(null);
@@ -121,7 +124,24 @@ export default function Receitas() {
     staleTime: 60 * 1000,
   });
 
-  const totalReceitas = receitas.length;
+  // Catálogo compartilhado (is_base=true) com as cópias pessoais (forks) do
+  // usuário atual ocupando o lugar da receita original correspondente —
+  // evita duplicar visualmente e mantém as contagens por categoria corretas.
+  // Admin: vê apenas o catálogo original, sem os forks individuais dos clientes.
+  const receitasExibidas = useMemo(() => {
+    if (isAdmin) return receitas.filter((r) => r.is_base !== false);
+    const forkPorBase = {};
+    receitas.forEach((r) => {
+      if (r.is_base === false && r.forked_from_id && r.created_by_id === user?.id) {
+        forkPorBase[r.forked_from_id] = r;
+      }
+    });
+    return receitas
+      .filter((r) => r.is_base === true)
+      .map((r) => forkPorBase[r.id] || r);
+  }, [receitas, isAdmin, user]);
+
+  const totalReceitas = receitasExibidas.length;
   const [visibleCount, setVisibleCount] = useState(100);
 
   useEffect(() => {
@@ -188,7 +208,7 @@ export default function Receitas() {
     return ids;
   })();
 
-  const filtered = receitas.filter((r) => {
+  const filtered = receitasExibidas.filter((r) => {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
     const matchNome = !busca || normalizarNome(r.nome).includes(normalizarNome(busca));
@@ -340,8 +360,8 @@ export default function Receitas() {
       </button>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
-        {CATEGORIAS_RECEITA.filter(cat => receitas.filter(r => hasCategoria(r, cat)).length > 0).map(cat => {
-          const receitasCategoria = receitas.filter(r => hasCategoria(r, cat));
+        {CATEGORIAS_RECEITA.filter(cat => receitasExibidas.filter(r => hasCategoria(r, cat)).length > 0).map(cat => {
+          const receitasCategoria = receitasExibidas.filter(r => hasCategoria(r, cat));
           const count = receitasCategoria.length;
           const selecionada = categoriaSelecionada === cat;
           const icone = ICONE_CATEGORIA[cat] || "📋";
