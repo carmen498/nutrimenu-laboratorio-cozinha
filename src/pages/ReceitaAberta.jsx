@@ -47,12 +47,16 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { registrarHistorico } from "@/lib/registrarHistorico";
+import { garantirReceitaEditavel } from "@/lib/forkReceita";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   // Contexto de origem (cardápio/evento): quando a ficha é aberta a partir de um
   // cardápio, o escalador abre pré-escalado com o PC e nº de pessoas daquele
@@ -316,15 +320,27 @@ export default function ReceitaAberta() {
   // PC Recomendado é um campo persistido da receita. Editá-lo NUNCA altera a
   // Quantidade Total (rendimento fixo da ficha) — apenas recalcula o Nº de
   // Porções (Quantidade Total ÷ PC) e grava o novo PC na receita.
+  // Garante que a edição não recaia sobre o catálogo compartilhado: cria uma
+  // cópia pessoal (fork) quando um não-admin edita uma receita is_base=true.
+  const ensureEditavel = async () => {
+    const result = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin });
+    if (result.forked) {
+      toast.success("Uma cópia editável desta receita foi criada para você.");
+      navigate(`/receita/${result.receitaId}`, { replace: true });
+    }
+    return result;
+  };
+
   const commitPC = async (newPC) => {
     const val = Math.max(1, Math.round(newPC));
     setPcLocal(val);
     const total = quantidadeTotal || 0;
     if (val > 0 && total > 0) setPorcoes(+(total / val).toFixed(2));
     try {
-      await base44.entities.Receita.update(id, { per_capita_g: val });
-      registrarHistorico(id, receita?.nome, ["Per capita"]);
-      qc.invalidateQueries({ queryKey: ["receita", id] });
+      const { receitaId } = await ensureEditavel();
+      await base44.entities.Receita.update(receitaId, { per_capita_g: val });
+      registrarHistorico(receitaId, receita?.nome, ["Per capita"]);
+      qc.invalidateQueries({ queryKey: ["receita", receitaId] });
     } catch (err) {
       toast.error("Erro ao salvar PC recomendado: " + (err.message || ""));
     }
@@ -364,9 +380,10 @@ export default function ReceitaAberta() {
 
   const handleSavePreparo = async () => {
     try {
-      await base44.entities.Receita.update(id, { modo_preparo: preparoDraft });
-      registrarHistorico(id, receita?.nome, ["Modo de preparo"]);
-      qc.invalidateQueries({ queryKey: ["receita", id] });
+      const { receitaId } = await ensureEditavel();
+      await base44.entities.Receita.update(receitaId, { modo_preparo: preparoDraft });
+      registrarHistorico(receitaId, receita?.nome, ["Modo de preparo"]);
+      qc.invalidateQueries({ queryKey: ["receita", receitaId] });
       setEditingPreparo(false);
       toast.success("Modo de preparo atualizado!");
     } catch (err) {
@@ -531,9 +548,10 @@ export default function ReceitaAberta() {
   const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
 
-  // Save costs to recipe
+  // Save costs to recipe (apenas admin grava no catálogo compartilhado;
+  // não-admins veem o custo calculado normalmente, mas não persistem no original)
   useEffect(() => {
-    if (receita && fator === 1 && custoTotal > 0) {
+    if (isAdmin && receita && fator === 1 && custoTotal > 0) {
       const newCT = parseFloat(custoTotal.toFixed(2));
       const newCP = parseFloat(custoPorcao.toFixed(2));
       const newCI = parseFloat(custoInsumos.toFixed(2));
@@ -557,11 +575,13 @@ export default function ReceitaAberta() {
 
   const updateQtdMut = useMutation({
     mutationFn: async ({ itemId, quantidade_por_porcao }) => {
-      await base44.entities.IngredienteReceita.update(itemId, { quantidade_por_porcao });
+      const { receitaId, mapItemId } = await ensureEditavel();
+      await base44.entities.IngredienteReceita.update(mapItemId(itemId), { quantidade_por_porcao });
+      return receitaId;
     },
-    onSuccess: () => {
-      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    onSuccess: (receitaId) => {
+      registrarHistorico(receitaId, receita?.nome, ["Ingredientes"]);
+      qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
       setEditingQtdId(null);
     },
   });
@@ -583,11 +603,13 @@ export default function ReceitaAberta() {
         updates.ingrediente_id = ingrediente_id;
         updates.ingrediente_nome = ingrediente_nome;
       }
-      await base44.entities.IngredienteReceita.update(itemId, updates);
+      const { receitaId, mapItemId } = await ensureEditavel();
+      await base44.entities.IngredienteReceita.update(mapItemId(itemId), updates);
+      return receitaId;
     },
-    onSuccess: () => {
-      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    onSuccess: (receitaId) => {
+      registrarHistorico(receitaId, receita?.nome, ["Ingredientes"]);
+      qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
       setEditingItem(null);
       toast.success("Item atualizado");
     },
@@ -690,10 +712,15 @@ export default function ReceitaAberta() {
   });
 
   const deleteItemOrGrupoMut = useMutation({
-    mutationFn: (itemId) => base44.entities.IngredienteReceita.delete(itemId),
-    onSuccess: () => {
-      registrarHistorico(id, receita?.nome, ["Ingredientes"]);
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+    mutationFn: async (itemId) => {
+      const { receitaId, mapItemId, forked } = await ensureEditavel();
+      if (forked) return receitaId; // cópia criada com o item intacto; exclusão deve ser repetida na cópia
+      await base44.entities.IngredienteReceita.delete(mapItemId(itemId));
+      return receitaId;
+    },
+    onSuccess: (receitaId) => {
+      registrarHistorico(receitaId, receita?.nome, ["Ingredientes"]);
+      qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
       toast.success("Item removido");
     },
   });
@@ -1222,7 +1249,7 @@ REGRAS:
             <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}>
               <Plus className="w-4 h-4 mr-1" /> Sub-título
             </Button>
-            <Button size="sm" onClick={() => setShowAddIng(true)}>
+            <Button size="sm" onClick={async () => { const { forked } = await ensureEditavel(); if (!forked) setShowAddIng(true); }}>
               <Plus className="w-4 h-4 mr-1" /> Ingrediente
             </Button>
           </div>
@@ -1233,7 +1260,7 @@ REGRAS:
         ) : itensFichaAgrupada.filter(i => !i.isGrupo && !i.isNA).length === 0 && itensFichaAgrupada.filter(i => i.isGrupo || i.isNA).length === 0 && !pendingGrupo ? (
           <Card className="p-8 text-center text-muted-foreground">
             <p>Nenhum ingrediente adicionado</p>
-            <Button size="sm" className="mt-3" onClick={() => setShowAddIng(true)}>
+            <Button size="sm" className="mt-3" onClick={async () => { const { forked } = await ensureEditavel(); if (!forked) setShowAddIng(true); }}>
               <Plus className="w-4 h-4 mr-1" /> Adicionar ingrediente
             </Button>
           </Card>
@@ -1592,7 +1619,7 @@ REGRAS:
       )}
 
       {showEdit && (
-        <EditReceitaDialog open={true} onClose={() => setShowEdit(false)} receita={receita} />
+        <EditReceitaDialog open={true} onClose={() => setShowEdit(false)} receita={receita} itens={itens} />
       )}
 
       {editingItem && (

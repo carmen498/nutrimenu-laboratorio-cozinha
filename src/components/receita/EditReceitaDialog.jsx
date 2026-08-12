@@ -17,6 +17,9 @@ import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { registrarHistorico } from "@/lib/registrarHistorico";
+import { garantirReceitaEditavel } from "@/lib/forkReceita";
+import { useAuth } from "@/lib/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const CAMPO_LABELS = {
   nome: "Nome",
@@ -40,11 +43,14 @@ function valuesEqual(a, b) {
   return a === b;
 }
 
-export default function EditReceitaDialog({ open, onClose, receita }) {
+export default function EditReceitaDialog({ open, onClose, receita, itens = [] }) {
   const [form, setForm] = useState({ ...receita });
   const [saving, setSaving] = useState(false);
   const [receitaTags, setReceitaTags] = useState([]);
   const [allTags, setAllTags] = useState([]);
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!receita?.id || !open) return;
@@ -70,19 +76,27 @@ export default function EditReceitaDialog({ open, onClose, receita }) {
   const salvarReceita = async () => {
     setSaving(true);
     try {
-      const { id, created_date, updated_date, created_by_id, ...rest } = form;
+      const { id, created_date, updated_date, created_by_id, is_base, forked_from_id, ...rest } = form;
       rest.nome = rest.nome?.toUpperCase();
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
-      await base44.entities.Receita.update(receita.id, rest);
+
+      const { receitaId, forked } = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin });
+      await base44.entities.Receita.update(receitaId, rest);
       const alterados = Object.entries(CAMPO_LABELS)
         .filter(([field]) => !valuesEqual(rest[field], receita[field]))
         .map(([, label]) => label);
-      if (alterados.length > 0) registrarHistorico(receita.id, rest.nome, alterados);
-      qc.invalidateQueries({ queryKey: ["receita", receita.id] });
+      if (alterados.length > 0) registrarHistorico(receitaId, rest.nome, alterados);
+      qc.invalidateQueries({ queryKey: ["receita", receitaId] });
       qc.invalidateQueries({ queryKey: ["receitas"] });
-      toast.success("Receita atualizada!");
-      onClose();
+      if (forked) {
+        toast.success("Uma cópia editável desta receita foi criada para você.");
+        onClose();
+        navigate(`/receita/${receitaId}`, { replace: true });
+      } else {
+        toast.success("Receita atualizada!");
+        onClose();
+      }
     } catch {
       toast.error("Erro ao salvar");
     } finally {
