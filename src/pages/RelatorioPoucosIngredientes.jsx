@@ -34,7 +34,7 @@ export default function RelatorioPoucosIngredientes() {
           const nomes = itens.map((i) =>
             i.tipo === "subreceita" ? (i.subreceita_nome || "(sub-receita sem nome)") : (i.ingrediente_nome || "(sem nome)")
           );
-          resultado.push({ nome: r.nome, categoria, qtd: itens.length, ingredientes: nomes.join("; ") });
+          resultado.push({ id: r.id, nome: r.nome, categoria, qtd: itens.length, ingredientes: nomes.join("; ") });
         }
       });
 
@@ -100,7 +100,11 @@ export default function RelatorioPoucosIngredientes() {
                 {linhas.map((l, idx) => (
                   <tr key={idx} className="border-t">
                     <td className="p-2 text-muted-foreground">{l.categoria}</td>
-                    <td className="p-2 font-medium">{l.nome}</td>
+                    <td className="p-2 font-medium">
+                      <Link to={`/receita/${l.id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                        {l.nome}
+                      </Link>
+                    </td>
                     <td className="p-2 text-center">{l.qtd}</td>
                     <td className="p-2 text-muted-foreground">{l.ingredientes || "—"}</td>
                   </tr>
