@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import IngredienteFichaHeader from "@/components/ingrediente/ficha/IngredienteFichaHeader";
@@ -17,11 +17,16 @@ import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/p
 export default function IngredienteAberto() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const qc = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [showForm, setShowForm] = useState(false);
   const [showFundir, setShowFundir] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("editar") === "1") setShowForm(true);
+  }, [searchParams]);
 
   const { data: ingredienteRaw, isLoading } = useQuery({
     queryKey: ["ingrediente", id],

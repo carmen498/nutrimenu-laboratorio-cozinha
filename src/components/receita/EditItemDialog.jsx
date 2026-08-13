@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Search, ArrowLeftRight, X, DollarSign } from "lucide-react";
+import { Search, ArrowLeftRight, X, DollarSign, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 
 export default function EditItemDialog({ open, onClose, item, porcoesBase, fator, onSave, saving, onEditPrice }) {
@@ -65,9 +66,16 @@ export default function EditItemDialog({ open, onClose, item, porcoesBase, fator
                   {item.ing.preco_por_g_rs > 0 ? `R$ ${item.ing.preco_por_g_rs.toFixed(4).replace(".", ",")}/g` : "não cadastrado"}
                 </span>
               </p>
-              <Button variant="outline" size="sm" className="h-7 text-xs shrink-0" onClick={() => onEditPrice(item.ing)}>
-                <DollarSign className="w-3.5 h-3.5 mr-1" /> Editar cadastro do ingrediente
-              </Button>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onEditPrice(item.ing)}>
+                  <DollarSign className="w-3.5 h-3.5 mr-1" /> Editar cadastro do ingrediente
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar preço do ingrediente no catálogo" asChild>
+                  <Link to={`/ingrediente/${item.ing.id}?editar=1`}>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
           {isIngrediente && (
