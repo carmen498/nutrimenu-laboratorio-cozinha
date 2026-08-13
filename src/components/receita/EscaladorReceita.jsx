@@ -86,15 +86,15 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           parseInput={parseDecimal}
         />
         <div className="flex items-center justify-center px-1 text-xl font-bold text-muted-foreground">×</div>
-        <StepCard
-          label="Nº porções"
-          value={porcoes || 0}
-          step={1}
-          onStep={(delta) => onChangePorcoes(Math.max(1, (porcoes || 0) + delta))}
-          onCommit={(v) => onChangePorcoes(Math.max(1, Math.round(v)))}
-          formatDisplay={(v) => (v > 0 ? (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ",")) : "")}
-          parseInput={parseDecimal}
-        />
+        <div className="flex-1 rounded-lg border p-3 bg-background border-border">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-2">Nº porções</p>
+          <div className="flex items-center justify-center h-10">
+            <span className="text-lg font-bold">
+              {porcoes > 0 ? (Number.isInteger(porcoes) ? String(porcoes) : porcoes.toFixed(2).replace(".", ",")) : "—"}
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground text-center mt-1">Calculado: Total ÷ PC</p>
+        </div>
         <div className="flex items-center justify-center px-1 text-xl font-bold text-muted-foreground">=</div>
         <StepCard
           label="Quantidade Total (kg)"
