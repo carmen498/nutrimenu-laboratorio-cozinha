@@ -254,6 +254,17 @@ export default function ReceitaAberta() {
     handleSavePDP(val);
   };
 
+  // Soma bruta (sem escala) dos pesos líquidos de todos os ingredientes da receita —
+  // usada para manter a Quantidade Total sempre refletindo a lista de ingredientes,
+  // independente do PC Recomendado estar definido ou não.
+  const somaIngredientesRaw = useMemo(() => {
+    if (!receita) return 0;
+    const porcoesBase = receita.porcoes_base || 1;
+    return itens
+      .filter((i) => i.tipo !== "grupo")
+      .reduce((sum, i) => sum + (i.quantidade_por_porcao || 0) * porcoesBase, 0);
+  }, [itens, receita]);
+
   // Per capita sugerido
   const perCapitaSugerido = useMemo(() => {
     if (!receita) return null;
@@ -265,28 +276,19 @@ export default function ReceitaAberta() {
 
   // Estado inicial do escalador: DESCREVE a receita cadastrada (rendimento PDP + PC gravado),
   // nunca escala nada por conta própria.
+  // Quantidade Total herda rendimento_total quando preenchido (>0); quando vazio/nulo/zero,
+  // cai para o Peso Bruto (soma automática dos ingredientes) em vez de zerar.
   // Nº de Porções depende do PC estar definido — sem PC, fica em branco (null), nunca cai
   // para porcoes_base como valor "de mentira".
   const estadoInicialEscala = useMemo(() => {
     if (!receita) return null;
     const pcInit = receita.per_capita_g || perCapitaSugerido?.g || 0;
-    const totalInit = receita.rendimento_total || 0;
+    const totalInit = receita.rendimento_total > 0 ? receita.rendimento_total : Math.round(somaIngredientesRaw);
     const porcoesInit = pcInit > 0 && totalInit > 0
       ? +(totalInit / pcInit).toFixed(2)
       : null;
     return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
-  }, [receita, perCapitaSugerido]);
-
-  // Soma bruta (sem escala) dos pesos líquidos de todos os ingredientes da receita —
-  // usada para manter a Quantidade Total sempre refletindo a lista de ingredientes,
-  // independente do PC Recomendado estar definido ou não.
-  const somaIngredientesRaw = useMemo(() => {
-    if (!receita) return 0;
-    const porcoesBase = receita.porcoes_base || 1;
-    return itens
-      .filter((i) => i.tipo !== "grupo")
-      .reduce((sum, i) => sum + (i.quantidade_por_porcao || 0) * porcoesBase, 0);
-  }, [itens, receita]);
+  }, [receita, perCapitaSugerido, somaIngredientesRaw]);
 
   // Inicializa o escalador uma única vez (por abertura da ficha) com o estado inicial —
   // ou, se a ficha foi aberta a partir de um cardápio/evento, com o contexto de origem.
