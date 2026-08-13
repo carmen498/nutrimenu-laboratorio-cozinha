@@ -10,14 +10,23 @@ import { toast } from "sonner";
 
 const SCROLL_KEY = "poucosIngredientesScrollY";
 
+// Cache simples em memória (fora do componente, sobrevive a remontagens da
+// página enquanto o app estiver aberto) para evitar reprocessar as ~2.200
+// receitas a cada vez que a aba é reaberta. Validade curta — dados que
+// mudaram fora deste relatório aparecem após expirar.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let reportCache = { data: null, timestamp: 0 };
+
 // Relatório somente leitura: receitas com 3 ingredientes reais ou menos
 // (ignora sub-títulos/grupos). Não altera nenhum dado das receitas — apenas
 // permite marcar como "resolvida" (registro próprio), removendo-a da lista.
 export default function RelatorioPoucosIngredientes() {
-  const [loading, setLoading] = useState(true);
-  const [linhas, setLinhas] = useState([]);
+  const cacheValido = reportCache.data && (Date.now() - reportCache.timestamp) < CACHE_TTL_MS;
+  const [loading, setLoading] = useState(!cacheValido);
+  const [linhas, setLinhas] = useState(cacheValido ? reportCache.data : []);
 
   useEffect(() => {
+    if (cacheValido) return;
     (async () => {
       const [receitas, itensAll, resolvidos] = await Promise.all([
         fetchAllPages(base44.entities.Receita, "-nome"),
@@ -47,9 +56,11 @@ export default function RelatorioPoucosIngredientes() {
       });
 
       resultado.sort((a, b) => a.categoria.localeCompare(b.categoria, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"));
+      reportCache = { data: resultado, timestamp: Date.now() };
       setLinhas(resultado);
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Restaura a posição de rolagem salva ao sair pelo nome da receita, uma vez
@@ -66,7 +77,11 @@ export default function RelatorioPoucosIngredientes() {
   const handleMarcarResolvido = async (linha) => {
     try {
       await base44.entities.PoucosIngredientesResolvido.create({ receita_id: linha.id, receita_nome: linha.nome });
-      setLinhas((prev) => prev.filter((l) => l.id !== linha.id));
+      setLinhas((prev) => {
+        const next = prev.filter((l) => l.id !== linha.id);
+        reportCache = { data: next, timestamp: reportCache.timestamp };
+        return next;
+      });
       toast.success("Receita marcada como resolvida");
     } catch (err) {
       toast.error("Erro ao marcar como resolvida: " + (err.message || ""));

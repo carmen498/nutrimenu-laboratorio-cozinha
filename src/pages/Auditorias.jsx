@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus } from "lucide-react";
@@ -12,9 +11,16 @@ import RelatorioPoucosIngredientes from "./RelatorioPoucosIngredientes";
 const TABS = ["rendimento", "receitas", "categorias", "duplicados", "faxina", "poucos"];
 
 export default function Auditorias() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const [tab, setTab] = useState(TABS.includes(tabParam) ? tabParam : "rendimento");
+  const tab = TABS.includes(tabParam) ? tabParam : "rendimento";
+
+  // Mantém a aba ativa sincronizada com a URL (replace, sem empilhar histórico
+  // extra) — assim, ao voltar pelo histórico do navegador a partir da ficha
+  // de uma receita, a URL já contém a aba correta e ela é restaurada ao remontar.
+  const handleTabChange = (value) => {
+    setSearchParams({ tab: value }, { replace: true });
+  };
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
@@ -22,7 +28,7 @@ export default function Auditorias() {
         Auditorias
       </h1>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="rendimento" className="gap-1.5">
             <AlertTriangle className="w-4 h-4" /> Rendimento
