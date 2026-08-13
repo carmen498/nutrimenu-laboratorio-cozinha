@@ -1,0 +1,17 @@
+{
+  "name": "PoucosIngredientesResolvido",
+  "type": "object",
+  "properties": {
+    "receita_id": {
+      "type": "string",
+      "description": "ID da receita marcada como resolvida no relat\u00f3rio de Poucos Ingredientes"
+    },
+    "receita_nome": {
+      "type": "string",
+      "description": "Nome da receita (cache)"
+    }
+  },
+  "required": [
+    "receita_id"
+  ]
+}
