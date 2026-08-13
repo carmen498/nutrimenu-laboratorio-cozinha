@@ -1,14 +1,15 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus } from "lucide-react";
 import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
 import RelatorioCategorias from "./RelatorioCategorias";
 import RelatorioDuplicados from "./RelatorioDuplicados";
 import RelatorioFaxinaCategorias from "./RelatorioFaxinaCategorias";
+import RelatorioPoucosIngredientes from "./RelatorioPoucosIngredientes";
 
-const TABS = ["rendimento", "receitas", "categorias", "duplicados", "faxina"];
+const TABS = ["rendimento", "receitas", "categorias", "duplicados", "faxina", "poucos"];
 
 export default function Auditorias() {
   const [searchParams] = useSearchParams();
@@ -38,6 +39,9 @@ export default function Auditorias() {
           <TabsTrigger value="faxina" className="gap-1.5">
             <Sparkles className="w-4 h-4" /> Faxina Categorias
           </TabsTrigger>
+          <TabsTrigger value="poucos" className="gap-1.5">
+            <ListMinus className="w-4 h-4" /> Poucos Ingredientes
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="rendimento" className="mt-4">
           <AuditoriaRendimento />
@@ -53,6 +57,9 @@ export default function Auditorias() {
         </TabsContent>
         <TabsContent value="faxina" className="mt-4">
           <RelatorioFaxinaCategorias />
+        </TabsContent>
+        <TabsContent value="poucos" className="mt-4">
+          <RelatorioPoucosIngredientes />
         </TabsContent>
       </Tabs>
     </div>

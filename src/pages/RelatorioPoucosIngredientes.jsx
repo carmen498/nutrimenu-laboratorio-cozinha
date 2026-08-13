@@ -4,7 +4,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { downloadCsv } from "@/lib/exportCsv";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Download } from "lucide-react";
+import { Download } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Relatório somente leitura: receitas com 3 ingredientes reais ou menos
@@ -59,14 +59,7 @@ export default function RelatorioPoucosIngredientes() {
   };
 
   return (
-    <div className="space-y-4 pb-8">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/"><ArrowLeft className="w-5 h-5" /></Link>
-        </Button>
-        <h1 className="font-display text-xl font-bold">Receitas com 3 ingredientes ou menos</h1>
-      </div>
-
+    <div className="space-y-4">
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
@@ -101,7 +94,7 @@ export default function RelatorioPoucosIngredientes() {
                   <tr key={idx} className="border-t">
                     <td className="p-2 text-muted-foreground">{l.categoria}</td>
                     <td className="p-2 font-medium">
-                      <Link to={`/receita/${l.id}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                      <Link to={`/receita/${l.id}`} className="text-primary hover:underline">
                         {l.nome}
                       </Link>
                     </td>

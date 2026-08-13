@@ -48,7 +48,6 @@ import Conta from '@/pages/Conta';
 import DicasCarmen from '@/pages/DicasCarmen';
 import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
 import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
-import RelatorioPoucosIngredientes from '@/pages/RelatorioPoucosIngredientes';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -108,7 +107,6 @@ const AuthenticatedApp = () => {
           <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
           <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
           <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
-          <Route path="/relatorio-poucos-ingredientes" element={<RelatorioPoucosIngredientes />} />
           <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
           <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
           <Route path="/auditorias" element={<Auditorias />} />
