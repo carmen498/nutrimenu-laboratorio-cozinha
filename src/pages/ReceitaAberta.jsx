@@ -105,6 +105,7 @@ export default function ReceitaAberta() {
   const [medidaInputValue, setMedidaInputValue] = useState("");
   const [showMedidasReceita, setShowMedidasReceita] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [existingCopyWarning, setExistingCopyWarning] = useState(null);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
     queryKey: ["receita", id],
@@ -348,7 +349,11 @@ export default function ReceitaAberta() {
   // Garante que a edição não recaia sobre o catálogo compartilhado: cria uma
   // cópia pessoal (fork) quando um não-admin edita uma receita is_base=true.
   const ensureEditavel = async () => {
-    const result = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin });
+    const result = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin, userId: user?.id });
+    if (result.blocked) {
+      setExistingCopyWarning({ existingCopyId: result.existingCopyId });
+      throw new Error("EXISTING_COPY_BLOCKED");
+    }
     if (result.forked) {
       toast.success("Uma cópia editável desta receita foi criada para você.");
       navigate(`/receita/${result.receitaId}`, { replace: true });
@@ -1710,6 +1715,24 @@ REGRAS:
           getMedidaDisplay={getMedidaDisplay}
         />
       )}
+
+      {/* Aviso: usuário já tem uma cópia pessoal desta receita */}
+      <AlertDialog open={!!existingCopyWarning} onOpenChange={(v) => !v && setExistingCopyWarning(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você já personalizou esta receita</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você já tem essa receita personalizada em Minhas Receitas. Deseja continuar editando a sua versão?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate(`/receita/${existingCopyWarning.existingCopyId}`)}>
+              Ir para minha cópia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Confirmação de exclusão da receita */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
