@@ -46,6 +46,7 @@ import Historico from '@/pages/Historico';
 import RelatorioReceitasPDF from '@/pages/RelatorioReceitasPDF';
 import Suporte from '@/pages/Suporte';
 import Conta from '@/pages/Conta';
+import Planos from '@/pages/Planos';
 import DicasCarmen from '@/pages/DicasCarmen';
 import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
 import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
@@ -105,6 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/historico" element={<Historico />} />
           <Route path="/suporte" element={<Suporte />} />
           <Route path="/conta" element={<Conta />} />
+          <Route path="/planos" element={<Planos />} />
           <Route path="/dicas-carmen" element={<DicasCarmen />} />
           <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
           <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
