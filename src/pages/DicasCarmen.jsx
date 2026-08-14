@@ -51,7 +51,7 @@ export default function DicasCarmen() {
     <div className="pb-24 md:pb-8">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="font-display text-2xl font-bold" style={{ color: "#2A4E3D" }}>
