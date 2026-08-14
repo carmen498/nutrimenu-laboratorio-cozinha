@@ -11,7 +11,7 @@
       "items": {
         "type": "string",
         "enum": [
-          "Carnes",
+          "Carnes Bovinas e Su\u00ednos",
           "Aves",
           "Peixes e Frutos do Mar",
           "Ovos",

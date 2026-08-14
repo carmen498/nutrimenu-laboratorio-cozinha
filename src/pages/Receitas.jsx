@@ -32,7 +32,7 @@ import { normalizarNome } from "@/lib/normalizarNome";
 import MinhasReceitasCard from "@/components/home/MinhasReceitasCard";
 
 const CORES_CATEGORIA = {
-  "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
+  "Carnes Bovinas e Suínos":       { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
   "Aves":                          { cor: "#FFF3E0", corTexto: "#E65100", corPill: "#FFD180", corPillTexto: "#BF360C" },
   "Peixes e Frutos do Mar":        { cor: "#E3F2FD", corTexto: "#1565C0", corPill: "#BBDEFB", corPillTexto: "#0D47A1" },
   "Ovos":                          { cor: "#FFF8E1", corTexto: "#F57F17", corPill: "#FFE082", corPillTexto: "#E65100" },
