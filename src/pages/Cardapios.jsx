@@ -16,6 +16,8 @@ import {
 import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown, ClipboardList, ArrowLeft } from "lucide-react";
 import ListaPlanejamentos from "@/components/planejamento/ListaPlanejamentos";
 import { lerRascunhoEvento } from "@/lib/eventoRascunho";
+import { useAuth } from "@/lib/AuthContext";
+import MeusCardapiosCard from "@/components/cardapio/MeusCardapiosCard";
 
 const TIPOS_CARDAPIO = [
   { nome: "Diário",        key: "diario",        icone: "🏠", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
@@ -39,7 +41,9 @@ const LABEL_UNIDADE = {
 
 export default function Cardapios() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [cardapios, setCardapios] = useState([]);
+  const [meusCardapiosCount, setMeusCardapiosCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos"); // todos | favoritos | tipo_key
@@ -69,6 +73,13 @@ export default function Cardapios() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    base44.entities.Cardapio.filter({ usuario_dono_id: user.id }, "", 500)
+      .then((lista) => setMeusCardapiosCount((lista || []).length))
+      .catch((e) => console.error(e));
+  }, [user?.id]);
 
   // Load cardapio tags when filter is active
   useEffect(() => {
@@ -272,6 +283,7 @@ export default function Cardapios() {
 
       {/* Type cards grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+        <MeusCardapiosCard count={meusCardapiosCount} />
         {TIPOS_CARDAPIO.map((t) => {
           const count = cardapios.filter(c => c.tipo === t.key).length;
           const ativo = filtroTipo === t.key;

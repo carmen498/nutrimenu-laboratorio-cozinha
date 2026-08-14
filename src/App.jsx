@@ -17,6 +17,7 @@ import Receitas from '@/pages/Receitas';
 import MinhasReceitas from '@/pages/MinhasReceitas';
 import ReceitaAberta from '@/pages/ReceitaAberta';
 import Cardapios from '@/pages/Cardapios';
+import MeusCardapios from '@/pages/MeusCardapios';
 import CardapioAberto from '@/pages/CardapioAberto';
 import FichaCardapio from '@/pages/FichaCardapio';
 import OrcamentoCardapio from '@/pages/OrcamentoCardapio';
@@ -84,6 +85,7 @@ const AuthenticatedApp = () => {
           <Route path="/minhas-receitas" element={<MinhasReceitas />} />
           <Route path="/receita/:id" element={<ReceitaAberta />} />
           <Route path="/cardapios" element={<Cardapios />} />
+          <Route path="/meus-cardapios" element={<MeusCardapios />} />
           <Route path="/cardapio/:id" element={<CardapioAberto />} />
           <Route path="/cardapio/:id/ficha" element={<FichaCardapio />} />
           <Route path="/cardapio/:id/orcamento" element={<OrcamentoCardapio />} />
