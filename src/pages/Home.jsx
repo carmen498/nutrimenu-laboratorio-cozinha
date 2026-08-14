@@ -10,6 +10,7 @@ import AcoesPrincipaisHome from "@/components/home/AcoesPrincipaisHome";
 import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
 import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
 import DicasCarmenCarousel from "@/components/home/DicasCarmenCarousel";
+import AvisoAssinaturaHome from "@/components/home/AvisoAssinaturaHome";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -74,6 +75,8 @@ export default function Home() {
 
   return (
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "0.25rem 1rem 0" }}>
+      <AvisoAssinaturaHome user={user} />
+
       {/* Hero */}
       <div className="pt-0 pb-1">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-1">

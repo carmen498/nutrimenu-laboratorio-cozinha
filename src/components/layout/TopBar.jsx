@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, Bell, Menu, ChevronDown, User, LifeBuoy, LogOut } from "lucide-react";
+import { Plus, Bell, Menu, ChevronDown, User, LifeBuoy, LogOut, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import TopBarSearch from "@/components/layout/TopBarSearch";
@@ -71,6 +71,9 @@ export default function TopBar({ onMenuClick }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/conta")}>
               <User className="w-4 h-4" /> Conta
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/planos")}>
+              <Sparkles className="w-4 h-4" /> Planos
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/suporte")}>
               <LifeBuoy className="w-4 h-4" /> Suporte
