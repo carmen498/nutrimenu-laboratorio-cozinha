@@ -33,7 +33,10 @@ async function criarReceitaDoItem(item, ingredientesById) {
   const pendentes = item.ingredientes.filter((i) => !i.resolvido);
 
   const categoriaValida = CATEGORIAS.includes(item.categoria) ? item.categoria : null;
-  const rendimentoTotal = item.ingredientes.reduce((acc, i) => acc + (i.quantidade_g || 0), 0);
+  // Peso Bruto real = soma apenas dos ingredientes vinculados (resolvidos), pois só eles
+  // geram registro IngredienteReceita — mesma base usada pelo fallback dinâmico de
+  // "Quantidade Total" (rendimentoEfetivo em custoReceita.js) quando rendimento_total é null.
+  const rendimentoTotal = resolvidos.reduce((acc, i) => acc + (i.quantidade_g || 0), 0);
 
   let notaFinal = (item.nota || "").trim();
   if (pendentes.length > 0) {
@@ -51,6 +54,10 @@ async function criarReceitaDoItem(item, ingredientesById) {
   }, 0);
   const custoTotalRounded = parseFloat(custoTotal.toFixed(2));
 
+  const pcRecomendado = item.porcao || 0;
+  const nPorcoes = pcRecomendado > 0 && rendimentoTotal > 0 ? rendimentoTotal / pcRecomendado : 1;
+  const custoPorPorcaoRounded = parseFloat((custoTotalRounded / nPorcoes).toFixed(2));
+
   const receita = await base44.entities.Receita.create({
     nome: item.nome.toUpperCase(),
     categorias: categoriaValida ? [categoriaValida] : [],
@@ -62,7 +69,7 @@ async function criarReceitaDoItem(item, ingredientesById) {
     modo_preparo: item.modo_preparo || "",
     nota: notaFinal,
     custo_total: custoTotalRounded,
-    custo_por_porcao: custoTotalRounded,
+    custo_por_porcao: custoPorPorcaoRounded,
   });
 
   for (let i = 0; i < resolvidos.length; i++) {
