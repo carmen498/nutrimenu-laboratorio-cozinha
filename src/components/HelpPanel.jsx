@@ -2,9 +2,9 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { HelpCircle, X, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
-import { helpContent } from "@/lib/helpContent";
+import { resolveHelpContent } from "@/lib/resolveHelpContent";
 
-export default function HelpPanel({ screenName = "", open: openProp, onOpenChange }) {
+export default function HelpPanel({ screenName = "", open: openProp, onOpenChange, focusFaqsSignal = 0 }) {
   const [openState, setOpenState] = useState(false);
   const open = openProp !== undefined ? openProp : openState;
   const setOpen = onOpenChange || setOpenState;
@@ -15,6 +15,7 @@ export default function HelpPanel({ screenName = "", open: openProp, onOpenChang
   const [questionError, setQuestionError] = useState("");
   const answerRef = useRef(null);
   const scrollRef = useRef(null);
+  const faqsRef = useRef(null);
 
   useEffect(() => {
     if (answer && answerRef.current && scrollRef.current) {
@@ -22,17 +23,14 @@ export default function HelpPanel({ screenName = "", open: openProp, onOpenChang
     }
   }, [answer]);
 
-  const content = useMemo(() => {
-    const exact = helpContent[screenName];
-    if (exact) return exact;
-    // Fallback: try partial match (e.g., "Receita" matches "Receita" key for /receita/:id)
-    if (screenName) {
-      for (const [key, val] of Object.entries(helpContent)) {
-        if (screenName.startsWith(key) || key.startsWith(screenName)) return val;
-      }
+  // Quando o botão "Ajuda com X" é clicado, leva direto para a seção de FAQ (em vez do topo do painel).
+  useEffect(() => {
+    if (focusFaqsSignal > 0 && open && faqsRef.current) {
+      faqsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    return null;
-  }, [screenName]);
+  }, [focusFaqsSignal, open]);
+
+  const content = useMemo(() => resolveHelpContent(screenName), [screenName]);
 
   const handleAsk = async () => {
     if (!question.trim()) { setQuestionError("Escreva sua dúvida para continuar."); return; }
@@ -103,7 +101,7 @@ export default function HelpPanel({ screenName = "", open: openProp, onOpenChang
 
           {/* FAQs */}
           {content?.faqs?.length > 0 && (
-            <div>
+            <div ref={faqsRef}>
               <h3 className="text-sm font-semibold text-foreground mb-2">Perguntas frequentes</h3>
               <div className="space-y-1">
                 {content.faqs.map((faq, idx) => (

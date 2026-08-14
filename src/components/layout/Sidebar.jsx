@@ -4,6 +4,9 @@ import {
   ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { getScreenName } from "@/lib/getScreenName";
+import { resolveHelpContent } from "@/lib/resolveHelpContent";
+import { ajudaWidgetContent } from "@/lib/ajudaWidgetContent";
 
 const laboratorioItems = [
   { path: "/receitas", label: "Receitas", icon: BookOpen },
@@ -30,9 +33,16 @@ function NavLink({ to, icon: Icon, label, active, onClick }) {
   );
 }
 
-function SidebarContent({ onNavigate, onHelpClick }) {
+function SidebarContent({ onNavigate, onHelpClick, onHelpFaqsClick }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+
+  const screenName = getScreenName(location.pathname, location.search);
+  const resolvedHelp = resolveHelpContent(screenName);
+  const widget = (resolvedHelp && ajudaWidgetContent[resolvedHelp.key]) || {
+    titulo: "Precisa de ajuda?",
+    descricao: "Acesse nossos guias e artigos de suporte.",
+  };
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
@@ -56,13 +66,19 @@ function SidebarContent({ onNavigate, onHelpClick }) {
 
       <div className="p-3 space-y-2 shrink-0">
         <div className="rounded-lg p-2.5 bg-sidebar-accent/60">
-          <p className="text-xs font-semibold mb-1">Precisa de ajuda?</p>
-          <p className="text-[11px] text-sidebar-foreground/70 mb-2">Acesse nossos guias e artigos de suporte.</p>
+          <p className="text-xs font-semibold mb-1">{widget.titulo}</p>
+          <p className="text-[11px] text-sidebar-foreground/70 mb-2">{widget.descricao}</p>
           <button
-            onClick={() => { onHelpClick?.(); onNavigate?.(); }}
+            onClick={() => { onHelpFaqsClick?.(); onNavigate?.(); }}
             className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-md bg-white/10 hover:bg-white/20 transition-colors"
           >
             <HelpCircle className="w-3.5 h-3.5" /> Central de Ajuda
+          </button>
+          <button
+            onClick={() => { onHelpClick?.(); onNavigate?.(); }}
+            className="w-full text-center text-[10px] text-sidebar-foreground/60 hover:text-sidebar-foreground/90 underline mt-1.5 transition-colors"
+          >
+            Central de ajuda completa
           </button>
         </div>
         <button
@@ -80,12 +96,12 @@ function SidebarContent({ onNavigate, onHelpClick }) {
   );
 }
 
-export default function Sidebar({ mobileOpen, onMobileClose, onHelpClick }) {
+export default function Sidebar({ mobileOpen, onMobileClose, onHelpClick, onHelpFaqsClick }) {
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:block fixed top-16 left-0 bottom-0 w-64 z-40 border-r border-sidebar-border">
-        <SidebarContent onHelpClick={onHelpClick} />
+        <SidebarContent onHelpClick={onHelpClick} onHelpFaqsClick={onHelpFaqsClick} />
       </aside>
 
       {/* Mobile drawer */}
@@ -98,7 +114,7 @@ export default function Sidebar({ mobileOpen, onMobileClose, onHelpClick }) {
               </button>
             </div>
             <div className="flex-1 min-h-0">
-              <SidebarContent onNavigate={onMobileClose} onHelpClick={onHelpClick} />
+              <SidebarContent onNavigate={onMobileClose} onHelpClick={onHelpClick} onHelpFaqsClick={onHelpFaqsClick} />
             </div>
           </div>
           <div className="flex-1 bg-black/50" onClick={onMobileClose} />

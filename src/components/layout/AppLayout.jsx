@@ -3,31 +3,15 @@ import { useState } from "react";
 import TopBar from "@/components/layout/TopBar";
 import Sidebar from "@/components/layout/Sidebar";
 import HelpPanel from "@/components/HelpPanel";
+import { getScreenName } from "@/lib/getScreenName";
 
 export default function AppLayout() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [helpFocusFaqsSignal, setHelpFocusFaqsSignal] = useState(0);
 
-  const screenName = (() => {
-    const p = location.pathname;
-    if (p === "/") return "Início";
-    if (p.startsWith("/receita/")) return "Receitas";
-    if (p === "/receitas") return "Receitas";
-    if (p.startsWith("/cardapio/")) return "Cardápio";
-    if (p === "/cardapios") return "Cardápios";
-    if (p === "/ingredientes") return "Ingredientes";
-    if (p === "/lista-compras") return location.search.includes("planejamento") ? "Lista de Compras" : "Carrinho";
-    if (p === "/percapita") return "Per Capita";
-    if (p === "/medidas-caseiras") return "Medidas Caseiras";
-    if (p === "/insumos-embalagens") return "Insumos e Embalagens";
-    if (p === "/relatorio-categorias") return "Relatório de Categorias";
-    if (p === "/auditoria-receitas") return "Auditoria de Receitas";
-    if (p === "/auditorias") return "Auditorias";
-    if (p === "/historico") return "Histórico";
-    if (p.startsWith("/exportar/")) return "Exportar Receita";
-    return "";
-  })();
+  const screenName = getScreenName(location.pathname, location.search);
 
   return (
     <div className="min-h-screen bg-background">
@@ -36,6 +20,7 @@ export default function AppLayout() {
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
         onHelpClick={() => setHelpOpen(true)}
+        onHelpFaqsClick={() => { setHelpOpen(true); setHelpFocusFaqsSignal((n) => n + 1); }}
       />
 
       <main className="pt-16 md:pl-64">
@@ -44,7 +29,7 @@ export default function AppLayout() {
         </div>
       </main>
 
-      <HelpPanel screenName={screenName} open={helpOpen} onOpenChange={setHelpOpen} />
+      <HelpPanel screenName={screenName} open={helpOpen} onOpenChange={setHelpOpen} focusFaqsSignal={helpFocusFaqsSignal} />
     </div>
   );
 }
