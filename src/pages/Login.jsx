@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { getManterLogadoPref, setManterLogadoPref } from "@/lib/manterLogadoPrefs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,29 @@ export default function Login() {
   const [manterLogado, setManterLogado] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const emailInputRef = useRef(null);
+
+  const applyPrefForEmail = (value) => {
+    setManterLogado(value ? getManterLogadoPref(value) : false);
+  };
+
+  // Handles browser-autofilled e-mail, which doesn't always fire a React onChange
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const autofilledEmail = emailInputRef.current?.value;
+      if (autofilledEmail && autofilledEmail !== email) {
+        setEmail(autofilledEmail);
+        applyPrefForEmail(autofilledEmail);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    applyPrefForEmail(value);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,6 +48,7 @@ export default function Login() {
     try {
       const response = await base44.auth.loginViaEmailPassword(email, password);
       base44.auth.setToken(response.access_token, manterLogado);
+      setManterLogadoPref(email, manterLogado);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -81,12 +106,13 @@ export default function Login() {
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
+              ref={emailInputRef}
               type="email"
               autoComplete="email"
               autoFocus
               placeholder="seu@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
               className="pl-10 h-12"
               required
             />
