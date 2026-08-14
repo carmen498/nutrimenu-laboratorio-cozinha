@@ -12,12 +12,14 @@ import { toast } from "sonner";
 
 export default function Conta() {
   const { user, checkUserAuth } = useAuth();
+  const [nomeCompleto, setNomeCompleto] = useState("");
   const [telefone, setTelefone] = useState("");
   const [empresa, setEmpresa] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
+      setNomeCompleto(user.nome_completo || "");
       setTelefone(user.telefone_whatsapp || "");
       setEmpresa(user.empresa || "");
     }
@@ -29,7 +31,7 @@ export default function Conta() {
     if (!telefoneValido) return;
     setSaving(true);
     try {
-      await base44.auth.updateMe({ telefone_whatsapp: telefone, empresa });
+      await base44.auth.updateMe({ nome_completo: nomeCompleto, telefone_whatsapp: telefone, empresa });
       await checkUserAuth();
       toast.success("Alterações salvas!");
     } catch (err) {
@@ -52,7 +54,11 @@ export default function Conta() {
 
         <div className="space-y-1.5">
           <Label>Nome</Label>
-          <Input value={user?.full_name || ""} disabled />
+          <Input
+            value={nomeCompleto}
+            onChange={(e) => setNomeCompleto(e.target.value)}
+            placeholder="Seu nome completo"
+          />
         </div>
 
         <div className="space-y-1.5">
@@ -70,9 +76,7 @@ export default function Conta() {
         </div>
 
         <div className="space-y-1.5">
-          <Label>
-            E-mail <span className="text-muted-foreground text-xs font-normal">(opcional)</span>
-          </Label>
+          <Label>E-mail</Label>
           <Input value={user?.email || ""} disabled />
         </div>
 
