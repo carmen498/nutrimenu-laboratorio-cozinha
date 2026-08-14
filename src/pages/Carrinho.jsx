@@ -7,8 +7,9 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
   AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { ShoppingCart, Trash2, ListX, Plus, FileDown } from "lucide-react";
+import { ShoppingCart, Trash2, ListX, Plus, FileDown, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { printarElementoIsolado } from "@/lib/printIsolado";
 import CarrinhoItemRow from "@/components/carrinho/CarrinhoItemRow";
@@ -18,6 +19,7 @@ import CarrinhoPDFPreview from "@/components/carrinho/CarrinhoPDFPreview";
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
 export default function Carrinho() {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [edits, setEdits] = useState({});
   const [confirmarLimpar, setConfirmarLimpar] = useState(false);
@@ -143,9 +145,14 @@ export default function Carrinho() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="font-display text-2xl font-bold flex items-center gap-2">
-          <ShoppingCart className="w-6 h-6 text-primary" /> Carrinho
-        </h1>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="font-display text-2xl font-bold flex items-center gap-2">
+            <ShoppingCart className="w-6 h-6 text-primary" /> Carrinho
+          </h1>
+        </div>
         {itens.length > 0 && (
           <div className="flex gap-2">
             <Button size="sm" variant="outline" className="gap-1" onClick={() => setShowPreviewPDF((v) => !v)}>

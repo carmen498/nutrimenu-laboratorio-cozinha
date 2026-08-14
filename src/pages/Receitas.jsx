@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste, CheckSquare, MoreHorizontal, FileText } from "lucide-react";
+import { Search, Plus, ChefHat, MoreVertical, Copy, Trash2, BookOpen, Sparkles, Upload, AlertTriangle, Star, Tag, X, LayoutGrid, ChevronDown, ClipboardPaste, CheckSquare, MoreHorizontal, FileText, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import NovaReceitaManual from "@/components/receita/NovaReceitaManual";
 import NovaReceitaIA from "@/components/receita/NovaReceitaIA";
@@ -249,7 +249,12 @@ export default function Receitas() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge></h1>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="font-display text-2xl font-bold">Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge></h1>
+        </div>
         <div className="flex gap-2">
           <Button
             variant={selectionMode ? "default" : "outline"}

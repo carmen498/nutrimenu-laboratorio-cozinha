@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { History, Search } from "lucide-react";
+import { History, Search, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import HistoricoItem from "@/components/historico/HistoricoItem";
 
 export default function Historico() {
+  const navigate = useNavigate();
   const [busca, setBusca] = useState("");
 
   const { data: registros = [], isLoading } = useQuery({
@@ -20,6 +23,9 @@ export default function Historico() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-4">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <History className="w-5 h-5" style={{ color: "#2A4E3D" }} />
         <h1 className="font-display text-xl font-bold" style={{ color: "#2A4E3D" }}>Histórico</h1>
       </div>

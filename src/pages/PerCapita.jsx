@@ -4,15 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Search, FileText, Pencil, RotateCcw, Check, X, Plus, Trash2 } from "lucide-react";
+import { Search, FileText, Pencil, RotateCcw, Check, X, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { percapitaData, todosItens, notaTecnica, referencias } from "@/lib/perCapitaData";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 
 const nomesGrupos = [...new Set(percapitaData.filter(i => i.tipo === "grupo").map(i => i.nome))];
 const prepSet = new Set(todosItens.map(i => i.prep));
 
 export default function PerCapita() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filtroGrupo, setFiltroGrupo] = useState("");
   const [editando, setEditando] = useState(null); // "prep_nome" sendo editado (sobreposição ou user-item)
@@ -246,6 +248,11 @@ export default function PerCapita() {
   return (
     <div className="space-y-4 pb-24 md:pb-8" ref={printRef}>
       {/* Header */}
+      <div className="no-print">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+      </div>
       <div className="text-center space-y-1 no-print">
         <h1 className="font-display text-lg md:text-xl font-bold leading-tight">
           TABELA DE REFERÊNCIA · PER CAPITA DE PREPARAÇÕES PRONTAS — CONSUMO BRASILEIRO

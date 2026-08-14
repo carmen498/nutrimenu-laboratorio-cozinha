@@ -7,13 +7,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Pencil, Trash2, Upload, Check, X, Utensils, Download } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Upload, Check, X, Utensils, Download, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import ImportarMedidasDialog from "@/components/medida/ImportarMedidasDialog";
 import { downloadCsv } from "@/lib/exportCsv";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 
 export default function MedidasCaseiras() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState("utensilios");
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
@@ -217,6 +219,9 @@ export default function MedidasCaseiras() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <Utensils className="w-5 h-5 text-primary" />
         <h1 className="font-display text-xl font-bold">Medidas Caseiras</h1>
       </div>

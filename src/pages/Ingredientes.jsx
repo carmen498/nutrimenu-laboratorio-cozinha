@@ -12,7 +12,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { Search, Plus, Upload, AlertTriangle, RefreshCw, History, Star, FileText, ShoppingCart, Tags, Download, MoreHorizontal, Clock, LayoutGrid, ChevronDown } from "lucide-react";
+import { Search, Plus, Upload, AlertTriangle, RefreshCw, History, Star, FileText, ShoppingCart, Tags, Download, MoreHorizontal, Clock, LayoutGrid, ChevronDown, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 import AtualizarPrecosDialog from "@/components/ingrediente/AtualizarPrecosDialog";
@@ -267,9 +267,14 @@ export default function Ingredientes() {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      <div>
-        <h1 className="font-display text-2xl font-bold">Ingredientes e Preços <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalIngredientes}</Badge></h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="font-display text-2xl font-bold">Ingredientes e Preços <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalIngredientes}</Badge></h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Preços por kg ou litro · itens por unidade mostram o preço da embalagem</p>
+        </div>
       </div>
 
       {/* Linha única de comando */}

@@ -7,14 +7,16 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Plus, Pencil, Trash2, Package, Check } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Package, Check, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const UNIDADES = ["Folha", "Cm", "Metro", "Unidade", "Pacote"];
 
 const emptyForm = { nome: "", categoria: "embalagem", unidade: "Unidade", preco_embalagem: "", quantidade_embalagem: "" };
 
 export default function InsumosEmbalagens() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -104,6 +106,9 @@ export default function InsumosEmbalagens() {
   return (
     <div className="space-y-4 pb-24 md:pb-8">
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <Package className="w-5 h-5 text-primary" />
         <h1 className="font-display text-xl font-bold">Insumos e Embalagens</h1>
       </div>

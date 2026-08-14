@@ -13,7 +13,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown, ClipboardList } from "lucide-react";
+import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown, ClipboardList, ArrowLeft } from "lucide-react";
 import ListaPlanejamentos from "@/components/planejamento/ListaPlanejamentos";
 import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 
@@ -194,13 +194,18 @@ export default function Cardapios() {
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Cardápios</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {aba === "cardapios"
-              ? `${cardapios.length} cardápio${cardapios.length !== 1 ? "s" : ""}`
-              : "Eventos"}
-          </p>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-display font-bold text-foreground">Cardápios</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {aba === "cardapios"
+                ? `${cardapios.length} cardápio${cardapios.length !== 1 ? "s" : ""}`
+                : "Eventos"}
+            </p>
+          </div>
         </div>
         {aba === "cardapios" && (
           <Button onClick={() => setShowNovo(true)} className="gap-2">
