@@ -29,6 +29,7 @@ import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { normalizarNome } from "@/lib/normalizarNome";
+import MinhasReceitasCard from "@/components/home/MinhasReceitasCard";
 
 const CORES_CATEGORIA = {
   "Carnes":                        { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -122,6 +123,12 @@ export default function Receitas() {
     queryKey: ["all-itens-receita"],
     queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
     staleTime: 60 * 1000,
+  });
+
+  const { data: minhasReceitasList = [] } = useQuery({
+    queryKey: ["minhas-receitas-count", user?.id],
+    queryFn: () => base44.entities.Receita.filter({ usuario_dono_id: user.id }, "", 500),
+    enabled: !!user?.id,
   });
 
   // Catálogo compartilhado (is_base=true) com as cópias pessoais (forks) do
@@ -360,6 +367,7 @@ export default function Receitas() {
       </button>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+        <MinhasReceitasCard count={minhasReceitasList.length} />
         {CATEGORIAS_RECEITA.filter(cat => receitasExibidas.filter(r => hasCategoria(r, cat)).length > 0).map(cat => {
           const receitasCategoria = receitasExibidas.filter(r => hasCategoria(r, cat));
           const count = receitasCategoria.length;
