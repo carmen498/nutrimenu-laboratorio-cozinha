@@ -391,13 +391,14 @@ export default function ReceitaAberta() {
   const commitTotalGrams = async (grams) => {
     const g = Math.max(0, Math.round(grams));
     const pc = pcLocal || 0;
+    const baseTotal = quantidadeTotal || 0;
     setQuantidadeTotal(g);
     setPorcoes(pc > 0 ? Math.max(0, Math.floor(g / pc)) : null);
-    const baseTotal = receita?.rendimento_total || 0;
-    if (baseTotal <= 0 || g === baseTotal) return;
+    const temIngredientes = itens.some((i) => i.tipo !== "grupo");
+    if ((baseTotal <= 0 && !temIngredientes) || g === baseTotal) return;
     try {
       const { receitaId, mapItemId } = await ensureEditavel();
-      const fatorRescale = g / baseTotal;
+      const fatorRescale = baseTotal > 0 ? g / baseTotal : 1;
       const updates = itens
         .filter((i) => i.tipo !== "grupo")
         .map((i) => ({ id: mapItemId(i.id), quantidade_por_porcao: (i.quantidade_por_porcao || 0) * fatorRescale }));
