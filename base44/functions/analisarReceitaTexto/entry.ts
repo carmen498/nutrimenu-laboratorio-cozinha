@@ -114,9 +114,23 @@ Deno.serve(async (req) => {
     const parsedBlocks = blocks.map(parseBlock);
 
     // ── READ-ONLY lookups (shared across all blocks) ──
-    const ingredientesDb = await base44.entities.Ingrediente.list('-nome', 500);
-    const sinonimos = await base44.entities.SinonimosIngredientes.list('-created_date', 2000);
-    const receitasExistentes = await base44.entities.Receita.list('-nome', 2000);
+    // Paginado até o fim: um limite fixo deixava de fora ingredientes/receitas
+    // comuns que caem fora da primeira página, gerando falsos "pendentes".
+    const fetchAll = async (entityClient, sort, pageSize = 1000) => {
+      let all = [];
+      let skip = 0;
+      let lastLen = pageSize;
+      while (lastLen === pageSize) {
+        const page = await entityClient.list(sort, pageSize, skip);
+        all = all.concat(page);
+        lastLen = page.length;
+        skip += pageSize;
+      }
+      return all;
+    };
+    const ingredientesDb = await fetchAll(base44.entities.Ingrediente, '-nome');
+    const sinonimos = await fetchAll(base44.entities.SinonimosIngredientes, '-created_date');
+    const receitasExistentes = await fetchAll(base44.entities.Receita, '-nome');
 
     const porNome = {};
     ingredientesDb.forEach((ing) => {
