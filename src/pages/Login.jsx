@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
@@ -12,6 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [manterLogado, setManterLogado] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +22,8 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
+      const response = await base44.auth.loginViaEmailPassword(email, password);
+      base44.auth.setToken(response.access_token, manterLogado);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -118,6 +121,16 @@ export default function Login() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="manter-logado"
+            checked={manterLogado}
+            onCheckedChange={(v) => setManterLogado(v === true)}
+          />
+          <Label htmlFor="manter-logado" className="text-sm font-normal cursor-pointer">
+            Manter logado
+          </Label>
         </div>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
