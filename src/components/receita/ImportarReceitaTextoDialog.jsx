@@ -134,7 +134,7 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
       }
       setParsedList(data.receitas.map((r) => ({
         ...r,
-        selecionada: !r.erro && !r.existe,
+        selecionada: !r.erro,
         expanded: false,
       })));
     } catch (err) {
@@ -242,14 +242,14 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
               </DialogDescription>
             </DialogHeader>
             {(() => {
-              const selecionaveis = parsedList.filter((i) => !i.erro && !i.existe);
+              const selecionaveis = parsedList.filter((i) => !i.erro);
               const todasSelecionadas = selecionaveis.length > 0 && selecionaveis.every((i) => i.selecionada);
               return selecionaveis.length > 0 ? (
                 <div className="flex items-center gap-2 px-2.5 py-1.5 border rounded-lg bg-muted/30">
                   <Checkbox
                     checked={todasSelecionadas}
                     onCheckedChange={() => {
-                      setParsedList((prev) => prev.map((it) => (!it.erro && !it.existe ? { ...it, selecionada: !todasSelecionadas } : it)));
+                      setParsedList((prev) => prev.map((it) => (!it.erro ? { ...it, selecionada: !todasSelecionadas } : it)));
                     }}
                   />
                   <span className="text-sm font-medium">
@@ -267,7 +267,7 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
                     <div className="flex items-center gap-2 p-2.5">
                       <Checkbox
                         checked={item.selecionada}
-                        disabled={!!item.erro || item.existe}
+                        disabled={!!item.erro}
                         onCheckedChange={() => toggleSelecionada(idx)}
                       />
                       <button
