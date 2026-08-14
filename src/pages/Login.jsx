@@ -13,7 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [manterLogado, setManterLogado] = useState(true);
+  const [manterLogado, setManterLogado] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -125,6 +125,8 @@ export default function Login() {
         <div className="flex items-center gap-2">
           <Checkbox
             id="manter-logado"
+            name="manter-logado"
+            autoComplete="on"
             checked={manterLogado}
             onCheckedChange={(v) => setManterLogado(v === true)}
           />
