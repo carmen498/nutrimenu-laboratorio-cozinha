@@ -369,31 +369,45 @@ export default function ReceitaAberta() {
     }
     if (result.forked) {
       let novaUrl = `/receita/${result.receitaId}`;
+      let cardapioRewireOk = true;
       if (contextoCardapio) {
         try {
           const cardapioAtual = (await base44.entities.Cardapio.filter({ id: contextoCardapio.cardapioId }))[0];
-          if (cardapioAtual) {
-            const [receitasCard, insumosCard, tagsCard] = await Promise.all([
-              base44.entities.CardapioReceita.filter({ cardapio_id: cardapioAtual.id }, "ordem", 200),
-              base44.entities.CardapioInsumo.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
-              base44.entities.CardapioTag.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
-            ]);
-            const cardapioResult = await garantirCardapioEditavel({
-              cardapio: cardapioAtual, receitas: receitasCard, insumos: insumosCard, cardapioTags: tagsCard,
-              isAdmin, userId: user?.id,
-            });
-            if (cardapioResult.cardapioId) {
-              const itemId = cardapioResult.mapReceitaItemId(contextoCardapio.cardapioReceitaId);
-              await base44.entities.CardapioReceita.update(itemId, { receita_id: result.receitaId, receita_nome: receita.nome });
-              const params = new URLSearchParams(searchParams);
-              params.set("ctxCardapioId", cardapioResult.cardapioId);
-              params.set("ctxCardapioReceitaId", itemId);
-              novaUrl += `?${params.toString()}`;
-            }
-          }
-        } catch (err) { console.error(err); }
+          if (!cardapioAtual) throw new Error("Cardápio de origem não encontrado");
+          const [receitasCard, insumosCard, tagsCard] = await Promise.all([
+            base44.entities.CardapioReceita.filter({ cardapio_id: cardapioAtual.id }, "ordem", 200),
+            base44.entities.CardapioInsumo.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
+            base44.entities.CardapioTag.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
+          ]);
+          // Fonte única de verdade: garantirCardapioEditavel já verifica se o usuário
+          // já tem uma cópia pessoal deste cardápio (blocked=true+existingCopyId) —
+          // reaproveita essa cópia em vez de tentar forkar de novo.
+          const cardapioResult = await garantirCardapioEditavel({
+            cardapio: cardapioAtual, receitas: receitasCard, insumos: insumosCard, cardapioTags: tagsCard,
+            isAdmin, userId: user?.id,
+          });
+          const cardapioId = cardapioResult.blocked ? cardapioResult.existingCopyId : cardapioResult.cardapioId;
+          if (!cardapioId) throw new Error("Não foi possível preparar a cópia pessoal do cardápio");
+          // Localiza o item pelo receita_id original (robusto tanto para cópia recém-criada
+          // quanto para cópia pessoal já existente reaproveitada).
+          const itensCopia = await base44.entities.CardapioReceita.filter({ cardapio_id: cardapioId }, "ordem", 200);
+          const itemParaAtualizar = itensCopia.find((it) => it.receita_id === id);
+          if (!itemParaAtualizar) throw new Error("Item do cardápio não encontrado na cópia pessoal");
+          await base44.entities.CardapioReceita.update(itemParaAtualizar.id, { receita_id: result.receitaId, receita_nome: receita.nome });
+          const params = new URLSearchParams(searchParams);
+          params.set("ctxCardapioId", cardapioId);
+          params.set("ctxCardapioReceitaId", itemParaAtualizar.id);
+          novaUrl += `?${params.toString()}`;
+        } catch (err) {
+          console.error(err);
+          cardapioRewireOk = false;
+        }
       }
-      toast.success("Uma cópia editável desta receita foi criada para você.");
+      if (cardapioRewireOk) {
+        toast.success("Uma cópia editável desta receita foi criada para você.");
+      } else {
+        toast.error("A receita foi personalizada, mas houve um problema ao atualizar o cardápio — tente novamente.");
+      }
       navigate(novaUrl, { replace: true });
     }
     return result;

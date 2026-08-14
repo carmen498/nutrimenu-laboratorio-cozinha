@@ -42,6 +42,7 @@ const LABEL_UNIDADE = {
 export default function Cardapios() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [cardapios, setCardapios] = useState([]);
   const [meusCardapiosCount, setMeusCardapiosCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -125,6 +126,8 @@ export default function Cardapios() {
         observacoes: form.observacoes.trim(),
         num_unidades: 1,
         favorito: false,
+        is_base: isAdmin,
+        usuario_dono_id: isAdmin ? null : user?.id,
       });
       setForm({ nome: "", tipo: "", data: "", observacoes: "" });
       setShowNovo(false);
@@ -450,6 +453,7 @@ export default function Cardapios() {
                 placeholder="ex: Almoço de domingo"
                 value={form.nome}
                 onChange={e => setForm({ ...form, nome: e.target.value })}
+                autoComplete="off"
                 autoFocus
               />
             </div>
