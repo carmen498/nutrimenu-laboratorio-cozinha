@@ -57,7 +57,7 @@ async function criarReceitaDoItem(item, ingredientesById) {
     revisar: false,
     porcoes_base: 1,
     unidade_base: "g",
-    rendimento_total: rendimentoTotal,
+    rendimento_total: null,
     per_capita_g: item.porcao || null,
     modo_preparo: item.modo_preparo || "",
     nota: notaFinal,
