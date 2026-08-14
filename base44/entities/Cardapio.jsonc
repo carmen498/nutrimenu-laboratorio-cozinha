@@ -58,6 +58,28 @@
     "preco_venda_sugerido": {
       "type": "number",
       "description": "Pre\u00e7o de venda sugerido"
+    },
+    "is_base": {
+      "type": "boolean",
+      "default": true,
+      "description": "true = card\u00e1pio do cat\u00e1logo compartilhado original; false = c\u00f3pia pessoal criada automaticamente ao editar (fork-on-edit)"
+    },
+    "forked_from_id": {
+      "type": "string",
+      "description": "Quando is_base=false, ID do card\u00e1pio original (is_base=true) do qual este \u00e9 uma c\u00f3pia"
+    },
+    "cardapio_origem_id": {
+      "type": "string",
+      "description": "Feature 'Meus Card\u00e1pios': quando preenchido, indica que este \u00e9 uma c\u00f3pia pessoal derivada de outro card\u00e1pio. Aponta para o ID do card\u00e1pio original."
+    },
+    "usuario_dono_id": {
+      "type": "string",
+      "description": "Feature 'Meus Card\u00e1pios': ID do usu\u00e1rio dono desta c\u00f3pia pessoal. Se nulo, o card\u00e1pio \u00e9 original/p\u00fablico do Laborat\u00f3rio."
+    },
+    "data_personalizacao": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Feature 'Meus Card\u00e1pios': data/hora de cria\u00e7\u00e3o da c\u00f3pia pessoal (preenchida automaticamente)"
     }
   },
   "required": [
@@ -66,13 +88,43 @@
   ],
   "rls": {
     "read": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "data.is_base": true
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     }
   }
 }
