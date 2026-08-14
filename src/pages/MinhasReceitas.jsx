@@ -2,11 +2,12 @@ import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, ChefHat, LayoutGrid, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, ChefHat, LayoutGrid, User, ArrowLeft } from "lucide-react";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { normalizarNome } from "@/lib/normalizarNome";
@@ -14,6 +15,7 @@ import { getCorHex } from "@/lib/coresReceita";
 
 export default function MinhasReceitas() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [busca, setBusca] = useState("");
   const [categoriaSelecionada, setCategoriaSelecionada] = useState(null);
 
@@ -38,13 +40,18 @@ export default function MinhasReceitas() {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      <div>
-        <h1 className="font-display text-2xl font-bold">
-          Minhas Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Suas cópias pessoais de receitas do Laboratório, criadas automaticamente ao editar uma receita original.
-        </p>
+      <div className="flex items-start gap-2">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="font-display text-2xl font-bold">
+            Minhas Receitas <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{totalReceitas}</Badge>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Suas cópias pessoais de receitas do Laboratório, criadas automaticamente ao editar uma receita original.
+          </p>
+        </div>
       </div>
 
       {/* Search */}
