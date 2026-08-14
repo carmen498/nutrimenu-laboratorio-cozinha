@@ -48,6 +48,7 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
       }
       await base44.auth.updateMe({ nome_completo: fullName, telefone_whatsapp: telefone });
+      await base44.functions.invoke("inicializarTrialUsuario", {});
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Código de verificação inválido");

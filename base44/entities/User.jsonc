@@ -19,6 +19,46 @@
     "empresa": {
       "type": "string",
       "description": "Empresa ou neg\u00f3cio do usu\u00e1rio"
+    },
+    "plano_atual": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "mensal",
+        "anual",
+        "renovacao"
+      ],
+      "description": "Plano comercial atual do usu\u00e1rio"
+    },
+    "status_assinatura": {
+      "type": "string",
+      "enum": [
+        "ativo",
+        "trial",
+        "vencido",
+        "cancelado"
+      ],
+      "description": "Status atual da assinatura do usu\u00e1rio"
+    },
+    "data_inicio": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de in\u00edcio do plano/assinatura atual"
+    },
+    "data_expiracao": {
+      "type": "string",
+      "format": "date",
+      "description": "Data em que o acesso deixa de ser v\u00e1lido se n\u00e3o houver renova\u00e7\u00e3o/pagamento"
+    },
+    "data_proxima_cobranca": {
+      "type": "string",
+      "format": "date",
+      "description": "Data prevista da pr\u00f3xima cobran\u00e7a (planos recorrentes, opcional)"
+    },
+    "ciclo_renovacao": {
+      "type": "number",
+      "default": 0,
+      "description": "Contador de quantas vezes o usu\u00e1rio j\u00e1 renovou o plano, usado para liberar o plano 'Renova\u00e7\u00e3o' a partir do 2\u00ba ano"
     }
   },
   "required": [
