@@ -43,17 +43,17 @@ export const helpContent = {
     { q: "Como gero um relatório de várias receitas de uma categoria?", a: "Expanda a categoria e use o botão de relatório dentro do card." },
     { q: "Como uso Insumos e Embalagens numa receita?", a: "Aparece tanto na receita quanto no Cardápio — você adiciona itens vindos do banco de Insumos (aba própria, com preços cadastrados). Soma separado do custo de ingredientes." },
     { q: "Como funciona 'Quanto cobrar se eu vender?'", a: "Ajuste a margem (%) pelo slider — preço sugerido por porção calculado em tempo real." },
-    { q: "Como gero os relatórios da receita?", a: "'Exportar PDF' → Ficha Técnica ou Ficha de Custos; botão 'Lista de Compras' separado. Todos abrem em pré-visualização antes de baixar, com opção de Compartilhar." 
+    { q: "Como gero os relatórios da receita?", a: "'Exportar PDF' → Ficha Técnica ou Ficha de Custos; botão 'Lista de Compras' separado. Todos abrem em pré-visualização antes de baixar, com opção de Compartilhar." },
     { q: "Como uma receita vai parar em 'Minhas Receitas'?", a: "Automaticamente. Ao editar qualquer campo de uma receita original (ingrediente, PC Recomendado, Rendimento, ou usar o 'Escalar receita'), o sistema cria uma cópia personalizada e a salva em Minhas Receitas, sem nenhuma ação extra de sua parte." },
-{ q: "Minhas Receitas é a mesma coisa que duplicar uma receita?", a: "Não. 'Duplicar receita' cria uma cópia manual, independente, sob demanda. Uma receita em 'Minhas Receitas' é gerada automaticamente no momento em que você edita uma receita original, e mantém o vínculo com ela." },
-{ q: "Se eu editar a mesma receita original de novo, ele cria uma segunda cópia?", a: "Não. O sistema identifica que você já tem uma versão personalizada dessa receita e te leva direto para ela, evitando cópias duplicadas." },
-{ q: "A receita original muda quando eu edito minha cópia?", a: "Não. A receita original do Laboratório permanece intacta e continua disponível normalmente para você e para os demais usuários." },
-{ q: "Se o preço de um ingrediente mudar no catálogo, minha receita personalizada também muda?", a: "Sim. O custo é sempre calculado com o preço mais atual do catálogo — não fica congelado no momento em que você personalizou a receita." },
-{ q: "Posso remover um ingrediente ou mudar o nome dele só na minha versão?", a: "Sim. Alterações feitas na lista de ingredientes da sua cópia pessoal afetam só a sua versão — a receita original e o catálogo geral de ingredientes não são alterados." },
-{ q: "Como acesso minhas receitas personalizadas?", a: "Clique no card 'Minhas Receitas' na tela de Início, ou no mesmo card na tela de Receitas — os dois levam direto para a listagem das suas cópias." },
-{ q: "Como sei quantas receitas já personalizei?", a: "O número ao lado de 'Minhas Receitas' (na tela de Início e na de Receitas) mostra a contagem atualizada em tempo real." },
-{ q: "Se eu excluir uma receita de 'Minhas Receitas', perco o acesso a ela?", a: "Não. Você continua com acesso normal à receita original do Laboratório — só a sua versão personalizada é removida." },
-{ q: "Existe limite de quantas receitas posso personalizar?", a: "Não, você pode ter quantas cópias pessoais quiser." },}
+    { q: "Minhas Receitas é a mesma coisa que duplicar uma receita?", a: "Não. 'Duplicar receita' cria uma cópia manual, independente, sob demanda. Uma receita em 'Minhas Receitas' é gerada automaticamente no momento em que você edita uma receita original, e mantém o vínculo com ela." },
+    { q: "Se eu editar a mesma receita original de novo, ele cria uma segunda cópia?", a: "Não. O sistema identifica que você já tem uma versão personalizada dessa receita e te leva direto para ela, evitando cópias duplicadas." },
+    { q: "A receita original muda quando eu edito minha cópia?", a: "Não. A receita original do Laboratório permanece intacta e continua disponível normalmente para você e para os demais usuários." },
+    { q: "Se o preço de um ingrediente mudar no catálogo, minha receita personalizada também muda?", a: "Sim. O custo é sempre calculado com o preço mais atual do catálogo — não fica congelado no momento em que você personalizou a receita." },
+    { q: "Posso remover um ingrediente ou mudar o nome dele só na minha versão?", a: "Sim. Alterações feitas na lista de ingredientes da sua cópia pessoal afetam só a sua versão — a receita original e o catálogo geral de ingredientes não são alterados." },
+    { q: "Como acesso minhas receitas personalizadas?", a: "Clique no card 'Minhas Receitas' na tela de Início, ou no mesmo card na tela de Receitas — os dois levam direto para a listagem das suas cópias." },
+    { q: "Como sei quantas receitas já personalizei?", a: "O número ao lado de 'Minhas Receitas' (na tela de Início e na de Receitas) mostra a contagem atualizada em tempo real." },
+    { q: "Se eu excluir uma receita de 'Minhas Receitas', perco o acesso a ela?", a: "Não. Você continua com acesso normal à receita original do Laboratório — só a sua versão personalizada é removida." },
+    { q: "Existe limite de quantas receitas posso personalizar?", a: "Não, você pode ter quantas cópias pessoais quiser." }
   ]
 },
    "Cardápios e Eventos": {
