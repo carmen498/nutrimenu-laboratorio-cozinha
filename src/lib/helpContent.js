@@ -4,6 +4,10 @@ export const helpContent = {
       "Este é o ponto de partida do Laboratório de Cozinha, sua plataforma de gastronomia planejada. Aqui você acessa rapidamente os módulos principais: Receitas, Cardápios, Ingredientes, Lista de Compras e a tabela de Per Capita. Cada módulo foi desenhado para facilitar o dia a dia de quem cozinha profissionalmente — do cálculo de custos à montagem de cardápios completos.",
     faqs: [
       {
+        q: "O que é 'Minhas Receitas'?",
+        a: "Todas as receitas do Laboratório de Cozinha são originais e compartilhadas com todos os usuários. Quando você edita uma receita (muda ingrediente, per capita, rendimento, etc.), o sistema cria automaticamente uma cópia personalizada só sua, salva em 'Minhas Receitas' — a receita original do Laboratório continua intacta para todo mundo. Se você tentar editar a mesma receita de novo, o sistema te leva direto para a sua versão em Minhas Receitas, para evitar cópias duplicadas.",
+      },
+      {
         q: "Por onde começar?",
         a: "O ideal é começar cadastrando seus ingredientes em Ingredientes > Novo Ingrediente. Depois, crie suas receitas em Receitas > Nova Receita. Com receitas e ingredientes no sistema, você já pode calcular custos automaticamente e montar cardápios.",
       },

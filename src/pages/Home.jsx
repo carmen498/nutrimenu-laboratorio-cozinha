@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, AlertTriangle } from "lucide-react";
 
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import IndicadoresHome from "@/components/home/IndicadoresHome";
@@ -16,6 +17,15 @@ const CORES = {
 };
 
 export default function Home() {
+  const { user } = useAuth();
+
+  // Contagem real de cópias pessoais do usuário atual (feature "Minhas Receitas").
+  const { data: minhasReceitas = [] } = useQuery({
+    queryKey: ["minhas-receitas-count-home", user?.id],
+    queryFn: () => base44.entities.Receita.filter({ usuario_dono_id: user.id }, "", 500),
+    enabled: !!user?.id,
+  });
+
   // Todas as receitas, ordenadas por data real de atualização (updated_date).
   // Usada para: contagem total, contagem de "atualizadas nos últimos 30 dias"
   // e a lista de receitas atualizadas recentemente.
@@ -103,7 +113,7 @@ export default function Home() {
       </div>
 
       {/* Ações principais */}
-      <AcoesPrincipaisHome />
+      <AcoesPrincipaisHome minhasReceitasCount={minhasReceitas.length} />
 
       {/* Indicadores reais */}
       <IndicadoresHome

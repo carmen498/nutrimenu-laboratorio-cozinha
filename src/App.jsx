@@ -14,6 +14,7 @@ import ResetPassword from '@/pages/ResetPassword';
 import AppLayout from '@/components/layout/AppLayout';
 import Home from '@/pages/Home';
 import Receitas from '@/pages/Receitas';
+import MinhasReceitas from '@/pages/MinhasReceitas';
 import ReceitaAberta from '@/pages/ReceitaAberta';
 import Cardapios from '@/pages/Cardapios';
 import CardapioAberto from '@/pages/CardapioAberto';
@@ -79,6 +80,7 @@ const AuthenticatedApp = () => {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/receitas" element={<Receitas />} />
+          <Route path="/minhas-receitas" element={<MinhasReceitas />} />
           <Route path="/receita/:id" element={<ReceitaAberta />} />
           <Route path="/cardapios" element={<Cardapios />} />
           <Route path="/cardapio/:id" element={<CardapioAberto />} />
