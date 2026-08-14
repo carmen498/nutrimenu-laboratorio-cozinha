@@ -22,7 +22,7 @@ export default function DicasCarmenCarousel() {
   if (dicas.length === 0) return null;
 
   const dicaAtual = dicas[indice] || dicas[0];
-  const resumo = dicaAtual.conteudo?.slice(0, 140) + (dicaAtual.conteudo?.length > 140 ? "..." : "");
+  const resumo = dicaAtual.conteudo?.slice(0, 220) + (dicaAtual.conteudo?.length > 220 ? "..." : "");
 
   const irPara = (i) => setIndice((i + dicas.length) % dicas.length);
 
@@ -42,11 +42,11 @@ export default function DicasCarmenCarousel() {
       </div>
 
       {/* Conteúdo: foto da Carmen | texto | imagem do tema */}
-      <div className="grid grid-cols-1 md:grid-cols-[140px_1fr_200px] gap-5 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-[170px_1fr_220px] gap-6 items-stretch">
         {/* Foto da Carmen + assinatura */}
         <div className="flex flex-col items-center md:items-start">
           <div
-            className="w-full max-w-[140px] aspect-[3/5] rounded-lg overflow-hidden shrink-0"
+            className="w-full max-w-[170px] aspect-[3/5] rounded-lg overflow-hidden shrink-0"
             style={{ background: "#EFE9DC" }}
           >
             {fotoCarmen ? (
@@ -64,18 +64,18 @@ export default function DicasCarmenCarousel() {
         </div>
 
         {/* Texto */}
-        <div className="min-w-0">
+        <div className="min-w-0 flex flex-col justify-center py-2">
           <span
-            className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-2 uppercase tracking-wide"
+            className="inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-3 uppercase tracking-wide w-fit"
             style={{ background: "#FFF3CD", color: "#B8860B" }}
           >
             Em destaque
           </span>
-          <p className="font-display text-lg font-bold mb-1.5" style={{ color: "#2A4E3D" }}>{dicaAtual.titulo}</p>
-          <p className="text-sm text-muted-foreground mb-3">{resumo}</p>
+          <p className="font-display text-xl font-bold mb-2.5" style={{ color: "#2A4E3D" }}>{dicaAtual.titulo}</p>
+          <p className="text-base text-muted-foreground mb-4 leading-relaxed">{resumo}</p>
           <Link
             to={`/dicas-carmen/${dicaAtual.id}`}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-md transition-colors hover:opacity-90"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white px-4 py-2 rounded-md transition-colors hover:opacity-90 w-fit"
             style={{ background: "#2A4E3D" }}
           >
             Ler dica completa <ArrowRight className="w-4 h-4" />
@@ -83,7 +83,7 @@ export default function DicasCarmenCarousel() {
         </div>
 
         {/* Imagem do tema */}
-        <div className="aspect-[4/3] w-full rounded-lg overflow-hidden hidden md:block" style={{ background: "#EFE9DC" }}>
+        <div className="w-full h-full rounded-lg overflow-hidden hidden md:block" style={{ background: "#EFE9DC" }}>
           {dicaAtual.imagem_capa ? (
             <img src={dicaAtual.imagem_capa} alt={dicaAtual.titulo} className="w-full h-full object-cover" />
           ) : (
