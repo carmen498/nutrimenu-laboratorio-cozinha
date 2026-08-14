@@ -39,6 +39,7 @@ import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
 import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
+import EscalarReceitaDialog from "@/components/receita/EscalarReceitaDialog";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -105,6 +106,7 @@ export default function ReceitaAberta() {
   const [medidaInputValue, setMedidaInputValue] = useState("");
   const [showMedidasReceita, setShowMedidasReceita] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEscalar, setShowEscalar] = useState(false);
   const [existingCopyWarning, setExistingCopyWarning] = useState(null);
 
   const { data: receita, isLoading: loadingReceita } = useQuery({
@@ -1278,6 +1280,11 @@ REGRAS:
         isEscalado={isEscalado}
         onRestore={handleRestaurarEscala}
       />
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={() => setShowEscalar(true)}>
+          <Scale className="w-3.5 h-3.5 mr-1" /> Escalar receita
+        </Button>
+      </div>
       {/* Ingredients table */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -1665,6 +1672,15 @@ REGRAS:
 
       {showEdit && (
         <EditReceitaDialog open={true} onClose={() => setShowEdit(false)} receita={receita} itens={itens} />
+      )}
+
+      {showEscalar && (
+        <EscalarReceitaDialog
+          open={true}
+          onClose={() => setShowEscalar(false)}
+          pc={pcLocal || 0}
+          onConfirm={commitTotalGrams}
+        />
       )}
 
       {editingItem && (
