@@ -48,6 +48,7 @@ import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { registrarHistorico } from "@/lib/registrarHistorico";
 import { garantirReceitaEditavel } from "@/lib/forkReceita";
+import { garantirCardapioEditavel } from "@/lib/forkCardapio";
 import { useAuth } from "@/lib/AuthContext";
 import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados, salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
 
@@ -67,6 +68,16 @@ export default function ReceitaAberta() {
     const pessoas = parseFloat(searchParams.get("ctxPessoas"));
     const nome = searchParams.get("ctxNome");
     if (pc > 0 && pessoas > 0 && nome) return { pc, pessoas, nome };
+    return null;
+  }, [searchParams]);
+
+  // Quando a ficha é aberta a partir de um cardápio (ctxCardapioId/ctxCardapioReceitaId),
+  // editar esta receita também personaliza o cardápio de origem (cria/reaproveita uma
+  // cópia pessoal em "Meus Cardápios" e aponta o prato para a receita personalizada).
+  const contextoCardapio = useMemo(() => {
+    const cardapioId = searchParams.get("ctxCardapioId");
+    const cardapioReceitaId = searchParams.get("ctxCardapioReceitaId");
+    if (cardapioId && cardapioReceitaId) return { cardapioId, cardapioReceitaId };
     return null;
   }, [searchParams]);
   const [porcoes, setPorcoes] = useState(null);
@@ -357,8 +368,33 @@ export default function ReceitaAberta() {
       throw new Error("EXISTING_COPY_BLOCKED");
     }
     if (result.forked) {
+      let novaUrl = `/receita/${result.receitaId}`;
+      if (contextoCardapio) {
+        try {
+          const cardapioAtual = (await base44.entities.Cardapio.filter({ id: contextoCardapio.cardapioId }))[0];
+          if (cardapioAtual) {
+            const [receitasCard, insumosCard, tagsCard] = await Promise.all([
+              base44.entities.CardapioReceita.filter({ cardapio_id: cardapioAtual.id }, "ordem", 200),
+              base44.entities.CardapioInsumo.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
+              base44.entities.CardapioTag.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
+            ]);
+            const cardapioResult = await garantirCardapioEditavel({
+              cardapio: cardapioAtual, receitas: receitasCard, insumos: insumosCard, cardapioTags: tagsCard,
+              isAdmin, userId: user?.id,
+            });
+            if (cardapioResult.cardapioId) {
+              const itemId = cardapioResult.mapReceitaItemId(contextoCardapio.cardapioReceitaId);
+              await base44.entities.CardapioReceita.update(itemId, { receita_id: result.receitaId, receita_nome: receita.nome });
+              const params = new URLSearchParams(searchParams);
+              params.set("ctxCardapioId", cardapioResult.cardapioId);
+              params.set("ctxCardapioReceitaId", itemId);
+              novaUrl += `?${params.toString()}`;
+            }
+          }
+        } catch (err) { console.error(err); }
+      }
       toast.success("Uma cópia editável desta receita foi criada para você.");
-      navigate(`/receita/${result.receitaId}`, { replace: true });
+      navigate(novaUrl, { replace: true });
     }
     return result;
   };

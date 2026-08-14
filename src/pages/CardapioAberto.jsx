@@ -31,6 +31,12 @@ import { custoEscalado } from "@/lib/custoReceita";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
+import { garantirCardapioEditavel } from "@/lib/forkCardapio";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogCancel, AlertDialogAction
+} from "@/components/ui/alert-dialog";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -78,8 +84,11 @@ const INSUMOS_SUGESTOES = {
 export default function CardapioAberto() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const [cardapio, setCardapio] = useState(null);
+  const [existingCopyWarning, setExistingCopyWarning] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cardapioTags, setCardapioTags] = useState([]);
   const [allTags, setAllTags] = useState([]);
@@ -173,10 +182,42 @@ export default function CardapioAberto() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Garante que o usuário pode editar este cardápio diretamente — se for um
+  // cardápio do catálogo compartilhado (is_base=true) e o usuário não for admin,
+  // cria (ou reaproveita) uma cópia pessoal em "Meus Cardápios" antes de aplicar a edição.
+  const ensureEditavel = async () => {
+    if (!cardapio) {
+      return { cardapioId: null, receitasAtual: receitas, insumosAtual: insumos, cardapioTagsAtual: cardapioTags, mapReceitaItemId: (x) => x, mapInsumoId: (x) => x, mapTagId: (x) => x, forked: false };
+    }
+    const result = await garantirCardapioEditavel({ cardapio, receitas, insumos, cardapioTags, isAdmin, userId: user?.id });
+    if (result.blocked) {
+      setExistingCopyWarning({ existingCopyId: result.existingCopyId });
+      throw new Error("EXISTING_COPY_BLOCKED");
+    }
+    if (result.forked) {
+      setCardapio(result.novoCardapio);
+      setReceitas(result.novasReceitas);
+      setInsumos(result.novosInsumos);
+      setCardapioTags(result.novasTags);
+      toast.success("Uma cópia editável deste cardápio foi criada para você.");
+      navigate(`/cardapio/${result.cardapioId}`, { replace: true });
+      return {
+        cardapioId: result.cardapioId, receitasAtual: result.novasReceitas, insumosAtual: result.novosInsumos,
+        cardapioTagsAtual: result.novasTags, mapReceitaItemId: result.mapReceitaItemId,
+        mapInsumoId: result.mapInsumoId, mapTagId: result.mapTagId, forked: true,
+      };
+    }
+    return {
+      cardapioId: result.cardapioId, receitasAtual: receitas, insumosAtual: insumos, cardapioTagsAtual: cardapioTags,
+      mapReceitaItemId: result.mapReceitaItemId, mapInsumoId: result.mapInsumoId, mapTagId: result.mapTagId, forked: false,
+    };
+  };
+
   const saveCardapio = async (field, value) => {
     if (!cardapio) return;
+    const { cardapioId } = await ensureEditavel();
     setCardapio(prev => ({ ...prev, [field]: value }));
-    try { await base44.entities.Cardapio.update(cardapio.id, { [field]: value }); }
+    try { await base44.entities.Cardapio.update(cardapioId, { [field]: value }); }
     catch (e) { console.error(e); }
   };
 
@@ -184,8 +225,10 @@ export default function CardapioAberto() {
   const toggleFav = async () => {
     const novo = !favLocal;
     setFavLocal(novo);
-    try { await base44.entities.Cardapio.update(cardapio.id, { favorito: novo }); }
-    catch (e) { setFavLocal(!novo); console.error(e); }
+    try {
+      const { cardapioId } = await ensureEditavel();
+      await base44.entities.Cardapio.update(cardapioId, { favorito: novo });
+    } catch (e) { setFavLocal(!novo); console.error(e); }
   };
 
   // Duplicar
@@ -219,11 +262,12 @@ export default function CardapioAberto() {
   // === RECEITAS ===
   const addReceita = async (receita) => {
     if (!cardapio) return;
+    const { cardapioId } = await ensureEditavel();
     const perCapitaDefault = isBuffet
       ? +(sugerirPerCapita(receita.nome, receita.categoria) / 1000).toFixed(3)
       : sugerirPerCapita(receita.nome, receita.categoria);
     const nova = {
-      cardapio_id: cardapio.id, receita_id: receita.id,
+      cardapio_id: cardapioId, receita_id: receita.id,
       receita_nome: receita.nome, receita_categoria: receita.categoria || "",
       per_capita_g: perCapitaDefault,
       quantidade_total_g: perCapitaDefault * num,
@@ -241,26 +285,31 @@ export default function CardapioAberto() {
 
   const removeReceita = async (recId) => {
     if (!confirm("Remover esta receita do cardápio?")) return;
-    await base44.entities.CardapioReceita.delete(recId);
-    setReceitas(prev => prev.filter(r => r.id !== recId));
+    const { mapReceitaItemId } = await ensureEditavel();
+    const newId = mapReceitaItemId(recId);
+    await base44.entities.CardapioReceita.delete(newId);
+    setReceitas(prev => prev.filter(r => r.id !== newId));
   };
 
   const updateReceita = async (recId, field, value) => {
-    setReceitas(prev => prev.map(r => r.id === recId ? { ...r, [field]: value } : r));
-    try { await base44.entities.CardapioReceita.update(recId, { [field]: value }); }
+    const { mapReceitaItemId } = await ensureEditavel();
+    const newId = mapReceitaItemId(recId);
+    setReceitas(prev => prev.map(r => r.id === newId ? { ...r, [field]: value } : r));
+    try { await base44.entities.CardapioReceita.update(newId, { [field]: value }); }
     catch (e) { console.error(e); }
   };
 
   const moveReceita = async (recId, dir) => {
-    const idx = receitas.findIndex(r => r.id === recId);
+    const { receitasAtual, mapReceitaItemId } = await ensureEditavel();
+    const idx = receitasAtual.findIndex(r => r.id === mapReceitaItemId(recId));
     if (idx < 0) return;
     const ni = idx + dir;
-    if (ni < 0 || ni >= receitas.length) return;
-    const upd = [...receitas];
+    if (ni < 0 || ni >= receitasAtual.length) return;
+    const upd = [...receitasAtual];
     [upd[idx], upd[ni]] = [upd[ni], upd[idx]];
     setReceitas(upd);
     try {
-      await base44.entities.CardapioReceita.update(recId, { ordem: ni + 1 });
+      await base44.entities.CardapioReceita.update(upd[ni].id, { ordem: ni + 1 });
       await base44.entities.CardapioReceita.update(upd[idx].id, { ordem: idx + 1 });
     } catch (e) { console.error(e); }
   };
@@ -281,6 +330,7 @@ export default function CardapioAberto() {
   const recalcRef = useRef(false);
   useEffect(() => {
     if (!cardapio || recalcRef.current || receitas.length === 0) return;
+    if (!(isAdmin || cardapio.is_base === false)) return;
     recalcRef.current = true;
     (async () => {
       for (const r of receitas) {
@@ -297,9 +347,10 @@ export default function CardapioAberto() {
   // === INSUMOS ===
   const addInsumo = async (insumo) => {
     if (!cardapio) return;
+    const { cardapioId } = await ensureEditavel();
     const qtd = insumo._sugestao_qtd || 1;
     const novo = {
-      cardapio_id: cardapio.id, insumo_id: insumo.id || "",
+      cardapio_id: cardapioId, insumo_id: insumo.id || "",
       nome: insumo.nome || "", quantidade: qtd,
       unidade: insumo.unidade || "un",
       custo_unitario: Number(insumo.preco_unitario) || 0,
@@ -310,28 +361,34 @@ export default function CardapioAberto() {
   };
 
   const updateInsumo = async (insId, field, value) => {
+    const { insumosAtual, mapInsumoId } = await ensureEditavel();
+    const newId = mapInsumoId(insId);
     const upd = { [field]: value };
-    const ins = insumos.find(i => i.id === insId);
+    const ins = insumosAtual.find(i => i.id === newId);
     if (field === "quantidade" || field === "custo_unitario") {
       const q = field === "quantidade" ? Number(value) : Number(ins?.quantidade || 0);
       const cu = field === "custo_unitario" ? Number(value) : Number(ins?.custo_unitario || 0);
       upd.custo_total = q * cu;
     }
-    setInsumos(prev => prev.map(i => i.id === insId ? { ...i, ...upd } : i));
-    try { await base44.entities.CardapioInsumo.update(insId, upd); }
+    setInsumos(prev => prev.map(i => i.id === newId ? { ...i, ...upd } : i));
+    try { await base44.entities.CardapioInsumo.update(newId, upd); }
     catch (e) { console.error(e); }
   };
 
   const removeInsumo = async (insId) => {
-    await base44.entities.CardapioInsumo.delete(insId);
-    setInsumos(prev => prev.filter(i => i.id !== insId));
+    const { mapInsumoId } = await ensureEditavel();
+    const newId = mapInsumoId(insId);
+    await base44.entities.CardapioInsumo.delete(newId);
+    setInsumos(prev => prev.filter(i => i.id !== newId));
   };
 
   // === VENDA ===
   const saveMarkup = async (val) => {
     setMarkup(val);
-    try { await base44.entities.Cardapio.update(cardapio.id, { markup_percentual: val }); }
-    catch (e) { console.error(e); }
+    try {
+      const { cardapioId } = await ensureEditavel();
+      await base44.entities.Cardapio.update(cardapioId, { markup_percentual: val });
+    } catch (e) { console.error(e); }
   };
 
   // === LISTA DE COMPRAS ===
@@ -400,8 +457,9 @@ export default function CardapioAberto() {
     if (!editForm.nome.trim() || !editForm.tipo) return;
     setSalvandoEditar(true);
     try {
+      const { cardapioId } = await ensureEditavel();
       const upd = { nome: editForm.nome.trim(), tipo: editForm.tipo, data: editForm.data || null };
-      await base44.entities.Cardapio.update(cardapio.id, upd);
+      await base44.entities.Cardapio.update(cardapioId, upd);
       setCardapio(prev => ({ ...prev, ...upd }));
       setShowEditar(false);
     } catch (e) { console.error(e); }
@@ -541,8 +599,10 @@ export default function CardapioAberto() {
                 nome={tag.nome}
                 cor={tag.cor}
                 onClick={async () => {
-                  await base44.entities.CardapioTag.delete(ct.id);
-                  setCardapioTags(prev => prev.filter(t => t.id !== ct.id));
+                  const { mapTagId } = await ensureEditavel();
+                  const newId = mapTagId(ct.id);
+                  await base44.entities.CardapioTag.delete(newId);
+                  setCardapioTags(prev => prev.filter(t => t.id !== newId));
                 }}
               />
             );
@@ -550,13 +610,15 @@ export default function CardapioAberto() {
           <TagSelector
             selectedIds={cardapioTags.map(ct => ct.tag_id)}
             onToggle={async (tag) => {
-              const exists = cardapioTags.find(ct => ct.tag_id === tag.id);
+              const { cardapioId, cardapioTagsAtual, mapTagId } = await ensureEditavel();
+              const exists = cardapioTagsAtual.find(ct => ct.tag_id === tag.id);
               if (exists) {
-                await base44.entities.CardapioTag.delete(exists.id);
-                setCardapioTags(prev => prev.filter(t => t.id !== tag.id));
+                const newId = mapTagId(exists.id);
+                await base44.entities.CardapioTag.delete(newId);
+                setCardapioTags(prev => prev.filter(t => t.id !== newId));
               } else {
                 const novo = await base44.entities.CardapioTag.create({
-                  cardapio_id: cardapio.id,
+                  cardapio_id: cardapioId,
                   tag_id: tag.id,
                   tag_nome: tag.nome,
                   tag_grupo: tag.grupo,
@@ -579,6 +641,7 @@ export default function CardapioAberto() {
           isBuffet={isBuffet}
           num={num}
           cardapioNome={cardapio.nome}
+          cardapioId={cardapio.id}
           cardapioTipo={cardapio.tipo}
           temDias={temDias}
           diasOptions={diasDisponiveis ? diasDisponiveis.map(k => DIAS.find(d => d.key === k)).filter(Boolean) : DIAS}
@@ -837,6 +900,24 @@ export default function CardapioAberto() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Aviso: já existe uma cópia pessoal deste cardápio */}
+      <AlertDialog open={!!existingCopyWarning} onOpenChange={(open) => !open && setExistingCopyWarning(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você já tem uma cópia pessoal deste cardápio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Para evitar cópias duplicadas, continue editando a versão que já está em "Meus Cardápios".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setExistingCopyWarning(null)}>Fechar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => navigate(`/cardapio/${existingCopyWarning?.existingCopyId}`)}>
+              Ir para minha cópia
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

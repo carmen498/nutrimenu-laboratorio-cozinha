@@ -15,7 +15,7 @@ export default function CardapioPratoLinha({
   contexto,
 }) {
   const linkTo = contexto && contexto.nome
-    ? `/receita/${rec.receita_id}?ctxPc=${rec.per_capita_g || 0}&ctxPessoas=${contexto.pessoas || 0}&ctxNome=${encodeURIComponent(contexto.nome)}`
+    ? `/receita/${rec.receita_id}?ctxPc=${rec.per_capita_g || 0}&ctxPessoas=${contexto.pessoas || 0}&ctxNome=${encodeURIComponent(contexto.nome)}${contexto.cardapioId ? `&ctxCardapioId=${contexto.cardapioId}&ctxCardapioReceitaId=${rec.id}` : ""}`
     : `/receita/${rec.receita_id}`;
   return (
     <div
