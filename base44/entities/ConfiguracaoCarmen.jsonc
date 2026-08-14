@@ -1,0 +1,29 @@
+{
+  "name": "ConfiguracaoCarmen",
+  "type": "object",
+  "properties": {
+    "foto_url": {
+      "type": "string",
+      "description": "URL da foto da Carmen usada no banner 'Dicas da Carmen' e na assinatura"
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
