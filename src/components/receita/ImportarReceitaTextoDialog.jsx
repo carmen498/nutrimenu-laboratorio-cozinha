@@ -241,6 +241,23 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
                 {parsedList.length} receita{parsedList.length > 1 ? "s" : ""} encontrada{parsedList.length > 1 ? "s" : ""} no texto. Revise e selecione o que deseja criar.
               </DialogDescription>
             </DialogHeader>
+            {(() => {
+              const selecionaveis = parsedList.filter((i) => !i.erro && !i.existe);
+              const todasSelecionadas = selecionaveis.length > 0 && selecionaveis.every((i) => i.selecionada);
+              return selecionaveis.length > 0 ? (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 border rounded-lg bg-muted/30">
+                  <Checkbox
+                    checked={todasSelecionadas}
+                    onCheckedChange={() => {
+                      setParsedList((prev) => prev.map((it) => (!it.erro && !it.existe ? { ...it, selecionada: !todasSelecionadas } : it)));
+                    }}
+                  />
+                  <span className="text-sm font-medium">
+                    {todasSelecionadas ? "Desmarcar todas" : "Selecionar todas"} ({selecionaveis.length})
+                  </span>
+                </div>
+              ) : null;
+            })()}
             <div className="space-y-2">
               {parsedList.map((item, idx) => {
                 const resolvidosCount = item.ingredientes.filter((i) => i.resolvido).length;
