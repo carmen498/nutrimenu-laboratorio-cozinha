@@ -48,6 +48,7 @@ import RelatorioReceitasPDF from '@/pages/RelatorioReceitasPDF';
 import Suporte from '@/pages/Suporte';
 import Sobre from '@/pages/Sobre';
 import Conta from '@/pages/Conta';
+import AdminUsuarios from '@/pages/AdminUsuarios';
 import Planos from '@/pages/Planos';
 import DicasCarmen from '@/pages/DicasCarmen';
 import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
@@ -110,6 +111,7 @@ const AuthenticatedApp = () => {
           <Route path="/suporte" element={<Suporte />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/conta" element={<Conta />} />
+          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           <Route path="/planos" element={<Planos />} />
           <Route path="/dicas-carmen" element={<DicasCarmen />} />
           <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />

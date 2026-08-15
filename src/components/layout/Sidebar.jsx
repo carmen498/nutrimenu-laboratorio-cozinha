@@ -1,9 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home, BookOpen, Apple, CalendarDays, Gauge, Utensils, Package,
-  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X,
+  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, Users,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import { getScreenName } from "@/lib/getScreenName";
 import { resolveHelpContent } from "@/lib/resolveHelpContent";
 import { ajudaWidgetContent } from "@/lib/ajudaWidgetContent";
@@ -35,6 +36,8 @@ function NavLink({ to, icon: Icon, label, active, onClick }) {
 
 function SidebarContent({ onNavigate, onHelpFaqsClick }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const isActive = (path) => location.pathname === path;
 
   const screenName = getScreenName(location.pathname, location.search);
@@ -61,6 +64,9 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           <NavLink to="/historico" icon={History} label="Histórico" active={isActive("/historico")} onClick={onNavigate} />
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
+          {isAdmin && (
+            <NavLink to="/admin/usuarios" icon={Users} label="Usuários" active={isActive("/admin/usuarios")} onClick={onNavigate} />
+          )}
         </div>
       </nav>
 
