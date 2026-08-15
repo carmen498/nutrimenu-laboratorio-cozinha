@@ -4,7 +4,6 @@ import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
 import TemplateEmailDialog from "./TemplateEmailDialog";
 
 const LINHAS = [
@@ -37,8 +36,6 @@ const LINHAS = [
   { gatilho: "Plano perto de vencer", status: "Rascunho", tipoLog: null },
   { gatilho: "Nota fiscal solicitada", status: "Rascunho", tipoLog: null },
 ];
-
-let toastEmBreveRef = null;
 
 export default function TransacionaisTab() {
   const [linhaEditando, setLinhaEditando] = useState(null);
@@ -77,14 +74,8 @@ export default function TransacionaisTab() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    if (linha.tipoLog) {
-                      setLinhaEditando(linha);
-                    } else {
-                      toastEmBreveRef?.dismiss();
-                      toastEmBreveRef = toast({ title: "Editor de templates em breve" });
-                    }
-                  }}
+                  disabled={!linha.tipoLog}
+                  onClick={() => linha.tipoLog && setLinhaEditando(linha)}
                 >
                   Editar
                 </Button>
