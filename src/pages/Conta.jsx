@@ -178,7 +178,7 @@ export default function Conta() {
       <Accordion type="single" collapsible>
         <AccordionItem value="nota-fiscal" className="border rounded-lg px-4">
           <AccordionTrigger className="text-sm font-semibold">
-            Dados para nota fiscal (preencher só se for pedir nota)
+            Dados complementares
           </AccordionTrigger>
           <AccordionContent className="space-y-4 pt-2">
             <div className="space-y-1.5">
