@@ -1,10 +1,58 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/AuthContext";
+
+const BRUBINS_URL = "https://www.brubins.com.br/";
+const linkClass = "text-blue-600 hover:underline font-medium";
+
+function renderParagrafo(texto) {
+  const partes = texto.split("BRUBINS");
+  return partes.map((parte, idx) => (
+    <span key={idx}>
+      {parte}
+      {idx < partes.length - 1 && (
+        <a href={BRUBINS_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
+          BRUBINS
+        </a>
+      )}
+    </span>
+  ));
+}
 
 export default function Sobre() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const { data: config } = useQuery({
+    queryKey: ["configuracao-carmen"],
+    queryFn: async () => {
+      const list = await base44.entities.ConfiguracaoCarmen.list();
+      return list[0] || null;
+    },
+  });
+
+  const uploadFotoMut = useMutation({
+    mutationFn: async (file) => {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      if (config) {
+        await base44.entities.ConfiguracaoCarmen.update(config.id, { foto_sobre_url: file_url });
+      } else {
+        await base44.entities.ConfiguracaoCarmen.create({ foto_sobre_url: file_url });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["configuracao-carmen"] });
+      toast.success("Foto atualizada!");
+    },
+    onError: () => toast.error("Erro ao enviar foto"),
+  });
 
   const paragrafos = [
     "Tudo começou numa cozinha a lenha, na fronteira com o Uruguai — Carmen tinha 5 anos quando já \"cuidava das panelas\" da família. Cresceu vendo geleias, escabeches e galinha ao molho pardo ganharem forma nas mãos das mulheres da casa. Ali nasceu o fascínio por transformar alimento em conhecimento.",
@@ -22,16 +70,39 @@ export default function Sobre() {
 
       <Card className="p-6 md:p-8">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-28 h-28 rounded-full bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-            <User className="w-10 h-10 text-muted-foreground/60" />
-          </div>
+          <label
+            className={`relative w-28 h-28 rounded-full overflow-hidden bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center ${isAdmin ? "cursor-pointer hover:border-primary/40 hover:bg-muted/80 transition-colors" : ""}`}
+            title={isAdmin ? "Clique para adicionar foto" : ""}
+          >
+            {config?.foto_sobre_url ? (
+              <img src={config.foto_sobre_url} alt="Carmen" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-10 h-10 text-muted-foreground/60" />
+            )}
+            {isAdmin && (
+              <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                <Camera className="w-6 h-6 text-white" />
+              </div>
+            )}
+            {isAdmin && (
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) uploadFotoMut.mutate(file);
+                }}
+              />
+            )}
+          </label>
         </div>
 
         <h1 className="font-display text-2xl font-bold text-center mb-6">Sobre a Carmen</h1>
 
         <div className="space-y-4">
           {paragrafos.map((p, idx) => (
-            <p key={idx} className="text-sm leading-relaxed text-foreground/90">{p}</p>
+            <p key={idx} className="text-sm leading-relaxed text-foreground/90">{renderParagrafo(p)}</p>
           ))}
         </div>
       </Card>

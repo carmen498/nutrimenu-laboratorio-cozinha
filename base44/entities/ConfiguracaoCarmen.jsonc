@@ -5,6 +5,10 @@
     "foto_url": {
       "type": "string",
       "description": "URL da foto da Carmen usada no banner 'Dicas da Carmen' e na assinatura"
+    },
+    "foto_sobre_url": {
+      "type": "string",
+      "description": "URL da foto da Carmen usada na tela 'Sobre'"
     }
   },
   "required": [],
