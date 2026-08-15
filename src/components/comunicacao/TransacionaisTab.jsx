@@ -15,6 +15,8 @@ const LINHAS = [
   { gatilho: "Nota fiscal solicitada", status: "Rascunho", tipoLog: null },
 ];
 
+let toastEmBreveRef = null;
+
 export default function TransacionaisTab() {
   const { data: logs = [] } = useQuery({
     queryKey: ["log-email-30d"],
@@ -49,7 +51,10 @@ export default function TransacionaisTab() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => toast({ title: "Editor de templates em breve" })}
+                onClick={() => {
+                  toastEmBreveRef?.dismiss();
+                  toastEmBreveRef = toast({ title: "Editor de templates em breve" });
+                }}
               >
                 Editar
               </Button>
