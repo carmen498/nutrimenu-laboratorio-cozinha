@@ -210,7 +210,7 @@ export default function Conta() {
       </Button>
 
       {/* Gestão de senha — só na visão admin */}
-      {isAdminViewingOther && (
+      {isAdmin && (
         <Card className="p-5 space-y-3">
           <h2 className="font-display text-sm font-bold text-muted-foreground uppercase tracking-wide">Gestão de senha</h2>
           <p className="text-xs text-muted-foreground">
