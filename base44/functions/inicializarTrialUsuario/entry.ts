@@ -1,5 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
+import { renderTemplateEmail } from "../../shared/templateEmail.ts";
+
+const ASSUNTO_PADRAO = "Bem-vindo(a) ao Laboratório de Cozinha";
+const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
+<p>Seu período de teste gratuito já começou. Explore receitas, cardápios e a gestão de custos da sua cozinha.</p>`;
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -26,12 +31,11 @@ export default async function(req: Request): Promise<Response> {
     // da conta — a entidade User embutida não suporta automação de "create").
     if (user.email) {
       const nome = user.nome_completo || user.full_name || "";
-      const html = `<p>Olá${nome ? " " + nome : ""}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
-<p>Seu período de teste gratuito já começou. Explore receitas, cardápios e a gestão de custos da sua cozinha.</p>`;
+      const { assunto, html } = await renderTemplateEmail(base44, "boas_vindas", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
       const resultadoEmail = await sendEmailViaResend({
         to: user.email,
-        subject: "Bem-vindo(a) ao Laboratório de Cozinha",
+        subject: assunto,
         html,
       });
 

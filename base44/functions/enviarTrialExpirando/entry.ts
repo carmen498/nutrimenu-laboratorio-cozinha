@@ -2,6 +2,11 @@
 // usuários em trial cujo data_expiracao é dentro de 2 dias, e registra em LogEmail.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
+import { renderTemplateEmail } from "../../shared/templateEmail.ts";
+
+const ASSUNTO_PADRAO = "Seu teste gratuito está acabando";
+const CORPO_PADRAO = `<p>Olá {{nome}}, seu período de teste no Laboratório de Cozinha termina em 2 dias.</p>
+<p>Não perca o acesso — escolha um plano para continuar.</p>`;
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -20,12 +25,11 @@ export default async function(req: Request): Promise<Response> {
     for (const usuario of usuarios) {
       if (!usuario.email) continue;
       const nome = usuario.nome_completo || usuario.full_name || "";
-      const html = `<p>Olá${nome ? " " + nome : ""}, seu período de teste no Laboratório de Cozinha termina em 2 dias.</p>
-<p>Não perca o acesso — escolha um plano para continuar.</p>`;
+      const { assunto, html } = await renderTemplateEmail(base44, "trial_expirando", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
       const resultado = await sendEmailViaResend({
         to: usuario.email,
-        subject: "Seu teste gratuito está acabando",
+        subject: assunto,
         html,
       });
 

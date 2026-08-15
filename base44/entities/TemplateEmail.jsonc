@@ -1,0 +1,50 @@
+{
+  "name": "TemplateEmail",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "boas_vindas",
+        "trial_expirando",
+        "trial_vencido"
+      ],
+      "description": "Tipo do e-mail transacional ao qual este template pertence"
+    },
+    "assunto": {
+      "type": "string",
+      "description": "Assunto do e-mail. Pode conter a vari\u00e1vel {{nome}}"
+    },
+    "corpo": {
+      "type": "string",
+      "description": "Corpo do e-mail (texto/HTML simples). Pode conter a vari\u00e1vel {{nome}}"
+    }
+  },
+  "required": [
+    "tipo",
+    "assunto",
+    "corpo"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
