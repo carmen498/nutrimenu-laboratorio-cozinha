@@ -1,0 +1,60 @@
+{
+  "name": "LogEmail",
+  "type": "object",
+  "properties": {
+    "destinatario_email": {
+      "type": "string",
+      "description": "E-mail do destinat\u00e1rio"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "boas_vindas",
+        "trial_expirando",
+        "trial_vencido"
+      ],
+      "description": "Tipo do e-mail transacional disparado"
+    },
+    "enviado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do envio"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "enviado",
+        "falhou"
+      ],
+      "default": "enviado",
+      "description": "Status do envio"
+    }
+  },
+  "required": [
+    "destinatario_email",
+    "tipo",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

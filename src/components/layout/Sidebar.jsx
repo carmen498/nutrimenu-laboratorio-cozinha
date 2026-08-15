@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home, BookOpen, Apple, CalendarDays, Gauge, Utensils, Package,
-  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, Users,
+  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, Users, MessageSquare,
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -65,7 +65,10 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
           {isAdmin && (
-            <NavLink to="/admin/usuarios" icon={Users} label="Usuários" active={isActive("/admin/usuarios")} onClick={onNavigate} />
+            <>
+              <NavLink to="/admin/usuarios" icon={Users} label="Usuários" active={isActive("/admin/usuarios")} onClick={onNavigate} />
+              <NavLink to="/admin/comunicacao" icon={MessageSquare} label="Comunicação" active={isActive("/admin/comunicacao")} onClick={onNavigate} />
+            </>
           )}
         </div>
       </nav>
