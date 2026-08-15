@@ -1,0 +1,148 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
+
+const PARCELAS_OPCOES = Array.from({ length: 12 }, (_, i) => i + 1);
+
+export default function CartaoForm({ plano, email, onClose, onSuccess }) {
+  const [numero, setNumero] = useState("");
+  const [nome, setNome] = useState("");
+  const [validade, setValidade] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [parcelas, setParcelas] = useState("1");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      if (!window.MercadoPago) {
+        throw new Error("SDK do Mercado Pago não carregou. Recarregue a página.");
+      }
+      const mp = new window.MercadoPago(MERCADOPAGO_PUBLIC_KEY);
+
+      const [mes, ano] = validade.split("/").map((v) => v.trim());
+      const cardNumberLimpo = numero.replace(/\s/g, "");
+
+      const metodos = await mp.getPaymentMethods({ bin: cardNumberLimpo.slice(0, 6) });
+      const paymentMethodId = metodos?.results?.[0]?.id;
+      if (!paymentMethodId) {
+        throw new Error("Não foi possível identificar a bandeira do cartão.");
+      }
+
+      const cardToken = await mp.createCardToken({
+        cardNumber: cardNumberLimpo,
+        cardholderName: nome,
+        cardExpirationMonth: mes,
+        cardExpirationYear: ano?.length === 2 ? `20${ano}` : ano,
+        securityCode: cvv,
+        identificationType: "CPF",
+        identificationNumber: cpf,
+      });
+
+      const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
+        plano,
+        forma_pagamento: "cartao",
+        token: cardToken.id,
+        installments: parseInt(parcelas, 10),
+        payment_method_id: paymentMethodId,
+        payer: { email, cpf },
+      });
+
+      onSuccess(res.data);
+    } catch (err) {
+      setError(err?.response?.data?.error || err.message || "Erro ao processar o pagamento.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-1.5">
+        <Label htmlFor="cartao-numero">Número do cartão</Label>
+        <Input
+          id="cartao-numero"
+          value={numero}
+          onChange={(e) => setNumero(e.target.value)}
+          placeholder="0000 0000 0000 0000"
+          required
+          autoComplete="off"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="cartao-nome">Nome impresso no cartão</Label>
+        <Input
+          id="cartao-nome"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+          required
+          autoComplete="off"
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="cartao-validade">Validade (MM/AA)</Label>
+          <Input
+            id="cartao-validade"
+            value={validade}
+            onChange={(e) => setValidade(e.target.value)}
+            placeholder="MM/AA"
+            required
+            autoComplete="off"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="cartao-cvv">CVV</Label>
+          <Input
+            id="cartao-cvv"
+            value={cvv}
+            onChange={(e) => setCvv(e.target.value)}
+            placeholder="000"
+            required
+            autoComplete="off"
+          />
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="cartao-cpf">CPF do titular</Label>
+        <Input
+          id="cartao-cpf"
+          value={cpf}
+          onChange={(e) => setCpf(e.target.value)}
+          placeholder="000.000.000-00"
+          required
+          autoComplete="off"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label>Parcelas</Label>
+        <Select value={parcelas} onValueChange={setParcelas}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PARCELAS_OPCOES.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n}x
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <Button type="submit" className="w-full h-11" disabled={loading}>
+        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+        Pagar
+      </Button>
+    </form>
+  );
+}

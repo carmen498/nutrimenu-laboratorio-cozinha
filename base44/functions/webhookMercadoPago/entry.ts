@@ -7,10 +7,12 @@
 //
 // TODO: depois de validar a assinatura, buscar o pagamento na API do Mercado Pago
 // pelo ID recebido (nunca confiar nos dados do corpo da notificação) e atualizar
-// o registro interno correspondente.
+// o registro interno correspondente (entidade Pagamento).
+
+import { secrets } from "base44:runtime";
 
 async function validarAssinatura(req: Request, dataId: string | null): Promise<boolean> {
-  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+  const secret = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
   if (!secret) return false;
 
   const xSignature = req.headers.get("x-signature");

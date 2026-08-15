@@ -7,6 +7,7 @@ import { toast } from "@/components/ui/use-toast";
 import PlanoCard from "@/components/planos/PlanoCard";
 import IncluidoTodosPlanos from "@/components/planos/IncluidoTodosPlanos";
 import { BannerVencido, BannerTrialExpirando } from "@/components/planos/AvisoAssinaturaBanner";
+import CheckoutDialog from "@/components/planos/CheckoutDialog";
 
 const formatarData = (dataStr) => {
   if (!dataStr) return null;
@@ -28,6 +29,7 @@ export default function Planos() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loadingTrial, setLoadingTrial] = useState(false);
+  const [checkoutPlano, setCheckoutPlano] = useState(null);
 
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
@@ -57,6 +59,10 @@ export default function Planos() {
     } finally {
       setLoadingTrial(false);
     }
+  };
+
+  const handleAssinar = (planoId, planoNome) => {
+    setCheckoutPlano({ id: planoId, nome: planoNome });
   };
 
   const handleEmBreve = () => {
@@ -109,7 +115,7 @@ export default function Planos() {
           subtitulo="Sem compromisso"
           preco="R$ 29,90/mês"
           botaoLabel="Assinar mensal"
-          onClick={handleEmBreve}
+          onClick={() => handleAssinar("mensal", "Mensal")}
           isCurrentPlan={planoAtual === "mensal"}
           validadeLabel="Próxima cobrança em"
           validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
@@ -122,7 +128,7 @@ export default function Planos() {
           precoDetalhe="R$ 198/ano"
           botaoLabel="Assinar anual"
           destaque
-          onClick={handleEmBreve}
+          onClick={() => handleAssinar("anual", "Anual")}
           isCurrentPlan={planoAtual === "anual"}
           validadeLabel="Próxima cobrança em"
           validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
@@ -151,6 +157,14 @@ export default function Planos() {
           onAssinar={() => scrollToPlano("anual")}
         />
       )}
+
+      <CheckoutDialog
+        open={!!checkoutPlano}
+        onOpenChange={(v) => !v && setCheckoutPlano(null)}
+        plano={checkoutPlano?.id}
+        planoNome={checkoutPlano?.nome}
+        email={user?.email}
+      />
     </div>
   );
 }
