@@ -46,6 +46,7 @@ import Configuracoes from '@/pages/Configuracoes';
 import Historico from '@/pages/Historico';
 import RelatorioReceitasPDF from '@/pages/RelatorioReceitasPDF';
 import Suporte from '@/pages/Suporte';
+import Sobre from '@/pages/Sobre';
 import Conta from '@/pages/Conta';
 import Planos from '@/pages/Planos';
 import DicasCarmen from '@/pages/DicasCarmen';
@@ -107,6 +108,7 @@ const AuthenticatedApp = () => {
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/historico" element={<Historico />} />
           <Route path="/suporte" element={<Suporte />} />
+          <Route path="/sobre" element={<Sobre />} />
           <Route path="/conta" element={<Conta />} />
           <Route path="/planos" element={<Planos />} />
           <Route path="/dicas-carmen" element={<DicasCarmen />} />
