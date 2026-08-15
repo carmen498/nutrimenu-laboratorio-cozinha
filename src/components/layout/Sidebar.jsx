@@ -33,7 +33,7 @@ function NavLink({ to, icon: Icon, label, active, onClick }) {
   );
 }
 
-function SidebarContent({ onNavigate, onHelpClick, onHelpFaqsClick }) {
+function SidebarContent({ onNavigate, onHelpFaqsClick }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
@@ -74,12 +74,6 @@ function SidebarContent({ onNavigate, onHelpClick, onHelpFaqsClick }) {
           >
             <HelpCircle className="w-3.5 h-3.5" /> Central de Ajuda
           </button>
-          <button
-            onClick={() => { onHelpClick?.(); onNavigate?.(); }}
-            className="w-full text-center text-[10px] text-sidebar-foreground/60 hover:text-sidebar-foreground/90 underline mt-1.5 transition-colors"
-          >
-            Central de ajuda completa
-          </button>
         </div>
         <button
           onClick={() => base44.auth.logout()}
@@ -96,12 +90,12 @@ function SidebarContent({ onNavigate, onHelpClick, onHelpFaqsClick }) {
   );
 }
 
-export default function Sidebar({ mobileOpen, onMobileClose, onHelpClick, onHelpFaqsClick }) {
+export default function Sidebar({ mobileOpen, onMobileClose, onHelpFaqsClick }) {
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden md:block fixed top-16 left-0 bottom-0 w-64 z-40 border-r border-sidebar-border">
-        <SidebarContent onHelpClick={onHelpClick} onHelpFaqsClick={onHelpFaqsClick} />
+        <SidebarContent onHelpFaqsClick={onHelpFaqsClick} />
       </aside>
 
       {/* Mobile drawer */}
@@ -114,7 +108,7 @@ export default function Sidebar({ mobileOpen, onMobileClose, onHelpClick, onHelp
               </button>
             </div>
             <div className="flex-1 min-h-0">
-              <SidebarContent onNavigate={onMobileClose} onHelpClick={onHelpClick} onHelpFaqsClick={onHelpFaqsClick} />
+              <SidebarContent onNavigate={onMobileClose} onHelpFaqsClick={onHelpFaqsClick} />
             </div>
           </div>
           <div className="flex-1 bg-black/50" onClick={onMobileClose} />

@@ -19,7 +19,6 @@ export default function AppLayout() {
       <Sidebar
         mobileOpen={mobileNavOpen}
         onMobileClose={() => setMobileNavOpen(false)}
-        onHelpClick={() => setHelpOpen(true)}
         onHelpFaqsClick={() => { setHelpOpen(true); setHelpFocusFaqsSignal((n) => n + 1); }}
       />
 
