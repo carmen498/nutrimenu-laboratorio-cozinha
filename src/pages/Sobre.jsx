@@ -7,21 +7,24 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
 
-const BRUBINS_URL = "https://www.brubins.com.br/";
 const linkClass = "text-blue-600 hover:underline font-medium";
+const LINKS = {
+  "BRUBINS": "https://www.brubins.com.br/",
+  "Como Congelar os Alimentos Original": "https://comocongelaralimentos.nutrimenu.com.br/",
+};
 
 function renderParagrafo(texto) {
-  const partes = texto.split("BRUBINS");
-  return partes.map((parte, idx) => (
-    <span key={idx}>
-      {parte}
-      {idx < partes.length - 1 && (
-        <a href={BRUBINS_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>
-          BRUBINS
-        </a>
-      )}
-    </span>
-  ));
+  const regex = new RegExp(`(${Object.keys(LINKS).join("|")})`, "g");
+  const partes = texto.split(regex);
+  return partes.map((parte, idx) =>
+    LINKS[parte] ? (
+      <a key={idx} href={LINKS[parte]} target="_blank" rel="noopener noreferrer" className={linkClass}>
+        {parte}
+      </a>
+    ) : (
+      <span key={idx}>{parte}</span>
+    )
+  );
 }
 
 export default function Sobre() {
@@ -59,7 +62,7 @@ export default function Sobre() {
     "Anos depois, um manual caseiro sobre congelamento — feito pra resolver o próprio dia a dia — virou curso, virou livro, e em 1984 virou a BRUBINS: fundada vendendo o próprio apartamento, começou na cozinha de casa e se tornou uma indústria de alimentos congelados que segue ativa até hoje, sob gestão do filho de Carmen, Bruno.",
     "Foi cuidando da produção da BRUBINS que Carmen percebeu que fichas técnicas feitas à mão não davam mais conta — e foi assim, ainda nos anos 80, que ela começou a programar o primeiro sistema de gestão de produção da própria empresa. Anos depois, formou-se em Nutrição e levou essa mesma inquietação para a área da rotulagem, criando o Nutrimenu.",
     "O Laboratório de Cozinha nasce dessa mesma raiz: décadas calculando rendimento, custo e produção na prática — da cozinha industrial da BRUBINS até a tecnologia de hoje. Não é teoria. É o caderno de receitas de uma vida inteira, transformado em ferramenta.",
-    "Essa mesma vivência também deu origem à coleção de eBooks \"Apaixonados Por\" (Empanados, Festas, Receitas que Inspiram, Cozinhe Hoje Festa Amanhã, entre outros), disponível no Hotmart Club.",
+    "Essa mesma vivência também deu origem à coleção de eBooks \"Apaixonados Por\" (Empanados, Festas, Receitas que Inspiram, Cozinhe Hoje Festa Amanhã, entre outros) e ao clássico Como Congelar os Alimentos Original, disponíveis no Hotmart Club.",
   ];
 
   return (
