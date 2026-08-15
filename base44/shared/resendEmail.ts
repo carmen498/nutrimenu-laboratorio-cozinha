@@ -2,12 +2,15 @@
 // functions transacionais e pela campanha de e-mail, para não duplicar a
 // chamada HTTP à API do Resend em cada function.
 import { secrets } from "base44:runtime";
+import { buildEmailHtml } from "./emailWrapper.ts";
 
-export async function sendEmailViaResend({ to, subject, html }) {
+export async function sendEmailViaResend(base44, { to, subject, html }) {
   const apiKey = secrets.get("RESEND_API_KEY");
   if (!apiKey) {
     return { ok: false, error: "RESEND_API_KEY não configurada" };
   }
+
+  const htmlFinal = await buildEmailHtml(base44, html);
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -19,7 +22,7 @@ export async function sendEmailViaResend({ to, subject, html }) {
       from: "Laboratório de Cozinha <onboarding@resend.dev>",
       to: [to],
       subject,
-      html,
+      html: htmlFinal,
     }),
   });
 

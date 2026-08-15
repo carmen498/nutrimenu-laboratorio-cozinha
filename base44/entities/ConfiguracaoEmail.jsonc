@@ -1,0 +1,62 @@
+{
+  "name": "ConfiguracaoEmail",
+  "type": "object",
+  "properties": {
+    "nome_remetente": {
+      "type": "string",
+      "default": "Laborat\u00f3rio de Cozinha",
+      "description": "Nome de exibi\u00e7\u00e3o do remetente, mostrado no cabe\u00e7alho do e-mail"
+    },
+    "tagline": {
+      "type": "string",
+      "default": "Receitas que se Multiplicam",
+      "description": "Tagline/subt\u00edtulo exibido abaixo do nome no cabe\u00e7alho"
+    },
+    "cor_cabecalho": {
+      "type": "string",
+      "default": "#5c7a5f",
+      "description": "Cor de fundo do cabe\u00e7alho e dos bot\u00f5es de a\u00e7\u00e3o principal (formato hex)"
+    },
+    "assinatura_rodape": {
+      "type": "string",
+      "default": "Carmen Reinstein \u00b7 Laborat\u00f3rio de Cozinha",
+      "description": "Assinatura exibida no rodap\u00e9 do e-mail"
+    },
+    "email_contato": {
+      "type": "string",
+      "description": "E-mail de contato exibido no rodap\u00e9"
+    },
+    "endereco_rodape": {
+      "type": "string",
+      "description": "Endere\u00e7o exibido no rodap\u00e9 (exig\u00eancia legal para e-mails de marketing)"
+    },
+    "texto_cancelamento": {
+      "type": "string",
+      "default": "Cancelar inscri\u00e7\u00e3o",
+      "description": "Texto do link de cancelamento de inscri\u00e7\u00e3o no rodap\u00e9"
+    }
+  },
+  "required": [],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

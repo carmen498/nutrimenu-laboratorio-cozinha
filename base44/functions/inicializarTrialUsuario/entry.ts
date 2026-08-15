@@ -33,7 +33,7 @@ export default async function(req: Request): Promise<Response> {
       const nome = user.nome_completo || user.full_name || "";
       const { assunto, html } = await renderTemplateEmail(base44, "boas_vindas", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
-      const resultadoEmail = await sendEmailViaResend({
+      const resultadoEmail = await sendEmailViaResend(base44, {
         to: user.email,
         subject: assunto,
         html,

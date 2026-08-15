@@ -8,6 +8,7 @@ import TransacionaisTab from "@/components/comunicacao/TransacionaisTab";
 import CampanhasTab from "@/components/comunicacao/CampanhasTab";
 import WhatsappReativoTab from "@/components/comunicacao/WhatsappReativoTab";
 import TemplateWhatsappTab from "@/components/comunicacao/TemplateWhatsappTab";
+import ConfiguracoesEmailTab from "@/components/comunicacao/ConfiguracoesEmailTab";
 
 export default function AdminComunicacao() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function AdminComunicacao() {
           <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
           <TabsTrigger value="whatsapp-reativo">WhatsApp reativo</TabsTrigger>
           <TabsTrigger value="editor-whatsapp">Editor de template WhatsApp</TabsTrigger>
+          <TabsTrigger value="config-email">Configurações de e-mail</TabsTrigger>
         </TabsList>
         <TabsContent value="transacionais" className="pt-4">
           <TransacionaisTab />
@@ -53,6 +55,9 @@ export default function AdminComunicacao() {
         </TabsContent>
         <TabsContent value="editor-whatsapp" className="pt-4">
           <TemplateWhatsappTab nomeInicial={nomeTemplateEdicao} />
+        </TabsContent>
+        <TabsContent value="config-email" className="pt-4">
+          <ConfiguracoesEmailTab />
         </TabsContent>
       </Tabs>
     </div>

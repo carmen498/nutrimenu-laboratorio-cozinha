@@ -27,7 +27,7 @@ export default async function(req: Request): Promise<Response> {
       const nome = usuario.nome_completo || usuario.full_name || "";
       const { assunto, html } = await renderTemplateEmail(base44, "trial_expirando", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
-      const resultado = await sendEmailViaResend({
+      const resultado = await sendEmailViaResend(base44, {
         to: usuario.email,
         subject: assunto,
         html,

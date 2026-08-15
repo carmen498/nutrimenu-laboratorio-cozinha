@@ -45,7 +45,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (acao === "teste") {
-      const resultado = await sendEmailViaResend({
+      const resultado = await sendEmailViaResend(base44, {
         to: user.email,
         subject: assunto || "Teste de campanha",
         html: (corpo || "").replace(/\n/g, "<br/>"),
@@ -57,7 +57,7 @@ export default async function(req: Request): Promise<Response> {
       let enviados = 0;
       for (const destinatario of destinatarios) {
         if (!destinatario.email) continue;
-        const resultado = await sendEmailViaResend({
+        const resultado = await sendEmailViaResend(base44, {
           to: destinatario.email,
           subject: assunto,
           html: (corpo || "").replace(/\n/g, "<br/>"),
