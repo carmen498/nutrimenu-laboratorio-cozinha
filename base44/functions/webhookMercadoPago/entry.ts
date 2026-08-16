@@ -5,11 +5,14 @@
 // "id:{data.id};request-id:{x-request-id};ts:{ts};" usando MERCADOPAGO_WEBHOOK_SECRET,
 // conforme especificação do Mercado Pago.
 //
-// TODO: depois de validar a assinatura, buscar o pagamento na API do Mercado Pago
-// pelo ID recebido (nunca confiar nos dados do corpo da notificação) e atualizar
-// o registro interno correspondente (entidade Pagamento).
+// Depois de validar a assinatura, busca a order na API do Mercado Pago pelo ID
+// recebido (nunca confia nos dados do corpo da notificação) e atualiza o registro
+// interno correspondente (entidade Pagamento) e, se aprovado, a assinatura do usuário.
 
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
+
+const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
 
 async function validarAssinatura(req: Request, dataId: string | null): Promise<boolean> {
   const secret = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
@@ -61,7 +64,75 @@ export default async function(req: Request): Promise<Response> {
 
     console.log("Notificação recebida do Mercado Pago:", JSON.stringify(body));
 
-    return Response.json({ received: true });
+    if (!dataId) {
+      return Response.json({ received: true });
+    }
+
+    const base44 = createClientFromRequest(req);
+
+    const ambiente = secrets.get("AMBIENTE");
+    const accessToken = ambiente === "producao"
+      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
+      : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
+
+    // Busca a order na API do Mercado Pago — nunca confia nos dados do corpo da notificação.
+    const orderResponse = await fetch(`https://api.mercadopago.com/v1/orders/${dataId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const order = await orderResponse.json().catch(() => null);
+
+    if (!orderResponse.ok || !order) {
+      console.log("Não foi possível buscar a order no Mercado Pago:", JSON.stringify(order));
+      return Response.json({ error: "order_not_found" }, { status: 200 });
+    }
+
+    const pagamentoId = order.external_reference;
+    if (!pagamentoId) {
+      console.log("Order sem external_reference — nada a atualizar.");
+      return Response.json({ received: true });
+    }
+
+    const pagamento = await base44.asServiceRole.entities.Pagamento.get(pagamentoId).catch(() => null);
+    if (!pagamento) {
+      console.log("Pagamento interno não encontrado para external_reference:", pagamentoId);
+      return Response.json({ received: true });
+    }
+
+    const paymentStatus = order.transactions?.payments?.[0]?.status;
+    let novoStatus: string | null = null;
+    if (order.status === "processed") {
+      novoStatus = "approved";
+    } else if (order.status === "canceled" || paymentStatus === "cancelled") {
+      novoStatus = "cancelled";
+    } else if (paymentStatus === "rejected") {
+      novoStatus = "rejected";
+    }
+
+    if (!novoStatus) {
+      console.log("Status da order ainda não é final:", order.status);
+      return Response.json({ received: true });
+    }
+
+    if (novoStatus === "approved") {
+      if (pagamento.status !== "approved") {
+        await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
+      }
+
+      const dias = DIAS_PLANO[pagamento.plano] ?? 30;
+      const agora = new Date();
+      const expiracao = new Date(agora.getTime() + dias * 86400000);
+
+      await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
+        status_assinatura: "ativo",
+        plano_atual: pagamento.plano,
+        data_inicio: agora.toISOString().split("T")[0],
+        data_expiracao: expiracao.toISOString().split("T")[0],
+      });
+    } else {
+      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
+    }
+
+    return Response.json({ received: true, status: novoStatus });
   } catch (error) {
     console.log("Erro ao processar notificação do Mercado Pago:", error.message);
     return Response.json({ error: error.message }, { status: 500 });
