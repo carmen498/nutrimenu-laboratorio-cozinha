@@ -9,6 +9,11 @@ import { secrets } from "base44:runtime";
 const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
 
+// Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
+// para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
+// rodou o deploy mais recente ou uma versão anterior ainda em propagação.
+const VERSAO_CODIGO = "v3-2026-08-16-18h20-erros-array";
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -52,6 +57,7 @@ export default async function(req: Request): Promise<Response> {
       parcelas,
       status: "pending",
       idempotency_key: idempotencyKey,
+      versao_codigo: VERSAO_CODIGO,
     });
 
     const ambiente = secrets.get("AMBIENTE");
