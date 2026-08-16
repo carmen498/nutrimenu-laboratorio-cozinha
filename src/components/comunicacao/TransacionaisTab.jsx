@@ -31,10 +31,38 @@ const LINHAS = [
     corpoPadrao: `<p>Olá {{nome}}, seu período de teste no Laboratório de Cozinha terminou hoje.</p>
 <p>Escolha um plano para continuar usando todas as funcionalidades.</p>`,
   },
-  { gatilho: "Pagamento aprovado", status: "Rascunho", tipoLog: null },
-  { gatilho: "Pagamento recusado", status: "Rascunho", tipoLog: null },
-  { gatilho: "Plano perto de vencer", status: "Rascunho", tipoLog: null },
-  { gatilho: "Nota fiscal solicitada", status: "Rascunho", tipoLog: null },
+  {
+    gatilho: "Pagamento aprovado",
+    status: "Rascunho",
+    tipoLog: "pagamento_aprovado",
+    assuntoPadrao: "Pagamento aprovado",
+    corpoPadrao: `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p>
+<p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`,
+  },
+  {
+    gatilho: "Pagamento recusado",
+    status: "Rascunho",
+    tipoLog: "pagamento_recusado",
+    assuntoPadrao: "Não conseguimos aprovar seu pagamento",
+    corpoPadrao: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p>
+<p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`,
+  },
+  {
+    gatilho: "Plano perto de vencer",
+    status: "Rascunho",
+    tipoLog: "plano_vencendo",
+    assuntoPadrao: "Seu plano está perto de vencer",
+    corpoPadrao: `<p>Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve.</p>
+<p>Renove agora para não perder o acesso às suas receitas e cardápios.</p>`,
+  },
+  {
+    gatilho: "Nota fiscal solicitada",
+    status: "Rascunho",
+    tipoLog: "nota_fiscal_solicitada",
+    assuntoPadrao: "Recebemos sua solicitação de nota fiscal",
+    corpoPadrao: `<p>Olá {{nome}}, recebemos sua solicitação de nota fiscal.</p>
+<p>Em breve enviaremos o documento para este e-mail.</p>`,
+  },
 ];
 
 export default function TransacionaisTab() {

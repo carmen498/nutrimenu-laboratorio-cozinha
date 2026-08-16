@@ -7,7 +7,11 @@
       "enum": [
         "boas_vindas",
         "trial_expirando",
-        "trial_vencido"
+        "trial_vencido",
+        "pagamento_aprovado",
+        "pagamento_recusado",
+        "plano_vencendo",
+        "nota_fiscal_solicitada"
       ],
       "description": "Tipo do e-mail transacional ao qual este template pertence"
     },
