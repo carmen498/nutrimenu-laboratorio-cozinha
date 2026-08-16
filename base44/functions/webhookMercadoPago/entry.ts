@@ -57,16 +57,33 @@ export default async function(req: Request): Promise<Response> {
     const body = await req.json().catch(() => null);
 
     const dataId = url.searchParams.get("data.id") || body?.data?.id || null;
+    const tipoNotificacao = body?.type || body?.topic || url.searchParams.get("type") || null;
+    const corpoBruto = JSON.stringify(body).slice(0, 2000);
+
+    // Log persistido de toda notificação recebida — o console.log não é acessível
+    // retroativamente, então este é o único jeito de diagnosticar depois o que
+    // o Mercado Pago realmente enviou e em qual ponto o processamento parou.
+    const base44Log = createClientFromRequest(req);
+    async function registrarLog(campos: Record<string, unknown>) {
+      await base44Log.asServiceRole.entities.LogWebhookMercadoPago.create({
+        data_id: dataId || "",
+        tipo_notificacao: tipoNotificacao,
+        corpo_bruto: corpoBruto,
+        ...campos,
+      }).catch((e: any) => console.log("Falha ao gravar LogWebhookMercadoPago:", e.message));
+    }
 
     const assinaturaValida = await validarAssinatura(req, dataId);
     if (!assinaturaValida) {
       console.log("Assinatura inválida na notificação do Mercado Pago — descartando.");
+      await registrarLog({ assinatura_valida: false, resultado: "assinatura_invalida" });
       return Response.json({ error: "invalid_signature" }, { status: 401 });
     }
 
     console.log("Notificação recebida do Mercado Pago:", JSON.stringify(body));
 
     if (!dataId) {
+      await registrarLog({ assinatura_valida: true, resultado: "sem_data_id" });
       return Response.json({ received: true });
     }
 
@@ -85,18 +102,21 @@ export default async function(req: Request): Promise<Response> {
 
     if (!orderResponse.ok || !order) {
       console.log("Não foi possível buscar a order no Mercado Pago:", JSON.stringify(order));
+      await registrarLog({ assinatura_valida: true, resultado: "order_nao_encontrada" });
       return Response.json({ error: "order_not_found" }, { status: 200 });
     }
 
     const pagamentoId = order.external_reference;
     if (!pagamentoId) {
       console.log("Order sem external_reference — nada a atualizar.");
+      await registrarLog({ assinatura_valida: true, resultado: "sem_data_id" });
       return Response.json({ received: true });
     }
 
     const pagamento = await base44.asServiceRole.entities.Pagamento.get(pagamentoId).catch(() => null);
     if (!pagamento) {
       console.log("Pagamento interno não encontrado para external_reference:", pagamentoId);
+      await registrarLog({ assinatura_valida: true, resultado: "pagamento_interno_nao_encontrado", pagamento_id: pagamentoId });
       return Response.json({ received: true });
     }
 
@@ -112,6 +132,7 @@ export default async function(req: Request): Promise<Response> {
 
     if (!novoStatus) {
       console.log("Status da order ainda não é final:", order.status);
+      await registrarLog({ assinatura_valida: true, resultado: "status_nao_final", pagamento_id: pagamentoId });
       return Response.json({ received: true });
     }
 
@@ -181,6 +202,8 @@ export default async function(req: Request): Promise<Response> {
         }
       }
     }
+
+    await registrarLog({ assinatura_valida: true, resultado: "processado", pagamento_id: pagamentoId, status_resolvido: novoStatus });
 
     return Response.json({ received: true, status: novoStatus });
   } catch (error) {
