@@ -30,6 +30,7 @@ export default function UsuariosFiltros({
           <SelectItem value="Ativo">Ativo</SelectItem>
           <SelectItem value="Trial expirando">Trial expirando</SelectItem>
           <SelectItem value="Vencido">Vencido</SelectItem>
+          <SelectItem value="Inativo">Inativo</SelectItem>
         </SelectContent>
       </Select>
       <Select value={segmentoFiltro} onValueChange={setSegmentoFiltro}>

@@ -36,9 +36,10 @@
         "ativo",
         "trial",
         "vencido",
-        "cancelado"
+        "cancelado",
+        "inativo"
       ],
-      "description": "Status atual da assinatura do usu\u00e1rio"
+      "description": "Status atual da assinatura do usu\u00e1rio. 'inativo' \u00e9 usado quando o admin desativa manualmente a conta"
     },
     "data_inicio": {
       "type": "string",
@@ -106,6 +107,10 @@
       "type": "string",
       "format": "date-time",
       "description": "Data/hora do \u00faltimo login do usu\u00e1rio (atualizado automaticamente)"
+    },
+    "anotacoes_admin": {
+      "type": "string",
+      "description": "Anota\u00e7\u00f5es internas sobre o cliente (contatos feitos, pedidos especiais, hist\u00f3rico). Vis\u00edvel e edit\u00e1vel apenas pelo admin, nunca pelo usu\u00e1rio titular"
     }
   },
   "required": [

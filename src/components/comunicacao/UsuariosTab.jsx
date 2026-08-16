@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { toast } from "@/components/ui/use-toast";
 import { computeStatusUsuario } from "@/lib/statusAssinaturaUsuario";
 import { contarReceitasPorUsuario } from "@/lib/receitasPorUsuario";
@@ -8,6 +9,7 @@ import UsuariosTable from "@/components/admin/UsuariosTable";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
 
 export default function UsuariosTab({ usuarios, isLoading, selecionados, setSelecionados, onDispararEmail }) {
+  const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [planoFiltro, setPlanoFiltro] = useState("todos");
   const [statusFiltro, setStatusFiltro] = useState("todos");
@@ -57,6 +59,22 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
     toast({ title: "Em breve", description: "O disparo de WhatsApp em massa ainda está em desenvolvimento." });
   };
 
+  const aplicarStatus = async (novoStatus, labelSucesso) => {
+    const ids = Array.from(selecionados);
+    if (ids.length === 0) return;
+    try {
+      await Promise.all(ids.map((id) => base44.entities.User.update(id, { status_assinatura: novoStatus })));
+      await qc.invalidateQueries({ queryKey: ["admin-usuarios"] });
+      setSelecionados(new Set());
+      toast({ title: labelSucesso });
+    } catch (err) {
+      toast({ title: "Erro ao atualizar usuários", description: err.message, variant: "destructive" });
+    }
+  };
+
+  const handleAtivar = () => aplicarStatus("ativo", "Usuários ativados");
+  const handleDesativar = () => aplicarStatus("inativo", "Usuários desativados");
+
   return (
     <div className="space-y-4">
       <UsuariosFiltros
@@ -71,6 +89,8 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
         quantidade={quantidadeSelecionada}
         onDispararEmail={onDispararEmail}
         onDispararWhatsapp={handleDispararWhatsapp}
+        onAtivar={handleAtivar}
+        onDesativar={handleDesativar}
       />
 
       {isLoading ? (

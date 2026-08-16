@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { formatarTelefone } from "@/lib/formatarTelefone";
 import { formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
@@ -46,6 +47,7 @@ export default function Conta() {
   const [cep, setCep] = useState("");
   const [cidadeUf, setCidadeUf] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [anotacoesAdmin, setAnotacoesAdmin] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export default function Conta() {
       setCep(displayUser.cep || "");
       setCidadeUf(displayUser.cidade_uf || "");
       setEndereco(displayUser.endereco || "");
+      setAnotacoesAdmin(displayUser.anotacoes_admin || "");
     }
   }, [displayUser]);
 
@@ -78,7 +81,7 @@ export default function Conta() {
     };
     try {
       if (isAdminViewingOther) {
-        await base44.entities.User.update(targetUserId, payload);
+        await base44.entities.User.update(targetUserId, { ...payload, anotacoes_admin: anotacoesAdmin });
         qc.invalidateQueries({ queryKey: ["conta-usuario", targetUserId] });
       } else {
         await base44.auth.updateMe(payload);
@@ -208,6 +211,22 @@ export default function Conta() {
       <Button className="w-full" style={{ backgroundColor: "#2A4E3D" }} disabled={!telefoneValido || saving} onClick={handleSalvar}>
         {saving ? "Salvando..." : "Salvar alterações"}
       </Button>
+
+      {/* Anotações internas — só na visão admin sobre outro usuário */}
+      {isAdminViewingOther && (
+        <Card className="p-5 space-y-3">
+          <h2 className="font-display text-sm font-bold text-muted-foreground uppercase tracking-wide">Anotações internas</h2>
+          <p className="text-xs text-muted-foreground">
+            Visível apenas para admins. O usuário titular nunca vê este conteúdo.
+          </p>
+          <Textarea
+            value={anotacoesAdmin}
+            onChange={(e) => setAnotacoesAdmin(e.target.value)}
+            placeholder="Contatos feitos, pedidos especiais, histórico..."
+            rows={5}
+          />
+        </Card>
+      )}
 
       {/* Gestão de senha — só na visão admin */}
       {isAdmin && (

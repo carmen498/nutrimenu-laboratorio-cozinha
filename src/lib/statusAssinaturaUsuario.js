@@ -16,6 +16,9 @@ export function diasEntreHoje(dataStr) {
 
 export function computeStatusUsuario(u) {
   const status = u?.status_assinatura;
+  if (status === "inativo") {
+    return { label: "Inativo", className: "bg-gray-100 text-gray-600 border-gray-200" };
+  }
   if (status === "vencido" || status === "cancelado") {
     return { label: "Vencido", className: "bg-red-100 text-red-700 border-red-200" };
   }
