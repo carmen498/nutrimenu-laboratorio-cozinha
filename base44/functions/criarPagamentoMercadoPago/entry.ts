@@ -8,6 +8,11 @@ import { secrets } from "base44:runtime";
 
 const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
+const NOME_PLANOS: Record<string, string> = {
+  diario: "Plano Diário — Laboratório de Cozinha",
+  mensal: "Plano Mensal — Laboratório de Cozinha",
+  anual: "Plano Anual — Laboratório de Cozinha",
+};
 
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
@@ -76,12 +81,22 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "Credencial do Mercado Pago não configurada para o ambiente atual" }, { status: 500 });
     }
 
+    const descricaoPlano = NOME_PLANOS[plano];
+
     const orderBody: Record<string, unknown> = {
       type: "online",
       processing_mode: "automatic",
       external_reference: pagamento.id,
+      description: descricaoPlano,
       total_amount: valorFormatado,
       payer: { email: payerEmail },
+      items: [
+        {
+          title: descricaoPlano,
+          unit_price: valorFormatado,
+          quantity: 1,
+        },
+      ],
     };
 
     if (forma_pagamento === "pix") {
