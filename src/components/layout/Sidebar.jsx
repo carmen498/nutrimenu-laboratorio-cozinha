@@ -65,7 +65,7 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
           {isAdmin && (
-            <NavLink to="/admin/comunicacao" icon={MessageSquare} label="Comunicação" active={isActive("/admin/comunicacao")} onClick={onNavigate} />
+            <NavLink to="/admin/comunicacao" icon={MessageSquare} label="Administração" active={isActive("/admin/comunicacao")} onClick={onNavigate} />
           )}
         </div>
       </nav>
