@@ -1,5 +1,5 @@
 export default function TemplateWhatsappPreview({ cabecalhoUrl, corpo, rodape }) {
-  const corpoPreview = (corpo || "").replace(/{{\s*nome\s*}}/gi, "João");
+  const corpoPreview = (corpo || "").replace(/{{\s*nome\s*}}/gi, "Renata");
 
   return (
     <div className="rounded-2xl bg-[#e5ddd5] p-6 flex justify-center">
