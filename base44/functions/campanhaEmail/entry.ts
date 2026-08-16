@@ -24,7 +24,16 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (acao === "disparar") {
-      const emails = Array.isArray(destinatarios) ? destinatarios.filter(Boolean) : [];
+      const emailsSolicitados = Array.isArray(destinatarios) ? destinatarios.filter(Boolean) : [];
+
+      // Proteção no nível do backend: nunca enviar para usuários desativados ou que não existem mais
+      // (excluídos), mesmo que tenham sido incluídos por engano na lista enviada pelo front-end.
+      const todosUsuarios = await base44.asServiceRole.entities.User.list("-created_date", 2000);
+      const statusPorEmail = new Map(todosUsuarios.map((u) => [u.email, u.status_assinatura]));
+
+      const emails = emailsSolicitados.filter((email) => statusPorEmail.get(email) !== "inativo" && statusPorEmail.has(email));
+      const bloqueados = emailsSolicitados.length - emails.length;
+
       let enviados = 0;
       for (const email of emails) {
         const resultado = await sendEmailViaResend(base44, {
@@ -34,7 +43,7 @@ export default async function(req: Request): Promise<Response> {
         });
         if (resultado.ok) enviados++;
       }
-      return Response.json({ total: emails.length, enviados });
+      return Response.json({ total: emailsSolicitados.length, enviados, bloqueados });
     }
 
     return Response.json({ error: "Ação inválida" }, { status: 400 });

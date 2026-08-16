@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { ChevronDown, Mail, MessageCircle, CheckCircle2, XCircle } from "lucide-react";
+import { ChevronDown, Mail, MessageCircle, CheckCircle2, XCircle, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
-export default function AcoesEmMassa({ quantidade, onDispararEmail, onDispararWhatsapp, onAtivar, onDesativar }) {
+export default function AcoesEmMassa({ quantidade, onDispararEmail, onDispararWhatsapp, onAtivar, onDesativar, onExcluir }) {
   if (quantidade === 0) return null;
 
   return (
@@ -31,6 +32,10 @@ export default function AcoesEmMassa({ quantidade, onDispararEmail, onDispararWh
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onDesativar}>
             <XCircle className="w-4 h-4 mr-2" /> Desativar
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onExcluir} className="text-destructive focus:text-destructive">
+            <Trash2 className="w-4 h-4 mr-2" /> Excluir
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

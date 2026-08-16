@@ -7,6 +7,16 @@ import { contarReceitasPorUsuario } from "@/lib/receitasPorUsuario";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import UsuariosTable from "@/components/admin/UsuariosTable";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 
 export default function UsuariosTab({ usuarios, isLoading, selecionados, setSelecionados, onDispararEmail }) {
   const qc = useQueryClient();
@@ -15,6 +25,8 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [segmentoFiltro, setSegmentoFiltro] = useState("todos");
   const [origemFiltro, setOrigemFiltro] = useState("todos");
+  const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   const { data: receitasPorUsuario = {} } = useQuery({
     queryKey: ["receitas-por-usuario"],
@@ -75,6 +87,25 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const handleAtivar = () => aplicarStatus("ativo", "Usuários ativados");
   const handleDesativar = () => aplicarStatus("inativo", "Usuários desativados");
 
+  const confirmarExclusao = async () => {
+    const ids = Array.from(selecionados);
+    if (ids.length === 0) return;
+    setExcluindo(true);
+    try {
+      for (const id of ids) {
+        await base44.entities.User.delete(id);
+      }
+      await qc.invalidateQueries({ queryKey: ["admin-usuarios"] });
+      setSelecionados(new Set());
+      setConfirmExcluirOpen(false);
+      toast({ title: "Usuário(s) excluído(s) permanentemente" });
+    } catch (err) {
+      toast({ title: "Erro ao excluir usuários", description: err.message, variant: "destructive" });
+    } finally {
+      setExcluindo(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <UsuariosFiltros
@@ -91,6 +122,7 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
         onDispararWhatsapp={handleDispararWhatsapp}
         onAtivar={handleAtivar}
         onDesativar={handleDesativar}
+        onExcluir={() => setConfirmExcluirOpen(true)}
       />
 
       {isLoading ? (
@@ -104,6 +136,28 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
           receitasPorUsuario={receitasPorUsuario}
         />
       )}
+
+      <AlertDialog open={confirmExcluirOpen} onOpenChange={setConfirmExcluirOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O cadastro de {quantidadeSelecionada} usuário(s) será removido
+              permanentemente da plataforma, incluindo dados de conta e histórico de acesso.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarExclusao}
+              disabled={excluindo}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {excluindo ? "Excluindo..." : "Excluir definitivamente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
+import { computeStatusUsuario } from "@/lib/statusAssinaturaUsuario";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UsuariosTab from "@/components/comunicacao/UsuariosTab";
@@ -35,7 +36,10 @@ export default function AdminComunicacao() {
     setAba("editor-whatsapp");
   };
 
-  const destinatariosSelecionados = usuarios.filter((u) => selecionados.has(u.id));
+  // Usuários desativados nunca podem entrar em listas de campanha, mesmo se selecionados por engano.
+  const destinatariosSelecionados = usuarios.filter(
+    (u) => selecionados.has(u.id) && computeStatusUsuario(u).label !== "Inativo"
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 pb-12">
