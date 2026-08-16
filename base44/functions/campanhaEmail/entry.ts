@@ -1,31 +1,8 @@
 // Aba "Campanhas" da Central de Comunicação — admin only.
-// acao="contar": retorna o total de destinatários do público selecionado.
 // acao="teste": envia o e-mail apenas para o próprio admin.
-// acao="disparar": envia para todos os destinatários do público selecionado.
+// acao="disparar": envia para a lista explícita de e-mails selecionada no painel (filtro + checklist).
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
-
-function filtroPublico(publico) {
-  const hoje = new Date();
-  switch (publico) {
-    case "todos_ativos":
-      return (u) => u.status_assinatura === "ativo";
-    case "trial_nao_convertido":
-      return (u) => u.status_assinatura === "trial";
-    case "plano_mensal":
-      return (u) => u.plano_atual === "mensal";
-    case "plano_anual":
-      return (u) => u.plano_atual === "anual";
-    case "trial_vencido_30d":
-      return (u) => {
-        if (u.status_assinatura !== "vencido" || !u.data_expiracao) return false;
-        const dias = Math.round((hoje.getTime() - new Date(`${u.data_expiracao}T00:00:00`).getTime()) / 86400000);
-        return dias >= 30;
-      };
-    default:
-      return () => false;
-  }
-}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -35,14 +12,7 @@ export default async function(req: Request): Promise<Response> {
     if (user.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
-    const { acao, publico, assunto, corpo } = body;
-
-    const todosUsuarios = await base44.asServiceRole.entities.User.list("-created_date", 2000);
-    const destinatarios = todosUsuarios.filter(filtroPublico(publico));
-
-    if (acao === "contar") {
-      return Response.json({ total: destinatarios.length });
-    }
+    const { acao, destinatarios, assunto, corpo } = body;
 
     if (acao === "teste") {
       const resultado = await sendEmailViaResend(base44, {
@@ -54,17 +24,17 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (acao === "disparar") {
+      const emails = Array.isArray(destinatarios) ? destinatarios.filter(Boolean) : [];
       let enviados = 0;
-      for (const destinatario of destinatarios) {
-        if (!destinatario.email) continue;
+      for (const email of emails) {
         const resultado = await sendEmailViaResend(base44, {
-          to: destinatario.email,
+          to: email,
           subject: assunto,
           html: (corpo || "").replace(/\n/g, "<br/>"),
         });
         if (resultado.ok) enviados++;
       }
-      return Response.json({ total: destinatarios.length, enviados });
+      return Response.json({ total: emails.length, enviados });
     }
 
     return Response.json({ error: "Ação inválida" }, { status: 400 });
