@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 import TemplateEmailDialog from "./TemplateEmailDialog";
 
 const LINHAS = [
@@ -67,16 +69,48 @@ const LINHAS = [
 
 export default function TransacionaisTab() {
   const [linhaEditando, setLinhaEditando] = useState(null);
+  const [alternando, setAlternando] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: logs = [] } = useQuery({
     queryKey: ["log-email-30d"],
     queryFn: () => base44.entities.LogEmail.list("-enviado_em", 2000),
   });
 
+  const { data: templates = [] } = useQuery({
+    queryKey: ["template-email-status"],
+    queryFn: () => base44.entities.TemplateEmail.list(),
+  });
+
   const limite = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const contarEnvios = (tipo) => {
     if (!tipo) return 0;
     return logs.filter((l) => l.tipo === tipo && l.status === "enviado" && new Date(l.enviado_em).getTime() >= limite).length;
+  };
+
+  const getTemplate = (tipo) => templates.find((t) => t.tipo === tipo);
+  const getStatus = (linha) => (getTemplate(linha.tipoLog)?.status === "ativo" ? "Ativo" : "Rascunho");
+
+  const handleAlternarStatus = async (linha) => {
+    const template = getTemplate(linha.tipoLog);
+    const novoStatus = template?.status === "ativo" ? "rascunho" : "ativo";
+    setAlternando(linha.tipoLog);
+    try {
+      if (template) {
+        await base44.entities.TemplateEmail.update(template.id, { status: novoStatus });
+      } else {
+        await base44.entities.TemplateEmail.create({
+          tipo: linha.tipoLog,
+          assunto: linha.assuntoPadrao,
+          corpo: linha.corpoPadrao,
+          status: novoStatus,
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["template-email-status"] });
+      toast({ title: novoStatus === "ativo" ? "E-mail ativado" : "E-mail movido para rascunho" });
+    } finally {
+      setAlternando(null);
+    }
   };
 
   return (
@@ -91,25 +125,37 @@ export default function TransacionaisTab() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {LINHAS.map((linha) => (
-            <TableRow key={linha.gatilho}>
-              <TableCell className="font-medium">{linha.gatilho}</TableCell>
-              <TableCell>
-                <Badge variant={linha.status === "Ativo" ? "default" : "secondary"}>{linha.status}</Badge>
-              </TableCell>
-              <TableCell>{contarEnvios(linha.tipoLog)}</TableCell>
-              <TableCell className="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={!linha.tipoLog}
-                  onClick={() => linha.tipoLog && setLinhaEditando(linha)}
-                >
-                  Editar
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {LINHAS.map((linha) => {
+            const status = getStatus(linha);
+            return (
+              <TableRow key={linha.gatilho}>
+                <TableCell className="font-medium">{linha.gatilho}</TableCell>
+                <TableCell>
+                  <Badge variant={status === "Ativo" ? "default" : "secondary"}>{status}</Badge>
+                </TableCell>
+                <TableCell>{contarEnvios(linha.tipoLog)}</TableCell>
+                <TableCell className="text-right space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!linha.tipoLog || alternando === linha.tipoLog}
+                    onClick={() => linha.tipoLog && handleAlternarStatus(linha)}
+                  >
+                    {alternando === linha.tipoLog && <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />}
+                    {status === "Ativo" ? "Mover p/ rascunho" : "Ativar"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!linha.tipoLog}
+                    onClick={() => linha.tipoLog && setLinhaEditando(linha)}
+                  >
+                    Editar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 

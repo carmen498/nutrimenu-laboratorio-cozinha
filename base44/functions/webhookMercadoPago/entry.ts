@@ -11,6 +11,8 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
+import { sendEmailViaResend } from "../../shared/resendEmail.ts";
+import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
 
@@ -113,6 +115,8 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
+    let dataExpiracaoFormatada: string | null = null;
+
     if (novoStatus === "approved") {
       if (pagamento.status !== "approved") {
         await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
@@ -121,15 +125,44 @@ export default async function(req: Request): Promise<Response> {
       const dias = DIAS_PLANO[pagamento.plano] ?? 30;
       const agora = new Date();
       const expiracao = new Date(agora.getTime() + dias * 86400000);
+      dataExpiracaoFormatada = expiracao.toISOString().split("T")[0];
 
       await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
         status_assinatura: "ativo",
         plano_atual: pagamento.plano,
         data_inicio: agora.toISOString().split("T")[0],
-        data_expiracao: expiracao.toISOString().split("T")[0],
+        data_expiracao: dataExpiracaoFormatada,
       });
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
+    }
+
+    // Dispara o e-mail transacional de pagamento aprovado/recusado, apenas se o
+    // template correspondente estiver com status "ativo" (configurado em Comunicação > Transacionais).
+    if (novoStatus === "approved" || novoStatus === "rejected") {
+      const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+      if (usuario?.email) {
+        const tipoEmail = novoStatus === "approved" ? "pagamento_aprovado" : "pagamento_recusado";
+        const nome = usuario.nome_completo || usuario.full_name || "";
+        const defaultAssunto = novoStatus === "approved" ? "Pagamento aprovado" : "Não conseguimos aprovar seu pagamento";
+        const defaultCorpo = novoStatus === "approved"
+          ? `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`
+          : `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`;
+
+        const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
+
+        if (ativo) {
+          const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+          await base44.asServiceRole.entities.LogEmail.create({
+            destinatario_email: usuario.email,
+            tipo: tipoEmail,
+            enviado_em: new Date().toISOString(),
+            status: resultado.ok ? "enviado" : "falhou",
+          });
+        } else {
+          console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
+        }
+      }
     }
 
     return Response.json({ received: true, status: novoStatus });

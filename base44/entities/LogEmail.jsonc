@@ -11,7 +11,9 @@
       "enum": [
         "boas_vindas",
         "trial_expirando",
-        "trial_vencido"
+        "trial_vencido",
+        "pagamento_aprovado",
+        "pagamento_recusado"
       ],
       "description": "Tipo do e-mail transacional disparado"
     },

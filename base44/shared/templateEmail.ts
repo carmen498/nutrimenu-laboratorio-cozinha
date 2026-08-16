@@ -9,8 +9,9 @@ export async function renderTemplateEmail(base44, tipo, nome, defaultAssunto, de
 
   const assunto = template?.assunto || defaultAssunto;
   const corpo = template?.corpo || defaultCorpo;
+  const ativo = template?.status === "ativo";
 
   const substituir = (texto) => texto.replace(/{{\s*nome\s*}}/gi, nome || "");
 
-  return { assunto: substituir(assunto), html: substituir(corpo) };
+  return { assunto: substituir(assunto), html: substituir(corpo), ativo };
 }
