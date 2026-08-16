@@ -16,13 +16,24 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
 
-async function validarAssinatura(req: Request, dataId: string | null): Promise<boolean> {
-  const secret = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
-  if (!secret) return false;
+async function validarAssinatura(req: Request, dataId: string | null): Promise<{ valida: boolean; diagnostico: Record<string, unknown> }> {
+  const secretBruto = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
+  const secret = (secretBruto || "").trim();
 
   const xSignature = req.headers.get("x-signature");
   const xRequestId = req.headers.get("x-request-id");
-  if (!xSignature) return false;
+
+  const diagnostico: Record<string, unknown> = {
+    secret_configurado: !!secretBruto,
+    secret_tinha_espacos_extras: !!secretBruto && secretBruto !== secret,
+    secret_tamanho: secret.length,
+    x_signature_recebido: xSignature,
+    x_request_id_recebido: xRequestId,
+    data_id_usado_no_manifest: dataId,
+  };
+
+  if (!secret) return { valida: false, diagnostico };
+  if (!xSignature) return { valida: false, diagnostico };
 
   const parts: Record<string, string> = {};
   for (const part of xSignature.split(",")) {
@@ -31,9 +42,12 @@ async function validarAssinatura(req: Request, dataId: string | null): Promise<b
   }
   const ts = parts["ts"];
   const v1 = parts["v1"];
-  if (!ts || !v1) return false;
+  diagnostico.ts_extraido = ts || null;
+  diagnostico.v1_recebido = v1 || null;
+  if (!ts || !v1) return { valida: false, diagnostico };
 
   const manifest = `id:${dataId ?? ""};request-id:${xRequestId ?? ""};ts:${ts};`;
+  diagnostico.manifest_usado = manifest;
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -47,8 +61,9 @@ async function validarAssinatura(req: Request, dataId: string | null): Promise<b
   const computedHex = Array.from(new Uint8Array(signatureBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+  diagnostico.v1_calculado_por_nos = computedHex;
 
-  return computedHex === v1;
+  return { valida: computedHex === v1, diagnostico };
 }
 
 export default async function(req: Request): Promise<Response> {
@@ -73,10 +88,14 @@ export default async function(req: Request): Promise<Response> {
       }).catch((e: any) => console.log("Falha ao gravar LogWebhookMercadoPago:", e.message));
     }
 
-    const assinaturaValida = await validarAssinatura(req, dataId);
+    const { valida: assinaturaValida, diagnostico: diagnosticoAssinatura } = await validarAssinatura(req, dataId);
     if (!assinaturaValida) {
-      console.log("Assinatura inválida na notificação do Mercado Pago — descartando.");
-      await registrarLog({ assinatura_valida: false, resultado: "assinatura_invalida" });
+      console.log("Assinatura inválida na notificação do Mercado Pago:", JSON.stringify(diagnosticoAssinatura));
+      await registrarLog({
+        assinatura_valida: false,
+        resultado: "assinatura_invalida",
+        corpo_bruto: `${corpoBruto} | DIAGNOSTICO: ${JSON.stringify(diagnosticoAssinatura)}`,
+      });
       return Response.json({ error: "invalid_signature" }, { status: 401 });
     }
 
