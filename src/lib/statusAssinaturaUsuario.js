@@ -35,3 +35,13 @@ export function whatsappHref(telefone) {
 }
 
 export const PLANO_LABEL = { trial: "Trial", mensal: "Mensal", anual: "Anual", renovacao: "Renovação" };
+
+export const SEGMENTOS = ["Nutricionista", "Chef de Cozinha", "Cozinha Industrial", "Estudante", "Fabricante de Produtos"];
+export const ORIGENS = ["Google", "Instagram", "Indicação de amigos", "Site", "Outros"];
+
+export function formatarDataHora(dataStr) {
+  if (!dataStr) return null;
+  const data = new Date(dataStr);
+  if (isNaN(data.getTime())) return null;
+  return data.toLocaleDateString("pt-BR");
+}

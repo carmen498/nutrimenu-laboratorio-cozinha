@@ -79,6 +79,33 @@
     "endereco": {
       "type": "string",
       "description": "Endere\u00e7o completo para nota fiscal (opcional)"
+    },
+    "segmento": {
+      "type": "string",
+      "enum": [
+        "Nutricionista",
+        "Chef de Cozinha",
+        "Cozinha Industrial",
+        "Estudante",
+        "Fabricante de Produtos"
+      ],
+      "description": "Segmento profissional do usu\u00e1rio"
+    },
+    "origem": {
+      "type": "string",
+      "enum": [
+        "Google",
+        "Instagram",
+        "Indica\u00e7\u00e3o de amigos",
+        "Site",
+        "Outros"
+      ],
+      "description": "Canal de origem/aquisi\u00e7\u00e3o do usu\u00e1rio"
+    },
+    "data_login": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do \u00faltimo login do usu\u00e1rio (atualizado automaticamente)"
     }
   },
   "required": [

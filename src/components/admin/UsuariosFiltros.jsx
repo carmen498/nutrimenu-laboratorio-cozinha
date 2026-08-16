@@ -1,9 +1,13 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SEGMENTOS, ORIGENS } from "@/lib/statusAssinaturaUsuario";
 
-export default function CampanhaFiltros({ busca, setBusca, planoFiltro, setPlanoFiltro, statusFiltro, setStatusFiltro }) {
+export default function UsuariosFiltros({
+  busca, setBusca, planoFiltro, setPlanoFiltro, statusFiltro, setStatusFiltro,
+  segmentoFiltro, setSegmentoFiltro, origemFiltro, setOrigemFiltro,
+}) {
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
       <Input
         placeholder="Buscar por nome, e-mail ou telefone..."
         value={busca}
@@ -26,6 +30,20 @@ export default function CampanhaFiltros({ busca, setBusca, planoFiltro, setPlano
           <SelectItem value="Ativo">Ativo</SelectItem>
           <SelectItem value="Trial expirando">Trial expirando</SelectItem>
           <SelectItem value="Vencido">Vencido</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select value={segmentoFiltro} onValueChange={setSegmentoFiltro}>
+        <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="todos">Todos os segmentos</SelectItem>
+          {SEGMENTOS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={origemFiltro} onValueChange={setOrigemFiltro}>
+        <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="todos">Todas as origens</SelectItem>
+          {ORIGENS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>
