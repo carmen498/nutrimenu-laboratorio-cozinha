@@ -44,6 +44,8 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 153 35% 25%;
     --sidebar-ring: 0 0% 98%;
+    --brand: 126 14% 42%;
+    --brand-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -79,6 +81,8 @@
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 150 10% 18%;
     --sidebar-ring: 140 40% 45%;
+    --brand: 126 14% 42%;
+    --brand-foreground: 0 0% 100%;
   }
 }
 
