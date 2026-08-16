@@ -17,7 +17,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v3-2026-08-16-18h20-erros-array";
+const VERSAO_CODIGO = "v4-2026-08-16-18h05-payer-nome-item-id";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -83,16 +83,28 @@ export default async function(req: Request): Promise<Response> {
 
     const descricaoPlano = NOME_PLANOS[plano];
 
+    // Nome do pagador, para aparecer identificado no painel do Mercado Pago
+    // (sem isso o campo "comprador" fica em branco na conciliação).
+    const nomeCompleto = (user.full_name || "").trim();
+    const [primeiroNome, ...restoNome] = nomeCompleto ? nomeCompleto.split(/\s+/) : [""];
+    const sobrenome = restoNome.join(" ");
+
     const orderBody: Record<string, unknown> = {
       type: "online",
       processing_mode: "automatic",
       external_reference: pagamento.id,
       description: descricaoPlano,
       total_amount: valorFormatado,
-      payer: { email: payerEmail },
+      payer: {
+        email: payerEmail,
+        ...(primeiroNome ? { first_name: primeiroNome } : {}),
+        ...(sobrenome ? { last_name: sobrenome } : {}),
+      },
       items: [
         {
+          id: plano,
           title: descricaoPlano,
+          description: descricaoPlano,
           unit_price: valorFormatado,
           quantity: 1,
         },
