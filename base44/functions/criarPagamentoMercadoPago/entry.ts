@@ -119,10 +119,13 @@ export default async function(req: Request): Promise<Response> {
       console.log("Erro ao criar order no Mercado Pago:", JSON.stringify(mpData));
       const causaDetalhada = Array.isArray(mpData?.cause) && mpData.cause.length
         ? mpData.cause.map((c: any) => c.description || c.code).join("; ")
-        : null;
+        : Array.isArray(mpData?.errors) && mpData.errors.length
+          ? mpData.errors.map((e: any) => `${e.code || ""} ${e.message || ""}`.trim()).join("; ")
+          : null;
+      const mensagemPrincipal = mpData?.message || mpData?.error || causaDetalhada || "sem mensagem";
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
-        detalhe_erro: `HTTP ${mpResponse.status} — ${mpData?.message || "sem mensagem"}${causaDetalhada ? ` (${causaDetalhada})` : ""}`,
+        detalhe_erro: `HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`,
       });
       return Response.json({ error: "Não foi possível processar o pagamento", detalhe: mpData }, { status: 400 });
     }
