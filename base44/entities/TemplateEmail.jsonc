@@ -11,7 +11,8 @@
         "pagamento_aprovado",
         "pagamento_recusado",
         "plano_vencendo",
-        "nota_fiscal_solicitada"
+        "nota_fiscal_solicitada",
+        "pagamento_estornado"
       ],
       "description": "Tipo do e-mail transacional ao qual este template pertence"
     },

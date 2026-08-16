@@ -115,6 +115,7 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
+    const eraAprovadoAntes = pagamento.status === "approved";
     let dataExpiracaoFormatada: string | null = null;
 
     if (novoStatus === "approved") {
@@ -137,17 +138,33 @@ export default async function(req: Request): Promise<Response> {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
     }
 
-    // Dispara o e-mail transacional de pagamento aprovado/recusado, apenas se o
-    // template correspondente estiver com status "ativo" (configurado em Comunicação > Transacionais).
-    if (novoStatus === "approved" || novoStatus === "rejected") {
+    // Dispara o e-mail transacional de pagamento aprovado/recusado/estornado, apenas se
+    // o template correspondente estiver com status "ativo" (Comunicação > Transacionais).
+    // "cancelled" só é tratado como estorno quando o pagamento já estava aprovado antes.
+    let tipoEmail: string | null = null;
+    if (novoStatus === "approved") tipoEmail = "pagamento_aprovado";
+    else if (novoStatus === "rejected") tipoEmail = "pagamento_recusado";
+    else if (novoStatus === "cancelled" && eraAprovadoAntes) tipoEmail = "pagamento_estornado";
+
+    if (tipoEmail) {
       const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
       if (usuario?.email) {
-        const tipoEmail = novoStatus === "approved" ? "pagamento_aprovado" : "pagamento_recusado";
         const nome = usuario.nome_completo || usuario.full_name || "";
-        const defaultAssunto = novoStatus === "approved" ? "Pagamento aprovado" : "Não conseguimos aprovar seu pagamento";
-        const defaultCorpo = novoStatus === "approved"
-          ? `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`
-          : `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`;
+        const DEFAULTS: Record<string, { assunto: string; corpo: string }> = {
+          pagamento_aprovado: {
+            assunto: "Pagamento aprovado",
+            corpo: `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`,
+          },
+          pagamento_recusado: {
+            assunto: "Não conseguimos aprovar seu pagamento",
+            corpo: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`,
+          },
+          pagamento_estornado: {
+            assunto: "Seu pagamento foi estornado",
+            corpo: `<p>Olá {{nome}}, informamos que o valor do seu pagamento foi estornado.</p><p>O reembolso será processado pelo Mercado Pago e deve aparecer no seu extrato em alguns dias, conforme o prazo do seu banco ou operadora de cartão.</p><p>Se tiver dúvidas, é só nos chamar.</p>`,
+          },
+        };
+        const { assunto: defaultAssunto, corpo: defaultCorpo } = DEFAULTS[tipoEmail];
 
         const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
 

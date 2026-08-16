@@ -65,6 +65,16 @@ const LINHAS = [
     corpoPadrao: `<p>Olá {{nome}}, recebemos sua solicitação de nota fiscal.</p>
 <p>Em breve enviaremos o documento para este e-mail.</p>`,
   },
+  {
+    gatilho: "Pagamento estornado",
+    status: "Rascunho",
+    tipoLog: "pagamento_estornado",
+    assuntoPadrao: "Seu pagamento foi estornado",
+    corpoPadrao: `<p>Olá {{nome}}, informamos que o valor do seu pagamento foi estornado.</p>
+<p>O reembolso será processado pelo Mercado Pago e deve aparecer no seu extrato em alguns dias, conforme o prazo do seu banco ou operadora de cartão.</p>
+<p>Se tiver dúvidas, é só nos chamar.</p>
+<p><a href="https://wa.me/555134160886" style="color:#5c7a5f; text-decoration:underline;">Falar com o suporte</a></p>`,
+  },
 ];
 
 export default function TransacionaisTab() {

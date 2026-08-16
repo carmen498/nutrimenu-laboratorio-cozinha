@@ -13,7 +13,8 @@
         "trial_expirando",
         "trial_vencido",
         "pagamento_aprovado",
-        "pagamento_recusado"
+        "pagamento_recusado",
+        "pagamento_estornado"
       ],
       "description": "Tipo do e-mail transacional disparado"
     },
