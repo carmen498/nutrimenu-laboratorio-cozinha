@@ -12,17 +12,11 @@ export default function ResumoPagamentosCards({ pagamentos }) {
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {CARDS.map((c) => {
         const doStatus = pagamentos.filter((p) => p.status === c.status);
-        const bruto = doStatus.reduce((acc, p) => acc + (p.valor || 0), 0);
         const liquido = doStatus.reduce((acc, p) => acc + (p.valor_liquido ?? p.valor ?? 0), 0);
         return (
           <div key={c.status} className={`rounded-lg border p-3 ${c.className}`}>
             <p className="text-xs font-medium text-muted-foreground mb-1.5">{c.label}</p>
-            <p className="text-sm font-semibold leading-tight">
-              {formatarMoeda(bruto)} <span className="text-xs text-muted-foreground font-normal">bruto</span>
-            </p>
-            <p className="text-sm leading-tight">
-              {formatarMoeda(liquido)} <span className="text-xs text-muted-foreground font-normal">líquido</span>
-            </p>
+            <p className="text-base font-semibold leading-tight">{formatarMoeda(liquido)}</p>
           </div>
         );
       })}
