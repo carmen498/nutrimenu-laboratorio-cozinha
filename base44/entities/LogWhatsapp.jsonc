@@ -1,41 +1,41 @@
 {
-  "name": "LogEmail",
+  "name": "LogWhatsapp",
   "type": "object",
   "properties": {
-    "destinatario_email": {
+    "destinatario_telefone": {
       "type": "string",
-      "description": "E-mail do destinat\u00e1rio"
+      "description": "N\u00famero de telefone (com DDI) para o qual a mensagem foi enviada/simulada"
     },
     "tipo": {
       "type": "string",
       "enum": [
-        "boas_vindas",
-        "trial_expirando",
-        "trial_vencido",
         "pagamento_aprovado",
         "pagamento_recusado",
-        "pagamento_estornado",
         "plano_vencendo"
       ],
-      "description": "Tipo do e-mail transacional disparado"
+      "description": "Tipo do evento transacional que originou o envio"
     },
-    "enviado_em": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Data/hora do envio"
+    "modo_teste": {
+      "type": "boolean",
+      "default": true,
+      "description": "true quando a mensagem foi apenas simulada/logada (modo de teste), sem envio real"
     },
     "status": {
       "type": "string",
       "enum": [
         "enviado",
-        "falhou"
+        "falhou",
+        "simulado"
       ],
-      "default": "enviado",
-      "description": "Status do envio"
+      "description": "Resultado do envio"
+    },
+    "resposta_bruta": {
+      "type": "string",
+      "description": "Conte\u00fado da mensagem (modo teste) ou resposta bruta da API Wascript (envio real), para diagn\u00f3stico"
     }
   },
   "required": [
-    "destinatario_email",
+    "destinatario_telefone",
     "tipo",
     "status"
   ],

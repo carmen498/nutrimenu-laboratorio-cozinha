@@ -1,43 +1,33 @@
 {
-  "name": "LogEmail",
+  "name": "TemplateWascript",
   "type": "object",
   "properties": {
-    "destinatario_email": {
-      "type": "string",
-      "description": "E-mail do destinat\u00e1rio"
-    },
     "tipo": {
       "type": "string",
       "enum": [
-        "boas_vindas",
-        "trial_expirando",
-        "trial_vencido",
         "pagamento_aprovado",
         "pagamento_recusado",
-        "pagamento_estornado",
         "plano_vencendo"
       ],
-      "description": "Tipo do e-mail transacional disparado"
+      "description": "Tipo do evento transacional ao qual esta mensagem de WhatsApp pertence"
     },
-    "enviado_em": {
+    "texto": {
       "type": "string",
-      "format": "date-time",
-      "description": "Data/hora do envio"
+      "description": "Texto da mensagem de WhatsApp. Pode conter a vari\u00e1vel {{nome}}"
     },
     "status": {
       "type": "string",
       "enum": [
-        "enviado",
-        "falhou"
+        "rascunho",
+        "ativo"
       ],
-      "default": "enviado",
-      "description": "Status do envio"
+      "default": "rascunho",
+      "description": "Status da mensagem: rascunho (n\u00e3o \u00e9 disparada) ou ativo (disparada normalmente)"
     }
   },
   "required": [
-    "destinatario_email",
     "tipo",
-    "status"
+    "texto"
   ],
   "rls": {
     "read": {

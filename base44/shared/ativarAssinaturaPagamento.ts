@@ -10,6 +10,7 @@
 
 import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
+import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
 
@@ -27,24 +28,29 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { plano: s
   });
 
   const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
-  if (!usuario?.email) return;
+  if (!usuario) return;
 
-  const nome = usuario.nome_completo || usuario.full_name || "";
-  const defaultAssunto = "Pagamento aprovado";
-  const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`;
+  if (usuario.email) {
+    const nome = usuario.nome_completo || usuario.full_name || "";
+    const defaultAssunto = "Pagamento aprovado";
+    const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`;
 
-  const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo);
+    const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo);
 
-  if (!ativo) {
-    console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
-    return;
+    if (ativo) {
+      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+      await base44.asServiceRole.entities.LogEmail.create({
+        destinatario_email: usuario.email,
+        tipo: "pagamento_aprovado",
+        enviado_em: new Date().toISOString(),
+        status: resultado.ok ? "enviado" : "falhou",
+      });
+    } else {
+      console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
+    }
   }
 
-  const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-  await base44.asServiceRole.entities.LogEmail.create({
-    destinatario_email: usuario.email,
-    tipo: "pagamento_aprovado",
-    enviado_em: new Date().toISOString(),
-    status: resultado.ok ? "enviado" : "falhou",
-  });
+  await enviarNotificacaoWhatsapp(base44, "pagamento_aprovado", usuario).catch((e: any) =>
+    console.log("Falha ao enviar WhatsApp de pagamento aprovado:", e.message)
+  );
 }

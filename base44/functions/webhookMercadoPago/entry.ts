@@ -14,6 +14,7 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
+import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 
 async function validarAssinatura(req: Request, dataId: string | null): Promise<{ valida: boolean; diagnostico: Record<string, unknown> }> {
   const secretBruto = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
@@ -244,6 +245,12 @@ export default async function(req: Request): Promise<Response> {
           } else {
             console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
           }
+        }
+
+        if (usuario && novoStatus === "rejected") {
+          await enviarNotificacaoWhatsapp(base44, "pagamento_recusado", usuario).catch((e: any) =>
+            console.log("Falha ao enviar WhatsApp de pagamento recusado:", e.message)
+          );
         }
       }
     }
