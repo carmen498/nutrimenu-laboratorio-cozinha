@@ -45,6 +45,7 @@ export default function PixForm({ plano, email, onClose }) {
             src={`data:image/png;base64,${resultado.qrCodeBase64}`}
             alt="QR Code PIX"
             className="w-48 h-48 border border-border rounded-lg"
+            style={{ imageRendering: "pixelated" }}
           />
         )}
         {resultado.qrCode && (
