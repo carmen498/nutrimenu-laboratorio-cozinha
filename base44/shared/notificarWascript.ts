@@ -11,7 +11,7 @@ const DEFAULTS: Record<string, string> = {
   pagamento_aprovado: "Olá {{nome}}! 🎉 Seu pagamento foi aprovado e seu plano no Laboratório de Cozinha já está ativo.",
   pagamento_recusado: "Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura. Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.",
   plano_vencendo: "Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve. Renove agora para não perder o acesso às suas receitas e cardápios.",
-  pagamento_pendente_lembrete: "Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado. Podemos ajudar em algo? Responda esta mensagem ou finalize seu pagamento na aba Planos do app.",
+  pagamento_pendente_lembrete: "Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado. Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.",
 };
 
 type TipoWascript = "pagamento_aprovado" | "pagamento_recusado" | "plano_vencendo" | "pagamento_pendente_lembrete";

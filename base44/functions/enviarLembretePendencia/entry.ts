@@ -9,7 +9,7 @@ import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 
 const ASSUNTO_PADRAO = "Podemos ajudar com seu pagamento?";
 const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado.</p>
-<p>Podemos ajudar em algo? Responda este e-mail ou finalize seu pagamento na aba Planos do aplicativo.</p>`;
+<p>Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.</p>`;
 
 export default async function(req: Request): Promise<Response> {
   try {

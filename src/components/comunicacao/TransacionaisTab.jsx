@@ -75,6 +75,14 @@ const LINHAS = [
 <p>Se tiver dúvidas, é só nos chamar.</p>
 <p><a href="https://wa.me/555134160886" style="color:#5c7a5f; text-decoration:underline;">Falar com o suporte</a></p>`,
   },
+  {
+    gatilho: "Lembrete de pagamento pendente",
+    status: "Rascunho",
+    tipoLog: "pagamento_pendente_lembrete",
+    assuntoPadrao: "Podemos ajudar com seu pagamento?",
+    corpoPadrao: `<p>Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado.</p>
+<p>Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.</p>`,
+  },
 ];
 
 export default function TransacionaisTab() {
