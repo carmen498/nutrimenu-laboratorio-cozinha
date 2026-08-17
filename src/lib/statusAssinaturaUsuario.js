@@ -42,6 +42,33 @@ export const PLANO_LABEL = { trial: "Trial", mensal: "Mensal", anual: "Anual", r
 export const SEGMENTOS = ["Nutricionista", "Chef de Cozinha", "Cozinha Industrial", "Estudante", "Fabricante de Produtos"];
 export const ORIGENS = ["Google", "Instagram", "Indicação de amigos", "Site", "Outros"];
 
+export const TIPOS_USUARIO = [
+  { value: "todos", label: "Todos" },
+  { value: "assinante", label: "Assinante" },
+  { value: "assinante_expirado", label: "Assinante expirado" },
+  { value: "todos_assinantes", label: "Todos assinantes" },
+  { value: "visitante", label: "Visitante" },
+  { value: "expirando_3_dias", label: "Todos assinantes expirando em até 3 dias" },
+];
+
+// Classifica o usuário para o filtro "Tipo de usuário" da Administração.
+export function usuarioMatchTipo(u, tipoFiltro) {
+  if (tipoFiltro === "todos") return true;
+  const plano = u?.plano_atual;
+  const isPago = plano === "mensal" || plano === "anual";
+  const status = u?.status_assinatura;
+  if (tipoFiltro === "visitante") return !isPago;
+  if (tipoFiltro === "todos_assinantes") return isPago;
+  if (tipoFiltro === "assinante") return isPago && status === "ativo";
+  if (tipoFiltro === "assinante_expirado") return isPago && (status === "vencido" || status === "cancelado");
+  if (tipoFiltro === "expirando_3_dias") {
+    if (!isPago || status !== "ativo") return false;
+    const dias = diasEntreHoje(u?.data_expiracao);
+    return dias != null && dias >= 0 && dias <= 3;
+  }
+  return true;
+}
+
 export function formatarDataHora(dataStr) {
   if (!dataStr) return null;
   const data = new Date(dataStr);

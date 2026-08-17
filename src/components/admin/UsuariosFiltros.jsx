@@ -1,10 +1,12 @@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SEGMENTOS, ORIGENS } from "@/lib/statusAssinaturaUsuario";
+import { SEGMENTOS, ORIGENS, TIPOS_USUARIO } from "@/lib/statusAssinaturaUsuario";
+import { SITUACOES_PAGAMENTO, STATUS_PAGAMENTO_LABEL } from "@/lib/pagamentosUsuario";
 
 export default function UsuariosFiltros({
   busca, setBusca, planoFiltro, setPlanoFiltro, statusFiltro, setStatusFiltro,
   segmentoFiltro, setSegmentoFiltro, origemFiltro, setOrigemFiltro,
+  tipoUsuarioFiltro, setTipoUsuarioFiltro, situacaoPagamentoFiltro, setSituacaoPagamentoFiltro,
 }) {
   return (
     <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
@@ -45,6 +47,19 @@ export default function UsuariosFiltros({
         <SelectContent>
           <SelectItem value="todos">Todas as origens</SelectItem>
           {ORIGENS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={tipoUsuarioFiltro} onValueChange={setTipoUsuarioFiltro}>
+        <SelectTrigger className="sm:w-56"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {TIPOS_USUARIO.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={situacaoPagamentoFiltro} onValueChange={setSituacaoPagamentoFiltro}>
+        <SelectTrigger className="sm:w-52"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="todos">Todas as situações de pagamento</SelectItem>
+          {SITUACOES_PAGAMENTO.map((s) => <SelectItem key={s} value={s}>{STATUS_PAGAMENTO_LABEL[s]}</SelectItem>)}
         </SelectContent>
       </Select>
     </div>

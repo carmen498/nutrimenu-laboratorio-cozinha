@@ -25,7 +25,11 @@
     },
     "valor": {
       "type": "number",
-      "description": "Valor cobrado em R$, definido pelo servidor a partir do AppConfig"
+      "description": "Valor cobrado em R$ (bruto), definido pelo servidor a partir do AppConfig"
+    },
+    "valor_liquido": {
+      "type": "number",
+      "description": "Valor l\u00edquido em R$ recebido ap\u00f3s taxas/descontos. Quando n\u00e3o informado, considerar igual ao valor bruto"
     },
     "parcelas": {
       "type": "number",
@@ -67,6 +71,10 @@
     "versao_codigo": {
       "type": "string",
       "description": "Identificador da vers\u00e3o do c\u00f3digo da function que processou esta tentativa (para confirmar se o deploy mais recente est\u00e1 ativo)"
+    },
+    "nota_fiscal_url": {
+      "type": "string",
+      "description": "URL da nota fiscal emitida para este pagamento, quando existir"
     }
   },
   "required": [

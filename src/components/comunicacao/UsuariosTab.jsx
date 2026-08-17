@@ -2,10 +2,11 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "@/components/ui/use-toast";
-import { computeStatusUsuario } from "@/lib/statusAssinaturaUsuario";
-import { contarReceitasPorUsuario } from "@/lib/receitasPorUsuario";
+import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUsuario";
+import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import UsuariosTable from "@/components/admin/UsuariosTable";
+import ResumoPagamentosCards from "@/components/admin/ResumoPagamentosCards";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
 import {
   AlertDialog,
@@ -25,14 +26,17 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const [statusFiltro, setStatusFiltro] = useState("todos");
   const [segmentoFiltro, setSegmentoFiltro] = useState("todos");
   const [origemFiltro, setOrigemFiltro] = useState("todos");
+  const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState("todos");
+  const [situacaoPagamentoFiltro, setSituacaoPagamentoFiltro] = useState("todos");
   const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
-  const { data: receitasPorUsuario = {} } = useQuery({
-    queryKey: ["receitas-por-usuario"],
-    queryFn: contarReceitasPorUsuario,
-    staleTime: 5 * 60 * 1000,
+  const { data: pagamentos = [] } = useQuery({
+    queryKey: ["admin-pagamentos"],
+    queryFn: () => base44.entities.Pagamento.list("-created_date", 2000),
   });
+
+  const pagamentosPorUsuario = useMemo(() => agruparPagamentosPorUsuario(pagamentos), [pagamentos]);
 
   const usuariosFiltrados = useMemo(() => {
     const buscaNorm = busca.trim().toLowerCase();
@@ -45,9 +49,19 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
       if (statusFiltro !== "todos" && computeStatusUsuario(u).label !== statusFiltro) return false;
       if (segmentoFiltro !== "todos" && u.segmento !== segmentoFiltro) return false;
       if (origemFiltro !== "todos" && u.origem !== origemFiltro) return false;
+      if (tipoUsuarioFiltro !== "todos" && !usuarioMatchTipo(u, tipoUsuarioFiltro)) return false;
+      if (situacaoPagamentoFiltro !== "todos") {
+        const ultimo = getUltimoPagamento(pagamentosPorUsuario, u.id);
+        if (!ultimo || ultimo.status !== situacaoPagamentoFiltro) return false;
+      }
       return true;
     });
-  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro]);
+  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, pagamentosPorUsuario]);
+
+  const pagamentosParaCards = useMemo(() => {
+    const ids = new Set(usuariosFiltrados.map((u) => u.id));
+    return pagamentos.filter((p) => ids.has(p.usuario_id));
+  }, [pagamentos, usuariosFiltrados]);
 
   const handleToggle = (id) => {
     setSelecionados((prev) => {
@@ -108,12 +122,16 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
 
   return (
     <div className="space-y-4">
+      <ResumoPagamentosCards pagamentos={pagamentosParaCards} />
+
       <UsuariosFiltros
         busca={busca} setBusca={setBusca}
         planoFiltro={planoFiltro} setPlanoFiltro={setPlanoFiltro}
         statusFiltro={statusFiltro} setStatusFiltro={setStatusFiltro}
         segmentoFiltro={segmentoFiltro} setSegmentoFiltro={setSegmentoFiltro}
         origemFiltro={origemFiltro} setOrigemFiltro={setOrigemFiltro}
+        tipoUsuarioFiltro={tipoUsuarioFiltro} setTipoUsuarioFiltro={setTipoUsuarioFiltro}
+        situacaoPagamentoFiltro={situacaoPagamentoFiltro} setSituacaoPagamentoFiltro={setSituacaoPagamentoFiltro}
       />
 
       <AcoesEmMassa
@@ -133,7 +151,7 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
           selecionados={selecionados}
           onToggle={handleToggle}
           onToggleAll={handleToggleAll}
-          receitasPorUsuario={receitasPorUsuario}
+          pagamentosPorUsuario={pagamentosPorUsuario}
         />
       )}
 

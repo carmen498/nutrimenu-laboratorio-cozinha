@@ -49,7 +49,7 @@ export default function AdminComunicacao() {
 
       <div className="flex items-center gap-2">
         <MessageSquare className="w-6 h-6" style={{ color: "#2A4E3D" }} />
-        <h1 className="font-display text-xl font-bold" style={{ color: "#2A4E3D" }}>Central de Comunicação</h1>
+        <h1 className="font-display text-xl font-bold" style={{ color: "#2A4E3D" }}>Administração</h1>
       </div>
 
       <Tabs value={aba} onValueChange={setAba}>
