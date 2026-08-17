@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, Star, CheckCircle2 } from "lucide-react";
+import { Loader2, Star, CheckCircle2, Check } from "lucide-react";
 
 export default function PlanoCard({
   planoId,
@@ -8,6 +8,7 @@ export default function PlanoCard({
   subtitulo,
   preco,
   precoDetalhe,
+  beneficios,
   botaoLabel,
   destaque = false,
   loading = false,
@@ -38,7 +39,17 @@ export default function PlanoCard({
         {nome}
       </h3>
       <p className="text-sm text-muted-foreground text-center mt-1">{subtitulo}</p>
-      <p className="text-sm text-muted-foreground text-center">Todas funcionalidades</p>
+      {beneficios?.length > 0 ? (
+        <ul className="mt-3 space-y-1.5">
+          {beneficios.map((b) => (
+            <li key={b} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+              <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" /> {b}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground text-center">Todas funcionalidades</p>
+      )}
 
       <div className="flex-1 flex flex-col items-center justify-center py-6">
         <p className="font-heading text-3xl font-bold text-foreground">{preco}</p>

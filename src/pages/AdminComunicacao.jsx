@@ -13,6 +13,7 @@ import CampanhasTab from "@/components/comunicacao/CampanhasTab";
 import WhatsappReativoTab from "@/components/comunicacao/WhatsappReativoTab";
 import TemplateWhatsappTab from "@/components/comunicacao/TemplateWhatsappTab";
 import ConfiguracoesEmailTab from "@/components/comunicacao/ConfiguracoesEmailTab";
+import PlanosTab from "@/components/comunicacao/PlanosTab";
 
 export default function AdminComunicacao() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ export default function AdminComunicacao() {
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList>
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="planos">Planos</TabsTrigger>
           <TabsTrigger value="transacionais">Transacionais</TabsTrigger>
           <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
           <TabsTrigger value="whatsapp-reativo">WhatsApp reativo</TabsTrigger>
@@ -69,6 +71,9 @@ export default function AdminComunicacao() {
             setSelecionados={setSelecionados}
             onDispararEmail={() => setAba("campanhas")}
           />
+        </TabsContent>
+        <TabsContent value="planos" className="pt-4">
+          <PlanosTab />
         </TabsContent>
         <TabsContent value="transacionais" className="pt-4">
           <TransacionaisTab />

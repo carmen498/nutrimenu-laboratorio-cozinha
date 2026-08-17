@@ -42,13 +42,14 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "E-mail do pagador é obrigatório" }, { status: 400 });
     }
 
-    // Preço vem sempre do servidor (AppConfig), nunca do frontend.
-    const configs = await base44.asServiceRole.entities.AppConfig.filter({ chave: `preco_plano_${plano}` });
-    const config = configs?.[0];
-    if (!config?.valor) {
+    // Preço vem sempre do servidor (ConfiguracaoPlano), nunca do frontend — é a mesma
+    // fonte editada pelo admin em Administração > Planos e exibida na tela pública.
+    const configsPlano = await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: plano });
+    const configPlano = configsPlano?.[0];
+    if (!configPlano || configPlano.valor_cobranca == null) {
       return Response.json({ error: `Preço não configurado para o plano ${plano}` }, { status: 500 });
     }
-    const valor = parseFloat(config.valor);
+    const valor = configPlano.valor_cobranca;
     const valorFormatado = valor.toFixed(2);
     const parcelas = forma_pagamento === "cartao" ? (parseInt(installments, 10) || 1) : 1;
 

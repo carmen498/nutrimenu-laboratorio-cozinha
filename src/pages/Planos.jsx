@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -25,11 +26,23 @@ const diasEntreHoje = (dataStr) => {
   return Math.round((data.getTime() - hoje.getTime()) / 86400000);
 };
 
+const formatarPreco = (plano) => {
+  const valor = (plano.preco_exibido || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const sufixo = plano.periodo_exibido === "mes" ? "/mês" : plano.periodo_exibido === "ano" ? "/ano" : "";
+  return `R$ ${valor}${sufixo}`;
+};
+
 export default function Planos() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loadingTrial, setLoadingTrial] = useState(false);
   const [checkoutPlano, setCheckoutPlano] = useState(null);
+
+  const { data: configPlanos = [], isLoading: carregandoPlanos } = useQuery({
+    queryKey: ["configuracao-planos-publico"],
+    queryFn: () => base44.entities.ConfiguracaoPlano.list("ordem"),
+  });
+  const configPorId = Object.fromEntries(configPlanos.map((p) => [p.plano_id, p]));
 
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
@@ -95,59 +108,82 @@ export default function Planos() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-        <PlanoCard
-          planoId="trial"
-          nome="Teste Grátis"
-          subtitulo="7 dias de uso"
-          preco="R$ 0"
-          botaoLabel="Testar grátis"
-          loading={loadingTrial}
-          onClick={handleTestarGratis}
-          isCurrentPlan={planoAtual === "trial"}
-          validadeLabel="Válido até"
-          validadeData={formatarData(user?.data_expiracao)}
-          diasRestantes={planoAtual === "trial" ? diasRestantesTrial : null}
-        />
-        <PlanoCard
-          planoId="mensal"
-          nome="Mensal"
-          subtitulo="Sem compromisso"
-          preco="R$ 29,90/mês"
-          botaoLabel="Assinar mensal"
-          onClick={() => handleAssinar("mensal", "Mensal")}
-          isCurrentPlan={planoAtual === "mensal"}
-          validadeLabel="Próxima cobrança em"
-          validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
-        />
-        <PlanoCard
-          planoId="anual"
-          nome="Anual"
-          subtitulo="Sempre ativo"
-          preco="R$ 16,50/mês"
-          precoDetalhe="R$ 198/ano"
-          botaoLabel="Assinar anual"
-          destaque
-          onClick={() => handleAssinar("anual", "Anual")}
-          isCurrentPlan={planoAtual === "anual"}
-          validadeLabel="Próxima cobrança em"
-          validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
-        />
-        <PlanoCard
-          planoId="renovacao"
-          nome="Renovação"
-          subtitulo="50% de desconto"
-          preco="R$ 99/ano"
-          precoDetalhe="ou 6x de R$ 16,50"
-          botaoLabel="Renovar"
-          onClick={handleEmBreve}
-          isCurrentPlan={planoAtual === "renovacao"}
-          validadeLabel="Próxima cobrança em"
-          validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
-          bloqueado={planoAtual !== "renovacao" && cicloRenovacao < 1}
-          mensagemBloqueio="Disponível a partir do 2º ano"
-        />
-      </div>
+      {carregandoPlanos ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          {configPorId.trial && (
+            <PlanoCard
+              planoId="trial"
+              nome={configPorId.trial.nome}
+              subtitulo={configPorId.trial.subtitulo}
+              preco={formatarPreco(configPorId.trial)}
+              precoDetalhe={configPorId.trial.preco_detalhe}
+              beneficios={configPorId.trial.beneficios}
+              botaoLabel="Testar grátis"
+              destaque={configPorId.trial.mais_popular}
+              loading={loadingTrial}
+              onClick={handleTestarGratis}
+              isCurrentPlan={planoAtual === "trial"}
+              validadeLabel="Válido até"
+              validadeData={formatarData(user?.data_expiracao)}
+              diasRestantes={planoAtual === "trial" ? diasRestantesTrial : null}
+            />
+          )}
+          {configPorId.mensal && (
+            <PlanoCard
+              planoId="mensal"
+              nome={configPorId.mensal.nome}
+              subtitulo={configPorId.mensal.subtitulo}
+              preco={formatarPreco(configPorId.mensal)}
+              precoDetalhe={configPorId.mensal.preco_detalhe}
+              beneficios={configPorId.mensal.beneficios}
+              botaoLabel="Assinar mensal"
+              destaque={configPorId.mensal.mais_popular}
+              onClick={() => handleAssinar("mensal", configPorId.mensal.nome)}
+              isCurrentPlan={planoAtual === "mensal"}
+              validadeLabel="Próxima cobrança em"
+              validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
+            />
+          )}
+          {configPorId.anual && (
+            <PlanoCard
+              planoId="anual"
+              nome={configPorId.anual.nome}
+              subtitulo={configPorId.anual.subtitulo}
+              preco={formatarPreco(configPorId.anual)}
+              precoDetalhe={configPorId.anual.preco_detalhe}
+              beneficios={configPorId.anual.beneficios}
+              botaoLabel="Assinar anual"
+              destaque={configPorId.anual.mais_popular}
+              onClick={() => handleAssinar("anual", configPorId.anual.nome)}
+              isCurrentPlan={planoAtual === "anual"}
+              validadeLabel="Próxima cobrança em"
+              validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
+            />
+          )}
+          {configPorId.renovacao && (
+            <PlanoCard
+              planoId="renovacao"
+              nome={configPorId.renovacao.nome}
+              subtitulo={configPorId.renovacao.subtitulo}
+              preco={formatarPreco(configPorId.renovacao)}
+              precoDetalhe={configPorId.renovacao.preco_detalhe}
+              beneficios={configPorId.renovacao.beneficios}
+              botaoLabel="Renovar"
+              destaque={configPorId.renovacao.mais_popular}
+              onClick={handleEmBreve}
+              isCurrentPlan={planoAtual === "renovacao"}
+              validadeLabel="Próxima cobrança em"
+              validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
+              bloqueado={planoAtual !== "renovacao" && cicloRenovacao < 1}
+              mensagemBloqueio="Disponível a partir do 2º ano"
+            />
+          )}
+        </div>
+      )}
 
       <IncluidoTodosPlanos />
 
