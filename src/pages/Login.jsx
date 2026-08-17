@@ -4,24 +4,17 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-import { getManterLogadoPref, setManterLogadoPref } from "@/lib/manterLogadoPrefs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [manterLogado, setManterLogado] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const emailInputRef = useRef(null);
-
-  const applyPrefForEmail = (value) => {
-    setManterLogado(value ? getManterLogadoPref(value) : false);
-  };
 
   // Handles browser-autofilled e-mail, which doesn't always fire a React onChange
   useEffect(() => {
@@ -29,16 +22,13 @@ export default function Login() {
       const autofilledEmail = emailInputRef.current?.value;
       if (autofilledEmail && autofilledEmail !== email) {
         setEmail(autofilledEmail);
-        applyPrefForEmail(autofilledEmail);
       }
     }, 250);
     return () => clearTimeout(timer);
   }, []);
 
   const handleEmailChange = (e) => {
-    const value = e.target.value;
-    setEmail(value);
-    applyPrefForEmail(value);
+    setEmail(e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -47,8 +37,7 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await base44.auth.loginViaEmailPassword(email, password);
-      base44.auth.setToken(response.access_token, manterLogado);
-      setManterLogadoPref(email, manterLogado);
+      base44.auth.setToken(response.access_token);
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid email or password");
@@ -147,18 +136,6 @@ export default function Login() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="manter-logado"
-            name="manter-logado"
-            autoComplete="on"
-            checked={manterLogado}
-            onCheckedChange={(v) => setManterLogado(v === true)}
-          />
-          <Label htmlFor="manter-logado" className="text-sm font-normal cursor-pointer">
-            Manter logado
-          </Label>
         </div>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
