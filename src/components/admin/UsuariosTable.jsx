@@ -11,7 +11,7 @@ import {
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
 } from "@/lib/pagamentosUsuario";
 
-export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario }) {
+export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo }) {
   const [expandidos, setExpandidos] = useState(new Set());
 
   if (usuarios.length === 0) {
@@ -49,7 +49,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
         <TableBody>
           {usuarios.map((u) => {
             const status = computeStatusUsuario(u);
-            const ultimoPagamento = getUltimoPagamento(pagamentosPorUsuario, u.id);
+            const ultimoPagamento = getUltimoPagamento(pagamentosPorUsuarioPeriodo, u.id);
             const historico = pagamentosPorUsuario.get(u.id) || [];
             const expandido = expandidos.has(u.id);
             return (

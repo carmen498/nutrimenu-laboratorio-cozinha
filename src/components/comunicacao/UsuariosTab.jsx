@@ -4,7 +4,9 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "@/components/ui/use-toast";
 import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUsuario";
 import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
+import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
+import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
 import ResumoPagamentosCards from "@/components/admin/ResumoPagamentosCards";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
@@ -28,6 +30,9 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const [origemFiltro, setOrigemFiltro] = useState("todos");
   const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState("todos");
   const [situacaoPagamentoFiltro, setSituacaoPagamentoFiltro] = useState("todos");
+  const [periodoFiltro, setPeriodoFiltro] = useState(PERIODO_PADRAO);
+  const [dataInicioCustom, setDataInicioCustom] = useState("");
+  const [dataFimCustom, setDataFimCustom] = useState("");
   const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
@@ -37,6 +42,16 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   });
 
   const pagamentosPorUsuario = useMemo(() => agruparPagamentosPorUsuario(pagamentos), [pagamentos]);
+
+  const intervaloPeriodo = useMemo(
+    () => calcularIntervaloPeriodo(periodoFiltro, dataInicioCustom, dataFimCustom),
+    [periodoFiltro, dataInicioCustom, dataFimCustom]
+  );
+  const pagamentosPeriodo = useMemo(
+    () => filtrarPagamentosPorPeriodo(pagamentos, intervaloPeriodo),
+    [pagamentos, intervaloPeriodo]
+  );
+  const pagamentosPorUsuarioPeriodo = useMemo(() => agruparPagamentosPorUsuario(pagamentosPeriodo), [pagamentosPeriodo]);
 
   const usuariosFiltrados = useMemo(() => {
     const buscaNorm = busca.trim().toLowerCase();
@@ -60,8 +75,8 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
 
   const pagamentosParaCards = useMemo(() => {
     const ids = new Set(usuariosFiltrados.map((u) => u.id));
-    return pagamentos.filter((p) => ids.has(p.usuario_id));
-  }, [pagamentos, usuariosFiltrados]);
+    return pagamentosPeriodo.filter((p) => ids.has(p.usuario_id));
+  }, [pagamentosPeriodo, usuariosFiltrados]);
 
   const handleToggle = (id) => {
     setSelecionados((prev) => {
@@ -124,6 +139,12 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
     <div className="space-y-4">
       <ResumoPagamentosCards pagamentos={pagamentosParaCards} />
 
+      <PeriodoFiltro
+        periodoFiltro={periodoFiltro} setPeriodoFiltro={setPeriodoFiltro}
+        dataInicioCustom={dataInicioCustom} setDataInicioCustom={setDataInicioCustom}
+        dataFimCustom={dataFimCustom} setDataFimCustom={setDataFimCustom}
+      />
+
       <UsuariosFiltros
         busca={busca} setBusca={setBusca}
         planoFiltro={planoFiltro} setPlanoFiltro={setPlanoFiltro}
@@ -152,6 +173,7 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
           onToggle={handleToggle}
           onToggleAll={handleToggleAll}
           pagamentosPorUsuario={pagamentosPorUsuario}
+          pagamentosPorUsuarioPeriodo={pagamentosPorUsuarioPeriodo}
         />
       )}
 
