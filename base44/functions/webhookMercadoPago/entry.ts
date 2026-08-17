@@ -169,6 +169,8 @@ export default async function(req: Request): Promise<Response> {
       const paymentStatus = recurso.transactions?.payments?.[0]?.status;
       if (recurso.status === "processed") {
         novoStatus = "approved";
+      } else if (paymentStatus === "refunded") {
+        novoStatus = "estornado";
       } else if (recurso.status === "canceled" || paymentStatus === "cancelled") {
         novoStatus = "cancelled";
       } else if (paymentStatus === "rejected") {
@@ -180,7 +182,9 @@ export default async function(req: Request): Promise<Response> {
         novoStatus = "approved";
       } else if (recurso.status === "rejected") {
         novoStatus = "rejected";
-      } else if (recurso.status === "cancelled" || recurso.status === "refunded") {
+      } else if (recurso.status === "refunded") {
+        novoStatus = "estornado";
+      } else if (recurso.status === "cancelled") {
         novoStatus = "cancelled";
       }
     }
@@ -191,7 +195,6 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
-    const eraAprovadoAntes = pagamento.status === "approved";
     let dataExpiracaoFormatada: string | null = null;
 
     if (novoStatus === "approved") {
@@ -216,11 +219,12 @@ export default async function(req: Request): Promise<Response> {
 
     // Dispara o e-mail transacional de pagamento aprovado/recusado/estornado, apenas se
     // o template correspondente estiver com status "ativo" (Comunicação > Transacionais).
-    // "cancelled" só é tratado como estorno quando o pagamento já estava aprovado antes.
+    // "estornado" é status próprio do Mercado Pago (refunded) — "cancelled" (pagamento
+    // abortado antes de completar, ex: PIX expirado) nunca dispara e-mail de estorno.
     let tipoEmail: string | null = null;
     if (novoStatus === "approved") tipoEmail = "pagamento_aprovado";
     else if (novoStatus === "rejected") tipoEmail = "pagamento_recusado";
-    else if (novoStatus === "cancelled" && eraAprovadoAntes) tipoEmail = "pagamento_estornado";
+    else if (novoStatus === "estornado") tipoEmail = "pagamento_estornado";
 
     if (tipoEmail) {
       const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);

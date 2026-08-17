@@ -38,10 +38,11 @@
         "pending",
         "approved",
         "rejected",
-        "cancelled"
+        "cancelled",
+        "estornado"
       ],
       "default": "pending",
-      "description": "Status do pagamento"
+      "description": "Status do pagamento. 'cancelled' = abortado antes de completar (ex: PIX expirado). 'estornado' = pagamento aprovado e depois reembolsado."
     },
     "mercadopago_order_id": {
       "type": "string",
