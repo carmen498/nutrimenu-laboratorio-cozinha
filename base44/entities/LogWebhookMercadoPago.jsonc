@@ -22,7 +22,8 @@
         "order_nao_encontrada",
         "pagamento_interno_nao_encontrado",
         "status_nao_final",
-        "processado"
+        "processado",
+        "tipo_nao_mapeado"
       ],
       "description": "Em qual ponto o processamento parou (ou terminou com sucesso)"
     },

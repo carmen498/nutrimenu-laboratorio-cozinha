@@ -106,6 +106,27 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
+    // Decide qual recurso buscar na API do Mercado Pago com base no tipo/tópico da notificação:
+    // "order" (cartão, Orders API) -> /v1/orders/{id} ; "payment" (ex: PIX) -> /v1/payments/{id}.
+    // Cobre tanto o valor puro ("order"/"payment") quanto variações com ação ("order.processed"/"payment.updated").
+    const tipoNormalizado = (tipoNotificacao || "").toLowerCase();
+    let recursoTipo: "order" | "payment" | null = null;
+    if (tipoNormalizado.includes("payment")) {
+      recursoTipo = "payment";
+    } else if (tipoNormalizado.includes("order")) {
+      recursoTipo = "order";
+    }
+
+    if (!recursoTipo) {
+      console.log(`Tipo de notificação não mapeado: ${tipoNotificacao}`);
+      await registrarLog({
+        assinatura_valida: true,
+        resultado: "tipo_nao_mapeado",
+        corpo_bruto: `${corpoBruto} | tipo de notificação não mapeado: ${tipoNotificacao}`,
+      });
+      return Response.json({ received: true });
+    }
+
     const base44 = createClientFromRequest(req);
 
     const ambiente = secrets.get("AMBIENTE");
@@ -113,21 +134,24 @@ export default async function(req: Request): Promise<Response> {
       ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
       : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
 
-    // Busca a order na API do Mercado Pago — nunca confia nos dados do corpo da notificação.
-    const orderResponse = await fetch(`https://api.mercadopago.com/v1/orders/${dataId}`, {
+    // Busca o recurso na API do Mercado Pago — nunca confia nos dados do corpo da notificação.
+    const recursoUrl = recursoTipo === "payment"
+      ? `https://api.mercadopago.com/v1/payments/${dataId}`
+      : `https://api.mercadopago.com/v1/orders/${dataId}`;
+    const recursoResponse = await fetch(recursoUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    const order = await orderResponse.json().catch(() => null);
+    const recurso = await recursoResponse.json().catch(() => null);
 
-    if (!orderResponse.ok || !order) {
-      console.log("Não foi possível buscar a order no Mercado Pago:", JSON.stringify(order));
+    if (!recursoResponse.ok || !recurso) {
+      console.log(`Não foi possível buscar ${recursoTipo} no Mercado Pago:`, JSON.stringify(recurso));
       await registrarLog({ assinatura_valida: true, resultado: "order_nao_encontrada" });
-      return Response.json({ error: "order_not_found" }, { status: 200 });
+      return Response.json({ error: `${recursoTipo}_not_found` }, { status: 200 });
     }
 
-    const pagamentoId = order.external_reference;
+    const pagamentoId = recurso.external_reference;
     if (!pagamentoId) {
-      console.log("Order sem external_reference — nada a atualizar.");
+      console.log(`${recursoTipo} sem external_reference — nada a atualizar.`);
       await registrarLog({ assinatura_valida: true, resultado: "sem_data_id" });
       return Response.json({ received: true });
     }
@@ -139,18 +163,30 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
-    const paymentStatus = order.transactions?.payments?.[0]?.status;
     let novoStatus: string | null = null;
-    if (order.status === "processed") {
-      novoStatus = "approved";
-    } else if (order.status === "canceled" || paymentStatus === "cancelled") {
-      novoStatus = "cancelled";
-    } else if (paymentStatus === "rejected") {
-      novoStatus = "rejected";
+    if (recursoTipo === "order") {
+      // Fluxo de cartão (Orders API) — lógica inalterada.
+      const paymentStatus = recurso.transactions?.payments?.[0]?.status;
+      if (recurso.status === "processed") {
+        novoStatus = "approved";
+      } else if (recurso.status === "canceled" || paymentStatus === "cancelled") {
+        novoStatus = "cancelled";
+      } else if (paymentStatus === "rejected") {
+        novoStatus = "rejected";
+      }
+    } else {
+      // Fluxo de payment direto (ex: PIX) — status já vem direto no recurso.
+      if (recurso.status === "approved") {
+        novoStatus = "approved";
+      } else if (recurso.status === "rejected") {
+        novoStatus = "rejected";
+      } else if (recurso.status === "cancelled" || recurso.status === "refunded") {
+        novoStatus = "cancelled";
+      }
     }
 
     if (!novoStatus) {
-      console.log("Status da order ainda não é final:", order.status);
+      console.log(`Status do ${recursoTipo} ainda não é final:`, recurso.status);
       await registrarLog({ assinatura_valida: true, resultado: "status_nao_final", pagamento_id: pagamentoId });
       return Response.json({ received: true });
     }
