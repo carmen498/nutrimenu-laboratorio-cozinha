@@ -5,6 +5,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
+import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
 
 const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
@@ -17,7 +18,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v4-2026-08-16-18h05-payer-nome-item-id";
+const VERSAO_CODIGO = "v5-2026-08-17-15h33-ativacao-sincrona";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -181,6 +182,15 @@ export default async function(req: Request): Promise<Response> {
       qr_code: qrCode,
       qr_code_base64: qrCodeBase64,
     });
+
+    // Aprovação instantânea (cartão): libera o plano e dispara o e-mail agora mesmo,
+    // sem depender do webhook assíncrono. O Pagamento acabou de ser criado como
+    // "pending" acima, então essa é sempre a primeira vez que ele vira "approved" —
+    // se o webhook chegar depois para esta mesma order, ele vai encontrar o Pagamento
+    // já "approved" e pular a reativação (idempotência tratada no webhook).
+    if (statusOrder === "approved") {
+      await ativarPlanoEEnviarEmail(base44, pagamento);
+    }
 
     return Response.json({
       pagamentoId: pagamento.id,

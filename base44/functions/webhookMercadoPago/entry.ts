@@ -13,8 +13,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
-
-const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
+import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
 
 async function validarAssinatura(req: Request, dataId: string | null): Promise<{ valida: boolean; diagnostico: Record<string, unknown> }> {
   const secretBruto = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
@@ -195,69 +194,56 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
-    let dataExpiracaoFormatada: string | null = null;
-
     if (novoStatus === "approved") {
-      if (pagamento.status !== "approved") {
+      // Idempotência: se este Pagamento já estava "approved" antes desta notificação
+      // (por exemplo, já foi ativado de forma síncrona na criação da order), não
+      // reprocessa — evita reenviar o e-mail ou somar a data de expiração de novo.
+      const jaEstavaAprovado = pagamento.status === "approved";
+      if (!jaEstavaAprovado) {
         await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
+        await ativarPlanoEEnviarEmail(base44, pagamento);
+      } else {
+        console.log("Pagamento já estava approved — ativação ignorada (idempotência).");
       }
-
-      const dias = DIAS_PLANO[pagamento.plano] ?? 30;
-      const agora = new Date();
-      const expiracao = new Date(agora.getTime() + dias * 86400000);
-      dataExpiracaoFormatada = expiracao.toISOString().split("T")[0];
-
-      await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
-        status_assinatura: "ativo",
-        plano_atual: pagamento.plano,
-        data_inicio: agora.toISOString().split("T")[0],
-        data_expiracao: dataExpiracaoFormatada,
-      });
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
-    }
 
-    // Dispara o e-mail transacional de pagamento aprovado/recusado/estornado, apenas se
-    // o template correspondente estiver com status "ativo" (Comunicação > Transacionais).
-    // "estornado" é status próprio do Mercado Pago (refunded) — "cancelled" (pagamento
-    // abortado antes de completar, ex: PIX expirado) nunca dispara e-mail de estorno.
-    let tipoEmail: string | null = null;
-    if (novoStatus === "approved") tipoEmail = "pagamento_aprovado";
-    else if (novoStatus === "rejected") tipoEmail = "pagamento_recusado";
-    else if (novoStatus === "estornado") tipoEmail = "pagamento_estornado";
+      // Dispara o e-mail transacional de pagamento recusado/estornado, apenas se o
+      // template correspondente estiver com status "ativo" (Comunicação > Transacionais).
+      // O e-mail de aprovado é disparado dentro de ativarPlanoEEnviarEmail, acima.
+      let tipoEmail: string | null = null;
+      if (novoStatus === "rejected") tipoEmail = "pagamento_recusado";
+      else if (novoStatus === "estornado") tipoEmail = "pagamento_estornado";
 
-    if (tipoEmail) {
-      const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
-      if (usuario?.email) {
-        const nome = usuario.nome_completo || usuario.full_name || "";
-        const DEFAULTS: Record<string, { assunto: string; corpo: string }> = {
-          pagamento_aprovado: {
-            assunto: "Pagamento aprovado",
-            corpo: `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`,
-          },
-          pagamento_recusado: {
-            assunto: "Não conseguimos aprovar seu pagamento",
-            corpo: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`,
-          },
-          pagamento_estornado: {
-            assunto: "Seu pagamento foi estornado",
-            corpo: `<p>Olá {{nome}}, informamos que o valor do seu pagamento foi estornado.</p><p>O reembolso será processado pelo Mercado Pago e deve aparecer no seu extrato em alguns dias, conforme o prazo do seu banco ou operadora de cartão.</p><p>Se tiver dúvidas, é só nos chamar.</p>`,
-          },
-        };
-        const { assunto: defaultAssunto, corpo: defaultCorpo } = DEFAULTS[tipoEmail];
+      if (tipoEmail) {
+        const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+        if (usuario?.email) {
+          const nome = usuario.nome_completo || usuario.full_name || "";
+          const DEFAULTS: Record<string, { assunto: string; corpo: string }> = {
+            pagamento_recusado: {
+              assunto: "Não conseguimos aprovar seu pagamento",
+              corpo: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`,
+            },
+            pagamento_estornado: {
+              assunto: "Seu pagamento foi estornado",
+              corpo: `<p>Olá {{nome}}, informamos que o valor do seu pagamento foi estornado.</p><p>O reembolso será processado pelo Mercado Pago e deve aparecer no seu extrato em alguns dias, conforme o prazo do seu banco ou operadora de cartão.</p><p>Se tiver dúvidas, é só nos chamar.</p>`,
+            },
+          };
+          const { assunto: defaultAssunto, corpo: defaultCorpo } = DEFAULTS[tipoEmail];
 
-        const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
+          const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
 
-        if (ativo) {
-          const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-          await base44.asServiceRole.entities.LogEmail.create({
-            destinatario_email: usuario.email,
-            tipo: tipoEmail,
-            enviado_em: new Date().toISOString(),
-            status: resultado.ok ? "enviado" : "falhou",
-          });
-        } else {
-          console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
+          if (ativo) {
+            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+            await base44.asServiceRole.entities.LogEmail.create({
+              destinatario_email: usuario.email,
+              tipo: tipoEmail,
+              enviado_em: new Date().toISOString(),
+              status: resultado.ok ? "enviado" : "falhou",
+            });
+          } else {
+            console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
+          }
         }
       }
     }
