@@ -15,7 +15,8 @@
         "pagamento_aprovado",
         "pagamento_recusado",
         "pagamento_estornado",
-        "plano_vencendo"
+        "plano_vencendo",
+        "pagamento_pendente_lembrete"
       ],
       "description": "Tipo do e-mail transacional disparado"
     },

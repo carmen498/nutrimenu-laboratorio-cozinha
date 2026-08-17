@@ -75,6 +75,11 @@
     "nota_fiscal_url": {
       "type": "string",
       "description": "URL da nota fiscal emitida para este pagamento, quando existir"
+    },
+    "lembrete_pendencia_enviado": {
+      "type": "boolean",
+      "default": false,
+      "description": "true quando o lembrete de pagamento pendente (e-mail/WhatsApp) j\u00e1 foi disparado para este pagamento, evitando reenvios di\u00e1rios"
     }
   },
   "required": [
