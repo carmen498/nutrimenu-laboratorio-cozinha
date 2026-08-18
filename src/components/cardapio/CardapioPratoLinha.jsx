@@ -22,8 +22,8 @@ export default function CardapioPratoLinha({
       className={`group transition-colors cursor-pointer ${selected ? "bg-accent" : "hover:bg-secondary/30"}`}
       onClick={() => onSelect(rec.id)}
     >
-      <div className="flex items-center gap-3 px-3 py-2.5">
-        <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-3 px-3 py-2.5 overflow-x-auto">
+        <div className="flex-1 min-w-[140px]">
           <Link
             to={linkTo}
             onClick={e => e.stopPropagation()}
@@ -46,6 +46,24 @@ export default function CardapioPratoLinha({
           {semCusto ? "—" : fmtRs(rec.custo_total)}
         </span>
         <span className="text-xs text-muted-foreground w-14 text-right shrink-0">{fmtPct(pct)}</span>
+        <div className="flex items-center shrink-0 no-print" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={onMoveUp}
+            disabled={!canMoveUp}
+            title="Mover para cima"
+            className="h-7 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onMoveDown}
+            disabled={!canMoveDown}
+            title="Mover para baixo"
+            className="h-7 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
         {showTrashInRow && (
           <button
             onClick={e => {
@@ -53,7 +71,7 @@ export default function CardapioPratoLinha({
               if (window.confirm("Remover este prato do cardápio? A receita continua existindo.")) onRemove();
             }}
             title="Remover prato do cardápio"
-            className="shrink-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity no-print"
+            className="shrink-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 no-print"
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -79,12 +97,6 @@ export default function CardapioPratoLinha({
               </Select>
             </>
           )}
-          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!canMoveUp} onClick={onMoveUp}>
-            <ChevronUp className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!canMoveDown} onClick={onMoveDown}>
-            <ChevronDown className="w-4 h-4" />
-          </Button>
           {!showTrashInRow && (
             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onRemove}>
               <Trash2 className="w-4 h-4" />

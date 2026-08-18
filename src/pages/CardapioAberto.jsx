@@ -67,6 +67,9 @@ const UNIDADE_LABEL = {
 const TIPOS_COM_DIAS = ["diario", "semanal", "fim_de_semana"];
 
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
+function normalizarBusca(s) {
+  return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
 const INSUMOS_SUGESTOES = {
   marmitas: [{ nome: "Marmita descartável", unidade: "un", preco_unitario: 0 }],
@@ -791,7 +794,7 @@ export default function CardapioAberto() {
             onChange={e => setBuscaReceita(e.target.value)} autoFocus />
           <div className="max-h-64 overflow-y-auto space-y-1">
             {todasReceitas
-              .filter(r => !buscaReceita.trim() || (r.nome || "").toLowerCase().includes(buscaReceita.toLowerCase()))
+              .filter(r => !buscaReceita.trim() || normalizarBusca(r.nome).includes(normalizarBusca(buscaReceita)))
               .slice(0, 30)
               .map(r => (
                 <button key={r.id}

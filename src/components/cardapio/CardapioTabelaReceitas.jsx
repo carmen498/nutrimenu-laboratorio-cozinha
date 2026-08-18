@@ -79,7 +79,7 @@ export default function CardapioTabelaReceitas({
         <div className="w-20 text-right">kg</div>
         <div className="w-20 text-right">R$</div>
         <div className="w-14 text-right">%</div>
-        <div className="w-7 shrink-0" />
+        <div className="w-20 shrink-0" />
       </div>
 
       {filtradas.length === 0 ? (
@@ -121,7 +121,7 @@ export default function CardapioTabelaReceitas({
             <div className="w-20 text-right shrink-0 text-sm font-semibold">{fmtKg(totalKg)}</div>
             <div className="w-20 text-right shrink-0 text-sm font-semibold whitespace-nowrap">{fmtRs(custoReceitasTotal)}</div>
             <div className="w-14 shrink-0" />
-            <div className="w-7 shrink-0" />
+            <div className="w-20 shrink-0" />
           </div>
           {custoInsumos > 0 && (
             <>
@@ -131,7 +131,7 @@ export default function CardapioTabelaReceitas({
                 <div className="w-20 shrink-0" />
                 <div className="w-20 text-right shrink-0 text-sm font-medium whitespace-nowrap">{fmtRs(custoInsumos)}</div>
                 <div className="w-14 shrink-0" />
-                <div className="w-7 shrink-0" />
+                <div className="w-20 shrink-0" />
               </div>
               <div className="flex items-center gap-3 px-3 py-2 border-t border-border/60 bg-secondary/50">
                 <div className="flex-1 min-w-0 text-sm font-semibold">Total de produção</div>
@@ -139,7 +139,7 @@ export default function CardapioTabelaReceitas({
                 <div className="w-20 shrink-0" />
                 <div className="w-20 text-right shrink-0 text-sm font-semibold whitespace-nowrap">{fmtRs(custoProducaoTotal)}</div>
                 <div className="w-14 shrink-0" />
-                <div className="w-7 shrink-0" />
+                <div className="w-20 shrink-0" />
               </div>
             </>
           )}
