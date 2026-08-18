@@ -23,7 +23,7 @@ import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
-import AddInsumoBanco from "@/components/cardapio/AddInsumoBanco";
+import CardapioInsumosSection from "@/components/cardapio/CardapioInsumosSection";
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
@@ -70,19 +70,6 @@ function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 function normalizarBusca(s) {
   return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
-
-const INSUMOS_SUGESTOES = {
-  marmitas: [{ nome: "Marmita descartável", unidade: "un", preco_unitario: 0 }],
-  happy_hour: [
-    { nome: "Copo descartável", unidade: "un", preco_unitario: 0 },
-    { nome: "Guardanapo", unidade: "un", preco_unitario: 0 },
-  ],
-  comemoracao: [
-    { nome: "Prato descartável", unidade: "un", preco_unitario: 0 },
-    { nome: "Talher descartável", unidade: "un", preco_unitario: 0 },
-    { nome: "Guarda-chuva decorativo", unidade: "un", preco_unitario: 0 },
-  ],
-};
 
 export default function CardapioAberto() {
   const { id } = useParams();
@@ -687,49 +674,14 @@ export default function CardapioAberto() {
 
       {/* BLOCO 3 — Insumos */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 mb-4 print:shadow-none print:border-0">
-        <div className="flex items-center justify-between mb-4 no-print">
-          <h2 className="font-display font-semibold text-lg">Insumos e Embalagens</h2>
-          <div className="flex gap-2">
-            {INSUMOS_SUGESTOES[cardapio.tipo]?.map(sug => (
-              <Button key={sug.nome} variant="outline" size="sm" className="text-xs h-7"
-                onClick={() => addInsumo({ ...sug, _sugestao_qtd: cardapio.tipo === "marmitas" && sug.nome.includes("Marmita") ? num : num })}>
-                + {sug.nome}
-              </Button>
-            ))}
-            <AddInsumoBanco
-              insumosGlobais={insumosGlobais}
-              onAdd={addInsumo}
-              onUpdateGlobais={() => load()}
-            />
-          </div>
-        </div>
-        <h2 className="font-display font-semibold text-lg hidden print:block mb-4">Insumos e Embalagens</h2>
-        {insumos.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">Nenhum insumo adicionado.</p>
-        ) : (
-          <div className="space-y-2">
-            {insumos.map(ins => (
-              <div key={ins.id} className="flex items-center gap-3 p-2 bg-secondary/30 rounded-lg">
-                <Input className="flex-1 h-7 text-sm" value={ins.nome || ""}
-                  onChange={e => updateInsumo(ins.id, "nome", e.target.value)} />
-                <Input className="w-16 h-7 text-xs text-center" value={ins.quantidade || ""}
-                  onChange={e => updateInsumo(ins.id, "quantidade", Number(e.target.value) || 0)} />
-                <span className="text-xs text-muted-foreground">{ins.unidade || "un"}</span>
-                <Input className="w-24 h-7 text-xs" value={ins.custo_unitario ? `R$ ${Number(ins.custo_unitario).toFixed(2)}` : ""}
-                  onChange={e => {
-                    const v = e.target.value.replace(/[^0-9,.]/g, "").replace(",", ".");
-                    updateInsumo(ins.id, "custo_unitario", Number(v) || 0);
-                  }}
-                  placeholder="R$ 0,00" />
-                <span className="text-sm font-semibold w-16 text-right">R$ {Number(ins.custo_total || 0).toFixed(2)}</span>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive no-print"
-                  onClick={() => removeInsumo(ins.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+        <CardapioInsumosSection
+          insumos={insumos}
+          insumosGlobais={insumosGlobais}
+          onAdd={addInsumo}
+          onUpdate={updateInsumo}
+          onRemove={removeInsumo}
+          onReloadGlobais={() => load()}
+        />
       </div>
 
       {/* BLOCO 4 — Cores do Cardápio */}
