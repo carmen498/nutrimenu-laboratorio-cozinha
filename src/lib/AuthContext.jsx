@@ -115,13 +115,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Builds the current URL but strips any pre-existing "from_url" param — passing it
+  // through as-is would nest the already-encoded URL inside itself on every redirect,
+  // growing without end. Read once, never accumulated.
+  const cleanUrlForRedirect = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('from_url');
+    return url.toString();
+  };
+
   const logout = (shouldRedirect = true) => {
     setUser(null);
     setIsAuthenticated(false);
     
     if (shouldRedirect) {
       // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(window.location.href);
+      base44.auth.logout(cleanUrlForRedirect());
     } else {
       // Just remove the token without redirect
       base44.auth.logout();
@@ -129,8 +138,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
+    // Already on /login — redirecting again would just re-append from_url and nest it.
+    if (window.location.pathname === '/login') return;
     // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(window.location.href);
+    base44.auth.redirectToLogin(cleanUrlForRedirect());
   };
 
   return (
