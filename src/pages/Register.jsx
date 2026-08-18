@@ -9,6 +9,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
+
+const VERSAO_TERMOS = "Termos de Uso v.18/08/2026";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
@@ -20,6 +23,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [aceitaTermos, setAceitaTermos] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,7 +51,12 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
-      await base44.auth.updateMe({ nome_completo: fullName, telefone_whatsapp: telefone });
+      await base44.auth.updateMe({
+        nome_completo: fullName,
+        telefone_whatsapp: telefone,
+        termos_aceitos_em: new Date().toISOString(),
+        termos_versao_aceita: VERSAO_TERMOS,
+      });
       await base44.functions.invoke("inicializarTrialUsuario", {});
       window.location.href = "/";
     } catch (err) {
@@ -249,7 +258,27 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <div className="flex items-start gap-2 pt-1">
+          <Checkbox
+            id="aceitaTermos"
+            checked={aceitaTermos}
+            onCheckedChange={(checked) => setAceitaTermos(checked === true)}
+            className="mt-0.5"
+          />
+          <Label htmlFor="aceitaTermos" className="text-sm font-normal leading-snug text-muted-foreground">
+            Li e aceito os{" "}
+            <a
+              href="/termos"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary font-medium hover:underline"
+            >
+              Termos de Uso
+            </a>{" "}
+            e a Política de Privacidade do Laboratório de Cozinha
+          </Label>
+        </div>
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !aceitaTermos}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
