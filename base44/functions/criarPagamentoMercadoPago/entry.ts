@@ -18,7 +18,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v5-2026-08-17-15h33-ativacao-sincrona";
+const VERSAO_CODIGO = "v6-2026-08-18-correcao-items-cpf";
 
 export default async function(req: Request): Promise<Response> {
   try {
