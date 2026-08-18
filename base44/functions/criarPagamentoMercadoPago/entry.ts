@@ -171,6 +171,8 @@ export default async function(req: Request): Promise<Response> {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
         detalhe_erro: `HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`,
+        resposta_erro_mp_completa: JSON.stringify(mpData),
+        payload_enviado_mp: JSON.stringify(orderBody),
       });
       return Response.json({ error: "Não foi possível processar o pagamento", detalhe: mpData }, { status: 400 });
     }
