@@ -1520,9 +1520,6 @@ REGRAS:
         })()}
       </Card>
 
-      {/* Ingredientes Esquecidos */}
-      <IngredientesEsquecidos receitaId={id} fator={fator} />
-
       {/* Mode of preparation */}
       {(passos.length > 0 || temSubreceitas) && (
         <div>
@@ -1565,6 +1562,9 @@ REGRAS:
           </Card>
         </div>
       )}
+
+      {/* Ingredientes Esquecidos */}
+      <IngredientesEsquecidos receitaId={id} fator={fator} />
 
       {/* Descritivo do Menu */}
       {editingDescritivo ? (
