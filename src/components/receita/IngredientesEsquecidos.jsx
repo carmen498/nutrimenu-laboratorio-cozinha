@@ -163,7 +163,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const custoEscalado = custoTotal * fator;
 
   return (
-    <div>
+    <Card className="p-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-medium text-muted-foreground italic">
           Ingredientes Esquecidos
@@ -307,6 +307,6 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
