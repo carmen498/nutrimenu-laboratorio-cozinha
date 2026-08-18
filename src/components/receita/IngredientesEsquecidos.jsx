@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Check, X } from "lucide-react";
+import { Plus, Trash2, Check, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 
@@ -165,9 +165,46 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-muted-foreground italic">
-          Ingredientes Esquecidos
-        </h3>
+        <div className="flex items-center gap-1.5">
+          <h3 className="text-sm font-medium text-muted-foreground italic">
+            Ingredientes Esquecidos
+          </h3>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground/60 hover:text-muted-foreground shrink-0"
+                title="O que são Ingredientes Esquecidos?"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 max-h-96 overflow-y-auto text-sm" align="start">
+              <p className="font-semibold mb-2">O que são Ingredientes Esquecidos?</p>
+              <p className="text-muted-foreground mb-3">
+                São itens que fazem parte do preparo mas não entram na lista principal por não terem peso ou quantidade controlada com precisão — ainda assim, têm custo real e devem ser registrados.
+              </p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                <li><span className="text-foreground font-medium">Água:</span> usada para cozinhar ou diluir. Atenção especial — seu volume interfere no cálculo do rendimento, no tamanho da porção e nos valores da tabela nutricional.</li>
+                <li><span className="text-foreground font-medium">Farinha:</span> para espichar a massa</li>
+                <li><span className="text-foreground font-medium">Açúcar:</span> para polvilhar a forma</li>
+                <li><span className="text-foreground font-medium">Manteiga:</span> para untar</li>
+                <li><span className="text-foreground font-medium">Óleo:</span> para fritar, grelhar ou untar formas</li>
+                <li><span className="text-foreground font-medium">Enfeites:</span> do prato ou do buffet</li>
+                <li><span className="text-foreground font-medium">Sal e pimenta:</span> utilizados para temperar durante o preparo</li>
+                <li><span className="text-foreground font-medium">Fermento:</span> pequenas quantidades usadas em algumas receitas</li>
+                <li><span className="text-foreground font-medium">Vinagre:</span> utilizado para temperar ou limpar hortaliças</li>
+                <li><span className="text-foreground font-medium">Café ou chá:</span> utilizados para adicionar sabor</li>
+                <li>Salsa picada para finalização</li>
+                <li>Parmesão (para polvilhar)</li>
+                <li><span className="text-foreground font-medium">Cremes e pastas:</span> como maionese, mostarda, etc.</li>
+                <li><span className="text-foreground font-medium">Especiarias ou raspas de frutas cítricas:</span> canela, noz-moscada, cravo-da-índia, folhas de louro, etc.</li>
+                <li>Flores comestíveis</li>
+                <li><span className="text-foreground font-medium">Molhos prontos:</span> pequenas quantidades de molhos como molho de soja, molho inglês, etc.</li>
+              </ol>
+            </PopoverContent>
+          </Popover>
+        </div>
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground hover:text-foreground">
