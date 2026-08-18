@@ -90,7 +90,7 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center mb-2">Nº porções</p>
           <div className="flex items-center justify-center h-10">
             <span className="text-lg font-bold">
-              {porcoes > 0 ? Math.floor(porcoes) : "—"}
+              {porcoes > 0 ? porcoes.toFixed(2).replace(".", ",") : "—"}
             </span>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-1">Calculado: Total ÷ PC</p>
