@@ -99,8 +99,8 @@ export default function CardapioTabelaReceitas({
                 pct={pct}
                 selected={selectedId === rec.id}
                 onSelect={handleSelect}
-                onUpdatePC={(val) => { onUpdateReceita(rec.id, "per_capita_g", val); onUpdateReceita(rec.id, "quantidade_total_g", val * num); }}
-                onUpdateField={(field, val) => onUpdateReceita(rec.id, field, val)}
+                onUpdatePC={(val) => onUpdateReceita(rec.id, { per_capita_g: val, quantidade_total_g: val * num })}
+                onUpdateField={(field, val) => onUpdateReceita(rec.id, { [field]: val })}
                 onRemove={() => onRemoveReceita(rec.id)}
                 onMoveUp={() => onMoveReceita(rec.id, -1)}
                 onMoveDown={() => onMoveReceita(rec.id, 1)}

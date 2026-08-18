@@ -294,11 +294,15 @@ export default function CardapioAberto() {
     setReceitas(prev => prev.filter(r => r.id !== newId));
   };
 
-  const updateReceita = async (recId, field, value) => {
+  // Aceita um único campo ({field, value}) ou múltiplos campos de uma vez (objeto),
+  // sempre como UMA operação atômica — evita corrida entre escritas relacionadas
+  // (ex: per_capita_g e quantidade_total_g ao editar o PC).
+  const updateReceita = async (recId, fieldOrUpdates, value) => {
+    const updates = typeof fieldOrUpdates === "string" ? { [fieldOrUpdates]: value } : fieldOrUpdates;
     const { mapReceitaItemId } = await ensureEditavel();
     const newId = mapReceitaItemId(recId);
-    setReceitas(prev => prev.map(r => r.id === newId ? { ...r, [field]: value } : r));
-    try { await base44.entities.CardapioReceita.update(newId, { [field]: value }); }
+    setReceitas(prev => prev.map(r => r.id === newId ? { ...r, ...updates } : r));
+    try { await base44.entities.CardapioReceita.update(newId, updates); }
     catch (e) { console.error(e); }
   };
 
@@ -329,21 +333,35 @@ export default function CardapioAberto() {
     } catch (e) { console.error(e); }
   };
 
-  // Recalc when num changes
-  const recalcRef = useRef(false);
+  // Persiste quantidade_total_g (usado por outras telas/relatórios) sempre que o
+  // número de convidados muda. A exibição nesta tela já é 100% ao vivo (não depende
+  // deste efeito) — isto é apenas para manter o cache do banco atualizado.
+  // Usa refs (não um único boolean) para nunca perder um convidados intermediário:
+  // se "num" mudar de novo enquanto uma passada está em andamento, a passada em
+  // andamento roda de novo ao final até convergir no valor mais recente.
+  const recalcRunningRef = useRef(false);
+  const latestNumRef = useRef(num);
+  const receitasRef = useRef(receitas);
+  useEffect(() => { latestNumRef.current = num; }, [num]);
+  useEffect(() => { receitasRef.current = receitas; }, [receitas]);
+
   useEffect(() => {
-    if (!cardapio || recalcRef.current || receitas.length === 0) return;
+    if (!cardapio || recalcRunningRef.current || receitas.length === 0) return;
     if (!(isAdmin || cardapio.is_base === false)) return;
-    recalcRef.current = true;
+    recalcRunningRef.current = true;
     (async () => {
-      for (const r of receitas) {
-        const nq = (Number(r.per_capita_g) || 0) * num;
-        if (Math.abs(nq - (Number(r.quantidade_total_g) || 0)) > 0.001) {
-          await base44.entities.CardapioReceita.update(r.id, { quantidade_total_g: nq });
-          recalcularCusto({ ...r, quantidade_total_g: nq }, r.receita_id);
+      let numUsado;
+      do {
+        numUsado = latestNumRef.current;
+        for (const r of receitasRef.current) {
+          const nq = (Number(r.per_capita_g) || 0) * numUsado;
+          if (Math.abs(nq - (Number(r.quantidade_total_g) || 0)) > 0.001) {
+            await base44.entities.CardapioReceita.update(r.id, { quantidade_total_g: nq });
+            recalcularCusto({ ...r, quantidade_total_g: nq }, r.receita_id);
+          }
         }
-      }
-      recalcRef.current = false;
+      } while (numUsado !== latestNumRef.current);
+      recalcRunningRef.current = false;
     })();
   }, [num]);
 
