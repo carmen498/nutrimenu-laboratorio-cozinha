@@ -41,6 +41,10 @@ export default async function(req: Request): Promise<Response> {
     if (!payer?.email) {
       return Response.json({ error: "E-mail do pagador é obrigatório" }, { status: 400 });
     }
+    const cpfLimpo = typeof payer?.cpf === "string" ? payer.cpf.replace(/\D/g, "") : "";
+    if (forma_pagamento === "pix" && !cpfLimpo) {
+      return Response.json({ error: "CPF do pagador é obrigatório para pagamento via PIX" }, { status: 400 });
+    }
 
     // Preço vem sempre do servidor (ConfiguracaoPlano), nunca do frontend — é a mesma
     // fonte editada pelo admin em Administração > Planos e exibida na tela pública.
@@ -101,8 +105,15 @@ export default async function(req: Request): Promise<Response> {
         email: payerEmail,
         ...(primeiroNome ? { first_name: primeiroNome } : {}),
         ...(sobrenome ? { last_name: sobrenome } : {}),
+        // CPF exigido pelo Mercado Pago para pagamentos PIX no Brasil.
+        ...(forma_pagamento === "pix" && cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
       },
-      items: [
+    };
+
+    // A Orders API não aceita a propriedade "items" em pedidos PIX (retorna
+    // HTTP 400 "unsupported_properties") — só é suportada no fluxo de cartão.
+    if (forma_pagamento === "cartao") {
+      orderBody.items = [
         {
           id: plano,
           title: descricaoPlano,
@@ -110,8 +121,8 @@ export default async function(req: Request): Promise<Response> {
           unit_price: valorFormatado,
           quantity: 1,
         },
-      ],
-    };
+      ];
+    }
 
     if (forma_pagamento === "pix") {
       orderBody.transactions = {
