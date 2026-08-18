@@ -53,6 +53,8 @@ import Planos from '@/pages/Planos';
 import DicasCarmen from '@/pages/DicasCarmen';
 import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
 import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
+import Termos from '@/pages/Termos';
+import Privacidade from '@/pages/Privacidade';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -80,6 +82,8 @@ const AuthenticatedApp = () => {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/termos" element={<Termos />} />
+      <Route path="/privacidade" element={<Privacidade />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
