@@ -115,7 +115,6 @@ export default async function(req: Request): Promise<Response> {
     if (forma_pagamento === "cartao") {
       orderBody.items = [
         {
-          id: plano,
           title: descricaoPlano,
           description: descricaoPlano,
           unit_price: valorFormatado,
