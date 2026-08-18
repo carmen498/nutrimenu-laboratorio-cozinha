@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Star, Pencil, AlertTriangle, FileText, Merge } from "lucide-react";
+import { ArrowLeft, Star, Pencil, AlertTriangle, FileText, Merge, HelpCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const isWeightUnit = (u) => ["G", "KG"].includes(u?.toUpperCase());
 const isLiquidUnit = (u) => ["ML", "LT"].includes(u?.toUpperCase());
@@ -59,6 +60,18 @@ export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggle
         <Button variant="outline" onClick={onFundir} className="shrink-0">
           <Merge className="w-4 h-4 mr-1" /> Fundir com outro ingrediente
         </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona fundir ingredientes?">
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 text-sm" align="end">
+            <p className="text-muted-foreground">
+              Permite unificar dois cadastros de ingredientes que representam o mesmo item. Selecione o ingrediente que vai permanecer ativo e o ingrediente que será substituído — por exemplo, mantendo "Amido de milho" e substituindo "Maisena". Ao confirmar, "Maisena" é excluída do cadastro e automaticamente trocada por "Amido de milho" em todas as receitas onde era usada.
+            </p>
+          </PopoverContent>
+        </Popover>
         <Button onClick={onEditar} className="shrink-0">
           <Pencil className="w-4 h-4 mr-1" /> Editar
         </Button>

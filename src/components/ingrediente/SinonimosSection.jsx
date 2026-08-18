@@ -3,7 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, X, Tag } from "lucide-react";
+import { Plus, X, Tag, HelpCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
 export default function SinonimosSection({ ingredienteId, localSinonimos, onLocalChange }) {
@@ -95,7 +96,19 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
   return (
     <div>
       <p className="text-sm font-medium mb-2 flex items-center gap-1">
-        <Tag className="w-3.5 h-3.5" /> Sinônimos
+        <Tag className="w-3.5 h-3.5" /> Sinônimo do ingrediente
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funcionam os sinônimos?">
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 text-sm" align="start">
+            <p className="text-muted-foreground">
+              Cadastre outros nomes pelos quais este ingrediente é conhecido. Ao criar uma nova receita, o app reconhece automaticamente qualquer um desses nomes como o mesmo ingrediente. Exemplo: o ingrediente cadastrado como "Frango, peito sem osso (filé)" pode ter os sinônimos "peito de frango", "frango peito" e "filé de frango" — digitando qualquer um deles, o app reconhece corretamente.
+            </p>
+          </PopoverContent>
+        </Popover>
       </p>
       <div className="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
         {sinonimos.length === 0 && (

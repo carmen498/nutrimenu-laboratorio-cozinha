@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star, Scale
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star, Scale, HelpCircle
 } from "lucide-react";
 import MedidasCaseirasReceitaDialog from "@/components/receita/MedidasCaseirasReceitaDialog";
 import { toast } from "sonner";
@@ -1331,7 +1331,19 @@ REGRAS:
         isEscalado={isEscalado}
         onRestore={handleRestaurarEscala}
       />
-      <div className="flex justify-end">
+      <div className="flex justify-end items-center gap-1.5">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona a escala de receitas?">
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 text-sm" align="end">
+            <p className="text-muted-foreground">
+              Ajusta o número de porções que você deseja produzir. Ao alterar a quantidade, o app recalcula automaticamente todos os ingredientes da receita, mantendo as proporções originais.
+            </p>
+          </PopoverContent>
+        </Popover>
         <Button variant="outline" size="sm" onClick={() => setShowEscalar(true)}>
           <Scale className="w-3.5 h-3.5 mr-1" /> Escalar receita
         </Button>
@@ -1339,7 +1351,30 @@ REGRAS:
       {/* Ingredients table */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg font-bold">Ingredientes</h2>
+          <div className="flex items-center gap-1.5">
+            <h2 className="font-display text-lg font-bold">Ingredientes</h2>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="O que são FC, Medida caseira e Sub-título?">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 max-h-96 overflow-y-auto text-sm" align="start">
+                <p className="text-foreground font-medium mb-1">FC (Fator de Correção)</p>
+                <p className="text-muted-foreground mb-3">
+                  Adiciona à tabela de ingredientes o Fator de Correção — também chamado de Índice de Parte Comestível (IPC). Representa a razão entre o peso bruto (antes do preparo) e o peso líquido (já limpo/preparado) do ingrediente: FC = Peso Bruto ÷ Peso Líquido.
+                </p>
+                <p className="text-foreground font-medium mb-1">Medida caseira</p>
+                <p className="text-muted-foreground mb-3">
+                  Adiciona à tabela de ingredientes uma coluna que converte a quantidade em gramas para uma medida caseira (xícara, colher, unidade, etc.). O utensílio usado na conversão pode ser alterado a qualquer momento.
+                </p>
+                <p className="text-foreground font-medium mb-1">Sub-título</p>
+                <p className="text-muted-foreground">
+                  Adiciona uma linha de destaque na lista de ingredientes, permitindo separá-los por etapa de preparo (ex: Massa, Recheio, Finalização) — facilitando a leitura da receita na produção. Para reposicionar, use a seta ou arraste a linha até o local desejado.
+                </p>
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="flex gap-1 flex-wrap">
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50">
               <Switch checked={mostrarFC} onCheckedChange={handleToggleFC} className="scale-90" />
@@ -1677,6 +1712,18 @@ REGRAS:
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Quanto cobrar se eu vender?</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona?">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 text-sm" align="start">
+                <p className="text-muted-foreground">
+                  Ao ativar, exibe uma barra para definir a Margem (%) desejada. Esse percentual é somado ao custo total da receita, mostrando quanto cobrar por porção para alcançar a margem definida.
+                </p>
+              </PopoverContent>
+            </Popover>
           </div>
           <Switch checked={showMargin} onCheckedChange={setShowMargin} />
         </div>

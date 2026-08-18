@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   ArrowLeft, Trash2, ShoppingCart, Download, Plus,
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
-  GlassWater, Sun, Sparkles, MapPin, FileText, Pencil
+  GlassWater, Sun, Sparkles, MapPin, FileText, Pencil, HelpCircle
 } from "lucide-react";
 import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
@@ -37,6 +37,7 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
   AlertDialogFooter, AlertDialogCancel, AlertDialogAction
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -694,7 +695,21 @@ export default function CardapioAberto() {
       {/* BLOCO 5 — Venda */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 mb-4 print:shadow-none print:border-0 no-print">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold text-lg">Quanto cobrar se eu vender?</h2>
+          <div className="flex items-center gap-1.5">
+            <h2 className="font-display font-semibold text-lg">Quanto cobrar se eu vender?</h2>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona?">
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 text-sm" align="start">
+                <p className="text-muted-foreground">
+                  Ao ativar, exibe uma barra para definir a Margem (%) desejada. Esse percentual é somado ao custo total da receita, mostrando quanto cobrar por porção para alcançar a margem definida.
+                </p>
+              </PopoverContent>
+            </Popover>
+          </div>
           <Switch checked={showVenda} onCheckedChange={v => {
             setShowVenda(v);
             saveMarkup(v ? (markup || 30) : 0);

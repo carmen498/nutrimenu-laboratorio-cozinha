@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Package, Check, X } from "lucide-react";
+import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 
 export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd, onUpdate, onRemove, onReloadGlobais }) {
   const [busca, setBusca] = useState("");
@@ -75,9 +75,55 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
   return (
     <div>
       <div className="flex items-center justify-between mb-3 no-print">
-        <h2 className="font-display text-lg font-bold flex items-center gap-2">
-          <Package className="w-5 h-5" /> Insumos e Embalagens
-        </h2>
+        <div className="flex items-center gap-1.5">
+          <h2 className="font-display text-lg font-bold flex items-center gap-2">
+            <Package className="w-5 h-5" /> Insumos e Embalagens
+          </h2>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground/60 hover:text-muted-foreground shrink-0"
+                title="O que são Insumos e Embalagens?"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 max-h-96 overflow-y-auto text-sm" align="start">
+              <p className="font-semibold mb-2">O que são Insumos e Embalagens?</p>
+              <p className="text-muted-foreground mb-3">
+                São itens que não fazem parte da receita como alimento, mas têm custo de produção e devem ser considerados no preço final — embalagens, materiais de higiene e itens de acabamento para venda ou serviço.
+              </p>
+              <p className="text-foreground font-medium mb-1">Embalagens</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground mb-3">
+                <li>Papel manteiga</li>
+                <li>Papel alumínio</li>
+                <li>Papel de fritura (papel siliconado)</li>
+                <li>Sacos plásticos (variados tamanhos)</li>
+                <li>Filme plástico (PVC)</li>
+                <li>Potes e marmitas descartáveis</li>
+                <li>Copos e potes com tampa</li>
+                <li>Caixas de papelão/cartonadas</li>
+                <li>Etiquetas e rótulos</li>
+                <li>Fitas adesivas ou lacres</li>
+              </ol>
+              <p className="text-foreground font-medium mb-1">Higiene e proteção</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground mb-3" start={11}>
+                <li>Luvas descartáveis</li>
+                <li>Touca descartável</li>
+                <li>Máscara descartável</li>
+                <li>Papel toalha</li>
+              </ol>
+              <p className="text-foreground font-medium mb-1">Finalização e apresentação</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground" start={15}>
+                <li>Palitos (para espetinhos, docinhos)</li>
+                <li>Cordão ou fitilho</li>
+                <li>Forminhas de papel (docinhos, cupcakes)</li>
+                <li>Guardanapos personalizados</li>
+              </ol>
+            </PopoverContent>
+          </Popover>
+        </div>
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
             <Button size="sm">

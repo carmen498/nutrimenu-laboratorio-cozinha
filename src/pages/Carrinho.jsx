@@ -164,6 +164,9 @@ export default function Carrinho() {
           </div>
         )}
       </div>
+      <p className="text-sm text-muted-foreground -mt-2">
+        Selecione os ingredientes na medida da necessidade. Este carrinho serve como uma lista de reposição para o estoque.
+      </p>
 
       {showPreviewPDF && itens.length > 0 && (
         <div className="space-y-2">
