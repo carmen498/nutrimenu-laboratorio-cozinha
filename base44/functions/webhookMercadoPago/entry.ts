@@ -18,14 +18,21 @@ import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 
+// Identificador de versão temporário — usado para confirmar sem ambiguidade, olhando o
+// corpo_bruto gravado em LogWebhookMercadoPago, que o endpoint público está executando
+// esta versão do código (com o .toLowerCase() no manifest da assinatura) e não uma
+// versão anterior em cache. Remover depois de confirmado.
+const VERSAO_CODIGO = "manifest-lowercase-fix-v2";
+
 export default async function(req: Request): Promise<Response> {
   try {
+    console.log(`webhookMercadoPago rodando versão: ${VERSAO_CODIGO}`);
     const url = new URL(req.url);
     const body = await req.json().catch(() => null);
 
     const dataId = url.searchParams.get("data.id") || body?.data?.id || null;
     const tipoNotificacao = body?.type || body?.topic || url.searchParams.get("type") || null;
-    const corpoBruto = JSON.stringify(body).slice(0, 2000);
+    const corpoBruto = `VERSAO:${VERSAO_CODIGO} | ${JSON.stringify(body).slice(0, 1900)}`;
 
     // Log persistido de toda notificação recebida — o console.log não é acessível
     // retroativamente, então este é o único jeito de diagnosticar depois o que
