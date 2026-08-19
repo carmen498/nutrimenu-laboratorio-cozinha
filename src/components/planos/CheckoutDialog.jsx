@@ -43,7 +43,12 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
               />
             </TabsContent>
             <TabsContent value="pix" className="pt-4">
-              <PixForm plano={plano} email={email} onClose={handleClose} />
+              <PixForm
+                plano={plano}
+                email={email}
+                onClose={handleClose}
+                onSuccess={() => setAprovado(true)}
+              />
             </TabsContent>
           </Tabs>
         )}

@@ -1,16 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Copy, Check } from "lucide-react";
+import { Loader2, Copy, Check, XCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
-export default function PixForm({ plano, email, onClose }) {
+const INTERVALO_POLLING_MS = 4000;
+const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
+
+export default function PixForm({ plano, email, onClose, onSuccess }) {
   const [cpf, setCpf] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const [statusFinal, setStatusFinal] = useState(null); // 'rejected' | 'cancelled'
+  const intervalRef = useRef(null);
+  const timeoutRef = useRef(null);
+
+  const pararPolling = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    intervalRef.current = null;
+    timeoutRef.current = null;
+  };
+
+  // Garante que o polling para se a tela/diálogo for desmontado (ex: usuário fechou).
+  useEffect(() => pararPolling, []);
+
+  const iniciarPolling = (pagamentoId) => {
+    intervalRef.current = setInterval(async () => {
+      try {
+        const pagamento = await base44.entities.Pagamento.get(pagamentoId);
+        if (pagamento.status === "approved") {
+          pararPolling();
+          onSuccess?.();
+        } else if (pagamento.status === "rejected" || pagamento.status === "cancelled") {
+          pararPolling();
+          setStatusFinal(pagamento.status);
+        }
+      } catch {
+        // Erro pontual na consulta — tenta de novo no próximo ciclo.
+      }
+    }, INTERVALO_POLLING_MS);
+
+    timeoutRef.current = setTimeout(pararPolling, TEMPO_MAXIMO_POLLING_MS);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,6 +58,7 @@ export default function PixForm({ plano, email, onClose }) {
         payer: { email, cpf },
       });
       setResultado(res.data);
+      if (res.data?.pagamentoId) iniciarPolling(res.data.pagamentoId);
     } catch (err) {
       setError(err?.response?.data?.error || err.message || "Erro ao gerar o PIX.");
     } finally {
@@ -36,6 +72,40 @@ export default function PixForm({ plano, email, onClose }) {
     setCopiado(true);
     setTimeout(() => setCopiado(false), 2000);
   };
+
+  const handleFechar = () => {
+    pararPolling();
+    onClose();
+  };
+
+  const handleTentarNovamente = () => {
+    setStatusFinal(null);
+    setResultado(null);
+  };
+
+  if (statusFinal) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6 text-center">
+        <XCircle className="w-12 h-12 text-destructive" />
+        <p className="font-medium text-foreground">
+          {statusFinal === "rejected" ? "Pagamento recusado" : "Pagamento cancelado"}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {statusFinal === "rejected"
+            ? "Não foi possível confirmar o pagamento PIX. Você pode gerar um novo código para tentar de novo."
+            : "O código PIX expirou ou foi cancelado. Gere um novo código para tentar de novo."}
+        </p>
+        <div className="flex gap-2 w-full">
+          <Button variant="outline" className="w-full" onClick={handleTentarNovamente}>
+            Tentar novamente
+          </Button>
+          <Button variant="ghost" className="w-full" onClick={handleFechar}>
+            Fechar
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (resultado) {
     return (
@@ -57,7 +127,11 @@ export default function PixForm({ plano, email, onClose }) {
         <p className="text-xs text-muted-foreground text-center">
           Escaneie o QR Code ou copie o código para pagar no app do seu banco.
         </p>
-        <Button variant="ghost" className="w-full" onClick={onClose}>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Aguardando confirmação do pagamento...
+        </div>
+        <Button variant="ghost" className="w-full" onClick={handleFechar}>
           Fechar
         </Button>
       </div>
