@@ -11,6 +11,23 @@
   <body>
     <script>
       (function () {
+        // Cosmetic only: hide "?returnTo=/from_url=" from the address bar as early
+        // as possible (before React even mounts), so the user never sees the long
+        // URL — not even briefly while the auth check/spinner is running. The raw
+        // value is kept in sessionStorage; src/lib/authReturnTo.js reads it from
+        // there when the URL no longer has the param.
+        try {
+          var qp = new URLSearchParams(window.location.search);
+          var pendingReturn = qp.get('returnTo') || qp.get('from_url');
+          if (pendingReturn) {
+            sessionStorage.setItem('base44_pending_return_to', pendingReturn);
+            qp.delete('returnTo');
+            qp.delete('from_url');
+            var cleanUrl = window.location.pathname + (qp.toString() ? '?' + qp.toString() : '') + window.location.hash;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        } catch (e) {}
+
         var ua = navigator.userAgent || navigator.vendor || window.opera || '';
 
         // DIAGNÓSTICO TEMPORÁRIO — registra o user-agent de todo acesso para

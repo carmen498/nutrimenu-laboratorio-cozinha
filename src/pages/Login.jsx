@@ -31,15 +31,6 @@ export default function Login() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Purely cosmetic: hides the "?from_url=..." query param from the address bar.
-  // The value was already captured above into `returnTo`, so this has no effect
-  // on the actual post-login redirect.
-  useEffect(() => {
-    if (window.location.search) {
-      window.history.replaceState({}, "", window.location.pathname);
-    }
-  }, []);
-
   const handleEmailChange = (e) => {
     setEmail(e.target.value);
   };

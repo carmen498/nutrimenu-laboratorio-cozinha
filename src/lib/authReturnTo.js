@@ -14,7 +14,12 @@ export function safeReturnTo() {
   // redirectToLogin() appends automatically when it sends an unauthenticated
   // visitor to /login — support both so a plain email link back to the app
   // (which triggers that redirect) still returns the user to where they landed.
-  const raw = params.get("returnTo") || params.get("from_url");
+  // Falls back to sessionStorage: index.html strips the param from the address
+  // bar as soon as the page loads (before React mounts) and stashes the raw
+  // value there, so by the time this runs the URL itself may already be clean.
+  const stored = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("base44_pending_return_to") : null;
+  const raw = params.get("returnTo") || params.get("from_url") || stored;
+  if (stored) sessionStorage.removeItem("base44_pending_return_to");
   if (!raw) return "/";
   try {
     const url = new URL(raw, window.location.origin);
