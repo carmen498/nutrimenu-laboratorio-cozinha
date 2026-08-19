@@ -34,7 +34,10 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
   diagnostico.v1_recebido = v1 || null;
   if (!ts || !v1) return { valida: false, diagnostico };
 
-  const manifest = `id:${dataId ?? ""};request-id:${xRequestId ?? ""};ts:${ts};`;
+  // IMPORTANTE: o Mercado Pago exige o data.id em minúsculas no manifest — não documentado
+  // claramente, mas confirmado tanto por exemplos oficiais (ex: "ORD01JQ..." -> "ord01jq...")
+  // quanto por testes reais feitos aqui: sem o toLowerCase() a assinatura nunca bate.
+  const manifest = `id:${(dataId ?? "").toLowerCase()};request-id:${xRequestId ?? ""};ts:${ts};`;
   diagnostico.manifest_usado = manifest;
 
   const encoder = new TextEncoder();
