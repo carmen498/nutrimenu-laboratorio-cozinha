@@ -11,7 +11,7 @@ import UsuariosTab from "@/components/comunicacao/UsuariosTab";
 import TransacionaisTab from "@/components/comunicacao/TransacionaisTab";
 import CampanhasTab from "@/components/comunicacao/CampanhasTab";
 import WhatsappReativoTab from "@/components/comunicacao/WhatsappReativoTab";
-import TemplateWhatsappTab from "@/components/comunicacao/TemplateWhatsappTab";
+import TemplateWascriptTab from "@/components/comunicacao/TemplateWascriptTab";
 import ConfiguracoesEmailTab from "@/components/comunicacao/ConfiguracoesEmailTab";
 import PlanosTab from "@/components/comunicacao/PlanosTab";
 
@@ -19,7 +19,7 @@ export default function AdminComunicacao() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [aba, setAba] = useState("usuarios");
-  const [nomeTemplateEdicao, setNomeTemplateEdicao] = useState(null);
+  const [tipoTemplateEdicao, setTipoTemplateEdicao] = useState(null);
   const [selecionados, setSelecionados] = useState(new Set());
 
   const { data: usuarios = [], isLoading } = useQuery({
@@ -32,8 +32,8 @@ export default function AdminComunicacao() {
     return <Navigate to="/" replace />;
   }
 
-  const irParaTemplate = (nomeTemplate) => {
-    setNomeTemplateEdicao(nomeTemplate);
+  const irParaTemplate = (tipoTemplate) => {
+    setTipoTemplateEdicao(tipoTemplate);
     setAba("editor-whatsapp");
   };
 
@@ -85,7 +85,7 @@ export default function AdminComunicacao() {
           <WhatsappReativoTab onEditarTemplate={irParaTemplate} />
         </TabsContent>
         <TabsContent value="editor-whatsapp" className="pt-4">
-          <TemplateWhatsappTab nomeInicial={nomeTemplateEdicao} />
+          <TemplateWascriptTab tipoInicial={tipoTemplateEdicao} />
         </TabsContent>
         <TabsContent value="config-email" className="pt-4">
           <ConfiguracoesEmailTab />

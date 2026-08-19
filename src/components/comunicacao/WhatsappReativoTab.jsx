@@ -1,41 +1,50 @@
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const LINHAS = [
-  { evento: "Pagamento recusado", template: "pagamento_recusado_v1", status: "Rascunho" },
-  { evento: "2ª tentativa falhou", template: "segunda_tentativa_falhou_v1", status: "Rascunho" },
-  { evento: "Trial vencendo em 1 dia", template: "trial_vencendo_1dia_v1", status: "Rascunho" },
-  { evento: "Lembrete de pagamento pendente", template: "pagamento_pendente_lembrete", status: "Rascunho" },
-  { evento: "Pagamento estornado", template: "pagamento_estornado", status: "Rascunho" },
-];
+import { EVENTOS_WASCRIPT } from "@/lib/eventosWascript";
 
 export default function WhatsappReativoTab({ onEditarTemplate }) {
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ["templates-wascript"],
+    queryFn: () => base44.entities.TemplateWascript.list(),
+  });
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Evento</TableHead>
-          <TableHead>Template</TableHead>
           <TableHead>Status</TableHead>
           <TableHead className="text-right">Ações</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {LINHAS.map((linha) => (
-          <TableRow key={linha.evento}>
-            <TableCell className="font-medium">{linha.evento}</TableCell>
-            <TableCell className="text-sm text-muted-foreground">{linha.template}</TableCell>
-            <TableCell>
-              <Badge variant="secondary">{linha.status}</Badge>
-            </TableCell>
-            <TableCell className="text-right">
-              <Button variant="ghost" size="sm" onClick={() => onEditarTemplate?.(linha.template)}>
-                Editar template
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
+        {EVENTOS_WASCRIPT.map((linha) => {
+          const registro = templates.find((t) => t.tipo === linha.tipo);
+          // Sem registro salvo, o sistema envia o texto padrão como ativo (ver notificarWascript.ts).
+          const ativo = registro ? registro.status === "ativo" : true;
+          return (
+            <TableRow key={linha.tipo}>
+              <TableCell className="font-medium">{linha.evento}</TableCell>
+              <TableCell>
+                {isLoading ? (
+                  <span className="text-xs text-muted-foreground">Carregando...</span>
+                ) : (
+                  <Badge variant={ativo ? "default" : "secondary"}>
+                    {ativo ? "Ativo" : "Rascunho"}
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button variant="ghost" size="sm" onClick={() => onEditarTemplate?.(linha.tipo)}>
+                  Editar template
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );
