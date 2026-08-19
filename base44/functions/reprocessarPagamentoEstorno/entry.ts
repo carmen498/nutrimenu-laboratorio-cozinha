@@ -76,6 +76,7 @@ export default async function(req: Request): Promise<Response> {
           tipo: "pagamento_estornado",
           enviado_em: new Date().toISOString(),
           status: resultado.ok ? "enviado" : "falhou",
+          detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
         });
         emailDisparado = resultado.ok === true;
         if (!resultado.ok) emailMotivoNaoDisparo = resultado.error || "Falha desconhecida ao enviar";

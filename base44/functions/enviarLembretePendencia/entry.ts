@@ -42,6 +42,7 @@ export default async function(req: Request): Promise<Response> {
               tipo: "pagamento_pendente_lembrete",
               enviado_em: new Date().toISOString(),
               status: resultado.ok ? "enviado" : "falhou",
+              detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
             });
             if (resultado.ok) enviados++;
           } else {

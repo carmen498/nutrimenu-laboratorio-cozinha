@@ -33,6 +33,10 @@
       ],
       "default": "enviado",
       "description": "Status do envio"
+    },
+    "detalhe_erro": {
+      "type": "string",
+      "description": "Mensagem de erro completa retornada pelo Resend quando o envio falha (c\u00f3digo HTTP + corpo da resposta), para diagn\u00f3stico"
     }
   },
   "required": [

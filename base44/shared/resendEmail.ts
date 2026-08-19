@@ -28,7 +28,10 @@ export async function sendEmailViaResend(base44, { to, subject, html }) {
 
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    return { ok: false, error: data?.message || `Erro HTTP ${res.status}` };
+    // Mensagem completa para diagnóstico: código HTTP + message + qualquer outro
+    // campo de erro que o Resend retorne (name, type, etc.), nunca só um resumo.
+    const detalheCompleto = `HTTP ${res.status} — ${JSON.stringify(data)}`;
+    return { ok: false, error: data?.message || `Erro HTTP ${res.status}`, detalhe_completo: detalheCompleto };
   }
   return { ok: true, id: data?.id };
 }

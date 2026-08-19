@@ -199,6 +199,7 @@ export default async function(req: Request): Promise<Response> {
               tipo: tipoEmail,
               enviado_em: new Date().toISOString(),
               status: resultado.ok ? "enviado" : "falhou",
+              detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
             });
           } else {
             console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);

@@ -44,6 +44,7 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { plano: s
         tipo: "pagamento_aprovado",
         enviado_em: new Date().toISOString(),
         status: resultado.ok ? "enviado" : "falhou",
+        detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
       });
     } else {
       console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
