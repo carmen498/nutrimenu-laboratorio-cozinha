@@ -19,7 +19,7 @@ export async function sendEmailViaResend(base44, { to, subject, html }) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      from: "Laboratório de Cozinha <onboarding@resend.dev>",
+      from: "Laboratório de Cozinha <contato@nutrimenu.com.br>",
       to: [to],
       subject,
       html: htmlFinal,
