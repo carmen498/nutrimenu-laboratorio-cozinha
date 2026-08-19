@@ -12,7 +12,16 @@
     <script>
       (function () {
         var ua = navigator.userAgent || navigator.vendor || window.opera || '';
-        var isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|LinkedInApp|Line\/|MicrosoftOutlook|Outlook-(iOS|Android)|ms-office/i.test(ua);
+
+        // DIAGNÓSTICO TEMPORÁRIO — registra o user-agent de todo acesso para
+        // descobrir por que o Outlook da Carmen não está caindo na detecção
+        // abaixo. Remover este bloco e a função logUserAgentDiagnostico depois.
+        try {
+          var beaconUrl = window.location.origin + '/functions/logUserAgentDiagnostico?ua=' + encodeURIComponent(ua) + '&url=' + encodeURIComponent(window.location.href);
+          fetch(beaconUrl, { method: 'GET', mode: 'no-cors' }).catch(function () {});
+        } catch (e) {}
+
+        var isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|LinkedInApp|Line\/|Outlook|ms-office/i.test(ua);
         if (!isInAppBrowser) return;
 
         var url = window.location.href;

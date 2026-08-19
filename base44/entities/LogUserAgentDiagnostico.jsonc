@@ -1,0 +1,39 @@
+{
+  "name": "LogUserAgentDiagnostico",
+  "type": "object",
+  "properties": {
+    "user_agent": {
+      "type": "string",
+      "description": "String completa do user-agent capturada no acesso, para diagn\u00f3stico do problema de navegador interno (Outlook, WhatsApp, etc.)"
+    },
+    "url_acessada": {
+      "type": "string",
+      "description": "URL completa que estava sendo acessada no momento da captura"
+    }
+  },
+  "required": [
+    "user_agent"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
