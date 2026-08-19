@@ -9,6 +9,57 @@
     <script src="https://sdk.mercadopago.com/js/v2"></script>
   </head>
   <body>
+    <script>
+      (function () {
+        var ua = navigator.userAgent || navigator.vendor || window.opera || '';
+        var isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|LinkedInApp|Line\/|MicrosoftOutlook|Outlook-(iOS|Android)|ms-office/i.test(ua);
+        if (!isInAppBrowser) return;
+
+        var url = window.location.href;
+        var overlay = document.createElement('div');
+        overlay.id = 'inapp-browser-warning';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#f4f4f2;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Arial,Helvetica,sans-serif;';
+        overlay.innerHTML =
+          '<div style="max-width:360px;background:#ffffff;border-radius:12px;padding:32px 24px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.08);">' +
+            '<div style="width:56px;height:56px;border-radius:14px;background:#5c7a5f;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px;">🔒</div>' +
+            '<h1 style="font-size:18px;margin:0 0 12px;color:#1f2b23;">Abra em um navegador</h1>' +
+            '<p style="font-size:14px;color:#444;line-height:1.5;margin:0 0 20px;">Para acessar sua conta, abra este link no seu navegador (toque nos três pontinhos e escolha "Abrir no navegador" ou "Abrir no Chrome/Safari").</p>' +
+            '<button id="inapp-copy-btn" style="width:100%;padding:12px;border:none;border-radius:8px;background:#5c7a5f;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Copiar link</button>' +
+            '<p id="inapp-copy-msg" style="font-size:12px;color:#5c7a5f;margin:10px 0 0;min-height:14px;"></p>' +
+          '</div>';
+
+        document.body.appendChild(overlay);
+
+        var btn = document.getElementById('inapp-copy-btn');
+        var msg = document.getElementById('inapp-copy-msg');
+        btn.addEventListener('click', function () {
+          function done(ok) {
+            msg.textContent = ok ? 'Link copiado!' : 'Não foi possível copiar. Selecione o link manualmente.';
+          }
+          function fallbackCopy() {
+            try {
+              var ta = document.createElement('textarea');
+              ta.value = url;
+              ta.style.position = 'fixed';
+              ta.style.opacity = '0';
+              document.body.appendChild(ta);
+              ta.focus();
+              ta.select();
+              var ok = document.execCommand('copy');
+              document.body.removeChild(ta);
+              done(ok);
+            } catch (e) {
+              done(false);
+            }
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(function () { done(true); }, fallbackCopy);
+          } else {
+            fallbackCopy();
+          }
+        });
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
