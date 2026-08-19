@@ -1,6 +1,7 @@
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
 import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
 import RelatorioCategorias from "./RelatorioCategorias";
@@ -11,7 +12,12 @@ import RelatorioPoucosIngredientes from "./RelatorioPoucosIngredientes";
 const TABS = ["rendimento", "receitas", "categorias", "duplicados", "faxina", "poucos"];
 
 export default function Auditorias() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  if (user && user.role !== "admin") {
+    return <Navigate to="/" replace />;
+  }
   const tabParam = searchParams.get("tab");
   const tab = TABS.includes(tabParam) ? tabParam : "rendimento";
 
