@@ -15,6 +15,10 @@ export function diasEntreHoje(dataStr) {
 }
 
 export function computeStatusUsuario(u) {
+  // Conta administradora (dona do sistema) nunca depende de trial/expiração.
+  if (u?.role === "admin") {
+    return { label: "Ativo", className: "bg-green-100 text-green-700 border-green-200" };
+  }
   const status = u?.status_assinatura;
   if (status === "inativo") {
     return { label: "Inativo", className: "bg-gray-100 text-gray-600 border-gray-200" };

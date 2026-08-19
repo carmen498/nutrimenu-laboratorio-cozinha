@@ -5,6 +5,8 @@ import { toast } from "@/components/ui/use-toast";
 import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUsuario";
 import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
 import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
@@ -30,6 +32,7 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const [origemFiltro, setOrigemFiltro] = useState("todos");
   const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState("todos");
   const [situacaoPagamentoFiltro, setSituacaoPagamentoFiltro] = useState("todos");
+  const [mostrarAdmins, setMostrarAdmins] = useState(false);
   const [periodoFiltro, setPeriodoFiltro] = useState(PERIODO_PADRAO);
   const [dataInicioCustom, setDataInicioCustom] = useState("");
   const [dataFimCustom, setDataFimCustom] = useState("");
@@ -56,6 +59,7 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const usuariosFiltrados = useMemo(() => {
     const buscaNorm = busca.trim().toLowerCase();
     return usuarios.filter((u) => {
+      if (!mostrarAdmins && u.role === "admin") return false;
       if (buscaNorm) {
         const alvo = `${u.nome_completo || u.full_name || ""} ${u.email || ""} ${u.telefone_whatsapp || ""}`.toLowerCase();
         if (!alvo.includes(buscaNorm)) return false;
@@ -71,7 +75,7 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
       }
       return true;
     });
-  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, pagamentosPorUsuario]);
+  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, mostrarAdmins, pagamentosPorUsuario]);
 
   const pagamentosParaCards = useMemo(() => {
     const ids = new Set(usuariosFiltrados.map((u) => u.id));
@@ -154,6 +158,13 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
         tipoUsuarioFiltro={tipoUsuarioFiltro} setTipoUsuarioFiltro={setTipoUsuarioFiltro}
         situacaoPagamentoFiltro={situacaoPagamentoFiltro} setSituacaoPagamentoFiltro={setSituacaoPagamentoFiltro}
       />
+
+      <div className="flex items-center gap-2">
+        <Switch id="mostrar-admins" checked={mostrarAdmins} onCheckedChange={setMostrarAdmins} />
+        <Label htmlFor="mostrar-admins" className="text-sm font-normal cursor-pointer">
+          Mostrar contas administradoras
+        </Label>
+      </div>
 
       <AcoesEmMassa
         quantidade={quantidadeSelecionada}
