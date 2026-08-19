@@ -16,6 +16,9 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const emailInputRef = useRef(null);
+  // Captured once on mount, before the URL is cleaned up below — used for the
+  // post-login redirect instead of re-reading window.location later.
+  const [returnTo] = useState(() => safeReturnTo());
 
   // Handles browser-autofilled e-mail, which doesn't always fire a React onChange
   useEffect(() => {
@@ -26,6 +29,15 @@ export default function Login() {
       }
     }, 250);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Purely cosmetic: hides the "?from_url=..." query param from the address bar.
+  // The value was already captured above into `returnTo`, so this has no effect
+  // on the actual post-login redirect.
+  useEffect(() => {
+    if (window.location.search) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
   const handleEmailChange = (e) => {
@@ -39,7 +51,7 @@ export default function Login() {
     try {
       const response = await base44.auth.loginViaEmailPassword(email, password);
       base44.auth.setToken(response.access_token);
-      window.location.href = safeReturnTo();
+      window.location.href = returnTo;
     } catch (err) {
       setError(err.message || "Invalid email or password");
     } finally {
@@ -48,7 +60,7 @@ export default function Login() {
   };
 
   const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", safeReturnTo());
+    base44.auth.loginWithProvider("google", returnTo);
   };
 
   return (
