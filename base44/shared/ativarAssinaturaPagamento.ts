@@ -13,6 +13,7 @@ import { renderTemplateEmail } from "./templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
+const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "Mensal", anual: "Anual" };
 
 export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { plano: string; usuario_id: string }): Promise<void> {
   const dias = DIAS_PLANO[pagamento.plano] ?? 30;
@@ -35,7 +36,14 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { plano: s
     const defaultAssunto = "Pagamento aprovado";
     const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`;
 
-    const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo);
+    const [ano, mes, dia] = dataExpiracaoFormatada.split("-");
+    const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
+    const nomePlano = NOME_PLANO[pagamento.plano] || pagamento.plano;
+
+    const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo, {
+      plano: nomePlano,
+      data_expiracao: dataExpiracaoBR,
+    });
 
     if (ativo) {
       const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
