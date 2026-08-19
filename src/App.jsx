@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -57,17 +57,25 @@ import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
 
+// Routes reachable without a valid session — these must keep rendering even
+// when the app-level check reports 'auth_required', otherwise a genuinely
+// fresh visitor (no token yet) gets redirected to /login and then hits a
+// permanent blank screen, since the error never clears on that same page.
+const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade'];
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const location = useLocation();
+  const isPublicPath = PUBLIC_PATHS.includes(location.pathname);
 
   // Redirect is a side effect — must run in an effect, not during render. Doing it in
   // render body fired again on every re-render while authError stayed 'auth_required',
   // each time nesting a new from_url into the already-redirected URL.
   useEffect(() => {
-    if (authError?.type === 'auth_required') {
+    if (authError?.type === 'auth_required' && !isPublicPath) {
       navigateToLogin();
     }
-  }, [authError, navigateToLogin]);
+  }, [authError, isPublicPath, navigateToLogin]);
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -77,7 +85,7 @@ const AuthenticatedApp = () => {
     );
   }
 
-  if (authError) {
+  if (authError && !isPublicPath) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
