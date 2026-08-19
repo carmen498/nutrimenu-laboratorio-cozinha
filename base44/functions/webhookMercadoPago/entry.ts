@@ -14,6 +14,7 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
+import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 
@@ -159,6 +160,12 @@ export default async function(req: Request): Promise<Response> {
       }
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
+
+      // Estorno reverte um acesso que já havia sido concedido — revoga o plano do
+      // usuário. "rejected"/"cancelled" são tentativas que nunca ativaram nada.
+      if (novoStatus === "estornado") {
+        await revogarAcessoEstorno(base44, pagamento.usuario_id);
+      }
 
       // Dispara o e-mail transacional de pagamento recusado/estornado, apenas se o
       // template correspondente estiver com status "ativo" (Comunicação > Transacionais).

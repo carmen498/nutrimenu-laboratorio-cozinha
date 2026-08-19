@@ -9,6 +9,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
+import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -53,6 +54,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "estornado" });
+    await revogarAcessoEstorno(base44, pagamento.usuario_id);
 
     const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
 
