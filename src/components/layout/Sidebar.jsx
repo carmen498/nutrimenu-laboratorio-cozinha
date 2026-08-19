@@ -49,7 +49,7 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
 
   return (
     <div className="flex flex-col h-full bg-sidebar text-sidebar-foreground">
-      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-0.5">
+      <nav className={`flex-1 py-3 px-3 space-y-0.5 ${isAdmin ? "overflow-y-auto" : "overflow-y-visible"}`}>
         <NavLink to="/" icon={Home} label="Início" active={isActive("/")} onClick={onNavigate} />
 
         <p className="px-3 pt-3 pb-1 text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
