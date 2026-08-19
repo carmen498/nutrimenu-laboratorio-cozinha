@@ -7,6 +7,7 @@ const LINHAS = [
   { evento: "2ª tentativa falhou", template: "segunda_tentativa_falhou_v1", status: "Rascunho" },
   { evento: "Trial vencendo em 1 dia", template: "trial_vencendo_1dia_v1", status: "Rascunho" },
   { evento: "Lembrete de pagamento pendente", template: "pagamento_pendente_lembrete", status: "Rascunho" },
+  { evento: "Pagamento estornado", template: "pagamento_estornado", status: "Rascunho" },
 ];
 
 export default function WhatsappReativoTab({ onEditarTemplate }) {

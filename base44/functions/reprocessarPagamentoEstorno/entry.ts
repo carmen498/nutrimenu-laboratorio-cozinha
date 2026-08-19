@@ -10,6 +10,7 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
+import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -85,8 +86,11 @@ export default async function(req: Request): Promise<Response> {
       emailMotivoNaoDisparo = "Usuário sem e-mail cadastrado";
     }
 
-    // Não há template/gatilho de WhatsApp para "pagamento_estornado" (apenas para
-    // pagamento_recusado e plano_vencendo) — nenhum WhatsApp é disparado aqui.
+    if (usuario) {
+      await enviarNotificacaoWhatsapp(base44, "pagamento_estornado", usuario).catch((e: any) =>
+        console.log("Falha ao enviar WhatsApp de pagamento estornado:", e.message)
+      );
+    }
 
     return Response.json({
       ok: true,
@@ -95,8 +99,6 @@ export default async function(req: Request): Promise<Response> {
       novo_status_pagamento: "estornado",
       email_disparado: emailDisparado,
       email_motivo_nao_disparo: emailMotivoNaoDisparo,
-      whatsapp_disparado: false,
-      whatsapp_motivo: "Não existe template/gatilho de WhatsApp para pagamento estornado",
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

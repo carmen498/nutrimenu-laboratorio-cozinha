@@ -209,6 +209,10 @@ export default async function(req: Request): Promise<Response> {
           await enviarNotificacaoWhatsapp(base44, "pagamento_recusado", usuario).catch((e: any) =>
             console.log("Falha ao enviar WhatsApp de pagamento recusado:", e.message)
           );
+        } else if (usuario && novoStatus === "estornado") {
+          await enviarNotificacaoWhatsapp(base44, "pagamento_estornado", usuario).catch((e: any) =>
+            console.log("Falha ao enviar WhatsApp de pagamento estornado:", e.message)
+          );
         }
       }
     }

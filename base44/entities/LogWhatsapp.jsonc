@@ -11,7 +11,9 @@
       "enum": [
         "pagamento_aprovado",
         "pagamento_recusado",
-        "plano_vencendo"
+        "plano_vencendo",
+        "pagamento_pendente_lembrete",
+        "pagamento_estornado"
       ],
       "description": "Tipo do evento transacional que originou o envio"
     },

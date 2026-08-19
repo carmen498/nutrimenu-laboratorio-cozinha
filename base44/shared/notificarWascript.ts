@@ -12,9 +12,10 @@ const DEFAULTS: Record<string, string> = {
   pagamento_recusado: "Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura. Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.",
   plano_vencendo: "Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve. Renove agora para não perder o acesso às suas receitas e cardápios.",
   pagamento_pendente_lembrete: "Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado. Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.",
+  pagamento_estornado: "Olá {{nome}}, confirmamos o estorno do seu pagamento no Laboratório de Cozinha. O valor será devolvido pelo Mercado Pago conforme o prazo do seu banco. Qualquer dúvida, estamos à disposição.",
 };
 
-type TipoWascript = "pagamento_aprovado" | "pagamento_recusado" | "plano_vencendo" | "pagamento_pendente_lembrete";
+type TipoWascript = "pagamento_aprovado" | "pagamento_recusado" | "plano_vencendo" | "pagamento_pendente_lembrete" | "pagamento_estornado";
 
 export async function enviarNotificacaoWhatsapp(
   base44: any,

@@ -8,7 +8,8 @@
         "pagamento_aprovado",
         "pagamento_recusado",
         "plano_vencendo",
-        "pagamento_pendente_lembrete"
+        "pagamento_pendente_lembrete",
+        "pagamento_estornado"
       ],
       "description": "Tipo do evento transacional ao qual esta mensagem de WhatsApp pertence"
     },
