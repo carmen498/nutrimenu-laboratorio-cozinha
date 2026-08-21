@@ -56,6 +56,7 @@ import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
 import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
+import Landing from '@/pages/Landing';
 
 // Routes reachable without a valid session — these must keep rendering even
 // when the app-level check reports 'auth_required', otherwise a genuinely
@@ -101,6 +102,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/termos" element={<Termos />} />
       <Route path="/privacidade" element={<Privacidade />} />
+      <Route path="/landing" element={<Landing />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
