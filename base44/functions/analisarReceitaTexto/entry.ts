@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { exigirAssinaturaAtiva } from "../../shared/acessoAssinatura.ts";
 
 // READ-ONLY function: parses one or MULTIPLE structured recipe texts (each
 // occurrence of a "RECEITA:" line starts a new recipe block) and resolves
@@ -8,8 +9,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { response } = await exigirAssinaturaAtiva(base44);
+    if (response) return response;
 
     const body = await req.json();
     const texto = body.texto;
