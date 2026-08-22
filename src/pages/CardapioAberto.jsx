@@ -347,12 +347,19 @@ export default function CardapioAberto() {
     try {
       const rec = await base44.entities.Receita.get(receitaId);
       if (!rec) return;
-      const ingredientes = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId }, "ordem", 200);
+      const [ingredientes, insumosReceitaAtual, esquecidosAtual] = await Promise.all([
+        base44.entities.IngredienteReceita.filter({ receita_id: receitaId }, "ordem", 500),
+        base44.entities.InsumoReceita.filter({ receita_id: receitaId }, "created_date", 500),
+        base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: receitaId }, "created_date", 500),
+      ]);
+      setIngredientesPorReceita(prev => ({ ...prev, [receitaId]: ingredientes || [] }));
+      setInsumosPorReceita(prev => ({ ...prev, [receitaId]: insumosReceitaAtual || [] }));
+      setEsquecidosPorReceita(prev => ({ ...prev, [receitaId]: esquecidosAtual || [] }));
       const qt = Number(cr.quantidade_total_g) || 0;
       const custoEsc = custoEscalado(rec, ingredientes, qt, {
         ingredienteMap,
-        insumosReceita: insumosPorReceita[receitaId] || [],
-        esquecidos: esquecidosPorReceita[receitaId] || [],
+        insumosReceita: insumosReceitaAtual || [],
+        esquecidos: esquecidosAtual || [],
       });
       await base44.entities.CardapioReceita.update(cr.id, { custo_total: custoEsc });
       setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc, quantidade_total_g: qt } : r));
