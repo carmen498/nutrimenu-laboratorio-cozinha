@@ -9,6 +9,7 @@ import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { montarFichaCustos } from "@/lib/fichaCustosCalc";
 import { gerarFichaCustosPDF } from "@/lib/fichaCustosPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização da Ficha de Custos do Cardápio (uso interno) — mesmo
 // padrão de tela-primeiro da Ficha do Cardápio / Orçamento. Cálculo sempre ao vivo
@@ -104,7 +105,7 @@ export default function FichaCustosCardapio() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
