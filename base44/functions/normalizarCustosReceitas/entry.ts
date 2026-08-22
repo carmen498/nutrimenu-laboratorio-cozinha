@@ -6,6 +6,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 const VERSAO = 2;
 const num = (v: any) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const txt = (v: any) => v == null ? '' : String(v).trim();
+const normNome = (v: any) => txt(v)
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, ' ');
 const positivo = (v: any) => {
   const n = Number(v);
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -209,6 +216,17 @@ Deno.serve(async (req) => {
           problemas.push({ item_id: item.id, ingrediente_id: ingredienteId, tipo: 'ingrediente_nao_encontrado' });
           continue;
         }
+        if (txt(item.ingrediente_nome) && normNome(item.ingrediente_nome) !== normNome(ingrediente.nome)) {
+          refAusente++;
+          problemas.push({
+            item_id: item.id,
+            ingrediente_id: ingredienteId,
+            ingrediente_nome_cache: txt(item.ingrediente_nome),
+            ingrediente_nome_mestre: txt(ingrediente.nome),
+            tipo: 'ingrediente_nome_id_divergente',
+          });
+          continue;
+        }
         const pl = num(item.quantidade_por_porcao) * porcoesBase;
         if (pl > 0) itensComQuantidadePositiva++;
         const pb = pl * fcEfetivo(item, ingrediente);
@@ -236,6 +254,17 @@ Deno.serve(async (req) => {
         const quantidade = num(esquecido.quantidade_g);
         if (ingredienteId && ingredienteMap.has(ingredienteId)) {
           const ingrediente = ingredienteMap.get(ingredienteId);
+          if (txt(esquecido.nome) && normNome(esquecido.nome) !== normNome(ingrediente.nome)) {
+            refAusente++;
+            problemas.push({
+              item_id: esquecido.id,
+              ingrediente_id: ingredienteId,
+              ingrediente_nome_cache: txt(esquecido.nome),
+              ingrediente_nome_mestre: txt(ingrediente.nome),
+              tipo: 'esquecido_nome_id_divergente',
+            });
+            continue;
+          }
           const preco = precoEfetivo({ ingrediente, ownerId, prefMap, legacyMap });
           const pb = quantidade * (num(ingrediente.fator_correcao) > 0 ? num(ingrediente.fator_correcao) : 1);
           custoEsquecidos += pb * preco;
