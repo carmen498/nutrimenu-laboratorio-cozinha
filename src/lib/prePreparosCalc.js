@@ -4,6 +4,7 @@
 // Não altera nenhum outro relatório nem cálculo existente — apenas lê dados.
 import { base44 } from "@/api/base44Client";
 import { carregarDadosRelatorios } from "@/lib/relatoriosPlanejamentoPDF";
+import { resolverFatorCorrecao } from "@/lib/ingredienteReceitaCalc";
 
 function fmtPeso(g) {
   const v = g || 0;
@@ -11,13 +12,13 @@ function fmtPeso(g) {
   return Math.round(v) + " g";
 }
 
-function fmtBrutoParen(liquidoG, fc) {
-  if (!fc || fc <= 1) return null;
-  return `(pegar ${fmtPeso(liquidoG * fc)} bruto)`;
+function fmtBrutoParen(liquidoG, brutoG) {
+  if (!brutoG || brutoG <= liquidoG + 0.001) return null;
+  return `(pegar ${fmtPeso(brutoG)} bruto)`;
 }
 
 // Carrega config/receitas/ingredientes-por-receita (reaproveitando o loader
-// compartilhado) + mapa de Ingrediente (para o Fator de Correção).
+// compartilhado) + mapa de Ingrediente (para preço e FC padrão).
 export async function carregarDadosPrePreparos(planejamento) {
   const base = await carregarDadosRelatorios(planejamento);
   const todosIngredientes = await base44.entities.Ingrediente.list("nome", 3000);
@@ -64,11 +65,14 @@ export function montarPrePreparos(planejamento, dados) {
         const nome = (ing.ingrediente_nome || "").trim();
         if (!nome) return;
         const key = `${nome.toLowerCase()}||${prePreparo.toLowerCase()}`;
+        const ingRef = ing.ingrediente_id ? ingredienteMap[ing.ingrediente_id] : null;
+        const fc = resolverFatorCorrecao(ing, ingRef).valor;
+        const brutoQty = scaledQty * fc;
         if (!ingredientesMap[key]) {
-          const ingRef = ing.ingrediente_id ? ingredienteMap[ing.ingrediente_id] : null;
-          ingredientesMap[key] = { nome, prePreparo, totalG: 0, fc: ingRef?.fator_correcao || 1, usos: {} };
+          ingredientesMap[key] = { nome, prePreparo, totalG: 0, totalBrutoG: 0, usos: {} };
         }
         ingredientesMap[key].totalG += scaledQty;
+        ingredientesMap[key].totalBrutoG += brutoQty;
         ingredientesMap[key].usos[nomeReceita] = (ingredientesMap[key].usos[nomeReceita] || 0) + scaledQty;
       }
     });
@@ -91,7 +95,7 @@ export function montarPrePreparos(planejamento, dados) {
         nome: v.nome,
         prePreparo: v.prePreparo,
         totalFmt: fmtPeso(v.totalG),
-        brutoTexto: fmtBrutoParen(v.totalG, v.fc),
+        brutoTexto: fmtBrutoParen(v.totalG, v.totalBrutoG),
         receitaLabel,
         usadoEmTexto,
       };
