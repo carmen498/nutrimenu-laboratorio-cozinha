@@ -3,14 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
 
-// Hook compartilhado de salvamento de Ingrediente — usado pela listagem (Ingredientes.jsx)
-// e pela ficha (IngredienteAberto.jsx), para manter a MESMA lógica de custo e histórico.
-//
-// Não-admins nunca alteram o preço do cadastro compartilhado: quando o preço muda,
-// a gravação vira um registro pessoal em PrecoIngredienteCliente — de forma
-// transparente, sem erro de permissão visível. Os demais campos (nome, categoria,
-// unidade, fator de correção...) continuam sendo gravados no cadastro compartilhado
-// normalmente, para todos os usuários.
+// Hook compartilhado de salvamento de Ingrediente.
+// Segurança: o catálogo Ingrediente é global e somente administradores podem
+// criar/alterar sua estrutura. Usuários comuns podem alterar exclusivamente o
+// próprio preço, persistido em PrecoIngredienteCliente.
 export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } = {}) {
   const qc = useQueryClient();
   return useMutation({
@@ -19,25 +15,29 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
       const preco_por_g = data.peso_embalagem_g > 0
         ? data.preco_embalagem_rs / data.peso_embalagem_g
         : 0;
+
+      if (!isAdmin) {
+        if (!data.id) {
+          throw new Error("Somente administradores podem cadastrar novos ingredientes.");
+        }
+        if (!userId) {
+          throw new Error("Usuário não identificado para salvar o preço pessoal.");
+        }
+
+        await salvarPrecoPersonalizado({
+          ingredienteId: data.id,
+          userId,
+          precoPorGRs: preco_por_g,
+        });
+
+        return { id: data.id, preco_por_g_rs: preco_por_g, _preco_pessoal: true };
+      }
+
       const payload = { ...data, preco_por_g_rs: preco_por_g };
 
       if (data.id) {
         const { id, created_date, updated_date, created_by_id, ...rest } = payload;
         const precoAlterado = data.preco_embalagem_rs !== data._preco_anterior || data.peso_embalagem_g !== data._peso_anterior;
-
-        if (!isAdmin) {
-          const {
-            preco_embalagem_rs, peso_embalagem_g, preco_por_g_rs,
-            historico_precos, preco_atualizado_em, fonte_preco, variacao_percentual,
-            _preco_anterior, _peso_anterior,
-            ...compartilhado
-          } = rest;
-          await base44.entities.Ingrediente.update(id, compartilhado);
-          if (precoAlterado && userId) {
-            await salvarPrecoPersonalizado({ ingredienteId: id, userId, precoPorGRs: preco_por_g });
-          }
-          return { id, ...compartilhado };
-        }
 
         if (precoAlterado) {
           const precoAnteriorPorKg = (data._preco_anterior && data._peso_anterior > 0)
@@ -65,6 +65,7 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
         delete rest._peso_anterior;
         return base44.entities.Ingrediente.update(id, rest);
       }
+
       if (preco_por_g > 0) {
         payload.preco_atualizado_em = new Date().toISOString();
         payload.fonte_preco = "Manual";
@@ -87,7 +88,7 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
       qc.invalidateQueries({ queryKey: ["sinonimos"] });
       qc.invalidateQueries({ queryKey: ["precos-personalizados"] });
       if (result?.id) qc.invalidateQueries({ queryKey: ["ingrediente", result.id] });
-      toast.success("Ingrediente salvo!");
+      toast.success(result?._preco_pessoal ? "Preço pessoal salvo!" : "Ingrediente salvo!");
       onSaved?.(result);
     },
   });
