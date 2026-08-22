@@ -5,7 +5,7 @@ import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 import { consoleErrorSeguro } from '@/lib/securityHardening';
 import { termosAtuaisAceitos } from '@/lib/termosVersao';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
