@@ -57,13 +57,14 @@ import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
 import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
+import AceitarTermos from '@/pages/AceitarTermos';
 import LandingOrRedirect from '@/components/LandingOrRedirect';
 
 // Routes reachable without a valid session — these must keep rendering even
 // when the app-level check reports 'auth_required', otherwise a genuinely
 // fresh visitor (no token yet) gets redirected to /login and then hits a
 // permanent blank screen, since the error never clears on that same page.
-const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -103,6 +104,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/termos" element={<Termos />} />
       <Route path="/privacidade" element={<Privacidade />} />
+      <Route path="/aceitar-termos" element={<AceitarTermos />} />
       <Route path="/" element={<LandingOrRedirect />} />
       <Route path="/landing" element={<Navigate to="/" replace />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
