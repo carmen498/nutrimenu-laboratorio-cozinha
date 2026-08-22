@@ -3,6 +3,7 @@ import { appParams } from "@/lib/app-params";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { caminhoInternoSeguro, redirectOAuthSeguro } from "@/lib/securityHardening";
 
 // App-side OAuth consent page for the app's MCP server. The platform redirects
 // AI clients here (see base44/mcp/config.json `consent_path`) with an opaque
@@ -66,8 +67,10 @@ export default function OAuthConsent() {
             window.location.pathname + "?ctx=" + encodeURIComponent(ctx);
           const encoded = encodeURIComponent(returnTo);
           redirecting = true; // keep the spinner while the browser navigates
+          const loginPath = caminhoInternoSeguro(data.login_path, "/login");
+          const separator = loginPath.includes("?") ? "&" : "?";
           window.location.href =
-            (data.login_path || "/login") + "?returnTo=" + encoded + "&from_url=" + encoded;
+            loginPath + separator + "returnTo=" + encoded + "&from_url=" + encoded;
           return;
         }
         setInfo(data);
@@ -102,8 +105,10 @@ export default function OAuthConsent() {
         if (res.status === 401) {
           const returnTo = window.location.pathname + "?ctx=" + encodeURIComponent(ctx);
           const encoded = encodeURIComponent(returnTo);
+          const loginPath = caminhoInternoSeguro(info && info.login_path, "/login");
+          const separator = loginPath.includes("?") ? "&" : "?";
           window.location.href =
-            ((info && info.login_path) || "/login") + "?returnTo=" + encoded + "&from_url=" + encoded;
+            loginPath + separator + "returnTo=" + encoded + "&from_url=" + encoded;
           return;
         }
         // These all come AFTER the single-use handle is atomically consumed
@@ -120,8 +125,14 @@ export default function OAuthConsent() {
         throw new Error("Could not complete authorization. Please try again.");
       }
       const data = await res.json();
-      window.location.href = data.redirect_url;
-      if (!/^https?:/i.test(data.redirect_url)) {
+      const redirectUrl = redirectOAuthSeguro(data.redirect_url);
+      if (!redirectUrl) {
+        setError("The authorization server returned an unsafe redirect URL. Reconnect from your AI client.");
+        setSubmitting(false);
+        return;
+      }
+      window.location.href = redirectUrl;
+      if (!/^https?:/i.test(redirectUrl)) {
         // Custom-scheme redirect (native AI clients, e.g. cursor://): browsers
         // may block or not visibly navigate, so show a terminal state instead
         // of an eternal spinner.
