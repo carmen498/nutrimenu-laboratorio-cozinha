@@ -5,11 +5,10 @@ import { Card } from "@/components/ui/card";
 import { ChefHat, Pencil, Trash2, ArrowUp, ArrowDown, Check, X, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
-import { useAuth } from "@/lib/AuthContext";
 
 function buildGridTemplate(mostrarFC, mostrarMedidaCaseira) {
   const cols = ["minmax(160px,18fr)", "minmax(90px,11fr)", "minmax(70px,8fr)"];
-  if (mostrarFC) cols.push("minmax(56px,6fr)", "minmax(80px,9fr)");
+  if (mostrarFC) cols.push("minmax(70px,7fr)", "minmax(80px,9fr)");
   cols.push("minmax(80px,9fr)", "minmax(50px,6fr)");
   if (mostrarMedidaCaseira) cols.push("minmax(170px,22fr)");
   cols.push("minmax(150px,11fr)");
@@ -18,7 +17,7 @@ function buildGridTemplate(mostrarFC, mostrarMedidaCaseira) {
 
 export default function TabelaIngredientesReceita({
   itens, receita, fator, mostrarFC, mostrarMedidaCaseira, blocos, findBlocoIdx,
-  medidaByIngrediente, uteMap, getMedidaDisplay,
+  medidaByIngrediente, medidaById = {}, uteMap, getMedidaDisplay,
   editingQtdId, editingQtdValue, setEditingQtdId, setEditingQtdValue, handleConfirmQtd,
   editingIngId, ingSearch, setEditingIngId, setIngSearch, ingredientesDB, receitasBasicas,
   replaceIngMut, replaceWithSubreceitaMut,
@@ -29,8 +28,6 @@ export default function TabelaIngredientesReceita({
   deleteItemOrGrupoMut, deleteSubreceitaMut, updateFCMut,
   handleMove, handleDragEnd, formatWeight, formatCustoItem,
 }) {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "admin";
   const gridTemplate = buildGridTemplate(mostrarFC, mostrarMedidaCaseira);
 
   const totalPesoLiq = itens.filter(i => !i.isGrupo).reduce((s, i) => s + (i.qtdNova || 0), 0);
@@ -44,10 +41,14 @@ export default function TabelaIngredientesReceita({
   };
 
   const converterMedidaParaGramasInline = (n, mc) => {
-    if (!mc) return 0;
-    if (mc.equivalencia_g) return n * mc.equivalencia_g;
-    if (mc.referencia_g) return n * mc.referencia_g;
-    return 0;
+    if (!mc || !n || n <= 0) return 0;
+    const quantidadeUtensilio = Number(mc.quantidade_utensilio) > 0 ? Number(mc.quantidade_utensilio) : 1;
+    const pesoCanonico = Number(mc.peso_g) > 0 ? Number(mc.peso_g) / quantidadeUtensilio : 0;
+    const pesoLegado = Number(mc.referencia_g) > 0
+      ? Number(mc.referencia_g)
+      : (Number(mc.equivalencia_g) > 0 ? Number(mc.equivalencia_g) : 0);
+    const refG = pesoCanonico || pesoLegado;
+    return refG > 0 ? n * refG : 0;
   };
 
   return (
@@ -251,6 +252,11 @@ export default function TabelaIngredientesReceita({
                   </div>
                 );
 
+                const medidaAtual = !item.isSubreceita
+                  ? ((item.medida_caseira_id && medidaById[item.medida_caseira_id])
+                    ? medidaById[item.medida_caseira_id]
+                    : medidaByIngrediente[item.ing?.id])
+                  : null;
                 const medidaInfo = !item.isSubreceita ? getMedidaDisplay(item) : null;
                 const medidaCell = mostrarMedidaCaseira && (
                   <div>
@@ -258,8 +264,9 @@ export default function TabelaIngredientesReceita({
                       <span className="text-sm text-muted-foreground">—</span>
                     ) : editingMedidaId === item.id ? (
                       (() => {
-                        const mc = medidaByIngrediente[item.ing?.id];
-                        const ute = uteMap[mc?.utensilio];
+                        const mc = medidaAtual;
+                        const utensilioId = mc?.utensilio_id || mc?.utensilio;
+                        const ute = uteMap[utensilioId];
                         return (
                           <div className="flex items-center gap-1">
                             <input
@@ -273,7 +280,12 @@ export default function TabelaIngredientesReceita({
                                   const g = converterMedidaParaGramasInline(n, mc);
                                   if (g) {
                                     const baseTotal = (receita?.porcoes_base || 1) * fator;
-                                    updateQtdMut.mutate({ itemId: item.id, quantidade_por_porcao: baseTotal > 0 ? g / baseTotal : g });
+                                    updateQtdMut.mutate({
+                                      itemId: item.id,
+                                      quantidade_por_porcao: baseTotal > 0 ? g / baseTotal : g,
+                                      medida_caseira_id: mc?.id || "",
+                                      quantidade_medida_caseira: n,
+                                    });
                                   }
                                   setEditingMedidaId(null);
                                 }
@@ -287,11 +299,19 @@ export default function TabelaIngredientesReceita({
                       })()
                     ) : medidaInfo?.texto ? (
                       <div className="flex items-center gap-1">
-                        <button className="text-xs text-primary/70 hover:text-primary text-left" onClick={() => { setEditingMedidaId(item.id); setMedidaInputValue(""); }} title="Clique para digitar em medida caseira">
+                        <button
+                          className="text-xs text-primary/70 hover:text-primary text-left"
+                          onClick={() => { setEditingMedidaId(item.id); setMedidaInputValue(item.quantidade_medida_caseira ? String(item.quantidade_medida_caseira) : ""); }}
+                          title="Clique para digitar em medida caseira"
+                        >
                           {medidaInfo.texto}
                         </button>
-                        {medidaByIngrediente[item.ing?.id] && (
-                          <button className="text-muted-foreground/60 hover:text-primary" onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(medidaByIngrediente[item.ing.id]); }} title="Editar utensílio/referência">
+                        {medidaAtual && (
+                          <button
+                            className="text-muted-foreground/60 hover:text-primary"
+                            onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(medidaAtual); }}
+                            title="Editar utensílio/referência"
+                          >
                             <Pencil className="w-3 h-3" />
                           </button>
                         )}
@@ -302,8 +322,8 @@ export default function TabelaIngredientesReceita({
                         {item.ing && (
                           <button
                             className="text-muted-foreground/60 hover:text-primary"
-                            onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(medidaByIngrediente[item.ing.id] || null); }}
-                            title={medidaByIngrediente[item.ing.id] ? "Editar utensílio/referência" : "Cadastrar medida caseira"}
+                            onClick={() => { setCadastrarMedidaIng(item.ing); setEditarMedidaMc(medidaAtual || null); }}
+                            title={medidaAtual ? "Editar utensílio/referência" : "Cadastrar medida caseira"}
                           >
                             <Pencil className="w-3 h-3" />
                           </button>
@@ -313,7 +333,8 @@ export default function TabelaIngredientesReceita({
                   </div>
                 );
 
-                const fc = item.ing?.fator_correcao || 1;
+                const fc = item.fcEfetivo || item.ing?.fator_correcao || 1;
+                const fcTemOverride = !!item.fcOverride;
 
                 return (
                   <DraggableRow key={item.id} draggableId={item.id} index={idx} isDragDisabled={!!item.subreceita_parent_id} handlePosition="end">
@@ -326,26 +347,44 @@ export default function TabelaIngredientesReceita({
                         <div className="text-xs text-muted-foreground">{!item.isSubreceita ? (item.pre_preparo || "") : ""}</div>
                         <div>{pesoLiqCell}</div>
                         {mostrarFC && (
-                          <div className="flex justify-center">
+                          <div className="flex items-center justify-center gap-0.5">
                             {item.isSubreceita ? (
                               <span className="text-sm text-muted-foreground">—</span>
-                            ) : isAdmin ? (
-                              <Input
-                                type="number"
-                                step="0.01"
-                                className="h-7 w-14 text-sm text-center"
-                                defaultValue={fc}
-                                key={`${item.id}-${fc}`}
-                                onBlur={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (!isNaN(val) && val > 0 && item.ing?.id) updateFCMut.mutate({ ingId: item.ing.id, fator_correcao: val });
-                                }}
-                                onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-                              />
                             ) : (
-                              <span className="text-sm text-muted-foreground" title="FC do cadastro mestre — somente leitura">
-                                {String(fc).replace(".", ",")}
-                              </span>
+                              <>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className={`h-7 w-14 text-sm text-center ${fcTemOverride ? "border-primary/60 bg-primary/5" : ""}`}
+                                  defaultValue={fc}
+                                  key={`${item.id}-${fc}-${fcTemOverride}`}
+                                  title={fcTemOverride
+                                    ? "FC específico desta receita. Use o × para voltar ao FC padrão do ingrediente."
+                                    : `FC padrão do ingrediente (${String(fc).replace(".", ",")}). Edite para definir um FC específico desta receita.`}
+                                  onBlur={(e) => {
+                                    const raw = e.target.value.trim();
+                                    const val = raw === "" ? 0 : parseFloat(raw);
+                                    if (!isNaN(val)) {
+                                      updateFCMut.mutate({
+                                        itemId: item.id,
+                                        fator_correcao_override: val > 0 ? val : 0,
+                                      });
+                                    }
+                                  }}
+                                  onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+                                />
+                                {fcTemOverride && (
+                                  <button
+                                    type="button"
+                                    className="text-primary hover:text-destructive text-xs font-bold px-0.5"
+                                    title="Voltar ao FC padrão do ingrediente"
+                                    onClick={() => updateFCMut.mutate({ itemId: item.id, fator_correcao_override: 0 })}
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </>
                             )}
                           </div>
                         )}
