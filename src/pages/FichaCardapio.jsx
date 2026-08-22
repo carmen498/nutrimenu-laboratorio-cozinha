@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { montarFichaCardapio } from "@/lib/fichaCardapioCalc";
 import { gerarFichaCardapioPDF } from "@/lib/fichaCardapioPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização da Ficha do Cardápio (produção) — mesmo padrão visual
 // da tela "Exportar Receita" / "Ficha Técnica". Conteúdo idêntico ao PDF exportado
@@ -75,7 +76,7 @@ export default function FichaCardapio() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
