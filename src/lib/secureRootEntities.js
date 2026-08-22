@@ -64,7 +64,6 @@ export async function criarCardapioSeguro(payload = {}) {
   const { is_base: _ignorado, ...dadosPessoais } = payload;
   return base44.entities.Cardapio.create({
     ...dadosPessoais,
-    is_base: false,
     usuario_dono_id: user.id,
     data_personalizacao: payload.data_personalizacao || new Date().toISOString(),
   });
