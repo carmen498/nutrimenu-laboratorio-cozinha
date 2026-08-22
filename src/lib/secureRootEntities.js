@@ -31,7 +31,7 @@ export async function criarReceitaSegura(payload = {}) {
   const dadosCriacao = {
     ...dados,
     ...linhagem,
-    is_base: isBase,
+    ...(isAdmin ? { is_base: isBase } : {}),
     usuario_dono_id: isBase ? '' : user.id,
   };
 
