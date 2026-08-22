@@ -4,6 +4,8 @@ import { ImagePlus, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 export default function FotoCarmenUpload() {
   const qc = useQueryClient();
@@ -19,14 +21,20 @@ export default function FotoCarmenUpload() {
     const file = e.target.files?.[0];
     if (!file) return;
     setEnviando(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    if (config) {
-      await base44.entities.ConfiguracaoCarmen.update(config.id, { foto_url: file_url });
-    } else {
-      await base44.entities.ConfiguracaoCarmen.create({ foto_url: file_url });
+    try {
+      const fileUrl = await uploadImagemSeguro(base44, file);
+      if (config) {
+        await base44.entities.ConfiguracaoCarmen.update(config.id, { foto_url: fileUrl });
+      } else {
+        await base44.entities.ConfiguracaoCarmen.create({ foto_url: fileUrl });
+      }
+      qc.invalidateQueries({ queryKey: ["configuracao-carmen"] });
+    } catch (err) {
+      toast.error(err?.message || "Erro ao enviar foto");
+    } finally {
+      setEnviando(false);
+      e.target.value = "";
     }
-    qc.invalidateQueries({ queryKey: ["configuracao-carmen"] });
-    setEnviando(false);
   };
 
   return (
