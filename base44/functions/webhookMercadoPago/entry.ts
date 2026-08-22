@@ -18,11 +18,9 @@ import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 
-// Identificador de versão temporário — usado para confirmar sem ambiguidade, olhando o
-// corpo_bruto gravado em LogWebhookMercadoPago, que o endpoint público está executando
-// esta versão do código (com o .toLowerCase() no manifest da assinatura) e não uma
-// versão anterior em cache. Remover depois de confirmado.
-const VERSAO_CODIGO = "manifest-lowercase-fix-v2";
+// Versão persistida apenas como metadado técnico; o corpo bruto da notificação
+// não é armazenado por política de minimização de dados.
+const VERSAO_CODIGO = "webhook-v3-2026-08-22-minimizacao-dados";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -32,33 +30,33 @@ export default async function(req: Request): Promise<Response> {
 
     const dataId = url.searchParams.get("data.id") || body?.data?.id || null;
     const tipoNotificacao = body?.type || body?.topic || url.searchParams.get("type") || null;
-    const corpoBruto = `VERSAO:${VERSAO_CODIGO} | ${JSON.stringify(body).slice(0, 1900)}`;
+    const acaoNotificacao = typeof body?.action === "string" ? body.action : null;
 
-    // Log persistido de toda notificação recebida — o console.log não é acessível
-    // retroativamente, então este é o único jeito de diagnosticar depois o que
-    // o Mercado Pago realmente enviou e em qual ponto o processamento parou.
+    // Log estruturado e mínimo: IDs técnicos e resultado do processamento.
+    // Não persiste corpo bruto, assinatura, request-id, e2e_id ou payload do provedor.
     const base44Log = createClientFromRequest(req);
     async function registrarLog(campos: Record<string, unknown>) {
       await base44Log.asServiceRole.entities.LogWebhookMercadoPago.create({
         data_id: dataId || "",
         tipo_notificacao: tipoNotificacao,
-        corpo_bruto: corpoBruto,
+        acao_notificacao: acaoNotificacao,
+        versao_codigo: VERSAO_CODIGO,
         ...campos,
       }).catch((e: any) => console.log("Falha ao gravar LogWebhookMercadoPago:", e.message));
     }
 
     const { valida: assinaturaValida, diagnostico: diagnosticoAssinatura } = await validarAssinatura(req, dataId);
     if (!assinaturaValida) {
-      console.log("Assinatura inválida na notificação do Mercado Pago:", JSON.stringify(diagnosticoAssinatura));
+      console.log("Assinatura inválida na notificação do Mercado Pago", diagnosticoAssinatura);
       await registrarLog({
         assinatura_valida: false,
         resultado: "assinatura_invalida",
-        corpo_bruto: `${corpoBruto} | DIAGNOSTICO: ${JSON.stringify(diagnosticoAssinatura)}`,
+        diagnostico_resumo: JSON.stringify(diagnosticoAssinatura),
       });
       return Response.json({ error: "invalid_signature" }, { status: 401 });
     }
 
-    console.log("Notificação recebida do Mercado Pago:", JSON.stringify(body));
+    console.log("Notificação válida recebida do Mercado Pago", { data_id: dataId, tipo: tipoNotificacao, acao: acaoNotificacao });
 
     if (!dataId) {
       await registrarLog({ assinatura_valida: true, resultado: "sem_data_id" });
@@ -81,7 +79,6 @@ export default async function(req: Request): Promise<Response> {
       await registrarLog({
         assinatura_valida: true,
         resultado: "tipo_nao_mapeado",
-        corpo_bruto: `${corpoBruto} | tipo de notificação não mapeado: ${tipoNotificacao}`,
       });
       return Response.json({ received: true });
     }
@@ -103,7 +100,7 @@ export default async function(req: Request): Promise<Response> {
     const recurso = await recursoResponse.json().catch(() => null);
 
     if (!recursoResponse.ok || !recurso) {
-      console.log(`Não foi possível buscar ${recursoTipo} no Mercado Pago:`, JSON.stringify(recurso));
+      console.log(`Não foi possível buscar ${recursoTipo} no Mercado Pago`, { data_id: dataId, http_status: recursoResponse.status });
       await registrarLog({ assinatura_valida: true, resultado: "order_nao_encontrada" });
       return Response.json({ error: `${recursoTipo}_not_found` }, { status: 200 });
     }
