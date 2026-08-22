@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Nome da receita no momento da altera\u00e7\u00e3o (cache)"
     },
+    "usuario_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio respons\u00e1vel pela altera\u00e7\u00e3o; usado para leitura do pr\u00f3prio hist\u00f3rico"
+    },
     "usuario_nome": {
       "type": "string",
       "description": "Nome do usu\u00e1rio respons\u00e1vel pela altera\u00e7\u00e3o, quando identific\u00e1vel"
@@ -27,8 +31,16 @@
     "receita_id"
   ],
   "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
     "read": {
       "$or": [
+        {
+          "data.usuario_id": "{{user.id}}"
+        },
         {
           "created_by_id": "{{user.id}}"
         },
@@ -40,28 +52,14 @@
       ]
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
