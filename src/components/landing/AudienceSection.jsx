@@ -2,17 +2,17 @@ import React from "react";
 
 const AUDIENCE = [
   {
-    kicker: "Produção e venda",
+    kicker: "Profissional 🍳",
     title: "Para quem precisa transformar receita em operação",
     text: "Cozinheiras artesanais, buffets, marmitas, confeiteiras e nutricionistas que precisam controlar quantidade, custo e compra sem depender de planilhas paralelas.",
   },
   {
-    kicker: "Casa e rotina",
+    kicker: "Iniciante 💍",
     title: "Para quem quer organizar a cozinha antes da correria",
     text: "Famílias, casais e pessoas aprendendo a cozinhar que querem decidir o cardápio, comprar na medida certa e aproveitar melhor o que já têm em casa.",
   },
   {
-    kicker: "Autonomia",
+    kicker: "Independente 👨",
     title: "Para quem passou a cozinhar para si mesmo",
     text: "Quem mora sozinho ou mudou de rotina e quer planejar refeições simples, evitar excesso de compras e depender menos de delivery no dia a dia.",
   },
