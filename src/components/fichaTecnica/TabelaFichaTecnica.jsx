@@ -47,17 +47,19 @@ export default function TabelaFichaTecnica({ itens, unidadeBase, medidaDisplayMa
               </tr>
             );
           }
-          const fc = item.ing?.fator_correcao || 1;
+          const fc = Number(item.fcEfetivo) > 0 ? Number(item.fcEfetivo) : (item.ing?.fator_correcao || 1);
+          const nomeSubreceita = item.receitaBase?.nome || item.subreceita_nome || "Sub-receita";
+          const nomeIngrediente = item.ing?.nome || item.ingrediente_nome || "Ingrediente";
           return (
             <tr key={item.id} className="border-b border-border/40" style={{ breakInside: "avoid" }}>
               <td className="py-1 px-1">
                 {item.isSubreceita ? (
                   <span className="inline-flex items-center gap-1">
                     <ChefHat className="w-3 h-3 text-amber-600" />
-                    {item.subreceita_nome}
+                    {nomeSubreceita}
                   </span>
                 ) : (
-                  item.ing?.nome || item.ingrediente_nome
+                  nomeIngrediente
                 )}
               </td>
               <td className="py-1 px-1 text-muted-foreground">{!item.isSubreceita ? (item.pre_preparo || "") : ""}</td>
