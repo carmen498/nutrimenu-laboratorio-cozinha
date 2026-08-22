@@ -8,7 +8,7 @@ import { Plus, X, Tag, HelpCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 
-export default function SinonimosSection({ ingredienteId, localSinonimos, onLocalChange }) {
+export default function SinonimosSection({ ingredienteId = null, localSinonimos = [], onLocalChange = null }) {
   const isLocal = !ingredienteId;
   const [novoSinonimo, setNovoSinonimo] = useState("");
   const [erro, setErro] = useState(null);
