@@ -12,7 +12,7 @@ function useSyncedText(value, formatFn) {
   return [text, setText, focused];
 }
 
-function StepCard({ label, value, unit, suffix, step, onStep, onCommit, formatDisplay, parseInput, highlight }) {
+function StepCard({ label, value, unit, suffix = null, step, onStep, onCommit, formatDisplay, parseInput, highlight = false }) {
   const [text, setText, focused] = useSyncedText(value, formatDisplay);
 
   const commit = () => {
