@@ -664,7 +664,7 @@ export default function ReceitaAberta() {
   // O cache persistido é apenas referência. Nunca grava preços pessoais numa
   // receita compartilhada; o admin atualiza somente o contexto global/mestre.
   useEffect(() => {
-    if (isAdmin && receita && fator === 1) {
+    if (isAdmin && receita && receita.is_base !== false && fator === 1) {
       const newCT = parseFloat(custoTotal.toFixed(4));
       const newCP = parseFloat(custoPorcao.toFixed(4));
       const newCI = parseFloat(custoInsumos.toFixed(4));
@@ -672,7 +672,7 @@ export default function ReceitaAberta() {
       const patch = {
         custo_modelo_versao: CUSTO_RECEITA_MODELO_VERSAO,
         custo_cache_status: status,
-        custo_cache_contexto: receita.is_base === false ? "proprietario" : "global",
+        custo_cache_contexto: "global",
         custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
       };
       if (custoCanonico.completo) {
