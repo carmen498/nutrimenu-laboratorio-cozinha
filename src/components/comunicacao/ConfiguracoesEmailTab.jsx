@@ -94,6 +94,11 @@ export default function ConfiguracoesEmailTab() {
           <Label>Endereço (rodapé)</Label>
           <Input value={form.endereco_rodape} onChange={set("endereco_rodape")} />
         </div>
+        <div className="space-y-1.5">
+          <Label>Texto de cancelamento — somente campanhas</Label>
+          <Input value={form.texto_cancelamento} onChange={set("texto_cancelamento")} />
+          <p className="text-xs text-muted-foreground">Nos e-mails transacionais este link não é exibido. Em campanhas, abre uma solicitação de cancelamento para o e-mail de contato.</p>
+        </div>
         <Button onClick={handleSalvar} disabled={salvando}>
           {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Salvar
@@ -123,6 +128,7 @@ export default function ConfiguracoesEmailTab() {
             <div>{form.assinatura_rodape}</div>
             {form.email_contato && <div>{form.email_contato}</div>}
             {form.endereco_rodape && <div>{form.endereco_rodape}</div>}
+            <div className="mt-2 text-[11px]">Campanhas: <span className="underline">{form.texto_cancelamento}</span></div>
           </div>
         </div>
       </div>
