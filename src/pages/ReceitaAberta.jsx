@@ -53,7 +53,8 @@ import { registrarHistorico } from "@/lib/registrarHistorico";
 import { garantirReceitaEditavel } from "@/lib/forkReceita";
 import { garantirCardapioEditavel } from "@/lib/forkCardapio";
 import { useAuth } from "@/lib/AuthContext";
-import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados, salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
+import { salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
+import { carregarIngredientesEfetivosCusto } from "@/lib/custoContexto";
 import {
   calcularItemIngredienteReceita,
   getMedidaIngredienteId,
@@ -141,20 +142,14 @@ export default function ReceitaAberta() {
   );
 
   const { data: ingredientesDB = [] } = useQuery({
-    queryKey: ["ingredientes"],
-    queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
+    queryKey: ["ingredientes", "custo-efetivo", user?.id, isAdmin],
+    queryFn: () => carregarIngredientesEfetivosCusto({ userId: user?.id, isAdmin }),
+    enabled: isAdmin || !!user?.id,
   });
 
-  const { data: precosPersonalizados = {} } = useQuery({
-    queryKey: ["precos-personalizados", user?.id],
-    queryFn: () => buscarPrecosPersonalizados(user.id),
-    enabled: !isAdmin && !!user?.id,
-  });
-
-  const ingredientesEfetivos = useMemo(
-    () => (isAdmin ? ingredientesDB : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados)),
-    [ingredientesDB, isAdmin, precosPersonalizados]
-  );
+  // Fase 10: a própria lista já vem com a precedência comercial canônica aplicada:
+  // mestre → PrecoIngredienteCliente (fallback) → IngredienteUsuario (fonte pessoal).
+  const ingredientesEfetivos = ingredientesDB;
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
@@ -679,6 +674,7 @@ export default function ReceitaAberta() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      qc.invalidateQueries({ queryKey: ["ingredientes", "custo-efetivo"] });
       qc.invalidateQueries({ queryKey: ["precos-personalizados"] });
       setEditingPrice(null);
       toast.success(isAdmin ? "Preço atualizado em todas as receitas!" : "Seu preço pessoal foi salvo!");
