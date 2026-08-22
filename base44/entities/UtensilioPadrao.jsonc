@@ -2,33 +2,18 @@
   "name": "UtensilioPadrao",
   "type": "object",
   "properties": {
-    "simbolo": {
-      "type": "string",
-      "description": "S\u00edmbolo curto exibido no conversor (ex: col. sopa, x\u00edc P, concha M)"
-    },
-    "descricao_singular": {
-      "type": "string",
-      "description": "Descri\u00e7\u00e3o por extenso no singular (ex: colher de sopa)"
-    },
-    "descricao_plural": {
-      "type": "string",
-      "description": "Descri\u00e7\u00e3o por extenso no plural (ex: colheres de sopa)"
-    },
-    "g_min": {
-      "type": "number",
-      "description": "Gramas m\u00ednimas de refer\u00eancia (null quando sem gramatura)"
-    },
-    "g_max": {
-      "type": "number",
-      "description": "Gramas m\u00e1ximas de refer\u00eancia (null quando sem gramatura)"
-    },
-    "g_medio": {
-      "type": "number",
-      "description": "Gramas m\u00e9dias de refer\u00eancia (null quando sem gramatura)"
-    }
+    "simbolo": { "type": "string", "description": "Símbolo curto exibido no conversor (ex: col. sopa, xíc P, concha M)" },
+    "descricao_singular": { "type": "string", "description": "Descrição por extenso no singular (ex: colher de sopa)" },
+    "descricao_plural": { "type": "string", "description": "Descrição por extenso no plural (ex: colheres de sopa)" },
+    "g_min": { "type": "number", "description": "Gramas mínimas de referência (null quando sem gramatura)" },
+    "g_max": { "type": "number", "description": "Gramas máximas de referência (null quando sem gramatura)" },
+    "g_medio": { "type": "number", "description": "Gramas médias de referência (null quando sem gramatura)" }
   },
-  "required": [
-    "simbolo",
-    "descricao_singular"
-  ]
+  "required": ["simbolo", "descricao_singular"],
+  "rls": {
+    "read": {},
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
 }
