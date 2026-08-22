@@ -21,6 +21,7 @@ import {
   aplicarPreferenciasIngredientes,
 } from "@/lib/preferenciaIngredienteUsuario";
 import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 const CATEGORIAS_COMPRA = {
   "Carnes e Ovos": "Carnes",
@@ -125,8 +126,8 @@ export default function EventoListaCompras() {
           setSelectedReceitas(recs);
           setPorcoesPorReceita(porc);
           setDocesBebidas(config.doces_bebidas || []);
-        } catch (e) { console.error("Erro ao carregar cardápio:", e); }
-      }).catch(e => console.error("Erro ao carregar planejamento:", e));
+        } catch (e) { consoleErrorSeguro("Erro ao carregar cardápio", e); }
+      }).catch(e => consoleErrorSeguro("Erro ao carregar planejamento", e));
     }
   }, []);
 
