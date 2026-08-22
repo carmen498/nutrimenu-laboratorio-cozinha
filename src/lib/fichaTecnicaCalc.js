@@ -60,7 +60,17 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     ? calcularModoPreparoComposto(itensFichaAgrupada, receitasBasicasMap, receita?.modo_preparo)
     : [];
 
-  const pesoBruto = itensFicha.filter((i) => !i.isGrupo).reduce((sum, i) => sum + (i.qtdNova || 0), 0);
+  // Peso Bruto (PB) = Peso Líquido (PL) × FC para ingredientes reais.
+  // Quando uma sub-receita está explodida, o marcador não entra na soma para evitar
+  // dupla contagem: entram apenas seus ingredientes-filhos, já com o FC aplicado.
+  // Se não houver filhos explodidos, a quantidade do marcador é usada como fallback.
+  const subreceitasComFilhos = new Set(Object.keys(childrenByParent));
+  const pesoBruto = itensFicha.reduce((sum, item) => {
+    if (item.isGrupo) return sum;
+    if (item.tipo === "subreceita" && subreceitasComFilhos.has(item.id)) return sum;
+    return sum + (item.qtdComprar || 0);
+  }, 0);
+
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
   const custoEsquecidos = esquecidos.reduce((sum, i) => sum + (i.custo_total || 0), 0);
