@@ -67,23 +67,23 @@ const isRecipeText = (text) => {
 export default function NovaReceitaIA({ open, onClose, onCreated }) {
   const [texto, setTexto] = useState("");
   const [processing, setProcessing] = useState(false);
-  const [parsed, setParsed] = useState(null);
+  const [parsed, setParsed] = useState(/** @type {any} */ (null));
   const [saving, setSaving] = useState(false);
   const qc = useQueryClient();
   const parsedRef = useRef(null);
   parsedRef.current = parsed;
-  const [duplicateWarning, setDuplicateWarning] = useState(null);
+  const [duplicateWarning, setDuplicateWarning] = useState(/** @type {any} */ (null));
   const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [showAddGrupo, setShowAddGrupo] = useState(false);
   const [novoGrupoTitulo, setNovoGrupoTitulo] = useState("");
   const navigate = useNavigate();
-  const [similarSuggestions, setSimilarSuggestions] = useState({});
+  const [similarSuggestions, setSimilarSuggestions] = useState(/** @type {any} */ ({}));
   const [docesAmbiguo, setDocesAmbiguo] = useState(false);
   const [showVariations, setShowVariations] = useState(false);
   const [variationsQty, setVariationsQty] = useState(3);
   const [generatingVariations, setGeneratingVariations] = useState(false);
-  const [variationResults, setVariationResults] = useState(null);
-  const receitaSalvaRef = useRef(null);
+  const [variationResults, setVariationResults] = useState(/** @type {any} */ (null));
+  const receitaSalvaRef = useRef(/** @type {any} */ (null));
   const [validacaoErro, setValidacaoErro] = useState("");
 
   const { data: ingredientes = [] } = useQuery({
