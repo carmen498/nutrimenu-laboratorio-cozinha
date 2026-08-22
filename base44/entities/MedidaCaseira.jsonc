@@ -4,44 +4,75 @@
   "properties": {
     "nome": {
       "type": "string",
-      "description": "Nome da medida (ex: X\u00edcara (ch\u00e1), Colher (sopa))"
+      "description": "Nome descritivo da medida (ex: Farinha de trigo · xícara)"
     },
-    "ingrediente_especifico": {
+    "ingrediente_id": {
       "type": "string",
-      "description": "Nome do ingrediente espec\u00edfico (vazio = padr\u00e3o geral)"
+      "description": "ID canônico do Ingrediente ao qual a medida se aplica"
     },
-    "equivalencia_g": {
-      "type": "number",
-      "description": "Equival\u00eancia em gramas"
-    },
-    "equivalencia_ml": {
-      "type": "number",
-      "description": "Equival\u00eancia em ml (para l\u00edquidos)"
-    },
-    "descricao": {
+    "utensilio_id": {
       "type": "string",
-      "description": "Descri\u00e7\u00e3o da medida"
+      "description": "ID canônico do UtensilioPadrao"
     },
-    "alimento": {
-      "type": "string",
-      "description": "ID do Ingrediente de refer\u00eancia (alimento ao qual a medida se aplica)"
-    },
-    "utensilio": {
-      "type": "string",
-      "description": "ID do UtensilioPadrao de refer\u00eancia"
-    },
-    "referencia_g": {
+    "quantidade_utensilio": {
       "type": "number",
-      "description": "Gramas de 1 medida do alimento CRU"
+      "default": 1,
+      "description": "Quantidade do utensílio usada como referência da equivalência (normalmente 1)"
     },
-    "medida_pronto_g": {
+    "peso_g": {
       "type": "number",
-      "description": "Gramas de 1 medida do alimento SERVIDO/PRONTO (opcional)"
+      "description": "Peso em gramas correspondente a quantidade_utensilio no estado informado"
+    },
+    "volume_ml": {
+      "type": "number",
+      "description": "Volume em ml correspondente a quantidade_utensilio, quando aplicável"
+    },
+    "estado_alimento": {
+      "type": "string",
+      "enum": ["cru", "pronto", "não informado"],
+      "default": "cru",
+      "description": "Estado do alimento usado para a equivalência"
+    },
+    "fonte": {
+      "type": "string",
+      "description": "Fonte da equivalência (medição própria, tabela, fabricante, literatura etc.)"
     },
     "so_gramas": {
       "type": "boolean",
       "default": false,
       "description": "Quando true, o conversor nunca exibe medida caseira para este alimento (apenas gramas)"
+    },
+    "ingrediente_especifico": {
+      "type": "string",
+      "description": "LEGADO: nome textual do ingrediente. Novos registros devem usar ingrediente_id."
+    },
+    "equivalencia_g": {
+      "type": "number",
+      "description": "LEGADO: equivalência em gramas. Novos registros devem usar peso_g."
+    },
+    "equivalencia_ml": {
+      "type": "number",
+      "description": "LEGADO: equivalência em ml. Novos registros devem usar volume_ml."
+    },
+    "descricao": {
+      "type": "string",
+      "description": "Descrição livre da medida"
+    },
+    "alimento": {
+      "type": "string",
+      "description": "LEGADO: ID do Ingrediente. Mantido durante migração; espelha ingrediente_id."
+    },
+    "utensilio": {
+      "type": "string",
+      "description": "LEGADO: ID do UtensilioPadrao. Mantido durante migração; espelha utensilio_id."
+    },
+    "referencia_g": {
+      "type": "number",
+      "description": "LEGADO: gramas de 1 medida do alimento cru. Mantido durante migração; espelha peso_g quando quantidade_utensilio=1."
+    },
+    "medida_pronto_g": {
+      "type": "number",
+      "description": "LEGADO: gramas de 1 medida do alimento servido/pronto"
     }
   },
   "required": [
