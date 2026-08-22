@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-// Fase 7 — normalização não destrutiva de MedidaCaseira.
+// Fase 7.1 — normalização não destrutiva de MedidaCaseira.
 // Promove para modelo_versao=2 apenas registros com referências canônicas
 // verificáveis e sem conflito de estado/duplicidade. Não apaga campos legados.
 
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       if (!mc.so_gramas && !pesoPorMedida && !volumePorMedida) problemas.push('sem_equivalencia_fisica');
       if (positivo(mc.medida_pronto_g)) problemas.push('medida_pronto_legada_a_separar');
 
-      const chave = `${ingredienteId || '*'}|${utensilioId || '*'}|${estado}`;
+      const chave = `${ingredienteId || '*'}|${mc.so_gramas ? '*' : (utensilioId || '*')}|${estado}`;
       chaveContagem.set(chave, (chaveContagem.get(chave) || 0) + 1);
       candidatos.push({ mc, ingredienteId, utensilioId, estado, quantidade, pesoPorMedida, volumePorMedida, chave, problemas });
     }
@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       };
       if (c.pesoPorMedida) {
         patch.peso_g = c.pesoPorMedida * c.quantidade;
-        patch.referencia_g = c.pesoPorMedida; // cache temporário de runtime
+        patch.referencia_g = c.pesoPorMedida;
       }
       if (c.volumePorMedida) patch.volume_ml = c.volumePorMedida * c.quantidade;
 
@@ -95,6 +95,18 @@ Deno.serve(async (req) => {
     for (let i = 0; i < updates.length; i += 500) {
       await base44.asServiceRole.entities.MedidaCaseira.bulkUpdate(updates.slice(i, i + 500));
     }
+
+    await base44.asServiceRole.entities.SaneamentoMedidaCaseiraLog.create({
+      acao: 'normalizar',
+      ingrediente_receita_atualizados: 0,
+      detalhes_json: JSON.stringify({
+        total_processado: (medidas || []).length,
+        total_normalizado: updates.length,
+        total_a_revisar: aRevisar.length,
+      }),
+      executado_por_id: user.id,
+      executado_em: new Date().toISOString(),
+    });
 
     return Response.json({
       total_processado: (medidas || []).length,
