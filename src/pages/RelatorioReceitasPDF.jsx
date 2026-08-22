@@ -8,6 +8,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { getCategorias } from "@/lib/categoriasHelper";
 import { CATEGORIAS as CATEGORIAS_RECEITA } from "@/components/receita/CategoriaPicker";
 import { printarElementoIsolado } from "@/lib/printIsolado";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 function formatarPC(r) {
   const pc = r.per_capita_g;
@@ -81,7 +82,7 @@ export default function RelatorioReceitasPDF() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
