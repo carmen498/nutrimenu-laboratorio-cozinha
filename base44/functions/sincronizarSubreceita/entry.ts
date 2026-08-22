@@ -2,6 +2,27 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 const MAX_PROFUNDIDADE = 12;
 const atualizadoEm = (r: any) => r?.updated_date || r?.updated_at || r?.created_date || '';
+const txt = (v: any) => v == null ? '' : String(v).trim();
+const normNome = (v: any) => txt(v)
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, ' ')
+  .trim()
+  .replace(/\s+/g, ' ');
+
+async function listarTudo(entity: any, sort = 'created_date', pageSize = 500) {
+  const out: any[] = [];
+  let skip = 0;
+  while (true) {
+    const page = await entity.list(sort, pageSize, skip);
+    if (!page?.length) break;
+    out.push(...page);
+    if (page.length < pageSize) break;
+    skip += page.length;
+  }
+  return out;
+}
 
 const assinatura = (deps: Map<string, string>) => [...deps.entries()]
   .sort(([a], [b]) => String(a).localeCompare(String(b)))
@@ -30,13 +51,16 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const markerId = String(body?.marker_id || '');
     const todosDesatualizados = body?.todos_desatualizados === true;
-    if (!markerId && !todosDesatualizados) {
-      return Response.json({ error: 'Informe marker_id ou todos_desatualizados=true' }, { status: 400 });
+    const migrarPreparacoesExatas = body?.migrar_preparacoes_exatas === true;
+    const dryRun = body?.dry_run === true;
+    if (!markerId && !todosDesatualizados && !migrarPreparacoesExatas) {
+      return Response.json({ error: 'Informe marker_id, todos_desatualizados=true ou migrar_preparacoes_exatas=true' }, { status: 400 });
     }
 
-    const [receitas, itens] = await Promise.all([
-      base44.asServiceRole.entities.Receita.list('nome', 10000),
-      base44.asServiceRole.entities.IngredienteReceita.list('ordem', 20000),
+    const [receitas, itens, ingredientes] = await Promise.all([
+      listarTudo(base44.asServiceRole.entities.Receita, 'nome'),
+      listarTudo(base44.asServiceRole.entities.IngredienteReceita, 'ordem'),
+      migrarPreparacoesExatas ? listarTudo(base44.asServiceRole.entities.Ingrediente, 'nome') : Promise.resolve([]),
     ]);
     const receitaMap = new Map((receitas || []).map((r: any) => [r.id, r]));
     const itemMap = new Map((itens || []).map((i: any) => [i.id, i]));
@@ -244,6 +268,108 @@ Deno.serve(async (req) => {
         alertas: analise.calculado.alertas,
       };
     };
+
+    if (migrarPreparacoesExatas) {
+      const ingredienteMap = new Map((ingredientes || []).map((i: any) => [i.id, i]));
+      const receitasPorNome = new Map<string, any[]>();
+      for (const receita of receitas || []) {
+        const key = normNome(receita?.nome);
+        if (!key) continue;
+        if (!receitasPorNome.has(key)) receitasPorNome.set(key, []);
+        receitasPorNome.get(key)!.push(receita);
+      }
+
+      const candidatos: any[] = [];
+      const bloqueados: any[] = [];
+      for (const item of itens || []) {
+        if (!item || item.tipo !== 'ingrediente' || item.subreceita_parent_id || !item.ingrediente_id) continue;
+        const parent = receitaMap.get(item.receita_id);
+        const ingrediente = ingredienteMap.get(item.ingrediente_id);
+        if (!parent || parent.custo_cache_status !== 'incompleto' || !ingrediente) continue;
+        if (Number(ingrediente.preco_por_g_rs) > 0) continue;
+
+        const matches = receitasPorNome.get(normNome(ingrediente.nome)) || [];
+        const fontes = matches.filter((r: any) => r.id !== parent.id && r.custo_cache_status === 'atual');
+        if (fontes.length !== 1) continue;
+
+        const source = fontes[0];
+        const hipotetico = {
+          ...item,
+          tipo: 'subreceita',
+          ingrediente_id: null,
+          ingrediente_nome: null,
+          subreceita_id: source.id,
+          subreceita_nome: source.nome,
+          subreceita_modo: 'referencia_cache',
+          subreceita_sincronizacao_status: 'pendente',
+        };
+        const analise = analisarMarker(hipotetico);
+        if (!analise.calculado) {
+          bloqueados.push({
+            item_id: item.id,
+            receita_pai_id: parent.id,
+            receita_pai_nome: parent.nome,
+            ingrediente_id: ingrediente.id,
+            ingrediente_nome: ingrediente.nome,
+            subreceita_id: source.id,
+            subreceita_nome: source.nome,
+            motivo: analise.error?.message || analise.status,
+          });
+          continue;
+        }
+
+        candidatos.push({ item, parent, ingrediente, source, hipotetico, filhos: analise.calculado.children.length });
+      }
+
+      if (dryRun) {
+        return Response.json({
+          dry_run: true,
+          candidatos: candidatos.length,
+          bloqueados: bloqueados.length,
+          amostra: candidatos.slice(0, 200).map((c: any) => ({
+            item_id: c.item.id,
+            receita_pai_id: c.parent.id,
+            receita_pai_nome: c.parent.nome,
+            ingrediente_id: c.ingrediente.id,
+            ingrediente_nome: c.ingrediente.nome,
+            subreceita_id: c.source.id,
+            subreceita_nome: c.source.nome,
+            filhos_previstos: c.filhos,
+          })),
+          bloqueios: bloqueados.slice(0, 200),
+        });
+      }
+
+      const resultados: any[] = [];
+      for (const c of candidatos) {
+        const patch = {
+          modelo_versao: 2,
+          tipo: 'subreceita',
+          ingrediente_id: null,
+          ingrediente_nome: null,
+          subreceita_id: c.source.id,
+          subreceita_nome: c.source.nome,
+          subreceita_modo: 'referencia_cache',
+          subreceita_sincronizacao_status: 'pendente',
+        };
+        await base44.asServiceRole.entities.IngredienteReceita.update(c.item.id, patch);
+        Object.assign(c.item, patch);
+        try {
+          resultados.push(await sincronizar(c.item));
+        } catch (error: any) {
+          resultados.push({ marker_id: c.item.id, status: 'erro', error: error?.message || String(error) });
+        }
+      }
+
+      return Response.json({
+        dry_run: false,
+        candidatos: candidatos.length,
+        migrados: resultados.filter((r: any) => r.status === 'sincronizada').length,
+        bloqueados: bloqueados.length,
+        erros: resultados.filter((r: any) => r.status !== 'sincronizada'),
+        resultados,
+      });
+    }
 
     if (markerId) {
       const marker = itemMap.get(markerId);
