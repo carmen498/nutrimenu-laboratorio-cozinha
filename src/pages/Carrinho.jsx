@@ -15,12 +15,20 @@ import { printarElementoIsolado } from "@/lib/printIsolado";
 import CarrinhoItemRow from "@/components/carrinho/CarrinhoItemRow";
 import AdicionarIngredienteCarrinhoDialog from "@/components/carrinho/AdicionarIngredienteCarrinhoDialog";
 import CarrinhoPDFPreview from "@/components/carrinho/CarrinhoPDFPreview";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
 export default function Carrinho() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [edits, setEdits] = useState({});
   const [confirmarLimpar, setConfirmarLimpar] = useState(false);
   const [showAdicionar, setShowAdicionar] = useState(false);
@@ -36,11 +44,34 @@ export default function Carrinho() {
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  const ingredientesEfetivos = useMemo(() => {
+    const comPrecoLegado = isAdmin
+      ? ingredientesDB
+      : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados);
+    return aplicarPreferenciasIngredientes(
+      comPrecoLegado,
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    );
+  }, [ingredientesDB, isAdmin, precosPersonalizados, preferenciasIngredientes]);
+
   const ingMap = useMemo(() => {
     const map = {};
-    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    ingredientesEfetivos.forEach((i) => { map[i.id] = i; });
     return map;
-  }, [ingredientesDB]);
+  }, [ingredientesEfetivos]);
 
   const invalidar = () => qc.invalidateQueries({ queryKey: ["carrinho-itens"] });
 
@@ -98,7 +129,7 @@ export default function Carrinho() {
     } catch (e) { toast.error("Erro ao limpar itens comprados"); }
   };
 
-  // Agrupamento leve por categoria do ingrediente
+  // Agrupamento técnico vem do mestre; embalagem e preço vêm do usuário quando existem.
   const grupos = useMemo(() => {
     const map = {};
     itens.forEach((item) => {
