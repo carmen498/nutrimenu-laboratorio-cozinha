@@ -14,11 +14,11 @@ import CategoriaPicker from "@/components/receita/CategoriaPicker";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import TagSelector from "@/components/tags/TagSelector";
 import TagList from "@/components/tags/TagList";
-import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { registrarHistorico } from "@/lib/registrarHistorico";
 import { garantirReceitaEditavel } from "@/lib/forkReceita";
+import { calcularPesoPrePreparo, formatarStatusRendimento } from "@/lib/rendimentoReceita";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -26,7 +26,7 @@ const CAMPO_LABELS = {
   nome: "Nome",
   categorias: "Categorias",
   porcoes_base: "Nº de Porções",
-  rendimento_total: "Rendimento",
+  peso_pos_preparo_total: "Peso pós-preparo (PDP)",
   unidade_base: "Unidade",
   modo_preparo: "Modo de preparo",
   foto_url: "Foto",
@@ -45,13 +45,23 @@ function valuesEqual(a, b) {
 }
 
 export default function EditReceitaDialog({ open, onClose, receita, itens = [] }) {
-  const [form, setForm] = useState({ ...receita });
+  const [form, setForm] = useState({
+    ...receita,
+    peso_pos_preparo_total: receita?.peso_pos_preparo_total || receita?.rendimento_total || 0,
+  });
   const [saving, setSaving] = useState(false);
   const [receitaTags, setReceitaTags] = useState([]);
   const [allTags, setAllTags] = useState([]);
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setForm({
+      ...receita,
+      peso_pos_preparo_total: receita?.peso_pos_preparo_total || receita?.rendimento_total || 0,
+    });
+  }, [receita?.id, open]);
 
   useEffect(() => {
     if (!receita?.id || !open) return;
@@ -69,9 +79,6 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
   const [rewritingPrep, setRewritingPrep] = useState(false);
   const qc = useQueryClient();
 
-  // Cópia editável: a primeira gravação (tag, foto ou Salvar) nesta sessão do
-  // diálogo cria a cópia pessoal, se necessário, e todas as gravações
-  // seguintes (incluindo o Salvar final) passam a usar essa mesma cópia.
   const forkedIdRef = useRef(null);
   const tagsRef = useRef(receitaTags);
   useEffect(() => { tagsRef.current = receitaTags; }, [receitaTags]);
@@ -79,7 +86,13 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
   const ensureFork = async () => {
     if (isAdmin || receita.is_base === false) return { rid: receita.id, mapTagId: (x) => x };
     if (forkedIdRef.current) return { rid: forkedIdRef.current, mapTagId: (x) => x };
-    const result = await garantirReceitaEditavel({ receita, itens, receitaTags: tagsRef.current, isAdmin });
+    const result = await garantirReceitaEditavel({
+      receita,
+      itens,
+      receitaTags: tagsRef.current,
+      isAdmin,
+      userId: user?.id,
+    });
     if (result.forked) {
       forkedIdRef.current = result.receitaId;
       const rt = await base44.entities.ReceitaTag.filter({ receita_id: result.receitaId }, "created_date", 200);
@@ -100,6 +113,28 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
       rest.nome = rest.nome?.toUpperCase();
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
+
+      // Fase 5 — rendimento técnico canônico.
+      const pesoPre = calcularPesoPrePreparo(rest, itens);
+      const pdp = Number(rest.peso_pos_preparo_total) || 0;
+      const pdpOriginal = Number(receita?.peso_pos_preparo_total || receita?.rendimento_total) || 0;
+      const pdpFoiAlterado = Math.abs(pdp - pdpOriginal) > 0.001;
+
+      rest.peso_pre_preparo_total = pesoPre;
+      rest.peso_pos_preparo_total = pdp;
+      rest.rendimento_total = pdp; // cache legado durante a transição
+
+      if (pdp > 0 && pdpFoiAlterado) {
+        rest.rendimento_origem = "medido";
+        rest.rendimento_status = "confirmado";
+        rest.rendimento_medido_em = new Date().toISOString();
+      } else if (pdp > 0) {
+        rest.rendimento_origem = receita?.rendimento_origem || (receita?.peso_pos_preparo_total ? "medido" : "legado");
+        rest.rendimento_status = receita?.rendimento_status || (receita?.peso_pos_preparo_total ? "a_validar" : "a_validar");
+      } else {
+        rest.rendimento_origem = "estimado";
+        rest.rendimento_status = "pendente";
+      }
 
       const { rid: receitaId } = await ensureFork();
       const forked = receitaId !== receita.id;
@@ -200,6 +235,9 @@ ${form.modo_preparo}`,
     }
   };
 
+  const pesoPreAtual = calcularPesoPrePreparo(form, itens);
+  const statusAtual = form.rendimento_status || (form.peso_pos_preparo_total > 0 ? "a_validar" : "pendente");
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -221,21 +259,47 @@ ${form.modo_preparo}`,
               <Input type="number" min={1} value={form.porcoes_base || ""} onChange={(e) => setForm({ ...form, porcoes_base: parseInt(e.target.value) || 1 })} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Rendimento total</Label>
-              <Input type="number" value={form.rendimento_total || ""} onChange={(e) => setForm({ ...form, rendimento_total: parseFloat(e.target.value) || 0 })} />
+
+          <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <Label>Rendimento técnico</Label>
+                <p className="text-xs text-muted-foreground">Pré-preparo líquido → peso pós-preparo (PDP)</p>
+              </div>
+              <span className="text-xs font-medium px-2 py-1 rounded-full bg-background border">{formatarStatusRendimento(statusAtual)}</span>
             </div>
-            <div>
-              <Label>Unidade</Label>
-              <Select value={form.unidade_base || "g"} onValueChange={(v) => setForm({ ...form, unidade_base: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="g">Gramas</SelectItem>
-                  <SelectItem value="ml">Mililitros</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Peso pré-preparo</Label>
+                <div className="h-9 flex items-center px-3 rounded-md border bg-muted/50 text-sm font-medium">
+                  {pesoPreAtual.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} {form.unidade_base || "g"}
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs">Peso pós-preparo (PDP)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={form.peso_pos_preparo_total || ""}
+                  onChange={(e) => setForm({ ...form, peso_pos_preparo_total: parseFloat(e.target.value) || 0 })}
+                  placeholder="Pesar depois de pronto"
+                />
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              Ao alterar o PDP, o valor é registrado como medido/confirmado. O Peso Bruto com FC não participa deste cálculo.
+            </p>
+          </div>
+
+          <div>
+            <Label>Unidade</Label>
+            <Select value={form.unidade_base || "g"} onValueChange={(v) => setForm({ ...form, unidade_base: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="g">Gramas</SelectItem>
+                <SelectItem value="ml">Mililitros</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div>
             <Label>PC recomendado (g/porção)</Label>
