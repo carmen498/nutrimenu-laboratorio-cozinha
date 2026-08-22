@@ -4,7 +4,7 @@
 // sendEmailViaResend, para que toda function de envio já saia com o layout
 // padrão sem precisar duplicar HTML.
 
-export async function buildEmailHtml(base44, corpoHtml) {
+export async function buildEmailHtml(base44, corpoHtml, { marketing = false } = {}) {
   const configs = await base44.asServiceRole.entities.ConfiguracaoEmail.list();
   const cfg = configs?.[0] || {};
 
@@ -14,6 +14,9 @@ export async function buildEmailHtml(base44, corpoHtml) {
   const assinatura = cfg.assinatura_rodape || "Carmen Reinstein · Laboratório de Cozinha";
   const emailContato = cfg.email_contato || "";
   const endereco = cfg.endereco_rodape || "";
+  const textoCancelamento = cfg.texto_cancelamento || "Cancelar inscrição";
+  const emailCancelamento = emailContato || "contato@nutrimenu.com.br";
+  const hrefCancelamento = `mailto:${emailCancelamento}?subject=${encodeURIComponent("Cancelar inscrição - Laboratório de Cozinha")}`;
 
   return `<!DOCTYPE html>
 <html>
@@ -31,6 +34,7 @@ export async function buildEmailHtml(base44, corpoHtml) {
         <div>${assinatura}</div>
         ${emailContato ? `<div>${emailContato}</div>` : ""}
         ${endereco ? `<div>${endereco}</div>` : ""}
+        ${marketing ? `<div style="margin-top:8px;"><a href="${hrefCancelamento}" style="color:#888;text-decoration:underline;">${textoCancelamento}</a></div>` : ""}
       </div>
     </div>
   </body>
