@@ -1,0 +1,59 @@
+{
+  "name": "NormalizacaoLinhagemReceitaLog",
+  "type": "object",
+  "properties": {
+    "executado_por_id": {
+      "type": "string",
+      "description": "ID do administrador que executou a normalização"
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da execução"
+    },
+    "total_receitas": {
+      "type": "number"
+    },
+    "normalizadas": {
+      "type": "number"
+    },
+    "ja_canonicas": {
+      "type": "number"
+    },
+    "a_revisar": {
+      "type": "number"
+    },
+    "ciclos": {
+      "type": "number"
+    },
+    "origens_ausentes": {
+      "type": "number"
+    },
+    "detalhes": {
+      "type": "string",
+      "description": "Resumo JSON da execução e primeiros registros que exigem revisão"
+    }
+  },
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
