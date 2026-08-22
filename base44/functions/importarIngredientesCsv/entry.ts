@@ -5,12 +5,13 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json();
     const file_url = body.file_url;
     if (!file_url) return Response.json({ error: 'file_url é obrigatório' }, { status: 400 });
 
-    // ── Fetch & parse CSV (handles both with and without UTF-8 BOM) ──
+    // Importação altera o catálogo mestre e, portanto, é exclusiva de administradores.
     const response = await fetch(file_url);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -33,21 +34,19 @@ Deno.serve(async (req) => {
 
     const dataRows = rows.slice(1).filter(r => r.length > 0 && r.some(c => c.trim() !== ''));
 
-    // ── Load existing ingredients for upsert-by-name matching ──
     const existentes = await base44.entities.Ingrediente.list('-nome', 500);
     const existMap = {};
     existentes.forEach(ing => {
       if (ing.nome) existMap[ing.nome.toLowerCase().trim()] = ing;
     });
 
-    // ── FIRST PASS: validate rows, split into creates & updates ──
     const toCreate = [];
     const toUpdate = [];
     const rejeitados = [];
 
     for (let i = 0; i < dataRows.length; i++) {
       const row = dataRows[i];
-      const linhaNum = i + 2; // header is line 1
+      const linhaNum = i + 2;
       const nome = (row[idxNome] || '').trim();
 
       if (!nome) {
@@ -90,7 +89,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── SECOND PASS: batch create & update (batches of 50) ──
     let criados = 0;
     let atualizados = 0;
     const BATCH_SIZE = 50;
