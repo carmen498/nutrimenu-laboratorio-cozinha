@@ -29,8 +29,16 @@ function metadadosDoPai(pai) {
 
 async function criarFilhoReceita(entityName, payload) {
   const pai = await carregarPai('receita', payload?.receita_id);
+  const dados = { ...payload };
+
+  // Fase 4: todo novo IngredienteReceita nasce com unidade canônica. Fluxos
+  // antigos não precisam conhecer o novo campo; o helper deriva da receita-pai.
+  if (entityName === 'IngredienteReceita' && !dados.unidade_quantidade) {
+    dados.unidade_quantidade = pai?.unidade_base === 'ml' ? 'ml' : 'g';
+  }
+
   return base44.entities[entityName].create({
-    ...payload,
+    ...dados,
     ...metadadosDoPai(pai),
   });
 }
