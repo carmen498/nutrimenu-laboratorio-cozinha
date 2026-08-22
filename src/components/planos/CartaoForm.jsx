@@ -27,6 +27,10 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!aceiteTermos) {
+      setError("Aceite os Termos de Uso e a Política de Privacidade para concluir a contratação.");
+      return;
+    }
     setLoading(true);
     try {
       const MercadoPago = await carregarMercadoPagoSdk();
@@ -50,10 +54,6 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         identificationType: "CPF",
         identificationNumber: cpf,
       });
-
-      if (!aceiteTermos) {
-        throw new Error("Aceite os Termos de Uso e a Política de Privacidade para concluir a contratação.");
-      }
 
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
