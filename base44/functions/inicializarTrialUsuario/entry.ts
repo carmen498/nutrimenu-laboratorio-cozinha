@@ -1,10 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
+import { hojeSaoPauloISO } from "../../shared/acessoAssinatura.ts";
 
 const ASSUNTO_PADRAO = "Bem-vindo(a) ao Laboratório de Cozinha";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
 <p>Seu período de teste gratuito já começou. Explore receitas, cardápios e a gestão de custos da sua cozinha.</p>`;
+
+function somarDiasISO(dataISO: string, dias: number): string {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  data.setUTCDate(data.getUTCDate() + dias);
+  return data.toISOString().split("T")[0];
+}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -12,12 +20,29 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const hoje = new Date();
-    const expiracao = new Date(hoje);
-    expiracao.setDate(expiracao.getDate() + 7);
+    // O trial só pode ser concedido a uma conta realmente nova, antes de qualquer
+    // histórico de plano. A proteção deliberadamente não depende de um novo campo
+    // de schema para não quebrar usuários já existentes no Base44.
+    const jaPossuiHistoricoDePlano = Boolean(
+      user.plano_atual ||
+      user.status_assinatura ||
+      user.data_inicio ||
+      user.data_expiracao ||
+      Number(user.ciclo_renovacao || 0) > 0
+    );
 
-    const dataInicio = hoje.toISOString().split('T')[0];
-    const dataExpiracao = expiracao.toISOString().split('T')[0];
+    if (jaPossuiHistoricoDePlano) {
+      return Response.json(
+        {
+          error: "Trial já utilizado ou conta com histórico de assinatura",
+          code: "trial_already_used",
+        },
+        { status: 409 },
+      );
+    }
+
+    const dataInicio = hojeSaoPauloISO();
+    const dataExpiracao = somarDiasISO(dataInicio, 7);
 
     await base44.asServiceRole.entities.User.update(user.id, {
       plano_atual: "trial",
