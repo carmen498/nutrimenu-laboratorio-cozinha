@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 const TEMAS = ["Fritura", "Congelamento", "Per Capita", "Precificação", "Ingredientes", "Rendimento", "Geral"];
 
@@ -26,9 +28,15 @@ export default function EditarDicaCarmenDialog({ open, onClose, dica, onSaved })
     const file = e.target.files?.[0];
     if (!file) return;
     setEnviandoImagem(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setImagemCapa(file_url);
-    setEnviandoImagem(false);
+    try {
+      const fileUrl = await uploadImagemSeguro(base44, file);
+      setImagemCapa(fileUrl);
+    } catch (err) {
+      toast.error(err?.message || "Erro ao enviar imagem");
+    } finally {
+      setEnviandoImagem(false);
+      e.target.value = "";
+    }
   };
 
   const handleSalvar = async () => {
