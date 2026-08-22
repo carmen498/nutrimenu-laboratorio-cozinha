@@ -26,23 +26,27 @@ export default async function(req: Request): Promise<Response> {
       if (!usuario.email) continue;
       if (await notificacaoJaProcessadaHoje(base44, "trial_vencido", usuario)) continue;
       const nome = usuario.nome_completo || usuario.full_name || "";
-      const { assunto, html } = await renderTemplateEmail(base44, "trial_vencido", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
+      const { assunto, html, ativo } = await renderTemplateEmail(base44, "trial_vencido", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
-      const resultado = await sendEmailViaResend(base44, {
-        to: usuario.email,
-        subject: assunto,
-        html,
-      });
+      if (ativo) {
+        const resultado = await sendEmailViaResend(base44, {
+          to: usuario.email,
+          subject: assunto,
+          html,
+        });
 
-      await base44.asServiceRole.entities.LogEmail.create({
-        destinatario_email: usuario.email,
-        tipo: "trial_vencido",
-        enviado_em: new Date().toISOString(),
-        status: resultado.ok ? "enviado" : "falhou",
-        detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
-      });
+        await base44.asServiceRole.entities.LogEmail.create({
+          destinatario_email: usuario.email,
+          tipo: "trial_vencido",
+          enviado_em: new Date().toISOString(),
+          status: resultado.ok ? "enviado" : "falhou",
+          detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
+        });
 
-      if (resultado.ok) enviados++;
+        if (resultado.ok) enviados++;
+      } else {
+        console.log('Template "trial_vencido" está em rascunho — e-mail não enviado.');
+      }
     }
 
     // A data de expiração é inclusiva. Por isso, apenas registros com data anterior
