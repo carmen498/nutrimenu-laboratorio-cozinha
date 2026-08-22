@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 const INTERVALO_POLLING_MS = 4000;
 const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
-export default function PixForm({ plano, email, onClose, onSuccess }) {
+export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos = false }) {
   const [cpf, setCpf] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -50,11 +50,16 @@ export default function PixForm({ plano, email, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!aceiteTermos) {
+      setError("Aceite os Termos de Uso e a Política de Privacidade para concluir a contratação.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
         forma_pagamento: "pix",
+        aceite_termos: true,
         payer: { email, cpf },
       });
       setResultado(res.data);
@@ -152,7 +157,7 @@ export default function PixForm({ plano, email, onClose, onSuccess }) {
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full h-11" disabled={loading}>
+      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Gerar QR Code PIX
       </Button>
