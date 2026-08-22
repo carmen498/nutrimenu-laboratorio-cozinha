@@ -9,8 +9,14 @@ import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/ace
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Seu plano está perto de vencer";
-const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve.</p>
-<p>Renove agora para não perder o acesso às suas receitas e cardápios.</p>`;
+const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano {{plano}} vence em {{dias_restantes}} dias, no dia {{data_expiracao}}.</p>
+<p>Lembrando que não há renovação automática — para continuar usando o Laboratório de Cozinha sem interrupção, é só renovar manualmente quando quiser.</p>`;
+
+const NOME_PLANO: Record<string, string> = {
+  mensal: "30 dias",
+  anual: "Anual",
+  renovacao: "Renovação",
+};
 
 function somarDiasISO(dataISO: string, dias: number): string {
   const [ano, mes, dia] = dataISO.split("-").map(Number);
@@ -37,7 +43,20 @@ export default async function(req: Request): Promise<Response> {
       const nome = usuario.nome_completo || usuario.full_name || "";
 
       if (usuario.email) {
-        const { assunto, html, ativo } = await renderTemplateEmail(base44, "plano_vencendo", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
+        const [ano, mes, dia] = (usuario.data_expiracao || dataAlvo).split("-");
+        const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
+        const { assunto, html, ativo } = await renderTemplateEmail(
+          base44,
+          "plano_vencendo",
+          nome,
+          ASSUNTO_PADRAO,
+          CORPO_PADRAO,
+          {
+            plano: NOME_PLANO[usuario.plano_atual] || usuario.plano_atual || "contratado",
+            dias_restantes: 5,
+            data_expiracao: dataExpiracaoBR,
+          },
+        );
 
         if (ativo) {
           const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
