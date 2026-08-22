@@ -5,6 +5,7 @@
 // e rendimentoEfetivo (custoReceita.js) — garante paridade total com o resto do app.
 // Documento de USO INTERNO: nunca inclui markup ou preço de venda.
 import { rendimentoEfetivo } from "@/lib/custoReceita";
+import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
 
 function fmtKg(v) {
   return (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -36,14 +37,20 @@ function montarDetalheIngredientes(cr, receitaMap, ingredientesPorReceita, ingre
 
   const itens = ingrs
     .map((ing) => {
-      // A quantidade cadastrada na receita é Peso Líquido (PL).
-      // Para compra e custo, usar Peso Bruto (PB) = PL × FC.
       const qtdLiquida = (Number(ing.quantidade_por_porcao) || 0) * porcoesBase * fator;
       const ingRef = ing.ingrediente_id ? ingredienteMap[ing.ingrediente_id] : null;
-      const fc = Number(ingRef?.fator_correcao) || 1;
-      const qtdBruta = qtdLiquida * fc;
-      const custo = qtdBruta * (Number(ingRef?.preco_por_g_rs) || 0);
-      return { nome: ing.ingrediente_nome || "—", qtd: qtdBruta, custo };
+      const calculado = calcularItemIngredienteReceita({
+        item: ing,
+        ingrediente: ingRef,
+        quantidadeLiquida: qtdLiquida,
+      });
+      return {
+        nome: ing.ingrediente_nome || "—",
+        qtd: calculado.pesoBruto,
+        custo: calculado.custo,
+        fc: calculado.fc,
+        fcOrigem: calculado.fcOrigem,
+      };
     })
     .filter((i) => i.custo > 0 || i.qtd > 0)
     .sort((a, b) => b.custo - a.custo);
