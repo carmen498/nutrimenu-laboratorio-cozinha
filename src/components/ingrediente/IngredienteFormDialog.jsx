@@ -15,7 +15,7 @@ import { toSentenceCaseName } from "@/lib/textCase";
 // - nome, categoria e fator de correção pertencem ao catálogo mestre;
 // - unidade de compra, embalagem, preço e fornecedor são dados comerciais pessoais.
 export default function IngredienteFormDialog({ open, onClose, item, onSave, saving, fornecedorSuggestions = [], isAdmin = true }) {
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState(/** @type {any} */ ({}));
   const [erroQuantidade, setErroQuantidade] = useState(null);
   const [novosSinonimos, setNovosSinonimos] = useState([]);
 
