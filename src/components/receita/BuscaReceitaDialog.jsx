@@ -16,8 +16,8 @@ const CATS = [
 ];
 
 export default function BuscaReceitaDialog({
-  open, onClose, onSelect, excludeIds = [], title = "Adicionar receita", receitas: propReceitas,
-  onCreateSection,
+  open, onClose, onSelect, excludeIds = [], title = "Adicionar receita", receitas: propReceitas = null,
+  onCreateSection = null,
 }) {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todas");
