@@ -1,9 +1,7 @@
-// Fonte única de verdade do Relatório de Pré-preparos para o Cardápio avulso
-// (fora do fluxo de Evento/Planejamento). Mesma lógica de consolidação e o
-// mesmo formato de saída de src/lib/prePreparosCalc.js, adaptado para ler
-// diretamente de CardapioReceita em vez do cardapio_config do Planejamento.
+// Fonte única de verdade do Relatório de Pré-preparos para o Cardápio avulso.
 import { base44 } from "@/api/base44Client";
 import { resolverFatorCorrecao } from "@/lib/ingredienteReceitaCalc";
+import { rendimentoEfetivo } from "@/lib/custoReceita";
 
 function fmtPeso(g) {
   const v = g || 0;
@@ -16,8 +14,6 @@ function fmtBrutoParen(liquidoG, brutoG) {
   return `(pegar ${fmtPeso(brutoG)} bruto)`;
 }
 
-// Carrega receitas do cardápio + ingredientes por receita + mapa de Ingrediente
-// (para preço e FC padrão). Somente leitura.
 export async function carregarDadosPrePreparosCardapio(cardapioId) {
   const receitasCardapio = await base44.entities.CardapioReceita.filter({ cardapio_id: cardapioId }, "ordem", 200);
   const receitaIds = [...new Set((receitasCardapio || []).map(r => r.receita_id).filter(Boolean))];
@@ -57,11 +53,11 @@ export function montarPrePreparosCardapio(cardapio, dados) {
   receitasCardapio.forEach((cr) => {
     const receita = receitaMap[cr.receita_id];
     if (!receita) return;
-    const rendimento = receita.rendimento_total || 0;
+    const ingrs = ingredientesPorReceita[cr.receita_id] || [];
+    const rendimento = rendimentoEfetivo(receita, ingrs);
     const porcoesBase = receita.porcoes_base || 1;
     const qtdTotal = Number(cr.quantidade_total_g) || 0;
     const fatorReceita = rendimento > 0 ? qtdTotal / rendimento : 0;
-    const ingrs = ingredientesPorReceita[cr.receita_id] || [];
     const nomeReceita = cr.receita_nome || receita.nome || "—";
 
     ingrs.forEach((ing) => {
