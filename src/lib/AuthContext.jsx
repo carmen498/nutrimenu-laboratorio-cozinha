@@ -93,7 +93,37 @@ export const AuthProvider = ({ children }) => {
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      const currentUser = await base44.auth.me();
+      let currentUser = await base44.auth.me();
+
+      // OAuth (ex.: Google) não passa pelo fluxo de OTP do Register. Para que
+      // toda conta realmente nova receba o mesmo trial, independentemente do
+      // provedor de autenticação, inicializamos aqui quando não há qualquer
+      // histórico de plano. A função server-side é idempotente e rejeita
+      // reutilização de trial.
+      const semHistoricoDePlano = currentUser?.role !== 'admin' && !(
+        currentUser?.plano_atual ||
+        currentUser?.status_assinatura ||
+        currentUser?.data_inicio ||
+        currentUser?.data_expiracao ||
+        Number(currentUser?.ciclo_renovacao || 0) > 0
+      );
+
+      if (semHistoricoDePlano) {
+        try {
+          await base44.functions.invoke('inicializarTrialUsuario', {});
+          currentUser = await base44.auth.me();
+        } catch (trialError) {
+          // 409 significa que outra aba/requisição já inicializou o trial.
+          // Recarrega o usuário e segue; demais erros são registrados, mas não
+          // transformam uma falha transitória de e-mail em falha de login.
+          if (trialError?.response?.status === 409 || trialError?.status === 409) {
+            currentUser = await base44.auth.me();
+          } else {
+            console.error('Trial initialization after auth failed:', trialError);
+          }
+        }
+      }
+
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
