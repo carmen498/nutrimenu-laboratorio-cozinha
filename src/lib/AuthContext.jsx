@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { consoleErrorSeguro } from '@/lib/securityHardening';
 
 const AuthContext = createContext();
 
@@ -48,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         }
         setIsLoadingPublicSettings(false);
       } catch (appError) {
-        console.error('App state check failed:', appError);
+        consoleErrorSeguro('App state check failed', appError);
         
         // Handle app-level errors
         if (appError.status === 403 && appError.data?.extra_data?.reason) {
@@ -79,7 +80,7 @@ export const AuthProvider = ({ children }) => {
         setIsLoadingAuth(false);
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
+      consoleErrorSeguro('Unexpected auth error', error);
       setAuthError({
         type: 'unknown',
         message: error.message || 'An unexpected error occurred'
@@ -108,7 +109,7 @@ export const AuthProvider = ({ children }) => {
           }
           sessionStorage.removeItem('base44_pending_terms_acceptance');
         } catch (termsError) {
-          console.error('Terms acceptance registration after OAuth failed:', termsError);
+          consoleErrorSeguro('Terms acceptance registration after OAuth failed', termsError);
         }
       }
 
@@ -136,7 +137,7 @@ export const AuthProvider = ({ children }) => {
           if (trialError?.response?.status === 409 || trialError?.status === 409) {
             currentUser = await base44.auth.me();
           } else {
-            console.error('Trial initialization after auth failed:', trialError);
+            consoleErrorSeguro('Trial initialization after auth failed', trialError);
           }
         }
       }
@@ -147,7 +148,7 @@ export const AuthProvider = ({ children }) => {
       setAuthChecked(true);
       base44.auth.updateMe({ data_login: new Date().toISOString() }).catch(() => {});
     } catch (error) {
-      console.error('User auth check failed:', error);
+      consoleErrorSeguro('User auth check failed', error);
       setIsLoadingAuth(false);
       setIsAuthenticated(false);
       setAuthChecked(true);
