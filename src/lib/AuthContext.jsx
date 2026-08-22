@@ -95,6 +95,23 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(true);
       let currentUser = await base44.auth.me();
 
+      // No cadastro via Google, a checkbox de Termos é confirmada antes do redirect
+      // e deixa apenas um marcador efêmero nesta aba. O aceite real é persistido
+      // somente agora, já com usuário autenticado, pela function server-side.
+      const aceiteTermosPendente = typeof sessionStorage !== 'undefined'
+        && sessionStorage.getItem('base44_pending_terms_acceptance') === 'true';
+      if (aceiteTermosPendente) {
+        try {
+          if (!currentUser?.termos_aceitos_em || !currentUser?.termos_versao_aceita) {
+            await base44.functions.invoke('registrarAceiteTermos', {});
+            currentUser = await base44.auth.me();
+          }
+          sessionStorage.removeItem('base44_pending_terms_acceptance');
+        } catch (termsError) {
+          console.error('Terms acceptance registration after OAuth failed:', termsError);
+        }
+      }
+
       // OAuth (ex.: Google) não passa pelo fluxo de OTP do Register. Para que
       // toda conta realmente nova receba o mesmo trial, independentemente do
       // provedor de autenticação, inicializamos aqui quando não há qualquer
