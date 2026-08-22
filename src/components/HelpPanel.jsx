@@ -3,6 +3,7 @@ import { HelpCircle, X, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { resolveHelpContent } from "@/lib/resolveHelpContent";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 export default function HelpPanel({ screenName = "", open: openProp, onOpenChange, focusFaqsSignal = 0 }) {
   const [openState, setOpenState] = useState(false);
@@ -49,7 +50,7 @@ export default function HelpPanel({ screenName = "", open: openProp, onOpenChang
       const textoResposta = typeof res === "string" ? res : (res?.response || res?.text || res?.content || JSON.stringify(res));
       setAnswer(textoResposta || "Não foi possível obter uma resposta. Tente reformular a pergunta.");
     } catch (err) {
-      console.error("HelpPanel ask error:", err);
+      consoleErrorSeguro("HelpPanel ask error", err);
       setAnswer("Ocorreu um erro ao consultar o assistente. Tente novamente.");
     } finally {
       setLoading(false);
