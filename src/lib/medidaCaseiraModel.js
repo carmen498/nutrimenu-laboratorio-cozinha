@@ -106,8 +106,8 @@ export function diagnosticarMedidaCaseira(medida = {}) {
   const pesoG = getPesoPorMedidaG(medida);
   const volumeMl = getVolumePorMedidaMl(medida);
 
+  if (!ingredienteId) problemas.push("sem_ingrediente_id");
   if (!utensilioId && !medida.so_gramas) problemas.push("sem_utensilio_id");
-  if (!ingredienteId && !medida.so_gramas) problemas.push("sem_ingrediente_id");
   if (!medida.so_gramas && !pesoG && !volumeMl) problemas.push("sem_equivalencia_fisica");
   if (numeroPositivo(medida.medida_pronto_g)) problemas.push("medida_pronto_legada_a_separar");
 
