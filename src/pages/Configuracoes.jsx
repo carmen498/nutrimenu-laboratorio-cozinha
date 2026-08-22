@@ -2,8 +2,12 @@ import { Settings } from "lucide-react";
 import PreferenciasGeraisSection from "@/components/configuracoes/PreferenciasGeraisSection";
 import AtualizacaoPrecosSection from "@/components/configuracoes/AtualizacaoPrecosSection";
 import DadosEmpresaSection from "@/components/configuracoes/DadosEmpresaSection";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Configuracoes() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   return (
     <div className="max-w-lg mx-auto space-y-4">
       <div className="flex items-center gap-2">
@@ -12,7 +16,7 @@ export default function Configuracoes() {
       </div>
 
       <PreferenciasGeraisSection />
-      <AtualizacaoPrecosSection />
+      {isAdmin && <AtualizacaoPrecosSection />}
       <DadosEmpresaSection />
     </div>
   );
