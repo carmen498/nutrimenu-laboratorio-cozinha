@@ -1,6 +1,11 @@
-// Regras canônicas de composição de IngredienteReceita — Fase 4.
+// Regras canônicas de composição de IngredienteReceita — Fases 4–7.
 // A quantidade gravada em IngredienteReceita é sempre líquida (PL) em g/ml.
 // O Peso Bruto (PB) e o custo são derivados do FC efetivo.
+import {
+  getIngredienteIdMedida,
+  getUtensilioIdMedida,
+  getPesoPorMedidaG,
+} from "@/lib/medidaCaseiraModel";
 
 const numeroPositivo = (valor) => {
   const n = Number(valor);
@@ -16,11 +21,7 @@ const numeroPositivo = (valor) => {
 export function resolverFatorCorrecao(item, ingrediente) {
   const override = numeroPositivo(item?.fator_correcao_override);
   if (override) {
-    return {
-      valor: override,
-      origem: "receita",
-      temOverride: true,
-    };
+    return { valor: override, origem: "receita", temOverride: true };
   }
 
   const padrao = numeroPositivo(ingrediente?.fator_correcao);
@@ -31,9 +32,6 @@ export function resolverFatorCorrecao(item, ingrediente) {
   };
 }
 
-/**
- * Calcula PL, PB e custo de um item já com a quantidade líquida desejada.
- */
 export function calcularItemIngredienteReceita({ item, ingrediente, quantidadeLiquida }) {
   const pl = Math.max(0, Number(quantidadeLiquida) || 0);
   const fcInfo = resolverFatorCorrecao(item, ingrediente);
@@ -51,9 +49,6 @@ export function calcularItemIngredienteReceita({ item, ingrediente, quantidadeLi
   };
 }
 
-/**
- * Resolve a unidade canônica do item sem quebrar receitas antigas.
- */
 export function resolverUnidadeQuantidade(item, receita) {
   if (item?.unidade_quantidade === "ml" || item?.unidade_quantidade === "g") {
     return item.unidade_quantidade;
@@ -61,30 +56,20 @@ export function resolverUnidadeQuantidade(item, receita) {
   return receita?.unidade_base === "ml" ? "ml" : "g";
 }
 
-/**
- * Compatibilidade MedidaCaseira Fase 4.
- */
+// Compatibilidade pública: consumidores existentes podem manter estes imports,
+// enquanto a fonte de verdade passa a ser medidaCaseiraModel.js.
 export function getMedidaIngredienteId(medida) {
-  return medida?.ingrediente_id || medida?.alimento || null;
+  return getIngredienteIdMedida(medida);
 }
 
 export function getMedidaUtensilioId(medida) {
-  return medida?.utensilio_id || medida?.utensilio || null;
+  return getUtensilioIdMedida(medida);
 }
 
 export function getMedidaPesoG(medida) {
-  const quantidade = numeroPositivo(medida?.quantidade_utensilio) || 1;
-  const pesoCanonico = numeroPositivo(medida?.peso_g);
-  if (pesoCanonico) return pesoCanonico / quantidade;
-
-  const legado = numeroPositivo(medida?.referencia_g) || numeroPositivo(medida?.equivalencia_g);
-  return legado || null;
+  return getPesoPorMedidaG(medida);
 }
 
-/**
- * Prefere a medida explicitamente vinculada ao IngredienteReceita.
- * Se não houver vínculo, usa a primeira medida disponível para o ingrediente.
- */
 export function resolverMedidaCaseiraItem(item, ingrediente, medidaById = {}, medidaByIngrediente = {}) {
   if (item?.medida_caseira_id && medidaById[item.medida_caseira_id]) {
     return medidaById[item.medida_caseira_id];
