@@ -335,8 +335,17 @@ Deno.serve(async (req) => {
         referencias_ausentes: totalRefAusente,
         detalhes: JSON.stringify({
           modo: 'aplicar',
+          migraveis: migraveis.length,
           esquecidos_legado: totalEsquecidosLegado,
-          revisar: revisar.slice(0, 500),
+          // Log propositalmente compacto: detalhes completos permanecem disponíveis no dry-run.
+          revisar: revisar.slice(0, 25).map((r: any) => ({
+            id: r.id,
+            nome: r.nome,
+            contexto: r.contexto,
+            itens_sem_preco: r.itens_sem_preco,
+            referencias_ausentes: r.referencias_ausentes,
+            esquecidos_legado: r.esquecidos_legado,
+          })),
         }),
       });
     }
