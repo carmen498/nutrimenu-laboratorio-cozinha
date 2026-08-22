@@ -6,6 +6,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
+import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 
 const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
@@ -18,7 +19,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v8-2026-08-22-minimizacao-dados";
+const VERSAO_CODIGO = "v9-2026-08-22-aceite-juridico";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -27,8 +28,20 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { plano, forma_pagamento, token, installments, payer } = body;
+    const { plano, forma_pagamento, token, installments, payer, aceite_termos } = body;
 
+    if (aceite_termos !== true) {
+      return Response.json({
+        error: "É necessário aceitar os Termos de Uso e a Política de Privacidade para concluir a contratação",
+        code: "legal_acceptance_required",
+      }, { status: 400 });
+    }
+    if (user.role !== "admin" && user.termos_versao_aceita !== VERSAO_TERMOS_ATUAL) {
+      return Response.json({
+        error: "Aceite a versão vigente dos Termos de Uso antes de contratar um plano",
+        code: "current_terms_acceptance_required",
+      }, { status: 409 });
+    }
     if (!PLANOS_VALIDOS.includes(plano)) {
       return Response.json({ error: "Plano inválido" }, { status: 400 });
     }
@@ -57,6 +70,11 @@ export default async function(req: Request): Promise<Response> {
     const valorFormatado = valor.toFixed(2);
     const parcelas = forma_pagamento === "cartao" ? (parseInt(installments, 10) || 1) : 1;
 
+    // A prova da contratação é gerada no servidor no instante da tentativa.
+    // O frontend informa apenas que houve ação explícita; versão e timestamp
+    // nunca são aceitos do cliente.
+    const aceiteContratacaoEm = new Date().toISOString();
+
     // Chave de idempotência gerada no servidor, por tentativa.
     const idempotencyKey = crypto.randomUUID();
 
@@ -68,6 +86,9 @@ export default async function(req: Request): Promise<Response> {
       parcelas,
       status: "pending",
       idempotency_key: idempotencyKey,
+      termos_aceitos_em: aceiteContratacaoEm,
+      termos_versao_aceita: VERSAO_TERMOS_ATUAL,
+      privacidade_versao_aceita: VERSAO_PRIVACIDADE_ATUAL,
       versao_codigo: VERSAO_CODIGO,
     });
 
