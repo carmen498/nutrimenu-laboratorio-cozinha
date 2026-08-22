@@ -9,12 +9,15 @@ async function usuarioAtual() {
 export async function criarReceitaSegura(payload = {}) {
   const user = await usuarioAtual();
   if (user.role === 'admin') {
-    return base44.entities.Receita.create(payload);
+    return base44.entities.Receita.create({
+      ...payload,
+      is_base: payload.is_base ?? true,
+    });
   }
 
+  const { is_base: _ignorado, ...dadosPessoais } = payload;
   return base44.entities.Receita.create({
-    ...payload,
-    is_base: false,
+    ...dadosPessoais,
     usuario_dono_id: user.id,
     data_personalizacao: payload.data_personalizacao || new Date().toISOString(),
   });
@@ -23,12 +26,15 @@ export async function criarReceitaSegura(payload = {}) {
 export async function criarCardapioSeguro(payload = {}) {
   const user = await usuarioAtual();
   if (user.role === 'admin') {
-    return base44.entities.Cardapio.create(payload);
+    return base44.entities.Cardapio.create({
+      ...payload,
+      is_base: payload.is_base ?? true,
+    });
   }
 
+  const { is_base: _ignorado, ...dadosPessoais } = payload;
   return base44.entities.Cardapio.create({
-    ...payload,
-    is_base: false,
+    ...dadosPessoais,
     usuario_dono_id: user.id,
     data_personalizacao: payload.data_personalizacao || new Date().toISOString(),
   });
