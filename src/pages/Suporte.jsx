@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 const WHATSAPP_NUMERO = "555134160886"; // +55 (51) 3416-0886
 const ASSUNTOS = ["Dúvida", "Bug/Problema técnico", "Sugestão", "Outro"];
@@ -20,7 +21,7 @@ export default function Suporte() {
     if (!assunto || !mensagem.trim()) return;
     const texto = `*Suporte - Laboratório de Cozinha*\n\nDe: ${user?.email || ""}\nAssunto: ${assunto}\nMensagem: ${mensagem.trim()}`;
     const url = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
-    window.open(url, "_blank");
+    abrirUrlHttpsSegura(url);
     toast.success("Mensagem enviada! Retornaremos em breve.");
     setAssunto("");
     setMensagem("");
