@@ -3,7 +3,6 @@ import {
   Home, BookOpen, Apple, CalendarDays, Gauge, Utensils, Package,
   ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, MessageSquare,
 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { getScreenName } from "@/lib/getScreenName";
 import { resolveHelpContent } from "@/lib/resolveHelpContent";
@@ -36,7 +35,7 @@ function NavLink({ to, icon: Icon, label, active, onClick }) {
 
 function SidebarContent({ onNavigate, onHelpFaqsClick }) {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isAdmin = user?.role === "admin";
   const isActive = (path) => location.pathname === path;
 
@@ -84,7 +83,7 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           </button>
         </div>
         <button
-          onClick={() => base44.auth.logout('/')}
+          onClick={() => logout('/')}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
         >
           <LogOut className="w-4 h-4" /> Sair
