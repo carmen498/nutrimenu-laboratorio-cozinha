@@ -1,4 +1,5 @@
 import { criarCardapioInsumo, criarCardapioReceita } from '@/lib/secureChildEntities';
+import { criarCardapioSeguro } from '@/lib/secureRootEntities';
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -120,7 +121,7 @@ export default function Cardapios() {
     if (!form.nome.trim() || !form.tipo) return;
     setSalvando(true);
     try {
-      const c = await base44.entities.Cardapio.create({
+      const c = await criarCardapioSeguro({
         nome: form.nome.trim().toUpperCase(),
         tipo: form.tipo,
         data: form.data || null,
@@ -158,7 +159,7 @@ export default function Cardapios() {
 
   const handleDuplicate = async (c) => {
     try {
-      const novo = await base44.entities.Cardapio.create({
+      const novo = await criarCardapioSeguro({
         nome: `${c.nome} — cópia`,
         tipo: c.tipo,
         data: null,
