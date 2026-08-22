@@ -68,7 +68,7 @@ function calcularCustoEsquecido(esquecido, ingredienteMap, fator) {
  * InsumoReceita continua com a semântica histórica "por lote" e, por segurança,
  * não é multiplicado pelo fator até existir um campo explícito de proporcionalidade.
  */
-export function calcularCustoReceitaCanonico({
+export function calcularCustoReceitaCanonico(/** @type {any} */ {
   receita,
   ingredientesReceita = [],
   ingredienteMap = {},
