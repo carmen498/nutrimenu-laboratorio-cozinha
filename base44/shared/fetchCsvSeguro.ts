@@ -1,31 +1,9 @@
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 3;
 const FETCH_TIMEOUT_MS = 10_000;
-
-function isPrivateIPv4(hostname: string): boolean {
-  const parts = hostname.split('.');
-  if (parts.length !== 4 || parts.some((p) => !/^\d{1,3}$/.test(p))) return false;
-  const nums = parts.map(Number);
-  if (nums.some((n) => n < 0 || n > 255)) return false;
-  const [a, b] = nums;
-  return (
-    a === 0 ||
-    a === 10 ||
-    a === 127 ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    a >= 224
-  );
-}
-
-function isPrivateIPv6(hostname: string): boolean {
-  const h = hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  if (!h.includes(':')) return false;
-  return h === '::' || h === '::1' || h.startsWith('fe8') || h.startsWith('fe9') ||
-    h.startsWith('fea') || h.startsWith('feb') || h.startsWith('fc') || h.startsWith('fd');
-}
+const BASE44_UPLOAD_HOST = 'base44.app';
+const APP_ID = '6a2b263c4c1cb1e47d54d8b7';
+const BASE44_FILE_PREFIX = `/api/apps/${APP_ID}/files/`;
 
 function validarUrl(rawUrl: string): URL {
   let url: URL;
@@ -39,9 +17,11 @@ function validarUrl(rawUrl: string): URL {
   if (url.username || url.password) throw new Error('URL do arquivo não pode conter credenciais');
 
   const host = url.hostname.toLowerCase().replace(/\.$/, '');
-  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
-      host.endsWith('.internal') || host.endsWith('.lan') || isPrivateIPv4(host) || isPrivateIPv6(host)) {
-    throw new Error('Host do arquivo não permitido');
+  if (host !== BASE44_UPLOAD_HOST || (url.port && url.port !== '443')) {
+    throw new Error('Somente arquivos enviados pelo Base44 são permitidos');
+  }
+  if (!url.pathname.startsWith(BASE44_FILE_PREFIX)) {
+    throw new Error('O arquivo deve pertencer a este aplicativo Base44');
   }
 
   return url;
