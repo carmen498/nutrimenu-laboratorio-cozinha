@@ -3,6 +3,7 @@
 // mesmo formato de saída de src/lib/prePreparosCalc.js, adaptado para ler
 // diretamente de CardapioReceita em vez do cardapio_config do Planejamento.
 import { base44 } from "@/api/base44Client";
+import { resolverFatorCorrecao } from "@/lib/ingredienteReceitaCalc";
 
 function fmtPeso(g) {
   const v = g || 0;
@@ -10,13 +11,13 @@ function fmtPeso(g) {
   return Math.round(v) + " g";
 }
 
-function fmtBrutoParen(liquidoG, fc) {
-  if (!fc || fc <= 1) return null;
-  return `(pegar ${fmtPeso(liquidoG * fc)} bruto)`;
+function fmtBrutoParen(liquidoG, brutoG) {
+  if (!brutoG || brutoG <= liquidoG + 0.001) return null;
+  return `(pegar ${fmtPeso(brutoG)} bruto)`;
 }
 
 // Carrega receitas do cardápio + ingredientes por receita + mapa de Ingrediente
-// (para o Fator de Correção). Somente leitura.
+// (para preço e FC padrão). Somente leitura.
 export async function carregarDadosPrePreparosCardapio(cardapioId) {
   const receitasCardapio = await base44.entities.CardapioReceita.filter({ cardapio_id: cardapioId }, "ordem", 200);
   const receitaIds = [...new Set((receitasCardapio || []).map(r => r.receita_id).filter(Boolean))];
@@ -80,11 +81,14 @@ export function montarPrePreparosCardapio(cardapio, dados) {
         const nome = (ing.ingrediente_nome || "").trim();
         if (!nome) return;
         const key = `${nome.toLowerCase()}||${prePreparo.toLowerCase()}`;
+        const ingRef = ing.ingrediente_id ? ingredienteMap[ing.ingrediente_id] : null;
+        const fc = resolverFatorCorrecao(ing, ingRef).valor;
+        const brutoQty = scaledQty * fc;
         if (!ingredientesMap[key]) {
-          const ingRef = ing.ingrediente_id ? ingredienteMap[ing.ingrediente_id] : null;
-          ingredientesMap[key] = { nome, prePreparo, totalG: 0, fc: ingRef?.fator_correcao || 1, usos: {} };
+          ingredientesMap[key] = { nome, prePreparo, totalG: 0, totalBrutoG: 0, usos: {} };
         }
         ingredientesMap[key].totalG += scaledQty;
+        ingredientesMap[key].totalBrutoG += brutoQty;
         ingredientesMap[key].usos[nomeReceita] = (ingredientesMap[key].usos[nomeReceita] || 0) + scaledQty;
       }
     });
@@ -107,7 +111,7 @@ export function montarPrePreparosCardapio(cardapio, dados) {
         nome: v.nome,
         prePreparo: v.prePreparo,
         totalFmt: fmtPeso(v.totalG),
-        brutoTexto: fmtBrutoParen(v.totalG, v.fc),
+        brutoTexto: fmtBrutoParen(v.totalG, v.totalBrutoG),
         receitaLabel,
         usadoEmTexto,
       };
