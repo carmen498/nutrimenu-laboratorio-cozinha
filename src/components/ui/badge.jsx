@@ -23,7 +23,7 @@ const badgeVariants = cva(
   }
 )
 
-function Badge({
+function Badge(/** @type {any} */ {
   className,
   variant,
   ...props

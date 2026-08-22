@@ -7,7 +7,7 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
 
-const Drawer = ({
+const Drawer = (/** @type {any} */ {
   shouldScaleBackground = true,
   ...props
 }) => (
@@ -46,7 +46,7 @@ const DrawerContent = forwardRefAny(({ className, children, ...props }, ref) => 
 ))
 DrawerContent.displayName = "DrawerContent"
 
-const DrawerHeader = ({
+const DrawerHeader = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -56,7 +56,7 @@ const DrawerHeader = ({
 )
 DrawerHeader.displayName = "DrawerHeader"
 
-const DrawerFooter = ({
+const DrawerFooter = (/** @type {any} */ {
   className,
   ...props
 }) => (

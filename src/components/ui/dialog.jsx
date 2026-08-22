@@ -48,7 +48,7 @@ const DialogContent = forwardRefAny(({ className, children, ...props }, ref) => 
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
-const DialogHeader = ({
+const DialogHeader = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -58,7 +58,7 @@ const DialogHeader = ({
 )
 DialogHeader.displayName = "DialogHeader"
 
-const DialogFooter = ({
+const DialogFooter = (/** @type {any} */ {
   className,
   ...props
 }) => (

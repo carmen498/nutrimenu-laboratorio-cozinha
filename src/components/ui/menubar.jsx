@@ -8,31 +8,31 @@ import { Check, ChevronRight, Circle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-function MenubarMenu({
+function MenubarMenu(/** @type {any} */ {
   ...props
 }) {
   return <MenubarPrimitive.Menu {...props} />;
 }
 
-function MenubarGroup({
+function MenubarGroup(/** @type {any} */ {
   ...props
 }) {
   return <MenubarPrimitive.Group {...props} />;
 }
 
-function MenubarPortal({
+function MenubarPortal(/** @type {any} */ {
   ...props
 }) {
   return <MenubarPrimitive.Portal {...props} />;
 }
 
-function MenubarRadioGroup({
+function MenubarRadioGroup(/** @type {any} */ {
   ...props
 }) {
   return <MenubarPrimitive.RadioGroup {...props} />;
 }
 
-function MenubarSub({
+function MenubarSub(/** @type {any} */ {
   ...props
 }) {
   return <MenubarPrimitive.Sub data-slot="menubar-sub" {...props} />;
@@ -170,7 +170,7 @@ const MenubarSeparator = forwardRefAny(({ className, ...props }, ref) => (
 ))
 MenubarSeparator.displayName = MenubarPrimitive.Separator.displayName
 
-const MenubarShortcut = ({
+const MenubarShortcut = (/** @type {any} */ {
   className,
   ...props
 }) => {

@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button";
 
-const Pagination = ({
+const Pagination = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -31,7 +31,7 @@ const PaginationItem = forwardRefAny(({ className, ...props }, ref) => (
 ))
 PaginationItem.displayName = "PaginationItem"
 
-const PaginationLink = ({
+const PaginationLink = (/** @type {any} */ {
   className,
   isActive,
   size = "icon",
@@ -47,7 +47,7 @@ const PaginationLink = ({
 )
 PaginationLink.displayName = "PaginationLink"
 
-const PaginationPrevious = ({
+const PaginationPrevious = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -62,7 +62,7 @@ const PaginationPrevious = ({
 )
 PaginationPrevious.displayName = "PaginationPrevious"
 
-const PaginationNext = ({
+const PaginationNext = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -77,7 +77,7 @@ const PaginationNext = ({
 )
 PaginationNext.displayName = "PaginationNext"
 
-const PaginationEllipsis = ({
+const PaginationEllipsis = (/** @type {any} */ {
   className,
   ...props
 }) => (

@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils"
 
-function Skeleton({
+function Skeleton(/** @type {any} */ {
   className,
   ...props
 }) {

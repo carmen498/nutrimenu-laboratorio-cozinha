@@ -18,7 +18,7 @@ const Command = forwardRefAny(({ className, ...props }, ref) => (
 ))
 Command.displayName = CommandPrimitive.displayName
 
-const CommandDialog = ({
+const CommandDialog = (/** @type {any} */ {
   children,
   ...props
 }) => {
@@ -93,7 +93,7 @@ const CommandItem = forwardRefAny(({ className, ...props }, ref) => (
 
 CommandItem.displayName = CommandPrimitive.Item.displayName
 
-const CommandShortcut = ({
+const CommandShortcut = (/** @type {any} */ {
   className,
   ...props
 }) => {

@@ -127,7 +127,7 @@ const ContextMenuSeparator = forwardRefAny(({ className, ...props }, ref) => (
 ))
 ContextMenuSeparator.displayName = ContextMenuPrimitive.Separator.displayName
 
-const ContextMenuShortcut = ({
+const ContextMenuShortcut = (/** @type {any} */ {
   className,
   ...props
 }) => {

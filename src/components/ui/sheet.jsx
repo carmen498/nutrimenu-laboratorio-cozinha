@@ -61,7 +61,7 @@ const SheetContent = forwardRefAny(({ side = "right", className, children, ...pr
 ))
 SheetContent.displayName = SheetPrimitive.Content.displayName
 
-const SheetHeader = ({
+const SheetHeader = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -71,7 +71,7 @@ const SheetHeader = ({
 )
 SheetHeader.displayName = "SheetHeader"
 
-const SheetFooter = ({
+const SheetFooter = (/** @type {any} */ {
   className,
   ...props
 }) => (

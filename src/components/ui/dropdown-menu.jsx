@@ -127,7 +127,7 @@ const DropdownMenuSeparator = forwardRefAny(({ className, ...props }, ref) => (
 ))
 DropdownMenuSeparator.displayName = DropdownMenuPrimitive.Separator.displayName
 
-const DropdownMenuShortcut = ({
+const DropdownMenuShortcut = (/** @type {any} */ {
   className,
   ...props
 }) => {

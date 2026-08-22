@@ -53,7 +53,7 @@ const BreadcrumbPage = forwardRefAny(({ className, ...props }, ref) => (
 ))
 BreadcrumbPage.displayName = "BreadcrumbPage"
 
-const BreadcrumbSeparator = ({
+const BreadcrumbSeparator = (/** @type {any} */ {
   children,
   className,
   ...props
@@ -68,7 +68,7 @@ const BreadcrumbSeparator = ({
 )
 BreadcrumbSeparator.displayName = "BreadcrumbSeparator"
 
-const BreadcrumbEllipsis = ({
+const BreadcrumbEllipsis = (/** @type {any} */ {
   className,
   ...props
 }) => (

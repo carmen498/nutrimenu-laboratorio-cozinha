@@ -37,7 +37,7 @@ const AlertDialogContent = forwardRefAny(({ className, ...props }, ref) => (
 ))
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName
 
-const AlertDialogHeader = ({
+const AlertDialogHeader = (/** @type {any} */ {
   className,
   ...props
 }) => (
@@ -47,7 +47,7 @@ const AlertDialogHeader = ({
 )
 AlertDialogHeader.displayName = "AlertDialogHeader"
 
-const AlertDialogFooter = ({
+const AlertDialogFooter = (/** @type {any} */ {
   className,
   ...props
 }) => (

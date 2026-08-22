@@ -48,7 +48,7 @@ const ChartContainer = forwardRefAny(({ id, className, children, config, ...prop
 })
 ChartContainer.displayName = "Chart"
 
-const ChartStyle = ({
+const ChartStyle = (/** @type {any} */ {
   id,
   config
 }) => {
