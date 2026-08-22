@@ -8,9 +8,7 @@ import { toast } from "sonner";
 
 /**
  * Cadastro centralizado de Medidas Caseiras da receita.
- * Lista todos os ingredientes, um por linha, com seletor de utensílio + referência_g.
- * Salva tudo de uma vez (cria/atualiza registros em MedidaCaseira).
- * Ao salvar, invalida ["medidas-caseiras"] → a ficha converte imediatamente.
+ * Fase 4: grava o modelo canônico e mantém os campos legados espelhados.
  */
 export default function MedidasCaseirasReceitaDialog({
   open,
@@ -32,9 +30,10 @@ export default function MedidasCaseirasReceitaDialog({
         if (!item.ing) return;
         const mc = medidaByIngrediente[item.ing.id];
         if (mc) {
+          const peso = mc.peso_g ?? mc.referencia_g ?? mc.equivalencia_g;
           newRows[item.ing.id] = {
-            utensilioId: mc.utensilio || "",
-            referenciaG: mc.referencia_g != null ? String(mc.referencia_g) : "",
+            utensilioId: mc.utensilio_id || mc.utensilio || "",
+            referenciaG: peso != null ? String(peso) : "",
             soGramas: !!mc.so_gramas,
             existingMc: mc,
           };
@@ -77,24 +76,27 @@ export default function MedidasCaseirasReceitaDialog({
 
         const ute = uteMap[row.utensilioId];
         const nome = `${item.ing.nome} · ${ute?.simbolo || ""}`;
+        const payload = {
+          nome,
+          ingrediente_id: item.ing.id,
+          utensilio_id: row.utensilioId,
+          quantidade_utensilio: 1,
+          peso_g: refG,
+          estado_alimento: "cru",
+          so_gramas: row.soGramas,
+          // Compatibilidade temporária
+          alimento: item.ing.id,
+          utensilio: row.utensilioId,
+          referencia_g: refG,
+          equivalencia_g: refG,
+          medida_pronto_g: row.existingMc?.medida_pronto_g,
+        };
 
         if (row.existingMc) {
-          await base44.entities.MedidaCaseira.update(row.existingMc.id, {
-            utensilio: row.utensilioId,
-            referencia_g: refG,
-            so_gramas: row.soGramas,
-            medida_pronto_g: row.existingMc.medida_pronto_g,
-            nome,
-          });
+          await base44.entities.MedidaCaseira.update(row.existingMc.id, payload);
           updated++;
         } else {
-          await base44.entities.MedidaCaseira.create({
-            nome,
-            alimento: item.ing.id,
-            utensilio: row.utensilioId,
-            referencia_g: refG,
-            so_gramas: row.soGramas,
-          });
+          await base44.entities.MedidaCaseira.create(payload);
           created++;
         }
       }
@@ -115,7 +117,6 @@ export default function MedidasCaseirasReceitaDialog({
           <DialogTitle className="font-display">Medidas Caseiras da Receita</DialogTitle>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
-          {/* Header */}
           <div className="grid grid-cols-12 gap-2 items-center py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b">
             <div className="col-span-4">Ingrediente · Medida atual</div>
             <div className="col-span-5">Utensílio</div>
