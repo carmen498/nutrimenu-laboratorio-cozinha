@@ -1,5 +1,5 @@
 // Lista de compras do fluxo de EVENTO (Planejamento) — acessada via /lista-compras?planejamento=ID.
-// Fluxo próprio preservado; Fase 3 altera apenas a fonte dos dados comerciais do ingrediente.
+// Fluxo próprio preservado; dados comerciais são pessoais e o FC respeita a receita.
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -20,6 +20,7 @@ import {
   buscarPreferenciasIngredientes,
   aplicarPreferenciasIngredientes,
 } from "@/lib/preferenciaIngredienteUsuario";
+import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
 
 const CATEGORIAS_COMPRA = {
   "Carnes e Ovos": "Carnes",
@@ -90,7 +91,6 @@ export default function EventoListaCompras() {
     queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
   });
 
-  // Auto-add recipe from URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const receitaId = params.get("receita");
@@ -102,7 +102,6 @@ export default function EventoListaCompras() {
       if (porcoes) setPorcoesPorReceita({ [receitaId]: porcoes });
     }
 
-    // Carregar cardápio do planejamento
     if (planejamentoId) {
       setPlanejamentoOrigem(planejamentoId);
       base44.entities.Planejamento.get(planejamentoId).then(p => {
@@ -147,15 +146,21 @@ export default function EventoListaCompras() {
   // Build shopping list (including sub-receita ingredients)
   const listaItems = useMemo(() => {
     const totals = {};
-    const addIngredient = (ingredienteId, nome, categoria, extra) => {
+    const addIngredient = (ingredienteId, nome, categoria, extra, itemReceita) => {
       const ing = ingMap[ingredienteId];
       if (!ing) return;
-      const qtd = extra.qtd * (ing.fator_correcao || 1);
-      const custo = qtd * (ing.preco_por_g_rs || 0);
+      const calculado = calcularItemIngredienteReceita({
+        item: itemReceita,
+        ingrediente: ing,
+        quantidadeLiquida: extra.qtd,
+      });
+      const qtd = calculado.pesoBruto;
+      const custo = calculado.custo;
       const key = `${ingredienteId}_${extra.origem || ""}`;
       const displayNome = extra.origem ? `${nome} · ${extra.origem}` : nome;
       if (totals[key]) {
         totals[key].quantidade += qtd;
+        totals[key].peso_liquido += calculado.pesoLiquido;
         totals[key].custo += custo;
         if (extra.origem && !totals[key].origem) totals[key].origem = extra.origem;
       } else {
@@ -165,6 +170,9 @@ export default function EventoListaCompras() {
           categoria: CATEGORIAS_COMPRA[ing.categoria] || "Diversos",
           categoriaOriginal: ing.categoria,
           quantidade: qtd,
+          peso_liquido: calculado.pesoLiquido,
+          fc: calculado.fc,
+          fcOrigem: calculado.fcOrigem,
           unidade_compra: ing.unidade_compra,
           peso_embalagem_g: ing.peso_embalagem_g,
           preco_por_g: ing.preco_por_g_rs || 0,
@@ -188,18 +196,18 @@ export default function EventoListaCompras() {
           const subQtd = (item.quantidade_por_porcao || 0) * porcoes;
           const subItens = allItens.filter((i) => i.receita_id === item.subreceita_id);
           subItens.forEach((si) => {
-            if (si.tipo === "grupo") return;
+            if (si.tipo !== "ingrediente") return;
             const siQtd = (si.quantidade_por_porcao || 0) * (subRec.porcoes_base || 1);
             const scaleFactor = subRec.rendimento_total > 0 ? subQtd / subRec.rendimento_total : subFator;
             addIngredient(si.ingrediente_id, ingMap[si.ingrediente_id]?.nome || si.ingrediente_nome, null, {
               qtd: siQtd * scaleFactor,
               origem: `do ${subRec.nome}`,
-            });
+            }, si);
           });
         } else {
           addIngredient(item.ingrediente_id, ingMap[item.ingrediente_id]?.nome || item.ingrediente_nome, null, {
             qtd: item.quantidade_por_porcao * porcoes,
-          });
+          }, item);
         }
       });
     });
@@ -215,7 +223,6 @@ export default function EventoListaCompras() {
 
   const getComprarCusto = (item) => getComprarQtd(item) * (item.preco_por_g || 0);
 
-  // Group by category
   const grouped = {};
   listaItems.forEach((item) => {
     if (!grouped[item.categoria]) grouped[item.categoria] = [];
