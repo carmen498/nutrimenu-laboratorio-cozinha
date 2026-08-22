@@ -20,6 +20,8 @@ const MOTIVO_LABEL = {
   sem_preco: "ingrediente sem preço",
   ingrediente_sem_id: "item sem ingrediente_id",
   ingrediente_nao_encontrado: "ingrediente não encontrado",
+  ingrediente_nome_id_divergente: "ID e nome apontam para ingredientes diferentes",
+  esquecido_nome_id_divergente: "ingrediente esquecido com ID/nome divergentes",
   esquecido_sem_preco: "ingrediente esquecido sem preço",
   esquecido_preco_legado: "ingrediente esquecido depende de cache legado",
   insumo_sem_preco: "insumo sem preço",
