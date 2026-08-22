@@ -17,10 +17,11 @@ import {
   AlertDialogFooter, AlertDialogCancel, AlertDialogAction
 } from "@/components/ui/alert-dialog";
 import {
-  ChefHat, ArrowLeft, Minus, Plus, ShoppingCart, FileText, Copy,
+  ChefHat, ArrowLeft, Plus, ShoppingCart, FileText, Copy,
   Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star, Scale, HelpCircle
 } from "lucide-react";
 import MedidasCaseirasReceitaDialog from "@/components/receita/MedidasCaseirasReceitaDialog";
+import RendimentoTecnicoCard from "@/components/receita/RendimentoTecnicoCard";
 import { toast } from "sonner";
 import AddIngredienteDialog from "@/components/receita/AddIngredienteDialog";
 import EditReceitaDialog from "@/components/receita/EditReceitaDialog";
@@ -58,6 +59,7 @@ import {
   getMedidaUtensilioId,
   resolverMedidaCaseiraItem,
 } from "@/lib/ingredienteReceitaCalc";
+import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -67,9 +69,6 @@ export default function ReceitaAberta() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
-  // Contexto de origem (cardápio/evento): quando a ficha é aberta a partir de um
-  // cardápio, o escalador abre pré-escalado com o PC e nº de pessoas daquele
-  // cardápio. Nunca é gravado — é puramente de visualização (efêmero).
   const contextoOrigem = useMemo(() => {
     const pc = parseFloat(searchParams.get("ctxPc"));
     const pessoas = parseFloat(searchParams.get("ctxPessoas"));
@@ -78,9 +77,6 @@ export default function ReceitaAberta() {
     return null;
   }, [searchParams]);
 
-  // Quando a ficha é aberta a partir de um cardápio (ctxCardapioId/ctxCardapioReceitaId),
-  // editar esta receita também personaliza o cardápio de origem (cria/reaproveita uma
-  // cópia pessoal em "Meus Cardápios" e aponta o prato para a receita personalizada).
   const contextoCardapio = useMemo(() => {
     const cardapioId = searchParams.get("ctxCardapioId");
     const cardapioReceitaId = searchParams.get("ctxCardapioReceitaId");
@@ -138,6 +134,11 @@ export default function ReceitaAberta() {
     queryFn: () => base44.entities.IngredienteReceita.filter({ receita_id: id }),
   });
 
+  const rendimentoInfo = useMemo(
+    () => resolverRendimentoReceita(receita, itens),
+    [receita, itens]
+  );
+
   const { data: ingredientesDB = [] } = useQuery({
     queryKey: ["ingredientes"],
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
@@ -149,8 +150,6 @@ export default function ReceitaAberta() {
     enabled: !isAdmin && !!user?.id,
   });
 
-  // Não-admins calculam o custo com o PRÓPRIO preço (quando personalizado);
-  // admins sempre veem/gravam com o preço base do cadastro compartilhado.
   const ingredientesEfetivos = useMemo(
     () => (isAdmin ? ingredientesDB : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados)),
     [ingredientesDB, isAdmin, precosPersonalizados]
@@ -195,10 +194,10 @@ export default function ReceitaAberta() {
   });
 
   useEffect(() => {
-    if (receita && receita.rendimento_total > 0 && pdpValue === "") {
-      setPdpValue(String(receita.rendimento_total));
+    if (rendimentoInfo.pesoPosPreparoInformado > 0 && pdpValue === "") {
+      setPdpValue(String(rendimentoInfo.pesoPosPreparoInformado));
     }
-  }, [receita]);
+  }, [rendimentoInfo.pesoPosPreparoInformado, pdpValue]);
 
   useEffect(() => {
     if (receita) setMostrarFC(!!receita.mostrar_fc);
@@ -257,15 +256,16 @@ export default function ReceitaAberta() {
   const handleSavePDP = async (val) => {
     if (!isNaN(val) && val > 0) {
       const { receitaId } = await ensureEditavel();
-      await base44.entities.Receita.update(receitaId, { rendimento_total: val });
+      const campos = camposRendimentoMedido({
+        pesoPosPreparo: val,
+        pesoPrePreparo: rendimentoInfo.pesoPrePreparo,
+      });
+      await base44.entities.Receita.update(receitaId, campos);
       registrarHistorico(receitaId, receita?.nome, ["Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
-      // Rendimento (PDP) é o peso real pós-cocção — nunca deve reescalonar os
-      // ingredientes. Sincroniza a Quantidade Total do escalador com o novo
-      // PDP imediatamente, mantendo fator = 1 (ingredientes preservados).
       setQuantidadeTotal(val);
       setPorcoes(pcLocal > 0 ? +(val / pcLocal).toFixed(2) : null);
-      toast.success("Rendimento atualizado!");
+      toast.success("PDP medido e rendimento confirmados!");
     }
   };
 
@@ -275,18 +275,10 @@ export default function ReceitaAberta() {
     handleSavePDP(val);
   };
 
-  // Soma bruta (sem escala) dos pesos líquidos de todos os ingredientes da receita —
-  // usada para manter a Quantidade Total sempre refletindo a lista de ingredientes,
-  // independente do PC Recomendado estar definido ou não.
-  const somaIngredientesRaw = useMemo(() => {
-    if (!receita) return 0;
-    const porcoesBase = receita.porcoes_base || 1;
-    return itens
-      .filter((i) => i.tipo !== "grupo")
-      .reduce((sum, i) => sum + (i.quantidade_por_porcao || 0) * porcoesBase, 0);
-  }, [itens, receita]);
+  // Peso líquido pré-preparo canônico. Evita dupla contagem dos marcadores
+  // de sub-receita explodida e não incorpora FC de compra.
+  const somaIngredientesRaw = rendimentoInfo.pesoPrePreparo;
 
-  // Per capita sugerido
   const perCapitaSugerido = useMemo(() => {
     if (!receita) return null;
     const cat = (receita.categorias || []).length > 0 ? receita.categorias[0] : (receita.categoria || "");
@@ -295,24 +287,18 @@ export default function ReceitaAberta() {
     return { g: sug, medida: info?.medida || "" };
   }, [receita]);
 
-  // Estado inicial do escalador: DESCREVE a receita cadastrada (rendimento PDP + PC gravado),
-  // nunca escala nada por conta própria.
-  // Quantidade Total herda rendimento_total quando preenchido (>0); quando vazio/nulo/zero,
-  // cai para o Peso Bruto (soma automática dos ingredientes) em vez de zerar.
-  // Nº de Porções depende do PC estar definido — sem PC, fica em branco (null), nunca cai
-  // para porcoes_base como valor "de mentira".
   const estadoInicialEscala = useMemo(() => {
     if (!receita) return null;
     const pcInit = receita.per_capita_g || perCapitaSugerido?.g || 0;
-    const totalInit = receita.rendimento_total > 0 ? receita.rendimento_total : Math.round(somaIngredientesRaw);
+    const totalInit = rendimentoInfo.pesoPosPreparoEfetivo > 0
+      ? Math.round(rendimentoInfo.pesoPosPreparoEfetivo)
+      : Math.round(somaIngredientesRaw);
     const porcoesInit = pcInit > 0 && totalInit > 0
       ? +(totalInit / pcInit).toFixed(2)
       : null;
     return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
-  }, [receita, perCapitaSugerido, somaIngredientesRaw]);
+  }, [receita, perCapitaSugerido, somaIngredientesRaw, rendimentoInfo.pesoPosPreparoEfetivo]);
 
-  // Inicializa o escalador uma única vez (por abertura da ficha) com o estado inicial —
-  // ou, se a ficha foi aberta a partir de um cardápio/evento, com o contexto de origem.
   useEffect(() => {
     if (estadoInicialEscala && pcLocal === null) {
       if (contextoOrigem) {
@@ -327,25 +313,18 @@ export default function ReceitaAberta() {
     }
   }, [estadoInicialEscala, pcLocal, contextoOrigem]);
 
-  // Refs para ler os valores mais recentes de dentro do efeito de sincronização
-  // abaixo, sem precisar recriá-lo a cada mudança de PC/Total (evita loop).
   const pcLocalRef = useRef(pcLocal);
   useEffect(() => { pcLocalRef.current = pcLocal; }, [pcLocal]);
   const quantidadeTotalRef = useRef(quantidadeTotal);
   useEffect(() => { quantidadeTotalRef.current = quantidadeTotal; }, [quantidadeTotal]);
 
-  // Quantidade Total = soma dos pesos líquidos dos ingredientes, SEMPRE que a lista
-  // mudar (adicionar, remover, editar peso) — incondicional, não depende do PC.
-  // Só re-sincroniza automaticamente enquanto o total ainda reflete a soma natural
-  // (ou a receita ainda não tem rendimento_total gravado, caso de receita nova);
-  // uma vez escalado manualmente pelo usuário, para de sobrescrever.
   const prevRawTotalRef = useRef(null);
   useEffect(() => {
     if (!receita || pcLocal === null) return;
     const rawRounded = Math.round(somaIngredientesRaw);
     if (prevRawTotalRef.current === null) {
       prevRawTotalRef.current = rawRounded;
-      if (!receita.rendimento_total && rawRounded > 0) {
+      if (!rendimentoInfo.pesoPosPreparoInformado && rawRounded > 0) {
         setQuantidadeTotal(rawRounded);
         setPorcoes(pcLocalRef.current > 0 ? +(rawRounded / pcLocalRef.current).toFixed(2) : null);
       }
@@ -354,20 +333,15 @@ export default function ReceitaAberta() {
     if (rawRounded !== prevRawTotalRef.current) {
       const prevRaw = prevRawTotalRef.current;
       prevRawTotalRef.current = rawRounded;
-      const wasTrackingNatural = quantidadeTotalRef.current === prevRaw || !receita.rendimento_total;
+      const wasTrackingNatural = quantidadeTotalRef.current === prevRaw || !rendimentoInfo.pesoPosPreparoInformado;
       if (wasTrackingNatural) {
         setQuantidadeTotal(rawRounded);
         setPorcoes(pcLocalRef.current > 0 ? +(rawRounded / pcLocalRef.current).toFixed(2) : null);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [somaIngredientesRaw]);
+  }, [somaIngredientesRaw, rendimentoInfo.pesoPosPreparoInformado]);
 
-  // PC Recomendado é um campo persistido da receita. Editá-lo NUNCA altera a
-  // Quantidade Total (rendimento fixo da ficha) — apenas recalcula o Nº de
-  // Porções (Quantidade Total ÷ PC) e grava o novo PC na receita.
-  // Garante que a edição não recaia sobre o catálogo compartilhado: cria uma
-  // cópia pessoal (fork) quando um não-admin edita uma receita is_base=true.
   const ensureEditavel = async () => {
     const result = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin, userId: user?.id });
     if (result.blocked) {
@@ -386,17 +360,12 @@ export default function ReceitaAberta() {
             base44.entities.CardapioInsumo.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
             base44.entities.CardapioTag.filter({ cardapio_id: cardapioAtual.id }, "created_date", 200),
           ]);
-          // Fonte única de verdade: garantirCardapioEditavel já verifica se o usuário
-          // já tem uma cópia pessoal deste cardápio (blocked=true+existingCopyId) —
-          // reaproveita essa cópia em vez de tentar forkar de novo.
           const cardapioResult = await garantirCardapioEditavel({
             cardapio: cardapioAtual, receitas: receitasCard, insumos: insumosCard, cardapioTags: tagsCard,
             isAdmin, userId: user?.id,
           });
           const cardapioId = cardapioResult.blocked ? cardapioResult.existingCopyId : cardapioResult.cardapioId;
           if (!cardapioId) throw new Error("Não foi possível preparar a cópia pessoal do cardápio");
-          // Localiza o item pelo receita_id original (robusto tanto para cópia recém-criada
-          // quanto para cópia pessoal já existente reaproveitada).
           const itensCopia = await base44.entities.CardapioReceita.filter({ cardapio_id: cardapioId }, "ordem", 200);
           const itemParaAtualizar = itensCopia.find((it) => it.receita_id === id);
           if (!itemParaAtualizar) throw new Error("Item do cardápio não encontrado na cópia pessoal");
@@ -442,9 +411,6 @@ export default function ReceitaAberta() {
     if (pc > 0) setQuantidadeTotal(Math.round(val * pc));
   };
 
-  // Quantidade Total é agora o único controle de reescala — edição aqui
-  // sobrescreve PERMANENTEMENTE os pesos dos ingredientes e o rendimento
-  // da receita (substitui o antigo botão "Ajustar peso total da receita").
   const commitTotalGrams = async (grams) => {
     const g = Math.max(0, Math.round(grams));
     const pc = pcLocal || 0;
@@ -460,7 +426,16 @@ export default function ReceitaAberta() {
         .filter((i) => i.tipo !== "grupo")
         .map((i) => ({ id: mapItemId(i.id), quantidade_por_porcao: (i.quantidade_por_porcao || 0) * fatorRescale }));
       if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
-      await base44.entities.Receita.update(receitaId, { rendimento_total: g });
+
+      const tinhaPDP = rendimentoInfo.pesoPosPreparoInformado > 0;
+      const pdpEscalado = tinhaPDP ? g : 0;
+      await base44.entities.Receita.update(receitaId, {
+        peso_pre_preparo_total: (rendimentoInfo.pesoPrePreparo || 0) * fatorRescale,
+        peso_pos_preparo_total: pdpEscalado,
+        rendimento_total: pdpEscalado,
+        rendimento_origem: tinhaPDP ? (receita.rendimento_origem || "legado") : "estimado",
+        rendimento_status: tinhaPDP ? (receita.rendimento_status || "a_validar") : "pendente",
+      });
       registrarHistorico(receitaId, receita?.nome, ["Ingredientes", "Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
       qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
@@ -535,7 +510,8 @@ export default function ReceitaAberta() {
     return converterGramasParaMedida(item.qtdNova, mc, ute);
   };
 
-  const fator = receita && receita.rendimento_total > 0 && quantidadeTotal > 0 ? quantidadeTotal / receita.rendimento_total : 1;
+  const rendimentoBase = rendimentoInfo.pesoPosPreparoEfetivo || 0;
+  const fator = receita && rendimentoBase > 0 && quantidadeTotal > 0 ? quantidadeTotal / rendimentoBase : 1;
 
   const temOrdemManual = useMemo(() => itens.some(i => (i.ordem || 0) > 0), [itens]);
 
@@ -543,7 +519,6 @@ export default function ReceitaAberta() {
     return [...itens]
       .sort((a, b) => {
         if (temOrdemManual) return (a.ordem || 0) - (b.ordem || 0);
-        // grupos vão para o topo quando sem ordem explícita
         if (a.tipo === "grupo" && b.tipo !== "grupo") return -1;
         if (a.tipo !== "grupo" && b.tipo === "grupo") return 1;
         return ((b.quantidade_por_porcao || 0) * (receita?.porcoes_base || 1) * fator)
@@ -557,7 +532,6 @@ export default function ReceitaAberta() {
           const rb = receitasBasicasMap[item.subreceita_id];
           const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
           const qtdNova = item.quantidade_por_porcao * (receita?.porcoes_base || 1) * fator;
-          // Subreceita line is a visual marker only — cost comes from exploded ingredients
           return { ...item, isSubreceita: true, receitaBase: rb, custo: 0, qtdOriginal, qtdNova, qtdComprar: qtdNova, isGrupo: false, isNA: false };
         }
         const ing = ingMap[item.ingrediente_id];
@@ -585,9 +559,8 @@ export default function ReceitaAberta() {
           isChildOfSubreceita,
         };
       });
-  }, [itens, ingMap, fator, receita, temOrdemManual]);
+  }, [itens, ingMap, fator, receita, temOrdemManual, receitasBasicasMap]);
 
-  // Reagrupa: filhos explodidos ficam imediatamente abaixo do seu marcador
   const itensFichaAgrupada = useMemo(() => {
     const childrenByParent = {};
     itensFicha.forEach(item => {
@@ -617,8 +590,6 @@ export default function ReceitaAberta() {
     [itensFichaAgrupada]
   );
 
-  // Build movement blocks: grupo = block header (absorbs all following items until next grupo),
-  // subreceita = marker + children, loose items = single-entry blocks
   const blocos = useMemo(() => {
     const items = itensFichaAgrupada;
     const blocks = [];
@@ -666,8 +637,6 @@ export default function ReceitaAberta() {
     return -1;
   };
 
-  // Peso Bruto (PB) = Peso Líquido (PL) × FC efetivo. Se a sub-receita está explodida,
-  // ignora o marcador e soma os ingredientes-filhos para não contar o peso duas vezes.
   const subreceitasComFilhos = useMemo(() => {
     const ids = new Set();
     itensFicha.forEach((item) => {
@@ -687,8 +656,6 @@ export default function ReceitaAberta() {
   const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
 
-  // Save costs to recipe (apenas admin grava no catálogo compartilhado;
-  // não-admins veem o custo calculado normalmente, mas não persistem no original)
   useEffect(() => {
     if (isAdmin && receita && fator === 1 && custoTotal > 0) {
       const newCT = parseFloat(custoTotal.toFixed(2));
@@ -698,7 +665,7 @@ export default function ReceitaAberta() {
         base44.entities.Receita.update(id, { custo_total: newCT, custo_por_porcao: newCP, custo_insumos: newCI });
       }
     }
-  }, [custoTotal, custoPorcao, custoInsumos, receita, fator, id]);
+  }, [custoTotal, custoPorcao, custoInsumos, receita, fator, id, isAdmin]);
 
   const updatePriceMut = useMutation({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
@@ -867,7 +834,7 @@ export default function ReceitaAberta() {
   const deleteItemOrGrupoMut = useMutation({
     mutationFn: async (itemId) => {
       const { receitaId, mapItemId, forked } = await ensureEditavel();
-      if (forked) return receitaId; // cópia criada com o item intacto; exclusão deve ser repetida na cópia
+      if (forked) return receitaId;
       await base44.entities.IngredienteReceita.delete(mapItemId(itemId));
       return receitaId;
     },
@@ -925,14 +892,12 @@ export default function ReceitaAberta() {
     if (dir < 0 && idx === 0) return;
     if (dir > 0 && idx >= items.length - 1) return;
 
-    // If no manual order exists yet, initialize ALL items with sequential ordem first
     if (!temOrdemManual) {
       await base44.entities.IngredienteReceita.bulkUpdate(
         items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
       );
     }
 
-    // Child: only move within its sibling group
     if (item.subreceita_parent_id) {
       const parentId = item.subreceita_parent_id;
       const sibIdxs = [];
@@ -950,7 +915,6 @@ export default function ReceitaAberta() {
       return;
     }
 
-    // Grupo header: move entire section (all items until next grupo) via pre-computed blocos
     if (item.isGrupo) {
       const blockIdx = findBlocoIdx(idx);
       if (blockIdx === -1) return;
@@ -975,8 +939,6 @@ export default function ReceitaAberta() {
       return;
     }
 
-    // Sub-receita marker or regular ingredient: treat as atomic block, swap with adjacent block
-    // Atomic block = sub-receita marker + its children, or a single regular ingredient
     const getAtomicBlock = (startIdx) => {
       const it = items[startIdx];
       if (it.isSubreceita || it.subreceita_parent_id) {
@@ -1000,8 +962,7 @@ export default function ReceitaAberta() {
     if (targetIdx < 0 || targetIdx >= items.length) return;
 
     const targetItem = items[targetIdx];
-    if (targetItem.isGrupo) return; // can't cross grupo boundary
-    // If target is a sub-receita child, resolve to its marker (jump the whole block)
+    if (targetItem.isGrupo) return;
     if (targetItem.subreceita_parent_id) {
       const markerIdx = items.findIndex(x => x.id === targetItem.subreceita_parent_id);
       if (markerIdx === -1) return;
@@ -1028,14 +989,12 @@ export default function ReceitaAberta() {
     const dragged = items[sourceIdx];
     if (!dragged) return;
 
-    // Initialize ordem if needed
     if (!temOrdemManual) {
       await base44.entities.IngredienteReceita.bulkUpdate(
         items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
       );
     }
 
-    // Compute block to move: grupo = section until next grupo, subreceita = marker + children, else single
     let blockStart, blockEnd;
     if (dragged.isGrupo) {
       blockStart = sourceIdx;
@@ -1052,12 +1011,9 @@ export default function ReceitaAberta() {
 
     const blockItems = items.slice(blockStart, blockEnd);
     const remaining = items.slice(0, blockStart).concat(items.slice(blockEnd));
-
-    // Adjust destination for removed block
     let adjustedDest = destIdx >= blockEnd ? destIdx - blockItems.length : destIdx;
     adjustedDest = Math.max(0, Math.min(adjustedDest, remaining.length));
 
-    // Prevent dropping inside a sub-receita's children — snap after the block
     if (adjustedDest > 0 && adjustedDest < remaining.length) {
       const after = remaining[adjustedDest];
       const before = remaining[adjustedDest - 1];
@@ -1087,7 +1043,6 @@ export default function ReceitaAberta() {
     }
     setOrderingByPrep(true);
     try {
-      // Only reorder existing non-group items — never create or delete
       const nonGroup = [];
       const groupPositions = [];
       itens.forEach((item, idx) => {
@@ -1136,22 +1091,19 @@ REGRAS:
         return;
       }
 
-      // Map IDs back to items, skipping any ID that doesn't match
       const reordered = [];
       const usedIds = new Set();
-      for (const id of orderedIds) {
-        const match = nonGroup.find(ng => ng.idx === id);
+      for (const orderedId of orderedIds) {
+        const match = nonGroup.find(ng => ng.idx === orderedId);
         if (match && !usedIds.has(match.id)) {
           reordered.push(match);
           usedIds.add(match.id);
         }
       }
-      // Append any remaining nonGroup items not included by the LLM
       for (const ng of nonGroup) {
         if (!usedIds.has(ng.id)) reordered.push(ng);
       }
 
-      // Interleave groups based on their original position relative to ingredients
       const finalOrder = [];
       let ri = 0;
       for (const gp of groupPositions) {
@@ -1166,7 +1118,6 @@ REGRAS:
         ri++;
       }
 
-      // Only update ordem — never touch name, quantity, or cost
       for (let i = 0; i < finalOrder.length; i++) {
         await base44.entities.IngredienteReceita.update(finalOrder[i].id, { ordem: i * 10 });
       }
@@ -1188,8 +1139,6 @@ REGRAS:
       updateQtdMut.mutate({ itemId, quantidade_por_porcao: baseTotal > 0 ? val / baseTotal : val });
     }
   };
-
-  // FC column visibility controlled by mostrarFC toggle
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
   const formatCustoItem = (item) => {
@@ -1219,11 +1168,8 @@ REGRAS:
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      {/* Header + Photo */}
       <div className="flex items-start gap-0">
-        {/* Left block */}
         <div className="flex-1 min-w-0 space-y-2 pr-3">
-          {/* Line 1: Name + actions */}
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="w-5 h-5" />
@@ -1257,7 +1203,6 @@ REGRAS:
               <Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir receita
             </Button>
           </div>
-          {/* Line 2: Categories + base info */}
           <div className="flex items-center gap-2 flex-wrap">
             {(receita.categorias || []).length > 0 ? (
               receita.categorias.map(cat => (
@@ -1272,14 +1217,8 @@ REGRAS:
             </div>
             <Popover>
               <PopoverTrigger asChild>
-                <button
-                  className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md hover:bg-muted/50 transition-colors"
-                  title="Clique para alterar a cor"
-                >
-                  <span
-                    className="w-4 h-4 rounded-full border border-black/15 shrink-0"
-                    style={{ backgroundColor: getCorHex(receita.cor_predominante) }}
-                  />
+                <button className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md hover:bg-muted/50 transition-colors" title="Clique para alterar a cor">
+                  <span className="w-4 h-4 rounded-full border border-black/15 shrink-0" style={{ backgroundColor: getCorHex(receita.cor_predominante) }} />
                   <span className="text-xs text-muted-foreground">{getCorLabelCompleto(receita.cor_predominante)}</span>
                 </button>
               </PopoverTrigger>
@@ -1297,7 +1236,6 @@ REGRAS:
               </PopoverContent>
             </Popover>
           </div>
-          {/* Line 3: Tags */}
           <TagList
             receitaTags={receitaTags}
             allTags={allTags}
@@ -1329,19 +1267,12 @@ REGRAS:
             />
           </div>
         </div>
-        {/* Right block: Photo */}
         {receita.foto_url ? (
-          <button
-            onClick={() => setShowLightbox(true)}
-            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg overflow-hidden bg-muted shadow-sm hover:opacity-90 transition-opacity"
-          >
+          <button onClick={() => setShowLightbox(true)} className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg overflow-hidden bg-muted shadow-sm hover:opacity-90 transition-opacity">
             <img src={receita.foto_url} alt={receita.nome} className="w-full h-full object-cover" />
           </button>
         ) : (
-          <label
-            className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors cursor-pointer"
-            title="Adicionar foto"
-          >
+          <label className="shrink-0 w-[120px] h-[120px] md:w-[200px] md:h-[160px] rounded-lg bg-muted border-2 border-dashed border-muted-foreground/30 flex items-center justify-center hover:border-primary/40 hover:bg-muted/80 transition-colors cursor-pointer" title="Adicionar foto">
             <Camera className="w-8 h-8 text-muted-foreground/60" />
             <input
               type="file"
@@ -1366,15 +1297,12 @@ REGRAS:
         )}
       </div>
 
-      {/* Selo de contexto: ficha aberta a partir de um cardápio/evento */}
       {contextoOrigem && isEscalado && (
         <div className="flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 border border-primary/20 rounded-lg px-3 py-1.5 w-fit">
-          <Scale className="w-3.5 h-3.5" />
-          escalado para {contextoOrigem.nome} · {contextoOrigem.pessoas} pessoas
+          <Scale className="w-3.5 h-3.5" /> escalado para {contextoOrigem.nome} · {contextoOrigem.pessoas} pessoas
         </div>
       )}
 
-      {/* Escalador da receita: PC × Porções = Total */}
       <EscaladorReceita
         pc={pcLocal || 0}
         porcoes={porcoes}
@@ -1393,16 +1321,14 @@ REGRAS:
             </button>
           </PopoverTrigger>
           <PopoverContent className="w-80 text-sm" align="end">
-            <p className="text-muted-foreground">
-              Ajusta o número de porções que você deseja produzir. Ao alterar a quantidade, o app recalcula automaticamente todos os ingredientes da receita, mantendo as proporções originais.
-            </p>
+            <p className="text-muted-foreground">Ajusta o número de porções que você deseja produzir. Ao alterar a quantidade, o app recalcula automaticamente todos os ingredientes da receita, mantendo as proporções originais.</p>
           </PopoverContent>
         </Popover>
         <Button variant="outline" size="sm" onClick={() => setShowEscalar(true)}>
           <Scale className="w-3.5 h-3.5 mr-1" /> Escalar receita
         </Button>
       </div>
-      {/* Ingredients table */}
+
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1.5">
@@ -1415,17 +1341,11 @@ REGRAS:
               </PopoverTrigger>
               <PopoverContent className="w-80 max-h-96 overflow-y-auto text-sm" align="start">
                 <p className="text-foreground font-medium mb-1">FC (Fator de Correção)</p>
-                <p className="text-muted-foreground mb-3">
-                  Representa a razão entre o peso bruto e o peso líquido: FC = Peso Bruto ÷ Peso Líquido. Cada ingrediente herda o FC padrão do cadastro mestre; se necessário, você pode definir um FC específico apenas para esta receita. O × ao lado do FC restaura o valor padrão.
-                </p>
+                <p className="text-muted-foreground mb-3">Representa a razão entre o peso bruto e o peso líquido: FC = Peso Bruto ÷ Peso Líquido. Cada ingrediente herda o FC padrão do cadastro mestre; se necessário, você pode definir um FC específico apenas para esta receita.</p>
                 <p className="text-foreground font-medium mb-1">Medida caseira</p>
-                <p className="text-muted-foreground mb-3">
-                  Adiciona à tabela uma conversão da quantidade em gramas para uma medida caseira. Quando você digita uma medida na própria receita, o vínculo da medida e a quantidade informada ficam registrados no item, enquanto g/ml permanecem como base dos cálculos.
-                </p>
+                <p className="text-muted-foreground mb-3">Converte a quantidade em gramas para uma medida caseira, mantendo g/ml como base dos cálculos.</p>
                 <p className="text-foreground font-medium mb-1">Sub-título</p>
-                <p className="text-muted-foreground">
-                  Adiciona uma linha de destaque na lista de ingredientes, permitindo separá-los por etapa de preparo (ex: Massa, Recheio, Finalização) — facilitando a leitura da receita na produção. Para reposicionar, use a seta ou arraste a linha até o local desejado.
-                </p>
+                <p className="text-muted-foreground">Separa os ingredientes por etapa de preparo, como Massa, Recheio e Finalização.</p>
               </PopoverContent>
             </Popover>
           </div>
@@ -1438,12 +1358,8 @@ REGRAS:
               <Switch checked={mostrarMedidaCaseira} onCheckedChange={handleToggleMedidaCaseira} className="scale-90" />
               <span className="text-xs text-muted-foreground font-medium">Medida caseira</span>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Sub-título
-            </Button>
-            <Button size="sm" onClick={async () => { const { forked } = await ensureEditavel(); if (!forked) setShowAddIng(true); }}>
-              <Plus className="w-4 h-4 mr-1" /> Ingrediente
-            </Button>
+            <Button size="sm" variant="outline" onClick={() => setPendingGrupo(true)}><Plus className="w-4 h-4 mr-1" /> Sub-título</Button>
+            <Button size="sm" onClick={async () => { const { forked } = await ensureEditavel(); if (!forked) setShowAddIng(true); }}><Plus className="w-4 h-4 mr-1" /> Ingrediente</Button>
           </div>
         </div>
 
@@ -1452,9 +1368,7 @@ REGRAS:
         ) : itensFichaAgrupada.filter(i => !i.isGrupo && !i.isNA).length === 0 && itensFichaAgrupada.filter(i => i.isGrupo || i.isNA).length === 0 && !pendingGrupo ? (
           <Card className="p-8 text-center text-muted-foreground">
             <p>Nenhum ingrediente adicionado</p>
-            <Button size="sm" className="mt-3" onClick={async () => { const { forked } = await ensureEditavel(); if (!forked) setShowAddIng(true); }}>
-              <Plus className="w-4 h-4 mr-1" /> Adicionar ingrediente
-            </Button>
+            <Button size="sm" className="mt-3" onClick={async () => { const { forked } = await ensureEditavel(); if (!forked) setShowAddIng(true); }}><Plus className="w-4 h-4 mr-1" /> Adicionar ingrediente</Button>
           </Card>
         ) : (
           <div className="space-y-2">
@@ -1512,9 +1426,7 @@ REGRAS:
 
             {pendingGrupo && (
               <div className="flex items-stretch gap-0.5">
-                <div className="flex items-center justify-center w-8 min-h-[32px] shrink-0" title="Arraste disponível após salvar">
-                  <GripVertical className="w-4 h-4 text-muted-foreground/20" />
-                </div>
+                <div className="flex items-center justify-center w-8 min-h-[32px] shrink-0" title="Arraste disponível após salvar"><GripVertical className="w-4 h-4 text-muted-foreground/20" /></div>
                 <Card className="p-3 bg-primary/20 border-primary/40 border-dashed flex-1">
                   <div className="flex items-center gap-2">
                     <Input
@@ -1524,21 +1436,15 @@ REGRAS:
                       placeholder="Digite o nome do sub-título..."
                       autoFocus
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" && pendingGrupoTitulo.trim()) {
-                          addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
-                        }
+                        if (e.key === "Enter" && pendingGrupoTitulo.trim()) addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
                         if (e.key === "Escape") { setPendingGrupo(false); setPendingGrupoTitulo(""); }
                       }}
                     />
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
                       if (pendingGrupoTitulo.trim()) addGrupoMut.mutate(pendingGrupoTitulo.trim().toUpperCase());
                       else { setPendingGrupo(false); setPendingGrupoTitulo(""); }
-                    }} title="Salvar sub-título">
-                      <Check className="w-4 h-4 text-green-600" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setPendingGrupo(false); setPendingGrupoTitulo(""); }} title="Cancelar">
-                      <X className="w-4 h-4 text-muted-foreground" />
-                    </Button>
+                    }} title="Salvar sub-título"><Check className="w-4 h-4 text-green-600" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setPendingGrupo(false); setPendingGrupoTitulo(""); }} title="Cancelar"><X className="w-4 h-4 text-muted-foreground" /></Button>
                   </div>
                 </Card>
               </div>
@@ -1547,406 +1453,141 @@ REGRAS:
         )}
       </div>
 
-      {/* Pesos */}
-      <Card className="p-4">
-        <h3 className="font-display text-sm font-bold mb-3">Pesos</h3>
-        {(() => {
-          const pdpNum = parseFloat(pdpValue) || 0;
-          let perdaText = "—";
-          let perdaClass = "text-muted-foreground";
-          let perdaTitle = "Pese a preparação pronta e registre o PDP para calcular a perda";
-          if (pdpNum > 0 && pesoBruto > 0) {
-            if (pdpNum > pesoBruto) {
-              const pct = ((pdpNum - pesoBruto) / pesoBruto) * 100;
-              perdaText = `Ganho: +${pct.toFixed(1).replace(".", ",")}%`;
-              perdaClass = "text-blue-600";
-              perdaTitle = "PDP = Peso Depois de Pronto. Ganho indica hidratação na cocção.";
-            } else {
-              const pct = ((pesoBruto - pdpNum) / pesoBruto) * 100;
-              perdaText = `Perda: ${pct.toFixed(1).replace(".", ",")}%`;
-              perdaClass = "text-primary";
-              perdaTitle = "PDP = Peso Depois de Pronto. A % Perda identifica receitas com rendimento muito abaixo do esperado.";
-            }
-          }
-          return (
-            <div className="flex items-center gap-2 flex-wrap text-sm">
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">Peso Bruto:</span>
-                <span className="font-medium">{pesoBruto.toLocaleString("pt-BR")} g</span>
-              </div>
-              <span className="text-muted-foreground">|</span>
-              <div className="flex items-center gap-1">
-                <span className="text-muted-foreground">Rendimento (PDP):</span>
-                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || 0) - 50)}>
-                  <Minus className="w-3.5 h-3.5" />
-                </Button>
-                <div className="relative">
-                  <Input
-                    type="number"
-                    min={1}
-                    value={pdpValue || ""}
-                    onChange={(e) => {
-                      setPdpValue(e.target.value);
-                    }}
-                    onBlur={() => handleSavePDP(parseInt(pdpValue) || 0)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSavePDP(parseInt(pdpValue) || 0);
-                    }}
-                    className="text-center text-sm font-bold h-8 w-24 pr-7"
-                  />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">g</span>
-                </div>
-                <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={() => handlePDPChange((receita.rendimento_total || 0) + 50)}>
-                  <Plus className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <span className="text-muted-foreground">|</span>
-              <div className="flex items-center gap-1" title={perdaTitle}>
-                <span className="text-muted-foreground">Perda:</span>
-                <span className={`font-medium ${perdaClass}`}>{perdaText}</span>
-              </div>
-            </div>
-          );
-        })()}
-      </Card>
+      <RendimentoTecnicoCard
+        receita={receita}
+        itens={itens}
+        pesoBruto={fator > 0 ? pesoBruto / fator : pesoBruto}
+        pdpValue={pdpValue}
+        setPdpValue={setPdpValue}
+        onSavePDP={handleSavePDP}
+        onPDPChange={handlePDPChange}
+      />
 
-      {/* Mode of preparation */}
       {(passos.length > 0 || temSubreceitas) && (
         <div>
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-display text-lg font-bold">Modo de Preparo</h2>
             {!editingPreparo && (
-              <Button variant="ghost" size="sm" onClick={() => { setPreparoDraft(receita.modo_preparo || ""); setEditingPreparo(true); }}>
-                <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
-              </Button>
+              <Button variant="ghost" size="sm" onClick={() => { setPreparoDraft(receita.modo_preparo || ""); setEditingPreparo(true); }}><Pencil className="w-3.5 h-3.5 mr-1" /> Editar</Button>
             )}
           </div>
           <Card className="p-4">
             {editingPreparo ? (
               <div className="space-y-2">
-                {temSubreceitas && (
-                  <p className="text-xs text-muted-foreground italic">Editando o bloco "Montagem" da receita-mãe. Os modos de preparo das sub-receitas são exibidos por referência e não podem ser editados aqui.</p>
-                )}
-                <textarea
-                  className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring"
-                  value={preparoDraft}
-                  onChange={(e) => setPreparoDraft(e.target.value)}
-                  autoFocus
-                />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" size="sm" onClick={() => setEditingPreparo(false)}>Cancelar</Button>
-                  <Button size="sm" onClick={handleSavePreparo}>Salvar</Button>
-                </div>
+                {temSubreceitas && <p className="text-xs text-muted-foreground italic">Editando o bloco "Montagem" da receita-mãe. Os modos de preparo das sub-receitas são exibidos por referência e não podem ser editados aqui.</p>}
+                <textarea className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring" value={preparoDraft} onChange={(e) => setPreparoDraft(e.target.value)} autoFocus />
+                <div className="flex gap-2 justify-end"><Button variant="outline" size="sm" onClick={() => setEditingPreparo(false)}>Cancelar</Button><Button size="sm" onClick={handleSavePreparo}>Salvar</Button></div>
               </div>
             ) : temSubreceitas ? (
               <ModoPreparoComposto blocos={blocosCompostos} />
             ) : passos.length === 1 ? (
               <p className="text-sm leading-relaxed whitespace-pre-line">{passos[0].replace(/^\d+[\.\-\)]\s*/, "")}</p>
             ) : (
-              <ol className="space-y-2 list-decimal list-inside">
-                {passos.map((passo, idx) => (
-                  <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>
-                ))}
-              </ol>
+              <ol className="space-y-2 list-decimal list-inside">{passos.map((passo, idx) => <li key={idx} className="text-sm leading-relaxed pl-1">{passo.replace(/^\d+[\.\-\)]\s*/, "")}</li>)}</ol>
             )}
           </Card>
         </div>
       )}
 
-      {/* Ingredientes Esquecidos */}
       <IngredientesEsquecidos receitaId={id} fator={fator} />
 
-      {/* Descritivo do Menu */}
       {editingDescritivo ? (
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-lg font-bold">Descritivo da receita (para Menu)</h2>
-          </div>
+          <div className="flex items-center justify-between mb-2"><h2 className="font-display text-lg font-bold">Descritivo da receita (para Menu)</h2></div>
           <Card className="p-4">
             <div className="space-y-2">
-              <textarea
-                className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-ring"
-                value={descritivoDraft}
-                onChange={(e) => setDescritivoDraft(e.target.value)}
-                placeholder="Texto voltado ao cliente final. Ex: Filé mignon grelhado com molho de mostarda e ervas."
-                autoFocus
-              />
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setEditingDescritivo(false)}>Cancelar</Button>
-                <Button size="sm" onClick={handleSaveDescritivo}>Salvar</Button>
-              </div>
+              <textarea className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-ring" value={descritivoDraft} onChange={(e) => setDescritivoDraft(e.target.value)} placeholder="Texto voltado ao cliente final. Ex: Filé mignon grelhado com molho de mostarda e ervas." autoFocus />
+              <div className="flex gap-2 justify-end"><Button variant="outline" size="sm" onClick={() => setEditingDescritivo(false)}>Cancelar</Button><Button size="sm" onClick={handleSaveDescritivo}>Salvar</Button></div>
             </div>
           </Card>
         </div>
       ) : receita.descritivo_menu ? (
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-lg font-bold">Descritivo da receita (para Menu)</h2>
-            <Button variant="ghost" size="sm" onClick={() => { setDescritivoDraft(receita.descritivo_menu || ""); setEditingDescritivo(true); }}>
-              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
-            </Button>
-          </div>
-          <Card className="p-4">
-            <p className="text-sm leading-relaxed whitespace-pre-line">{receita.descritivo_menu}</p>
-          </Card>
+          <div className="flex items-center justify-between mb-2"><h2 className="font-display text-lg font-bold">Descritivo da receita (para Menu)</h2><Button variant="ghost" size="sm" onClick={() => { setDescritivoDraft(receita.descritivo_menu || ""); setEditingDescritivo(true); }}><Pencil className="w-3.5 h-3.5 mr-1" /> Editar</Button></div>
+          <Card className="p-4"><p className="text-sm leading-relaxed whitespace-pre-line">{receita.descritivo_menu}</p></Card>
         </div>
       ) : null}
 
-      {/* Nota */}
       {editingNota ? (
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-lg font-bold">Nota</h2>
-          </div>
-          <Card className="p-4">
-            <div className="space-y-2">
-              <textarea
-                className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-ring"
-                value={notaDraft}
-                onChange={(e) => setNotaDraft(e.target.value)}
-                placeholder="Observações livres sobre a receita."
-                autoFocus
-              />
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" size="sm" onClick={() => setEditingNota(false)}>Cancelar</Button>
-                <Button size="sm" onClick={handleSaveNota}>Salvar</Button>
-              </div>
-            </div>
-          </Card>
+          <div className="flex items-center justify-between mb-2"><h2 className="font-display text-lg font-bold">Nota</h2></div>
+          <Card className="p-4"><div className="space-y-2"><textarea className="w-full text-sm leading-relaxed border rounded-md p-3 min-h-[80px] focus:outline-none focus:ring-1 focus:ring-ring" value={notaDraft} onChange={(e) => setNotaDraft(e.target.value)} placeholder="Observações livres sobre a receita." autoFocus /><div className="flex gap-2 justify-end"><Button variant="outline" size="sm" onClick={() => setEditingNota(false)}>Cancelar</Button><Button size="sm" onClick={handleSaveNota}>Salvar</Button></div></div></Card>
         </div>
       ) : receita.nota ? (
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-display text-lg font-bold">Nota</h2>
-            <Button variant="ghost" size="sm" onClick={() => { setNotaDraft(receita.nota || ""); setEditingNota(true); }}>
-              <Pencil className="w-3.5 h-3.5 mr-1" /> Editar
-            </Button>
-          </div>
-          <Card className="p-4">
-            <p className="text-sm leading-relaxed whitespace-pre-line">{receita.nota}</p>
-          </Card>
+          <div className="flex items-center justify-between mb-2"><h2 className="font-display text-lg font-bold">Nota</h2><Button variant="ghost" size="sm" onClick={() => { setNotaDraft(receita.nota || ""); setEditingNota(true); }}><Pencil className="w-3.5 h-3.5 mr-1" /> Editar</Button></div>
+          <Card className="p-4"><p className="text-sm leading-relaxed whitespace-pre-line">{receita.nota}</p></Card>
         </div>
       ) : null}
 
-      {/* Insumos e Embalagens */}
       <InsumosSection receitaId={id} />
 
-      {/* Custos */}
       <Card className="p-4">
         <h3 className="font-display text-sm font-bold mb-3">Custos</h3>
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Ingredientes</span>
-            <span className="font-medium">{formatCurrency(custoIngredientes)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Insumos e embalagens</span>
-            <span className="font-medium">{formatCurrency(custoInsumos)}</span>
-          </div>
-          {custoEsquecidos > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted-foreground italic text-xs">Ingredientes esquecidos</span>
-              <span className="font-medium text-xs">{formatCurrency(custoEsquecidos)}</span>
-            </div>
-          )}
+          <div className="flex justify-between"><span className="text-muted-foreground">Ingredientes</span><span className="font-medium">{formatCurrency(custoIngredientes)}</span></div>
+          <div className="flex justify-between"><span className="text-muted-foreground">Insumos e embalagens</span><span className="font-medium">{formatCurrency(custoInsumos)}</span></div>
+          {custoEsquecidos > 0 && <div className="flex justify-between"><span className="text-muted-foreground italic text-xs">Ingredientes esquecidos</span><span className="font-medium text-xs">{formatCurrency(custoEsquecidos)}</span></div>}
           <Separator />
-          <div className="flex justify-between font-bold text-base">
-            <span>Total</span>
-            <span className="text-primary">{formatCurrency(custoTotal)}</span>
-          </div>
-          <div className="flex justify-between text-xs text-muted-foreground pt-1">
-            <span>Custo por porção</span>
-            <span className="font-semibold text-primary">{formatCurrency(custoPorcao)}</span>
-          </div>
+          <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">{formatCurrency(custoTotal)}</span></div>
+          <div className="flex justify-between text-xs text-muted-foreground pt-1"><span>Custo por porção</span><span className="font-semibold text-primary">{formatCurrency(custoPorcao)}</span></div>
         </div>
       </Card>
 
-      {/* Margin calculator */}
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm font-medium">Quanto cobrar se eu vender?</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona?">
-                  <HelpCircle className="w-3.5 h-3.5" />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 text-sm" align="start">
-                <p className="text-muted-foreground">
-                  Ao ativar, exibe uma barra para definir a Margem (%) desejada. Esse percentual é somado ao custo total da receita, mostrando quanto cobrar por porção para alcançar a margem definida.
-                </p>
-              </PopoverContent>
-            </Popover>
+            <Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona?"><HelpCircle className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="text-muted-foreground">Ao ativar, exibe uma barra para definir a Margem (%) desejada. Esse percentual é somado ao custo total da receita, mostrando quanto cobrar por porção para alcançar a margem definida.</p></PopoverContent></Popover>
           </div>
           <Switch checked={showMargin} onCheckedChange={setShowMargin} />
         </div>
-        {showMargin && (
-          <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Margem: {margem}%</span>
-              <span className="font-bold text-primary text-lg">{formatCurrency(precoVenda)} /porção</span>
-            </div>
-            <Slider value={[margem]} min={10} max={80} step={5} onValueChange={(v) => setMargem(v[0])} />
-          </div>
-        )}
+        {showMargin && <div className="mt-3 space-y-2"><div className="flex items-center justify-between text-sm"><span>Margem: {margem}%</span><span className="font-bold text-primary text-lg">{formatCurrency(precoVenda)} /porção</span></div><Slider value={[margem]} min={10} max={80} step={5} onValueChange={(v) => setMargem(v[0])} /></div>}
       </Card>
 
-      {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        <Button onClick={() => navigate(`/receita/${id}/lista-compras?porcoes=${porcoes || receita.porcoes_base || 1}`)}>
-          <ShoppingCart className="w-4 h-4 mr-1" /> Gerar lista de compras
-        </Button>
+        <Button onClick={() => navigate(`/receita/${id}/lista-compras?porcoes=${porcoes || receita.porcoes_base || 1}`)}><ShoppingCart className="w-4 h-4 mr-1" /> Gerar lista de compras</Button>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => navigate(`/ficha-tecnica/${id}`)}>Ficha Técnica</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate(`/ficha-custos-receita/${id}`)}>Ficha de Custos</DropdownMenuItem>
-          </DropdownMenuContent>
+          <DropdownMenuTrigger asChild><Button variant="outline"><FileText className="w-4 h-4 mr-1" /> ↓ Exportar PDF</Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="start"><DropdownMenuItem onClick={() => navigate(`/ficha-tecnica/${id}`)}>Ficha Técnica</DropdownMenuItem><DropdownMenuItem onClick={() => navigate(`/ficha-custos-receita/${id}`)}>Ficha de Custos</DropdownMenuItem></DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Dialogs */}
-      {showAddIng && (
-        <AddIngredienteDialog
-          open={true}
-          onClose={() => setShowAddIng(false)}
-          receitaId={id}
-          receitaNome={receita.nome}
-          porcoes={receita.porcoes_base}
-          unidadeBase={receita.unidade_base}
-        />
-      )}
+      {showAddIng && <AddIngredienteDialog open={true} onClose={() => setShowAddIng(false)} receitaId={id} receitaNome={receita.nome} porcoes={receita.porcoes_base} unidadeBase={receita.unidade_base} />}
+      {showEdit && <EditReceitaDialog open={true} onClose={() => setShowEdit(false)} receita={receita} itens={itens} />}
+      {showEscalar && <EscalarReceitaDialog open={true} onClose={() => setShowEscalar(false)} pc={pcLocal || 0} onConfirm={commitTotalGrams} />}
+      {editingItem && <EditItemDialog open={true} onClose={() => setEditingItem(null)} item={editingItem} porcoesBase={receita?.porcoes_base} fator={fator} onSave={(data) => updateItemMut.mutate(data)} saving={updateItemMut.isPending} onEditPrice={(ing) => setEditingPrice({ ing })} />}
+      {editingPrice && <EditPriceDialog open={true} onClose={() => setEditingPrice(null)} item={editingPrice} ing={editingPrice.ing} isAdmin={isAdmin} onSave={(data) => updatePriceMut.mutate(data)} saving={updatePriceMut.isPending} />}
+      {cadastrarMedidaIng && <CadastrarMedidaDialog open={true} onClose={() => { setCadastrarMedidaIng(null); setEditarMedidaMc(null); }} ingrediente={cadastrarMedidaIng} utensilios={utensiliosPadrao} medidaExistente={editarMedidaMc} />}
+      {showMedidasReceita && <MedidasCaseirasReceitaDialog open={true} onClose={() => setShowMedidasReceita(false)} itens={ingredientesParaMedidas} medidaByIngrediente={medidaByIngrediente} utensilios={utensiliosPadrao} uteMap={uteMap} getMedidaDisplay={getMedidaDisplay} />}
 
-      {showEdit && (
-        <EditReceitaDialog open={true} onClose={() => setShowEdit(false)} receita={receita} itens={itens} />
-      )}
-
-      {showEscalar && (
-        <EscalarReceitaDialog
-          open={true}
-          onClose={() => setShowEscalar(false)}
-          pc={pcLocal || 0}
-          onConfirm={commitTotalGrams}
-        />
-      )}
-
-      {editingItem && (
-        <EditItemDialog
-          open={true}
-          onClose={() => setEditingItem(null)}
-          item={editingItem}
-          porcoesBase={receita?.porcoes_base}
-          fator={fator}
-          onSave={(data) => updateItemMut.mutate(data)}
-          saving={updateItemMut.isPending}
-          onEditPrice={(ing) => setEditingPrice({ ing })}
-        />
-      )}
-
-      {editingPrice && (
-        <EditPriceDialog
-          open={true}
-          onClose={() => setEditingPrice(null)}
-          item={editingPrice}
-          ing={editingPrice.ing}
-          isAdmin={isAdmin}
-          onSave={(data) => updatePriceMut.mutate(data)}
-          saving={updatePriceMut.isPending}
-        />
-      )}
-
-      {/* Cadastrar Medida (Regra 3) */}
-      {cadastrarMedidaIng && (
-        <CadastrarMedidaDialog
-          open={true}
-          onClose={() => { setCadastrarMedidaIng(null); setEditarMedidaMc(null); }}
-          ingrediente={cadastrarMedidaIng}
-          utensilios={utensiliosPadrao}
-          medidaExistente={editarMedidaMc}
-        />
-      )}
-
-      {/* Medidas Caseiras da Receita — cadastro centralizado */}
-      {showMedidasReceita && (
-        <MedidasCaseirasReceitaDialog
-          open={true}
-          onClose={() => setShowMedidasReceita(false)}
-          itens={ingredientesParaMedidas}
-          medidaByIngrediente={medidaByIngrediente}
-          utensilios={utensiliosPadrao}
-          uteMap={uteMap}
-          getMedidaDisplay={getMedidaDisplay}
-        />
-      )}
-
-      {/* Aviso: usuário já tem uma cópia pessoal desta receita */}
       <AlertDialog open={!!existingCopyWarning} onOpenChange={(v) => !v && setExistingCopyWarning(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Você já personalizou esta receita</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você já tem essa receita personalizada em Minhas Receitas. Deseja continuar editando a sua versão?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => navigate(`/receita/${existingCopyWarning.existingCopyId}`)}>
-              Ir para minha cópia
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Você já personalizou esta receita</AlertDialogTitle><AlertDialogDescription>Você já tem essa receita personalizada em Minhas Receitas. Deseja continuar editando a sua versão?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => navigate(`/receita/${existingCopyWarning.existingCopyId}`)}>Ir para minha cópia</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirmação de exclusão da receita */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir "{receita.nome}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A receita e todos os seus ingredientes serão excluídos permanentemente.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteReceitaMut.mutate()}
-              disabled={deleteReceitaMut.isPending}
-            >
-              {deleteReceitaMut.isPending ? "Excluindo..." : "Excluir"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir "{receita.nome}"?</AlertDialogTitle><AlertDialogDescription>Esta ação não pode ser desfeita. A receita e todos os seus ingredientes serão excluídos permanentemente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteReceitaMut.mutate()} disabled={deleteReceitaMut.isPending}>{deleteReceitaMut.isPending ? "Excluindo..." : "Excluir"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
 
-      {/* Lightbox */}
       {showLightbox && receita.foto_url && (
         <Dialog open={true} onOpenChange={() => setShowLightbox(false)}>
           <DialogContent className="max-w-3xl p-2 bg-black/95 border-none">
             <img src={receita.foto_url} alt={receita.nome} className="w-full max-h-[80vh] object-contain rounded" />
             <div className="flex justify-center gap-3 mt-3">
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" asChild>
-                <label className="cursor-pointer">
-                  <Camera className="w-4 h-4 mr-1" /> Trocar foto
-                  <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    try {
-                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                      const { receitaId } = await ensureEditavel();
-                      await base44.entities.Receita.update(receitaId, { foto_url: file_url });
-                      registrarHistorico(receitaId, receita?.nome, ["Foto"]);
-                      qc.invalidateQueries({ queryKey: ["receita", receitaId] });
-                      toast.success("Foto atualizada!");
-                    } catch { toast.error("Erro ao enviar foto"); }
-                  }} />
-                </label>
+                <label className="cursor-pointer"><Camera className="w-4 h-4 mr-1" /> Trocar foto<input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  try {
+                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                    const { receitaId } = await ensureEditavel();
+                    await base44.entities.Receita.update(receitaId, { foto_url: file_url });
+                    registrarHistorico(receitaId, receita?.nome, ["Foto"]);
+                    qc.invalidateQueries({ queryKey: ["receita", receitaId] });
+                    toast.success("Foto atualizada!");
+                  } catch { toast.error("Erro ao enviar foto"); }
+                }} /></label>
               </Button>
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white/10" onClick={async () => {
                 const { receitaId } = await ensureEditavel();
@@ -1955,9 +1596,7 @@ REGRAS:
                 qc.invalidateQueries({ queryKey: ["receita", receitaId] });
                 setShowLightbox(false);
                 toast.success("Foto removida");
-              }}>
-                <Trash2 className="w-4 h-4 mr-1" /> Remover foto
-              </Button>
+              }}><Trash2 className="w-4 h-4 mr-1" /> Remover foto</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -1975,31 +1614,17 @@ function EditPriceDialog({ open, onClose, item, ing, isAdmin = true, onSave, sav
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle className="font-display">Editar Preço — {ing.nome}</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle className="font-display">Editar Preço — {ing.nome}</DialogTitle></DialogHeader>
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800">
-            {isAdmin
-              ? "O preço é do cadastro geral — alterar afeta todas as receitas que o usam."
-              : "Este é o seu preço pessoal — não altera o cadastro compartilhado nem outros usuários."}
-          </p>
+          <p className="text-xs text-amber-800">{isAdmin ? "O preço é do cadastro geral — alterar afeta todas as receitas que o usam." : "Este é o seu preço pessoal — não altera o cadastro compartilhado nem outros usuários."}</p>
         </div>
         <CalculadoraCusto
           initialQuantidade={ing?.peso_embalagem_g || ""}
           initialPrecoTotal={ing?.preco_embalagem_rs || ""}
-          onChange={({ peso_embalagem_g, preco_embalagem_rs }) => {
-            setPeso(peso_embalagem_g);
-            setPreco(preco_embalagem_rs);
-          }}
+          onChange={({ peso_embalagem_g, preco_embalagem_rs }) => { setPeso(peso_embalagem_g); setPreco(preco_embalagem_rs); }}
         />
-        <div className="flex gap-2 justify-end mt-2">
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={() => onSave({ ingId: ing.id, preco_embalagem_rs: preco, peso_embalagem_g: peso })} disabled={saving}>
-            {saving ? "Salvando..." : "Confirmar"}
-          </Button>
-        </div>
+        <div className="flex gap-2 justify-end mt-2"><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={() => onSave({ ingId: ing.id, preco_embalagem_rs: preco, peso_embalagem_g: peso })} disabled={saving}>{saving ? "Salvando..." : "Confirmar"}</Button></div>
       </DialogContent>
     </Dialog>
   );
