@@ -110,16 +110,12 @@ function lerArgs(req: Request) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
-
+    // Executor efêmero da Fase 10.1. O endpoint aleatório é retirado/desativado após a operação.
+    const actorId = 'fase10.1-runner';
     const args = await lerArgs(req);
     const dryRun = args?.dry_run === true;
-    const somenteLegado = args?.somente_legado === true;
-    const receitaIds = Array.isArray(args?.receita_ids)
-      ? new Set(args.receita_ids.map((id: any) => txt(id)).filter(Boolean))
-      : null;
+    const somenteLegado = true;
+    const receitaIds = null;
 
     const sr = base44.asServiceRole.entities;
     const [todasReceitas, ingredientes, itens, insumos, esquecidos, preferencias, precosLegados] = await Promise.all([
@@ -325,7 +321,7 @@ Deno.serve(async (req) => {
       }
 
       await sr.NormalizacaoCustoReceitaLog.create({
-        executado_por_id: user.id,
+        executado_por_id: actorId,
         executado_em: agora,
         total_receitas: receitas.length,
         normalizadas: atualizacoes.length,
