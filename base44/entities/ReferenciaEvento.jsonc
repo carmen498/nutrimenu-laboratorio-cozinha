@@ -4,43 +4,24 @@
   "properties": {
     "tipo": {
       "type": "string",
-      "enum": [
-        "bebida",
-        "coquetel",
-        "doce"
-      ],
+      "enum": ["bebida", "coquetel", "doce"],
       "description": "Tipo do item: bebida, coquetel ou doce"
     },
-    "item": {
-      "type": "string",
-      "description": "Nome do item"
-    },
-    "percentual_padrao": {
-      "type": "number",
-      "description": "Percentual padr\u00e3o (%) de pessoas que consomem o item"
-    },
-    "media_padrao": {
-      "type": "number",
-      "description": "M\u00e9dia padr\u00e3o por pessoa (em ml, un ou g conforme unidade)"
-    },
+    "item": { "type": "string", "description": "Nome do item" },
+    "percentual_padrao": { "type": "number", "description": "Percentual padrão (%) de pessoas que consomem o item" },
+    "media_padrao": { "type": "number", "description": "Média padrão por pessoa (em ml, un ou g conforme unidade)" },
     "unidade": {
       "type": "string",
-      "enum": [
-        "ml",
-        "un",
-        "g"
-      ],
-      "description": "Unidade de medida: ml (l\u00edquidos), un (unidades), g (gramas)"
+      "enum": ["ml", "un", "g"],
+      "description": "Unidade de medida: ml (líquidos), un (unidades), g (gramas)"
     },
-    "sem_padrao": {
-      "type": "boolean",
-      "default": false,
-      "description": "Se true, % e m\u00e9dia come\u00e7am vazios ao marcar no evento"
-    }
+    "sem_padrao": { "type": "boolean", "default": false, "description": "Se true, % e média começam vazios ao marcar no evento" }
   },
-  "required": [
-    "tipo",
-    "item",
-    "unidade"
-  ]
+  "required": ["tipo", "item", "unidade"],
+  "rls": {
+    "read": {},
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
 }
