@@ -1,10 +1,19 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-// Corrige em lote o campo rendimento_total das receitas cujo valor está
-// zerado ou é menor que a soma dos pesos (g) dos próprios ingredientes.
-// NÃO altera ingredientes, quantidades, preços ou PC — apenas rendimento_total.
-// Idempotente: uma receita só é tocada se rendimento_total ainda estiver
-// zerado ou abaixo da soma dos ingredientes; se já estiver correta, é ignorada.
+// Fase 5 — normalização segura de rendimento.
+//
+// Esta função NÃO substitui mais rendimento_total pela soma dos ingredientes.
+// Um PDP menor que o peso pré-preparo pode representar perda real de cocção.
+// O objetivo agora é somente:
+// 1) calcular/salvar o snapshot do peso líquido pré-preparo;
+// 2) migrar o rendimento legado para peso_pos_preparo_total sem alterar seu valor;
+// 3) classificar valores legados como "a_validar";
+// 4) marcar receitas sem PDP como "pendente".
+
+const positivo = (v: unknown) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
 
 Deno.serve(async (req) => {
   try {
@@ -16,44 +25,66 @@ Deno.serve(async (req) => {
     const receitas = await base44.asServiceRole.entities.Receita.list('-nome', 2000);
     const itens = await base44.asServiceRole.entities.IngredienteReceita.list('-created_date', 5000);
 
-    const somaPorReceita = {};
-    for (const i of itens) {
-      if (i.tipo === 'grupo') continue;
-      somaPorReceita[i.receita_id] = (somaPorReceita[i.receita_id] || 0) + (Number(i.quantidade_por_porcao) || 0);
+    const itensPorReceita: Record<string, any[]> = {};
+    for (const item of itens || []) {
+      if (!item?.receita_id) continue;
+      if (!itensPorReceita[item.receita_id]) itensPorReceita[item.receita_id] = [];
+      itensPorReceita[item.receita_id].push(item);
     }
 
-    const updates = [];
-    const logs = [];
+    const updates: any[] = [];
 
-    for (const r of receitas) {
-      const rendimentoAtual = Number(r.rendimento_total) || 0;
-      const porcoesBase = Number(r.porcoes_base) || 1;
-      const somaBase = somaPorReceita[r.id] || 0;
-      const soma = somaBase * porcoesBase;
+    for (const r of receitas || []) {
+      const receitaItens = itensPorReceita[r.id] || [];
+      const porcoesBase = positivo(r.porcoes_base) || 1;
+      const parentsComFilhos = new Set(
+        receitaItens.map((i) => i.subreceita_parent_id).filter(Boolean)
+      );
 
-      if (soma <= 0) continue; // sem ingredientes suficientes para calcular, não mexe
-      const precisaCorrigir = rendimentoAtual <= 0 || rendimentoAtual < soma;
-      if (!precisaCorrigir) continue;
-      if (Math.abs(rendimentoAtual - soma) < 0.01) continue; // já correta, idempotência
+      const pesoPre = receitaItens.reduce((sum, item) => {
+        if (!item || item.tipo === 'grupo') return sum;
+        if (item.tipo === 'subreceita' && parentsComFilhos.has(item.id)) return sum;
+        return sum + positivo(item.quantidade_por_porcao) * porcoesBase;
+      }, 0);
 
-      updates.push({ id: r.id, rendimento_total: soma });
-      logs.push({
-        receita_id: r.id,
-        receita_nome: r.nome || '',
-        rendimento_anterior: rendimentoAtual,
-        rendimento_novo: soma,
-      });
+      const pdpCanonico = positivo(r.peso_pos_preparo_total);
+      const pdpLegado = positivo(r.rendimento_total);
+      const pdp = pdpCanonico || pdpLegado;
+
+      const update: Record<string, unknown> = {
+        id: r.id,
+        peso_pre_preparo_total: pesoPre,
+      };
+
+      if (pdp > 0) {
+        update.peso_pos_preparo_total = pdp;
+        update.rendimento_total = pdp; // compatibilidade
+        update.rendimento_origem = r.rendimento_origem || (pdpCanonico ? 'medido' : 'legado');
+        update.rendimento_status = r.rendimento_status || (pdpCanonico ? 'a_validar' : 'a_validar');
+      } else {
+        update.rendimento_origem = r.rendimento_origem || 'estimado';
+        update.rendimento_status = 'pendente';
+      }
+
+      const mudou =
+        Number(r.peso_pre_preparo_total || 0) !== Number(update.peso_pre_preparo_total || 0) ||
+        (pdp > 0 && Number(r.peso_pos_preparo_total || 0) !== Number(update.peso_pos_preparo_total || 0)) ||
+        (update.rendimento_origem && r.rendimento_origem !== update.rendimento_origem) ||
+        r.rendimento_status !== update.rendimento_status;
+
+      if (mudou) updates.push(update);
     }
 
-    // bulkUpdate/bulkCreate aceitam até 500 registros por chamada
     for (let i = 0; i < updates.length; i += 500) {
       await base44.asServiceRole.entities.Receita.bulkUpdate(updates.slice(i, i + 500));
     }
-    for (let i = 0; i < logs.length; i += 500) {
-      await base44.asServiceRole.entities.CorrecaoRendimentoLog.bulkCreate(logs.slice(i, i + 500));
-    }
 
-    return Response.json({ total_processado: receitas.length, total_corrigido: updates.length });
+    return Response.json({
+      total_processado: receitas.length,
+      total_normalizado: updates.length,
+      total_corrigido: 0,
+      observacao: 'Nenhum PDP foi substituído pela soma dos ingredientes.',
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
