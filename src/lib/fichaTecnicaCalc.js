@@ -3,6 +3,10 @@
 // apenas fixando fator = 1. Não grava nada — apenas deriva valores para exibição.
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
+import {
+  calcularItemIngredienteReceita,
+  resolverUnidadeQuantidade,
+} from "@/lib/ingredienteReceitaCalc";
 
 export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita = [], esquecidos = [] }) {
   const porcoesBase = receita?.porcoes_base || 1;
@@ -22,15 +26,43 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
       if (item.tipo === "subreceita") {
         const rb = receitasBasicasMap[item.subreceita_id];
         const qtdOriginal = item.quantidade_por_porcao * porcoesBase;
-        return { ...item, isSubreceita: true, receitaBase: rb, custo: 0, qtdOriginal, qtdNova: qtdOriginal, qtdComprar: qtdOriginal, isGrupo: false, isNA: false };
+        return {
+          ...item,
+          isSubreceita: true,
+          receitaBase: rb,
+          custo: 0,
+          qtdOriginal,
+          qtdNova: qtdOriginal,
+          qtdComprar: qtdOriginal,
+          isGrupo: false,
+          isNA: false,
+        };
       }
+
       const ing = ingMap[item.ingrediente_id];
       const qtdOriginal = item.quantidade_por_porcao * porcoesBase;
-      const fc = ing?.fator_correcao || 1;
-      const qtdComprar = qtdOriginal * fc;
-      const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
+      const calculado = calcularItemIngredienteReceita({
+        item,
+        ingrediente: ing,
+        quantidadeLiquida: qtdOriginal,
+      });
       const isChildOfSubreceita = !!item.subreceita_parent_id;
-      return { ...item, ing, qtdOriginal, qtdNova: qtdOriginal, qtdComprar, custo, isGrupo: false, isNA: false, isChildOfSubreceita };
+
+      return {
+        ...item,
+        ing,
+        qtdOriginal,
+        qtdNova: calculado.pesoLiquido,
+        qtdComprar: calculado.pesoBruto,
+        custo: calculado.custo,
+        fcEfetivo: calculado.fc,
+        fcOrigem: calculado.fcOrigem,
+        fcOverride: calculado.fcOverride,
+        unidadeQuantidade: resolverUnidadeQuantidade(item, receita),
+        isGrupo: false,
+        isNA: false,
+        isChildOfSubreceita,
+      };
     });
 
   // Reagrupa: filhos explodidos de sub-receita ficam abaixo do marcador
@@ -60,10 +92,9 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     ? calcularModoPreparoComposto(itensFichaAgrupada, receitasBasicasMap, receita?.modo_preparo)
     : [];
 
-  // Peso Bruto (PB) = Peso Líquido (PL) × FC para ingredientes reais.
+  // Peso Bruto (PB) = Peso Líquido (PL) × FC efetivo para ingredientes reais.
   // Quando uma sub-receita está explodida, o marcador não entra na soma para evitar
   // dupla contagem: entram apenas seus ingredientes-filhos, já com o FC aplicado.
-  // Se não houver filhos explodidos, a quantidade do marcador é usada como fallback.
   const subreceitasComFilhos = new Set(Object.keys(childrenByParent));
   const pesoBruto = itensFicha.reduce((sum, item) => {
     if (item.isGrupo) return sum;
@@ -71,12 +102,16 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     return sum + (item.qtdComprar || 0);
   }, 0);
 
+  const pesoLiquido = itensFicha.reduce((sum, item) => {
+    if (item.isGrupo || item.tipo === "subreceita") return sum;
+    return sum + (item.qtdNova || 0);
+  }, 0);
+
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
   const custoEsquecidos = esquecidos.reduce((sum, i) => sum + (i.custo_total || 0), 0);
   const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
 
-  // Indicadores: PC recomendado e nº de porções derivado (mesma lógica do escalador inicial)
   const cat = (receita?.categorias || []).length > 0 ? receita.categorias[0] : (receita?.categoria || "");
   const pcRecomendado = receita?.per_capita_g || sugerirPerCapita(receita?.nome, cat) || 0;
   const rendimentoTotal = receita?.rendimento_total || 0;
@@ -85,7 +120,6 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     : porcoesBase;
   const custoPorPorcao = custoTotal / (nPorcoes || 1);
 
-  // Linha de pesos: bruto x rendimento(PDP) x perda/ganho
   let perda = null;
   if (rendimentoTotal > 0 && pesoBruto > 0) {
     if (rendimentoTotal > pesoBruto) {
@@ -99,6 +133,7 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     itensFichaAgrupada,
     temSubreceitas,
     blocosCompostos,
+    pesoLiquido,
     pesoBruto,
     custoIngredientes,
     custoInsumos,
