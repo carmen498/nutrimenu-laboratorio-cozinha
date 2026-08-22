@@ -66,10 +66,7 @@
     },
     "unidade_base": {
       "type": "string",
-      "enum": [
-        "g",
-        "ml"
-      ],
+      "enum": ["g", "ml"],
       "description": "Unidade base da receita: g (sólidos) ou ml (líquidos)"
     },
     "modo_preparo": {
@@ -135,34 +132,76 @@
     "is_base": {
       "type": "boolean",
       "default": true,
-      "description": "true = receita do catálogo compartilhado original; false = cópia pessoal criada automaticamente ao editar (fork-on-edit)"
-    },
-    "forked_from_id": {
-      "type": "string",
-      "description": "Quando is_base=false, ID da receita original (is_base=true) da qual esta é uma cópia"
-    },
-    "receita_origem_id": {
-      "type": "string",
-      "description": "Feature 'Minhas Receitas': quando preenchido, indica que esta é uma cópia pessoal derivada de outra receita. Aponta para o ID da receita original."
+      "description": "Escopo canônico: true = catálogo compartilhado; false = receita pessoal. Usuários comuns nunca devem criar is_base=true."
     },
     "usuario_dono_id": {
       "type": "string",
-      "description": "Feature 'Minhas Receitas': ID do usuário dono desta cópia pessoal. Se nulo, a receita é original/pública do Laboratório."
+      "description": "Propriedade canônica da receita pessoal. Vazio em receitas do catálogo; em receitas pessoais deve apontar para o usuário dono."
+    },
+    "receita_origem_id": {
+      "type": "string",
+      "description": "Origem imediata canônica da receita derivada. Vazio quando a receita é raiz."
+    },
+    "receita_raiz_id": {
+      "type": "string",
+      "description": "ID do ancestral raiz da linhagem. Em receitas raiz aponta para o próprio ID; em derivações permanece estável através das gerações."
+    },
+    "linhagem_geracao": {
+      "type": "number",
+      "description": "Distância até a receita raiz: 0 para raiz, 1 para derivação direta e assim por diante."
+    },
+    "linhagem_tipo": {
+      "type": "string",
+      "enum": ["catalogo", "autoral", "personalizacao", "duplicacao", "importacao"],
+      "description": "Natureza da receita na linhagem. catalogo/autoral são raízes; personalizacao/duplicacao/importacao descrevem derivações quando aplicável."
+    },
+    "linhagem_versao": {
+      "type": "number",
+      "description": "Versão do modelo de propriedade/linhagem. A Fase 9 usa versão 1."
+    },
+    "linhagem_status": {
+      "type": "string",
+      "enum": ["canonica", "a_validar", "origem_ausente", "ciclo"],
+      "description": "Estado da linhagem persistida. Registros históricos inconsistentes são preservados e marcados para revisão."
+    },
+    "forked_from_id": {
+      "type": "string",
+      "description": "LEGADO/COMPATIBILIDADE do fork-on-edit. Na Fase 9 a origem canônica é receita_origem_id; para personalizações novas este campo é mantido sincronizado temporariamente."
     },
     "data_personalizacao": {
       "type": "string",
       "format": "date-time",
-      "description": "Feature 'Minhas Receitas': data/hora de criação da cópia pessoal (preenchida automaticamente)"
+      "description": "Data/hora de criação de uma receita pessoal/personalização."
     }
   },
-  "required": [
-    "nome"
-  ],
+  "required": ["nome"],
   "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.is_base": false
+            },
+            {
+              "data.usuario_dono_id": "{{user.id}}"
+            }
+          ]
+        }
+      ]
+    },
     "read": {
       "$or": [
         {
           "data.is_base": true
+        },
+        {
+          "data.usuario_dono_id": "{{user.id}}"
         },
         {
           "created_by_id": "{{user.id}}"
@@ -177,6 +216,9 @@
     "update": {
       "$or": [
         {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
           "created_by_id": "{{user.id}}"
         },
         {
@@ -188,6 +230,9 @@
     },
     "delete": {
       "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
         {
           "created_by_id": "{{user.id}}"
         },
