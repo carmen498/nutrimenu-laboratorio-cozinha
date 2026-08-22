@@ -1,12 +1,13 @@
-// Cálculo da Ficha Técnica (PDF) — SEMPRE reflete a receita BASE (porcoes_base / rendimento_total),
-// nunca o estado do escalador na tela. Mesmo caminho de cálculo usado na ficha (ReceitaAberta),
-// apenas fixando fator = 1. Não grava nada — apenas deriva valores para exibição.
+// Cálculo da Ficha Técnica (PDF) — SEMPRE reflete a receita BASE.
+// Fase 5: PB permanece conceito de compra/custo; o rendimento técnico compara
+// peso líquido pré-preparo com PDP (peso pós-preparo).
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 import { sugerirPerCapita } from "@/lib/perCapitaData";
 import {
   calcularItemIngredienteReceita,
   resolverUnidadeQuantidade,
 } from "@/lib/ingredienteReceitaCalc";
+import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 
 export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita = [], esquecidos = [] }) {
   const porcoesBase = receita?.porcoes_base || 1;
@@ -65,7 +66,6 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
       };
     });
 
-  // Reagrupa: filhos explodidos de sub-receita ficam abaixo do marcador
   const childrenByParent = {};
   itensFicha.forEach((item) => {
     if (item.subreceita_parent_id) {
@@ -92,9 +92,7 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     ? calcularModoPreparoComposto(itensFichaAgrupada, receitasBasicasMap, receita?.modo_preparo)
     : [];
 
-  // Peso Bruto (PB) = Peso Líquido (PL) × FC efetivo para ingredientes reais.
-  // Quando uma sub-receita está explodida, o marcador não entra na soma para evitar
-  // dupla contagem: entram apenas seus ingredientes-filhos, já com o FC aplicado.
+  // PB = quantidade líquida × FC. Usado para compra/custo, não para perda de cocção.
   const subreceitasComFilhos = new Set(Object.keys(childrenByParent));
   const pesoBruto = itensFicha.reduce((sum, item) => {
     if (item.isGrupo) return sum;
@@ -103,9 +101,14 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
   }, 0);
 
   const pesoLiquido = itensFicha.reduce((sum, item) => {
-    if (item.isGrupo || item.tipo === "subreceita") return sum;
+    if (item.isGrupo) return sum;
+    if (item.tipo === "subreceita" && subreceitasComFilhos.has(item.id)) return sum;
     return sum + (item.qtdNova || 0);
   }, 0);
+
+  const rendimento = resolverRendimentoReceita(receita, itens);
+  const pesoPrePreparo = rendimento.pesoPrePreparo;
+  const rendimentoTotal = rendimento.pesoPosPreparoEfetivo;
 
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
@@ -114,20 +117,18 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
 
   const cat = (receita?.categorias || []).length > 0 ? receita.categorias[0] : (receita?.categoria || "");
   const pcRecomendado = receita?.per_capita_g || sugerirPerCapita(receita?.nome, cat) || 0;
-  const rendimentoTotal = receita?.rendimento_total || 0;
   const nPorcoes = pcRecomendado > 0 && rendimentoTotal > 0
     ? +(rendimentoTotal / pcRecomendado).toFixed(1)
     : porcoesBase;
   const custoPorPorcao = custoTotal / (nPorcoes || 1);
 
-  let perda = null;
-  if (rendimentoTotal > 0 && pesoBruto > 0) {
-    if (rendimentoTotal > pesoBruto) {
-      perda = { tipo: "ganho", pct: ((rendimentoTotal - pesoBruto) / pesoBruto) * 100 };
-    } else {
-      perda = { tipo: "perda", pct: ((pesoBruto - rendimentoTotal) / pesoBruto) * 100 };
-    }
-  }
+  const perda = rendimento.variacaoPercentual == null
+    ? null
+    : {
+        tipo: rendimento.tipoVariacao,
+        pct: Math.abs(rendimento.variacaoPercentual),
+        variacaoPct: rendimento.variacaoPercentual,
+      };
 
   return {
     itensFichaAgrupada,
@@ -135,6 +136,7 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     blocosCompostos,
     pesoLiquido,
     pesoBruto,
+    pesoPrePreparo,
     custoIngredientes,
     custoInsumos,
     custoEsquecidos,
@@ -142,6 +144,12 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     porcoesBase,
     pcRecomendado,
     rendimentoTotal,
+    rendimentoInformado: rendimento.pesoPosPreparoInformado,
+    rendimentoEstimado: rendimento.rendimentoEstimado,
+    rendimentoOrigem: rendimento.rendimentoOrigem,
+    rendimentoStatus: rendimento.rendimentoStatus,
+    fatorRendimento: rendimento.fatorRendimento,
+    variacaoRendimentoPct: rendimento.variacaoPercentual,
     nPorcoes,
     custoPorPorcao,
     perda,
