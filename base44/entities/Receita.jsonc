@@ -106,15 +106,46 @@
     },
     "custo_total": {
       "type": "number",
-      "description": "Custo total calculado"
+      "description": "CACHE PERSISTIDO de custo da receita. Em receitas compartilhadas representa refer\u00eancia global com pre\u00e7os mestre; nunca deve ser usado como fonte de verdade para pre\u00e7o pessoal do usu\u00e1rio."
     },
     "custo_insumos": {
       "type": "number",
-      "description": "Custo total de insumos e embalagens"
+      "description": "CACHE PERSISTIDO do custo de insumos/embalagens do lote. A fonte de verdade permanece nos registros InsumoReceita."
     },
     "custo_por_porcao": {
       "type": "number",
-      "description": "Custo por por\u00e7\u00e3o calculado"
+      "description": "CACHE PERSISTIDO do custo por por\u00e7\u00e3o. Consumidores com contexto comercial devem recalcular pelo Motor de Custos Can\u00f4nico."
+    },
+    "custo_modelo_versao": {
+      "type": "number",
+      "description": "Vers\u00e3o do modelo usado para gerar o cache de custos. A Fase 10 usa vers\u00e3o 2."
+    },
+    "custo_cache_status": {
+      "type": "string",
+      "enum": [
+        "atual",
+        "a_recalcular",
+        "incompleto",
+        "legado"
+      ],
+      "description": "Estado do cache persistido. incompleto indica refer\u00eancia/pre\u00e7o ausente; o c\u00e1lculo ao vivo continua sendo a fonte de verdade."
+    },
+    "custo_cache_atualizado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da \u00faltima normaliza\u00e7\u00e3o do cache de custos."
+    },
+    "custo_cache_contexto": {
+      "type": "string",
+      "enum": [
+        "global",
+        "proprietario"
+      ],
+      "description": "Contexto do cache persistido: global para cat\u00e1logo compartilhado; proprietario para receita pessoal."
+    },
+    "custo_cache_itens_sem_preco": {
+      "type": "number",
+      "description": "Quantidade de itens que impedem o cache de ser considerado completo."
     },
     "revisar": {
       "type": "boolean",
