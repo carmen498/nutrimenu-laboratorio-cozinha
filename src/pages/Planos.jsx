@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
+import { avaliarAcessoAssinatura } from "@/lib/acessoAssinatura";
 import { toast } from "@/components/ui/use-toast";
 import PlanoCard from "@/components/planos/PlanoCard";
 import IncluidoTodosPlanos from "@/components/planos/IncluidoTodosPlanos";
@@ -47,6 +48,11 @@ export default function Planos() {
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
   const cicloRenovacao = user?.ciclo_renovacao || 0;
+  const acessoAssinatura = avaliarAcessoAssinatura(user);
+  const assinaturaVencida =
+    user?.role !== "admin" &&
+    !acessoAssinatura.temAcesso &&
+    ["expirado", "vencido", "cancelado", "sem_data_expiracao"].includes(acessoAssinatura.motivo);
 
   const diasRestantesTrial =
     statusAssinatura === "trial" && user?.data_expiracao
@@ -94,7 +100,7 @@ export default function Planos() {
         <ArrowLeft className="w-4 h-4" /> Voltar
       </Link>
 
-      {statusAssinatura === "vencido" && (
+      {assinaturaVencida && (
         <BannerVencido
           dataVencimento={formatarData(user?.data_expiracao) || "—"}
           onRenovar={() => scrollToPlano(planoAtual || "mensal")}
@@ -144,7 +150,7 @@ export default function Planos() {
               destaque={configPorId.mensal.mais_popular}
               onClick={() => handleAssinar("mensal", configPorId.mensal.nome)}
               isCurrentPlan={planoAtual === "mensal"}
-              validadeLabel="Próxima cobrança em"
+              validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
             />
           )}
@@ -160,7 +166,7 @@ export default function Planos() {
               destaque={configPorId.anual.mais_popular}
               onClick={() => handleAssinar("anual", configPorId.anual.nome)}
               isCurrentPlan={planoAtual === "anual"}
-              validadeLabel="Próxima cobrança em"
+              validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
             />
           )}
@@ -176,7 +182,7 @@ export default function Planos() {
               destaque={configPorId.renovacao.mais_popular}
               onClick={handleEmBreve}
               isCurrentPlan={planoAtual === "renovacao"}
-              validadeLabel="Próxima cobrança em"
+              validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
               bloqueado={planoAtual !== "renovacao" && cicloRenovacao < 1}
               mensagemBloqueio="Disponível a partir do 2º ano"
@@ -187,7 +193,7 @@ export default function Planos() {
 
       <IncluidoTodosPlanos />
 
-      {statusAssinatura === "trial" && diasRestantesTrial != null && diasRestantesTrial <= 3 && (
+      {statusAssinatura === "trial" && acessoAssinatura.temAcesso && diasRestantesTrial != null && diasRestantesTrial <= 3 && (
         <BannerTrialExpirando
           diasRestantes={Math.max(diasRestantesTrial, 0)}
           onAssinar={() => scrollToPlano("anual")}
