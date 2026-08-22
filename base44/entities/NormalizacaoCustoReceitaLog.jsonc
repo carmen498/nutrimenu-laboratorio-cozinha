@@ -1,0 +1,57 @@
+{
+  "name": "NormalizacaoCustoReceitaLog",
+  "type": "object",
+  "properties": {
+    "executado_por_id": {
+      "type": "string"
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "total_receitas": {
+      "type": "number"
+    },
+    "normalizadas": {
+      "type": "number"
+    },
+    "ja_atuais": {
+      "type": "number"
+    },
+    "incompletas": {
+      "type": "number"
+    },
+    "itens_sem_preco": {
+      "type": "number"
+    },
+    "referencias_ausentes": {
+      "type": "number"
+    },
+    "detalhes": {
+      "type": "string",
+      "description": "Resumo JSON dos primeiros registros que exigem revis\u00e3o."
+    }
+  },
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
