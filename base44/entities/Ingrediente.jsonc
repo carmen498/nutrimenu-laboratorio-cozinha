@@ -50,7 +50,7 @@
     "favorito": {
       "type": "boolean",
       "default": false,
-      "description": "Ingrediente marcado como favorito"
+      "description": "LEGADO: não gravar novas preferências aqui. Favoritos por usuário ficam em IngredienteUsuario."
     },
     "preco_estimado": {
       "type": "boolean",
