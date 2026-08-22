@@ -12,48 +12,26 @@
       "items": {
         "type": "object",
         "properties": {
-          "ingrediente_id": {
-            "type": "string"
-          },
-          "ingrediente_nome": {
-            "type": "string"
-          },
-          "categoria": {
-            "type": "string"
-          },
-          "quantidade_g": {
-            "type": "number"
-          },
-          "unidade_compra": {
-            "type": "string"
-          },
-          "peso_embalagem_g": {
-            "type": "number"
-          },
-          "custo_estimado": {
-            "type": "number"
-          },
-          "ja_tenho": {
-            "type": "boolean"
-          }
+          "ingrediente_id": { "type": "string" },
+          "ingrediente_nome": { "type": "string" },
+          "categoria": { "type": "string" },
+          "quantidade_g": { "type": "number" },
+          "unidade_compra": { "type": "string" },
+          "peso_embalagem_g": { "type": "number" },
+          "custo_estimado": { "type": "number" },
+          "ja_tenho": { "type": "boolean" }
         }
       }
     },
     "receitas_incluidas": {
       "type": "array",
-      "description": "Receitas inclu\u00eddas na lista",
+      "description": "Receitas incluídas na lista",
       "items": {
         "type": "object",
         "properties": {
-          "receita_id": {
-            "type": "string"
-          },
-          "receita_nome": {
-            "type": "string"
-          },
-          "porcoes": {
-            "type": "number"
-          }
+          "receita_id": { "type": "string" },
+          "receita_nome": { "type": "string" },
+          "porcoes": { "type": "number" }
         }
       }
     },
@@ -62,7 +40,31 @@
       "description": "Total geral da compra"
     }
   },
-  "required": [
-    "nome"
-  ]
+  "required": ["nome"],
+  "rls": {
+    "create": {
+      "$or": [
+        { "user_condition": { "role": "user" } },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "read": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "delete": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    }
+  }
 }
