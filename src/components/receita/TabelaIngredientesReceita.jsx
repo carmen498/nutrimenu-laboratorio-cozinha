@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { ChefHat, Pencil, Trash2, ArrowUp, ArrowDown, Check, X, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
+import { useAuth } from "@/lib/AuthContext";
 
 function buildGridTemplate(mostrarFC, mostrarMedidaCaseira) {
   const cols = ["minmax(160px,18fr)", "minmax(90px,11fr)", "minmax(70px,8fr)"];
@@ -28,6 +29,8 @@ export default function TabelaIngredientesReceita({
   deleteItemOrGrupoMut, deleteSubreceitaMut, updateFCMut,
   handleMove, handleDragEnd, formatWeight, formatCustoItem,
 }) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const gridTemplate = buildGridTemplate(mostrarFC, mostrarMedidaCaseira);
 
   const totalPesoLiq = itens.filter(i => !i.isGrupo).reduce((s, i) => s + (i.qtdNova || 0), 0);
@@ -324,7 +327,9 @@ export default function TabelaIngredientesReceita({
                         <div>{pesoLiqCell}</div>
                         {mostrarFC && (
                           <div className="flex justify-center">
-                            {item.isSubreceita ? <span className="text-sm text-muted-foreground">—</span> : (
+                            {item.isSubreceita ? (
+                              <span className="text-sm text-muted-foreground">—</span>
+                            ) : isAdmin ? (
                               <Input
                                 type="number"
                                 step="0.01"
@@ -337,6 +342,10 @@ export default function TabelaIngredientesReceita({
                                 }}
                                 onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
                               />
+                            ) : (
+                              <span className="text-sm text-muted-foreground" title="FC do cadastro mestre — somente leitura">
+                                {String(fc).replace(".", ",")}
+                              </span>
                             )}
                           </div>
                         )}
