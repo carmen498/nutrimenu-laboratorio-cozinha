@@ -46,6 +46,9 @@ export default function IngredienteFichaHeader({ ingrediente, isAdmin = false, o
             {ingrediente.fator_correcao && ingrediente.fator_correcao !== 1.0 && (
               <Badge variant="secondary" className="text-xs">FC {String(ingrediente.fator_correcao).replace(".", ",")}</Badge>
             )}
+            {!isAdmin && ingrediente._dados_comerciais_pessoais && (
+              <Badge variant="outline" className="text-xs">Meus dados de compra</Badge>
+            )}
             <Badge
               className={`text-xs flex items-center gap-1 ${precoDesatualizado ? "bg-red-100 text-red-700 border-red-200" : "bg-secondary text-secondary-foreground"}`}
             >
@@ -77,7 +80,7 @@ export default function IngredienteFichaHeader({ ingrediente, isAdmin = false, o
           </>
         )}
         <Button onClick={onEditar} className="shrink-0">
-          <Pencil className="w-4 h-4 mr-1" /> {isAdmin ? "Editar" : "Editar meu preço"}
+          <Pencil className="w-4 h-4 mr-1" /> {isAdmin ? "Editar" : "Meus dados de compra"}
         </Button>
       </div>
 
