@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { exigirAssinaturaAtiva } from "../../shared/acessoAssinatura.ts";
 
 const BATCH_SIZE = 25;
 
@@ -52,8 +53,8 @@ IMPORTANTE:
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { response } = await exigirAssinaturaAtiva(base44);
+    if (response) return response;
 
     const body = await req.json();
     const ingredientes = body.ingredientes || [];
@@ -62,7 +63,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Nenhum ingrediente informado' }, { status: 400 });
     }
 
-    // Process in batches to avoid token limits
     const todosResultados = [];
     for (let i = 0; i < ingredientes.length; i += BATCH_SIZE) {
       const lote = ingredientes.slice(i, i + BATCH_SIZE);
