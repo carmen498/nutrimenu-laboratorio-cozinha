@@ -44,6 +44,13 @@ Deno.serve(async (req) => {
       somaPorReceita[i.receita_id] = (somaPorReceita[i.receita_id] || 0) + (Number(i.quantidade_por_porcao) || 0);
     }
 
+    // Grupo B: a assinatura original do bug (porcoes_base > 100) já foi apagada
+    // por uma correção anterior de rendimento_total — hoje toda a categoria
+    // Aves está com porcoes_base = 1. O rastro confiável que resta é o
+    // CorrecaoRendimentoLog: só as receitas importadas em lote com o bug
+    // precisaram ter seu rendimento_total recalculado por aquela correção.
+    // Receitas de Aves cadastradas corretamente desde o início não aparecem
+    // nesse log e permanecem intocadas aqui.
     const idsComRendimentoCorrigido = new Set(logsRendimento.map((l) => l.receita_id));
     const avesCorrompidas = avesTodas.filter((r) => idsComRendimentoCorrigido.has(r.id));
 
@@ -52,16 +59,19 @@ Deno.serve(async (req) => {
 
     const processar = (r, perCapitaAlvo) => {
       const somaIngredientes = somaPorReceita[r.id] || 0;
+
       const porcoesBaseAtual = r.porcoes_base ?? null;
       const perCapitaAtual = r.per_capita_g ?? null;
       const rendimentoAtual = r.rendimento_total ?? null;
+
       const porcoesBaseAlvo = 1;
       const rendimentoAlvo = somaIngredientes;
 
       const mudaPorcoes = Number(porcoesBaseAtual) !== porcoesBaseAlvo;
       const mudaPerCapita = Number(perCapitaAtual) !== perCapitaAlvo;
       const mudaRendimento = Math.abs((Number(rendimentoAtual) || 0) - rendimentoAlvo) >= 0.01;
-      if (!mudaPorcoes && !mudaPerCapita && !mudaRendimento) return;
+
+      if (!mudaPorcoes && !mudaPerCapita && !mudaRendimento) return; // já correta — idempotência
 
       updates.push({ id: r.id, porcoes_base: porcoesBaseAlvo, per_capita_g: perCapitaAlvo, rendimento_total: rendimentoAlvo });
       logs.push({
