@@ -1,4 +1,4 @@
-// Modelo canônico de MedidaCaseira — Fase 7.
+// Modelo canônico de MedidaCaseira — Fase 7/7.1.
 //
 // Referências canônicas:
 // - ingrediente_id -> Ingrediente
@@ -20,6 +20,7 @@ export function getIngredienteIdMedida(medida) {
 }
 
 export function getUtensilioIdMedida(medida) {
+  if (medida?.so_gramas) return null;
   return texto(medida?.utensilio_id) || texto(medida?.utensilio) || null;
 }
 
@@ -47,7 +48,7 @@ export function getVolumePorMedidaMl(medida) {
 
 export function chaveCanonicaMedida(medida) {
   const ingredienteId = getIngredienteIdMedida(medida) || "*";
-  const utensilioId = getUtensilioIdMedida(medida) || "*";
+  const utensilioId = medida?.so_gramas ? "*" : (getUtensilioIdMedida(medida) || "*");
   const estado = texto(medida?.estado_alimento) || "não informado";
   return `${ingredienteId}|${utensilioId}|${estado}`;
 }
@@ -60,7 +61,7 @@ export function chaveCanonicaMedida(medida) {
  */
 export function normalizarPayloadMedidaCaseira(payload = {}, { manterCacheRuntime = true } = {}) {
   const ingredienteId = getIngredienteIdMedida(payload);
-  const utensilioId = getUtensilioIdMedida(payload);
+  const utensilioId = payload.so_gramas ? null : getUtensilioIdMedida(payload);
   const quantidadeUtensilio = getQuantidadeUtensilioMedida(payload);
   const pesoPorMedida = getPesoPorMedidaG(payload);
   const volumePorMedida = getVolumePorMedidaMl(payload);
@@ -72,7 +73,7 @@ export function normalizarPayloadMedidaCaseira(payload = {}, { manterCacheRuntim
     ...payload,
     modelo_versao: MEDIDA_CASEIRA_MODELO_VERSAO,
     ingrediente_id: ingredienteId || "",
-    utensilio_id: utensilioId || "",
+    utensilio_id: payload.so_gramas ? "" : (utensilioId || ""),
     quantidade_utensilio: quantidadeUtensilio,
     estado_alimento: estado,
     so_gramas: !!payload.so_gramas,
@@ -84,7 +85,7 @@ export function normalizarPayloadMedidaCaseira(payload = {}, { manterCacheRuntim
   if (volumePorMedida) dados.volume_ml = volumePorMedida * quantidadeUtensilio;
   else if (dados.volume_ml == null) dados.volume_ml = null;
 
-  dados.chave_canonica = `${dados.ingrediente_id || "*"}|${dados.utensilio_id || "*"}|${estado}`;
+  dados.chave_canonica = `${dados.ingrediente_id || "*"}|${dados.so_gramas ? "*" : (dados.utensilio_id || "*")}|${estado}`;
 
   delete dados.alimento;
   delete dados.utensilio;
