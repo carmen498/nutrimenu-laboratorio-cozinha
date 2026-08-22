@@ -1,5 +1,5 @@
 // Lista de compras do fluxo de EVENTO (Planejamento) — acessada via /lista-compras?planejamento=ID.
-// Fluxo próprio e intacto: NÃO alterar. Mantido separado do Carrinho de ingredientes.
+// Fluxo próprio preservado; Fase 3 altera apenas a fonte dos dados comerciais do ingrediente.
 import { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,12 @@ import { Label } from "@/components/ui/label";
 import BuscaReceitaDialog from "@/components/receita/BuscaReceitaDialog";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 const CATEGORIAS_COMPRA = {
   "Carnes e Ovos": "Carnes",
@@ -28,6 +34,8 @@ const CATEGORIAS_COMPRA = {
 
 export default function EventoListaCompras() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [jaTemho, setJaTenho] = useState({});
   const [showAddReceita, setShowAddReceita] = useState(false);
   const [selectedReceitas, setSelectedReceitas] = useState([]);
@@ -48,6 +56,29 @@ export default function EventoListaCompras() {
     queryKey: ["ingredientes"],
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  const ingredientesEfetivos = useMemo(() => {
+    const comPrecoLegado = isAdmin
+      ? ingredientesDB
+      : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados);
+    return aplicarPreferenciasIngredientes(
+      comPrecoLegado,
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    );
+  }, [ingredientesDB, isAdmin, precosPersonalizados, preferenciasIngredientes]);
 
   const { data: allItens = [] } = useQuery({
     queryKey: ["ingredientesReceitaTodos"],
@@ -102,9 +133,9 @@ export default function EventoListaCompras() {
 
   const ingMap = useMemo(() => {
     const map = {};
-    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    ingredientesEfetivos.forEach((i) => { map[i.id] = i; });
     return map;
-  }, [ingredientesDB]);
+  }, [ingredientesEfetivos]);
 
   const receitaMap = useMemo(() => {
     const map = {};
@@ -151,7 +182,6 @@ export default function EventoListaCompras() {
       itens.forEach((item) => {
         if (item.tipo === "grupo") return;
         if (item.tipo === "subreceita") {
-          // Include ingredients from sub-receita
           const subRec = receitaMap[item.subreceita_id];
           if (!subRec) return;
           const subFator = porcoes / (receita.porcoes_base || 1);
@@ -177,7 +207,6 @@ export default function EventoListaCompras() {
   }, [selectedReceitas, porcoesPorReceita, allItens, ingMap, receitaMap]);
 
   const getItemKey = (item) => `${item.ingrediente_id}_${item.origem || ""}`;
-
   const getComprarQtd = (item) => {
     const key = getItemKey(item);
     if (comprarManual[key] != null) return comprarManual[key];
@@ -245,7 +274,6 @@ export default function EventoListaCompras() {
         </Button>
       </div>
 
-      {/* Margem de segurança */}
       {listaItems.length > 0 && (
         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 flex-wrap">
           <Label className="text-sm font-medium shrink-0">Margem de segurança</Label>
@@ -272,7 +300,6 @@ export default function EventoListaCompras() {
         </div>
       )}
 
-      {/* Selected recipes */}
       {selectedReceitas.length > 0 && (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground font-medium">Receitas incluídas:</p>
@@ -306,7 +333,6 @@ export default function EventoListaCompras() {
         </div>
       )}
 
-      {/* Shopping list */}
       {listaItems.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
@@ -341,7 +367,7 @@ export default function EventoListaCompras() {
                   };
                   return (
                     <Card
-                      key={item.ingrediente_id}
+                      key={getItemKey(item)}
                       className={`p-3 flex items-center gap-2 flex-wrap transition-opacity ${jaTemho[item.ingrediente_id] ? "opacity-40" : ""}`}
                     >
                       <Checkbox
@@ -369,7 +395,6 @@ export default function EventoListaCompras() {
             </div>
           ))}
 
-          {/* Total */}
           <Card className="p-4 bg-primary text-primary-foreground">
             <div className="flex items-center justify-between">
               <span className="font-semibold">Total da compra</span>
@@ -377,7 +402,6 @@ export default function EventoListaCompras() {
             </div>
           </Card>
 
-          {/* Actions */}
           <div className="flex gap-2">
             <Button variant="outline" className="flex-1" onClick={handleShare}>
               <Share2 className="w-4 h-4 mr-1" /> Compartilhar
@@ -386,7 +410,6 @@ export default function EventoListaCompras() {
         </>
       )}
 
-      {/* Doces & Bebidas — fora do total de comida */}
       {docesBebidas.length > 0 && totalPessoasEvento > 0 && (
         <div>
           <Badge variant="secondary" className="mb-2 bg-purple-100 text-purple-700">Doces & Bebidas</Badge>
@@ -418,7 +441,6 @@ export default function EventoListaCompras() {
         </div>
       )}
 
-      {/* Add recipe dialog */}
       <BuscaReceitaDialog
         open={showAddReceita}
         onClose={() => setShowAddReceita(false)}
