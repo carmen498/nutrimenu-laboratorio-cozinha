@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import "@/landing.css";
 import "@/landing-refined.css";
+import carmenPhoto from "@/assets/carmenPhoto";
 import StickyFooter from "@/components/landing/StickyFooter";
 import HeroSection from "@/components/landing/HeroSection";
 import NumbersSection from "@/components/landing/NumbersSection";
@@ -19,7 +20,7 @@ const IMG = {
   pain: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/b43340f32_generated_image.png",
   baking: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/9196f8bd5_generated_image.png",
   couple: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/ddf030eaf_generated_image.png",
-  carmen: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/db3984d1d_generated_image.png",
+  carmen: carmenPhoto,
 };
 
 export default function Landing() {
