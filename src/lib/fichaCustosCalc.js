@@ -36,10 +36,14 @@ function montarDetalheIngredientes(cr, receitaMap, ingredientesPorReceita, ingre
 
   const itens = ingrs
     .map((ing) => {
-      const qtd = (Number(ing.quantidade_por_porcao) || 0) * porcoesBase * fator;
+      // A quantidade cadastrada na receita é Peso Líquido (PL).
+      // Para compra e custo, usar Peso Bruto (PB) = PL × FC.
+      const qtdLiquida = (Number(ing.quantidade_por_porcao) || 0) * porcoesBase * fator;
       const ingRef = ing.ingrediente_id ? ingredienteMap[ing.ingrediente_id] : null;
-      const custo = qtd * (Number(ingRef?.preco_por_g_rs) || 0);
-      return { nome: ing.ingrediente_nome || "—", qtd, custo };
+      const fc = Number(ingRef?.fator_correcao) || 1;
+      const qtdBruta = qtdLiquida * fc;
+      const custo = qtdBruta * (Number(ingRef?.preco_por_g_rs) || 0);
+      return { nome: ing.ingrediente_nome || "—", qtd: qtdBruta, custo };
     })
     .filter((i) => i.custo > 0 || i.qtd > 0)
     .sort((a, b) => b.custo - a.custo);
