@@ -4,13 +4,13 @@
 import { secrets } from "base44:runtime";
 import { buildEmailHtml } from "./emailWrapper.ts";
 
-export async function sendEmailViaResend(base44, { to, subject, html }) {
+export async function sendEmailViaResend(base44, { to, subject, html, marketing = false }) {
   const apiKey = secrets.get("RESEND_API_KEY");
   if (!apiKey) {
     return { ok: false, error: "RESEND_API_KEY não configurada" };
   }
 
-  const htmlFinal = await buildEmailHtml(base44, html);
+  const htmlFinal = await buildEmailHtml(base44, html, { marketing });
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
