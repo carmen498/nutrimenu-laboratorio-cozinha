@@ -9,6 +9,12 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Minus, Plus, ShoppingCart } from "lucide-react";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { montarListaComprasReceita } from "@/lib/listaComprasReceitaCalc";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 const UNIDADES_CONTAGEM = ["UN", "CX", "VIDRO", "LATA", "PACOTE", "MOLHO"];
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
@@ -17,6 +23,8 @@ const formatWeight = (g) => (g >= 1000 ? `${(g / 1000).toFixed(2).replace(".", "
 export default function ReceitaListaCompras() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const params = new URLSearchParams(window.location.search);
   const porcoesUrl = parseFloat(params.get("porcoes"));
 
@@ -40,17 +48,39 @@ export default function ReceitaListaCompras() {
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  const ingredientesEfetivos = useMemo(() => {
+    const comPrecoLegado = isAdmin
+      ? ingredientesDB
+      : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados);
+    return aplicarPreferenciasIngredientes(
+      comPrecoLegado,
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    );
+  }, [ingredientesDB, isAdmin, precosPersonalizados, preferenciasIngredientes]);
+
   const ingMap = useMemo(() => {
     const map = {};
-    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    ingredientesEfetivos.forEach((i) => { map[i.id] = i; });
     return map;
-  }, [ingredientesDB]);
+  }, [ingredientesEfetivos]);
 
   // Porções padrão: mesma referência inicial usada na ficha (rendimento ÷ PC)
   const porcoesEfetivas = useMemo(() => {
     if (porcoes != null) return porcoes;
     if (!receita) return 1;
-    const cat = (receita.categorias || []).length > 0 ? receita.categorias[0] : (receita.categoria || "");
     const pc = receita.per_capita_g || 0;
     if (pc > 0 && receita.rendimento_total > 0) return +(receita.rendimento_total / pc).toFixed(1);
     return receita.porcoes_base || 1;
@@ -78,7 +108,6 @@ export default function ReceitaListaCompras() {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      {/* Cabeçalho */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
@@ -102,7 +131,6 @@ export default function ReceitaListaCompras() {
         </p>
       </Card>
 
-      {/* Itens */}
       {lista.itensLista.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           <ShoppingCart className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
@@ -158,7 +186,6 @@ export default function ReceitaListaCompras() {
         </div>
       )}
 
-      {/* Total */}
       <Card className="p-4 bg-primary text-primary-foreground">
         <div className="flex items-center justify-between">
           <span className="font-semibold">Total da compra</span>
