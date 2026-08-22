@@ -15,20 +15,20 @@ const numeroPositivo = (valor) => {
 
 const texto = (valor) => typeof valor === "string" ? valor.trim() : "";
 
-export function getIngredienteIdMedida(medida) {
+export function getIngredienteIdMedida(/** @type {any} */ medida) {
   return texto(medida?.ingrediente_id) || texto(medida?.alimento) || null;
 }
 
-export function getUtensilioIdMedida(medida) {
+export function getUtensilioIdMedida(/** @type {any} */ medida) {
   if (medida?.so_gramas) return null;
   return texto(medida?.utensilio_id) || texto(medida?.utensilio) || null;
 }
 
-export function getQuantidadeUtensilioMedida(medida) {
+export function getQuantidadeUtensilioMedida(/** @type {any} */ medida) {
   return numeroPositivo(medida?.quantidade_utensilio) || 1;
 }
 
-export function getPesoPorMedidaG(medida) {
+export function getPesoPorMedidaG(/** @type {any} */ medida) {
   const quantidade = getQuantidadeUtensilioMedida(medida);
   const pesoCanonico = numeroPositivo(medida?.peso_g);
   if (pesoCanonico) return pesoCanonico / quantidade;
@@ -37,7 +37,7 @@ export function getPesoPorMedidaG(medida) {
   return legado || null;
 }
 
-export function getVolumePorMedidaMl(medida) {
+export function getVolumePorMedidaMl(/** @type {any} */ medida) {
   const quantidade = getQuantidadeUtensilioMedida(medida);
   const volumeCanonico = numeroPositivo(medida?.volume_ml);
   if (volumeCanonico) return volumeCanonico / quantidade;
@@ -46,7 +46,7 @@ export function getVolumePorMedidaMl(medida) {
   return legado || null;
 }
 
-export function chaveCanonicaMedida(medida) {
+export function chaveCanonicaMedida(/** @type {any} */ medida) {
   const ingredienteId = getIngredienteIdMedida(medida) || "*";
   const utensilioId = medida?.so_gramas ? "*" : (getUtensilioIdMedida(medida) || "*");
   const estado = texto(medida?.estado_alimento) || "não informado";
@@ -59,7 +59,7 @@ export function chaveCanonicaMedida(medida) {
  * o módulo legado de conversão ainda existe em alguns consumidores. Nenhum novo
  * vínculo é gravado em alimento/utensilio/ingrediente_especifico/equivalencia_*.
  */
-export function normalizarPayloadMedidaCaseira(payload = {}, { manterCacheRuntime = true } = {}) {
+export function normalizarPayloadMedidaCaseira(/** @type {any} */ payload = {}, { manterCacheRuntime = true } = {}) {
   const ingredienteId = getIngredienteIdMedida(payload);
   const utensilioId = payload.so_gramas ? null : getUtensilioIdMedida(payload);
   const quantidadeUtensilio = getQuantidadeUtensilioMedida(payload);
@@ -100,7 +100,7 @@ export function normalizarPayloadMedidaCaseira(payload = {}, { manterCacheRuntim
   return dados;
 }
 
-export function diagnosticarMedidaCaseira(medida = {}) {
+export function diagnosticarMedidaCaseira(/** @type {any} */ medida = {}) {
   const problemas = [];
   const ingredienteId = getIngredienteIdMedida(medida);
   const utensilioId = getUtensilioIdMedida(medida);
