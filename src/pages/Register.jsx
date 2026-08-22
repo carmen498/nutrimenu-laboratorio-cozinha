@@ -11,7 +11,6 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const VERSAO_TERMOS = "Termos de Uso v.18/08/2026";
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
