@@ -22,7 +22,7 @@ function getProximaSegunda3h() {
 function formatarProximaAtualizacao() {
   const data = getProximaSegunda3h();
   const hoje = new Date();
-  const diffDias = Math.round((data - hoje) / (1000 * 60 * 60 * 24));
+  const diffDias = Math.round((data.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
   if (diffDias === 0) return "Hoje às 3h";
   if (diffDias === 1) return "Amanhã às 3h";
   const dias = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
