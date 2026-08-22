@@ -1,0 +1,28 @@
+{
+  "name": "SincronizacaoSubreceitaLog",
+  "type": "object",
+  "properties": {
+    "marker_id": { "type": "string", "description": "IngredienteReceita marcador da sub-receita" },
+    "receita_pai_id": { "type": "string", "description": "Receita que utiliza a sub-receita" },
+    "subreceita_id": { "type": "string", "description": "Receita referenciada pelo marcador" },
+    "acao": {
+      "type": "string",
+      "enum": ["sincronizar", "normalizar_status", "erro_ciclo", "origem_ausente", "erro"],
+      "description": "Resultado/ação da sincronização"
+    },
+    "filhos_anteriores": { "type": "number" },
+    "filhos_novos": { "type": "number" },
+    "assinatura_anterior": { "type": "string" },
+    "assinatura_nova": { "type": "string" },
+    "executado_por_id": { "type": "string" },
+    "executado_em": { "type": "string" },
+    "detalhes": { "type": "string" }
+  },
+  "required": ["marker_id", "acao", "executado_em"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}
