@@ -6,13 +6,17 @@
       "type": "string",
       "description": "ID da receita"
     },
+    "modelo_versao": {
+      "type": "number",
+      "description": "Versão do modelo de composição. Novos registros normalizados usam 2; ausência/1 identifica registros legados a migrar."
+    },
     "ingrediente_id": {
       "type": "string",
-      "description": "ID do ingrediente (vazio para tipo=grupo ou tipo=subreceita)"
+      "description": "Referência canônica ao Ingrediente quando tipo=ingrediente. Vazio nos demais tipos."
     },
     "ingrediente_nome": {
       "type": "string",
-      "description": "LEGADO/CACHE: nome do ingrediente. A identidade canônica é ingrediente_id."
+      "description": "LEGADO/CACHE de exibição. Não usar como identidade; o nome canônico deve ser resolvido por ingrediente_id."
     },
     "pre_preparo": {
       "type": "string",
@@ -33,15 +37,15 @@
     },
     "medida_caseira_id": {
       "type": "string",
-      "description": "ID da MedidaCaseira escolhida especificamente para este item da receita. Quando ausente, o app pode usar a medida padrão do ingrediente."
+      "description": "Referência canônica à MedidaCaseira escolhida para este item. Quando ausente, o app pode usar a medida padrão do ingrediente."
     },
     "quantidade_medida_caseira": {
       "type": "number",
-      "description": "Quantidade de medidas informada pelo usuário quando a quantidade do item foi digitada em medida caseira. É metadado de entrada; os gramas/ml continuam sendo a base de cálculo."
+      "description": "Quantidade de medidas informada pelo usuário. É metadado de entrada; g/ml permanecem como base de cálculo."
     },
     "medida_caseira": {
       "type": "string",
-      "description": "LEGADO/CACHE: texto livre de medida caseira. Novas relações devem usar medida_caseira_id."
+      "description": "LEGADO/CACHE de texto livre. Novas relações devem usar medida_caseira_id + quantidade_medida_caseira."
     },
     "ordem": {
       "type": "number",
@@ -49,34 +53,30 @@
     },
     "tipo": {
       "type": "string",
-      "enum": [
-        "ingrediente",
-        "grupo",
-        "subreceita"
-      ],
+      "enum": ["ingrediente", "grupo", "subreceita"],
       "default": "ingrediente",
-      "description": "Tipo do item na lista: ingrediente, grupo ou subreceita"
+      "description": "Discriminador canônico do item. Define quais referências e campos são válidos."
     },
     "titulo_grupo": {
       "type": "string",
-      "description": "Título do grupo (usado quando tipo=grupo)"
+      "description": "Título do grupo, usado somente quando tipo=grupo"
     },
     "subreceita_id": {
       "type": "string",
-      "description": "ID da receita usada como sub-receita (quando tipo=subreceita)"
+      "description": "Referência canônica à Receita usada como sub-receita quando tipo=subreceita."
     },
     "subreceita_nome": {
       "type": "string",
-      "description": "LEGADO/CACHE: nome da sub-receita. A relação canônica é subreceita_id."
+      "description": "LEGADO/CACHE de exibição. Não usar como identidade; o nome canônico deve ser resolvido por subreceita_id."
     },
     "subreceita_parent_id": {
       "type": "string",
-      "description": "ID do item subreceita pai (para ingredientes explodidos de sub-receitas — agrupamento visual e exclusão em cascata)"
+      "description": "ID do item subreceita pai para ingredientes explodidos; usado para agrupamento visual e exclusão em cascata."
     },
     "proporcional": {
       "type": "boolean",
       "default": true,
-      "description": "Indica se o ingrediente escala proporcionalmente com a receita (true) ou tem quantidade fixa (false)"
+      "description": "Indica se o item escala proporcionalmente com a receita (true) ou mantém quantidade fixa (false)."
     },
     "is_base": {
       "type": "boolean",
@@ -87,66 +87,34 @@
       "description": "ID do usuário dono quando a receita-pai é uma cópia pessoal"
     }
   },
-  "required": [
-    "receita_id"
-  ],
+  "required": ["receita_id"],
   "rls": {
     "create": {
       "$or": [
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        },
-        {
-          "$and": [
-            {
-              "data.is_base": false
-            },
-            {
-              "data.usuario_dono_id": "{{user.id}}"
-            }
-          ]
-        }
+        {"user_condition": {"role": "admin"}},
+        {"$and": [
+          {"data.is_base": false},
+          {"data.usuario_dono_id": "{{user.id}}"}
+        ]}
       ]
     },
     "read": {
       "$or": [
-        {
-          "data.is_base": true
-        },
-        {
-          "data.usuario_dono_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
+        {"data.is_base": true},
+        {"data.usuario_dono_id": "{{user.id}}"},
+        {"user_condition": {"role": "admin"}}
       ]
     },
     "update": {
       "$or": [
-        {
-          "data.usuario_dono_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
+        {"data.usuario_dono_id": "{{user.id}}"},
+        {"user_condition": {"role": "admin"}}
       ]
     },
     "delete": {
       "$or": [
-        {
-          "data.usuario_dono_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
+        {"data.usuario_dono_id": "{{user.id}}"},
+        {"user_condition": {"role": "admin"}}
       ]
     }
   }
