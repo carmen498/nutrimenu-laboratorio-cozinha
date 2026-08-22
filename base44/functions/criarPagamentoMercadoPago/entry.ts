@@ -18,7 +18,24 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v6-2026-08-18-correcao-items-cpf";
+const VERSAO_CODIGO = "v7-2026-08-22-redacao-diagnosticos";
+
+function sanitizarDiagnostico(valor: unknown): unknown {
+  if (Array.isArray(valor)) return valor.map(sanitizarDiagnostico);
+  if (!valor || typeof valor !== 'object') return valor;
+
+  const saida: Record<string, unknown> = {};
+  for (const [chave, item] of Object.entries(valor as Record<string, unknown>)) {
+    const k = chave.toLowerCase();
+    if (k === 'token' || k === 'email' || k === 'first_name' || k === 'last_name' ||
+        k === 'identification' || k === 'card' || k === 'security_code') {
+      saida[chave] = '[REDACTED]';
+    } else {
+      saida[chave] = sanitizarDiagnostico(item);
+    }
+  }
+  return saida;
+}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -171,8 +188,8 @@ export default async function(req: Request): Promise<Response> {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
         detalhe_erro: `HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`,
-        resposta_erro_mp_completa: JSON.stringify(mpData),
-        payload_enviado_mp: JSON.stringify(orderBody),
+        resposta_erro_mp_completa: JSON.stringify(sanitizarDiagnostico(mpData)),
+        payload_enviado_mp: JSON.stringify(sanitizarDiagnostico(orderBody)),
       });
       return Response.json({ error: "Não foi possível processar o pagamento", detalhe: mpData }, { status: 400 });
     }
