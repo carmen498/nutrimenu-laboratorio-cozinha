@@ -13,6 +13,15 @@ const numero = (valor) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const normalizarNomeReferencia = (valor) => String(valor || "")
+  .trim()
+  .normalize("NFD")
+  .replace(/[\u0300-\u036f]/g, "")
+  .toUpperCase()
+  .replace(/[^A-Z0-9]+/g, " ")
+  .trim()
+  .replace(/\s+/g, " ");
+
 export function rendimentoEfetivo(receita, ingredientesReceita = []) {
   return resolverRendimentoReceita(receita, ingredientesReceita).pesoPosPreparoEfetivo || 0;
 }
@@ -26,6 +35,14 @@ function custoInsumoReceita(insumo) {
 function calcularCustoEsquecido(esquecido, ingredienteMap, fator) {
   const ingrediente = esquecido?.ingrediente_id ? ingredienteMap?.[esquecido.ingrediente_id] : null;
   const quantidade = numero(esquecido?.quantidade_g) * fator;
+
+  if (
+    ingrediente &&
+    esquecido?.nome &&
+    normalizarNomeReferencia(esquecido.nome) !== normalizarNomeReferencia(ingrediente.nome)
+  ) {
+    return { custo: 0, origem: "referencia_divergente", semPreco: false, referenciaInvalida: true };
+  }
 
   if (ingrediente && quantidade > 0) {
     const calculado = calcularItemIngredienteReceita({
@@ -81,6 +98,21 @@ export function calcularCustoReceitaCanonico({
       continue;
     }
 
+    if (
+      item.ingrediente_nome &&
+      normalizarNomeReferencia(item.ingrediente_nome) !== normalizarNomeReferencia(ingrediente.nome)
+    ) {
+      referenciasAusentes++;
+      problemas.push({
+        item_id: item.id || "",
+        ingrediente_id: item.ingrediente_id,
+        ingrediente_nome_cache: item.ingrediente_nome,
+        ingrediente_nome_mestre: ingrediente.nome,
+        tipo: "ingrediente_nome_id_divergente",
+      });
+      continue;
+    }
+
     const quantidadeLiquida = numero(item.quantidade_por_porcao) * porcoesBase * fatorSeguro;
     const calculado = calcularItemIngredienteReceita({ item, ingrediente, quantidadeLiquida });
     custoIngredientes += calculado.custo;
@@ -102,6 +134,14 @@ export function calcularCustoReceitaCanonico({
     const calculado = calcularCustoEsquecido(esquecido, ingredienteMap, fatorSeguro);
     custoEsquecidos += calculado.custo;
     if (calculado.origem === "cache_legado" || calculado.origem === "unitario_legado") esquecidosCacheLegado++;
+    if (calculado.referenciaInvalida) {
+      referenciasAusentes++;
+      problemas.push({
+        item_id: esquecido?.id || "",
+        ingrediente_id: esquecido?.ingrediente_id || "",
+        tipo: "esquecido_nome_id_divergente",
+      });
+    }
     if (calculado.semPreco && numero(esquecido?.quantidade_g) > 0) {
       itensSemPreco++;
       problemas.push({ item_id: esquecido?.id || "", tipo: "esquecido_sem_preco" });
