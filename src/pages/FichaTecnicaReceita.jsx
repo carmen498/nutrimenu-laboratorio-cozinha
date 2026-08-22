@@ -19,6 +19,12 @@ import {
   buscarPreferenciasIngredientes,
   aplicarPreferenciasIngredientes,
 } from "@/lib/preferenciaIngredienteUsuario";
+import {
+  getMedidaIngredienteId,
+  getMedidaPesoG,
+  getMedidaUtensilioId,
+  resolverMedidaCaseiraItem,
+} from "@/lib/ingredienteReceitaCalc";
 
 export default function FichaTecnicaReceita() {
   const { id } = useParams();
@@ -121,10 +127,19 @@ export default function FichaTecnicaReceita() {
     return map;
   }, [utensiliosPadrao]);
 
+  const medidaById = useMemo(() => {
+    const map = {};
+    medidasCaseiras.forEach((mc) => {
+      if (mc.id) map[mc.id] = mc;
+    });
+    return map;
+  }, [medidasCaseiras]);
+
   const medidaByIngrediente = useMemo(() => {
     const map = {};
     medidasCaseiras.forEach((mc) => {
-      if (mc.alimento && !map[mc.alimento]) map[mc.alimento] = mc;
+      const ingredienteId = getMedidaIngredienteId(mc);
+      if (ingredienteId && !map[ingredienteId]) map[ingredienteId] = mc;
     });
     return map;
   }, [medidasCaseiras]);
@@ -139,16 +154,18 @@ export default function FichaTecnicaReceita() {
     if (!ficha) return map;
     ficha.itensFichaAgrupada.forEach((item) => {
       if (item.ing && !item.isSubreceita) {
-        const mc = medidaByIngrediente[item.ing.id];
+        const mc = resolverMedidaCaseiraItem(item, item.ing, medidaById, medidaByIngrediente);
         if (mc) {
-          const ute = uteMap[mc.utensilio];
-          const result = converterGramasParaMedida(item.qtdNova, mc, ute);
+          const ute = uteMap[getMedidaUtensilioId(mc)];
+          const refG = getMedidaPesoG(mc);
+          const medidaCompat = mc.referencia_g || !refG ? mc : { ...mc, referencia_g: refG };
+          const result = converterGramasParaMedida(item.qtdNova, medidaCompat, ute);
           if (result?.texto) map[item.id] = result.texto;
         }
       }
     });
     return map;
-  }, [ficha, medidaByIngrediente, uteMap]);
+  }, [ficha, medidaById, medidaByIngrediente, uteMap]);
 
   if (!receita || !ficha) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
