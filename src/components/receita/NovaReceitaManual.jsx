@@ -1,4 +1,5 @@
 import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -213,7 +214,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     setSaving(true);
     try {
       const passos = formatarModoPreparo(form.modo_preparo);
-      const receita = await base44.entities.Receita.create({
+      const receita = await criarReceitaSegura({
         ...form,
         nome: form.nome?.toUpperCase(),
         porcoes_base: form.porcoes_base || null,
