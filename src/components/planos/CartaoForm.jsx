@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
+import { carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 
 const PARCELAS_OPCOES = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -19,15 +19,18 @@ export default function CartaoForm({ plano, email, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    // Pré-carrega somente quando o formulário de cartão é realmente aberto.
+    carregarMercadoPagoSdk().catch(() => {});
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      if (!window.MercadoPago) {
-        throw new Error("SDK do Mercado Pago não carregou. Recarregue a página.");
-      }
-      const mp = new window.MercadoPago(MERCADOPAGO_PUBLIC_KEY);
+      const MercadoPago = await carregarMercadoPagoSdk();
+      const mp = new MercadoPago(MERCADOPAGO_PUBLIC_KEY);
 
       const [mes, ano] = validade.split("/").map((v) => v.trim());
       const cardNumberLimpo = numero.replace(/\s/g, "");
