@@ -6,6 +6,7 @@ import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
 import AuditoriaComposicaoReceita from "./AuditoriaComposicaoReceita";
 import AuditoriaMedidasCaseiras from "./AuditoriaMedidasCaseiras";
+import HistoricoSaneamentoMedidas from "@/components/auditoria/HistoricoSaneamentoMedidas";
 import RelatorioCategorias from "./RelatorioCategorias";
 import RelatorioDuplicados from "./RelatorioDuplicados";
 import RelatorioFaxinaCategorias from "./RelatorioFaxinaCategorias";
@@ -38,7 +39,10 @@ export default function Auditorias() {
         </TabsList>
         <TabsContent value="rendimento" className="mt-4"><AuditoriaRendimento /></TabsContent>
         <TabsContent value="composicao" className="mt-4"><AuditoriaComposicaoReceita /></TabsContent>
-        <TabsContent value="medidas" className="mt-4"><AuditoriaMedidasCaseiras /></TabsContent>
+        <TabsContent value="medidas" className="mt-4 space-y-4">
+          <AuditoriaMedidasCaseiras />
+          <HistoricoSaneamentoMedidas />
+        </TabsContent>
         <TabsContent value="receitas" className="mt-4"><AuditoriaReceitas /></TabsContent>
         <TabsContent value="categorias" className="mt-4"><RelatorioCategorias /></TabsContent>
         <TabsContent value="duplicados" className="mt-4"><RelatorioDuplicados /></TabsContent>
