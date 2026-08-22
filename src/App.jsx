@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminRoute from '@/components/AdminRoute';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
@@ -135,16 +136,18 @@ const AuthenticatedApp = () => {
           <Route path="/suporte" element={<Suporte />} />
           <Route path="/sobre" element={<Sobre />} />
           <Route path="/conta" element={<Conta />} />
-          <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
-          <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
           <Route path="/planos" element={<Planos />} />
           <Route path="/dicas-carmen" element={<DicasCarmen />} />
-          <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
           <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
           <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
-          <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
-          <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
-          <Route path="/auditorias" element={<Auditorias />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
+            <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
+            <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
+            <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
+            <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
+            <Route path="/auditorias" element={<Auditorias />} />
+          </Route>
           <Route path="/planejamento/:id/pre-preparos" element={<PrePreparosPlanejamento />} />
           <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
           <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
