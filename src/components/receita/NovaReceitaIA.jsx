@@ -1,4 +1,5 @@
 import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -343,7 +344,7 @@ IMPORTANTE:
       const porcoes = p.porcoes_base || 0;
       const semCategoria = !catAuto || catAuto.length === 0;
       
-      const receita = await base44.entities.Receita.create({
+      const receita = await criarReceitaSegura({
         nome: p.nome?.toUpperCase(),
         categorias: semCategoria ? [] : catAuto,
         revisar: false,
@@ -630,7 +631,7 @@ Para cada variação, retorne:
         }
 
         const rendimentoCalc = novosIngredientes.reduce((acc, ing) => acc + (ing.quantidade_g || 0), 0);
-        const novaReceita = await base44.entities.Receita.create({
+        const novaReceita = await criarReceitaSegura({
           nome: variacao.novo_nome.toUpperCase(),
           categorias: variacao.nova_categoria ? [variacao.nova_categoria] : (p.categorias || []),
           revisar: false,
