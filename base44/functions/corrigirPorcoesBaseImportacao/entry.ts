@@ -2,16 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 // Correção de um bug antigo do importador de texto: porcoes_base recebeu o
 // valor do campo PORÇÃO do arquivo (Sopas) ou a soma dos próprios insumos
-// (Aves importadas em lote), em vez de 1, deixando per_capita_g vazio/errado
-// e inflando rendimento_total.
+// (Aves importadas em lote), em vez de 1.
 //
-// NÃO altera ingredientes, quantidades ou preços — apenas porcoes_base,
-// per_capita_g e rendimento_total.
-// Grupo A (Sopas): lista fechada de 8 receitas.
-// Grupo B (Aves): QUALQUER receita da categoria "Aves" cuja porcoes_base
-// bata com a assinatura do bug (porcoes_base > 100 E ≈ soma dos ingredientes)
-// — nunca toca em receitas de Aves fora desse padrão.
-// Idempotente: só grava se algum campo-alvo ainda estiver diferente do valor correto.
+// Fase 5: quando esta rotina corrige um rendimento comprovadamente corrompido
+// pelo importador, também sincroniza o modelo canônico de rendimento. O valor
+// corrigido é classificado como IMPORTADO / A VALIDAR — nunca como medição real.
 
 const SOPAS = [
   'CALDO VERDE',
@@ -38,19 +33,14 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.CorrecaoRendimentoLog.list('-created_date', 500),
     ]);
 
-    const somaPorReceita = {};
+    const itensPorReceita = {};
     for (const i of itens) {
-      if (i.tipo === 'grupo') continue;
-      somaPorReceita[i.receita_id] = (somaPorReceita[i.receita_id] || 0) + (Number(i.quantidade_por_porcao) || 0);
+      if (!i?.receita_id) continue;
+      if (!itensPorReceita[i.receita_id]) itensPorReceita[i.receita_id] = [];
+      itensPorReceita[i.receita_id].push(i);
     }
 
-    // Grupo B: a assinatura original do bug (porcoes_base > 100) já foi apagada
-    // por uma correção anterior de rendimento_total — hoje toda a categoria
-    // Aves está com porcoes_base = 1. O rastro confiável que resta é o
-    // CorrecaoRendimentoLog: só as receitas importadas em lote com o bug
-    // precisaram ter seu rendimento_total recalculado por aquela correção.
-    // Receitas de Aves cadastradas corretamente desde o início não aparecem
-    // nesse log e permanecem intocadas aqui.
+    // O rastro confiável das Aves afetadas é o histórico da correção antiga.
     const idsComRendimentoCorrigido = new Set(logsRendimento.map((l) => l.receita_id));
     const avesCorrompidas = avesTodas.filter((r) => idsComRendimentoCorrigido.has(r.id));
 
@@ -58,22 +48,49 @@ Deno.serve(async (req) => {
     const logs = [];
 
     const processar = (r, perCapitaAlvo) => {
-      const somaIngredientes = somaPorReceita[r.id] || 0;
+      const receitaItens = itensPorReceita[r.id] || [];
+      const parentsComFilhos = new Set(
+        receitaItens.map((i) => i.subreceita_parent_id).filter(Boolean)
+      );
+
+      // Com porcoes_base corrigido para 1, esta é a base líquida pré-preparo.
+      const pesoPreAlvo = receitaItens.reduce((sum, item) => {
+        if (!item || item.tipo === 'grupo') return sum;
+        if (item.tipo === 'subreceita' && parentsComFilhos.has(item.id)) return sum;
+        return sum + (Number(item.quantidade_por_porcao) || 0);
+      }, 0);
 
       const porcoesBaseAtual = r.porcoes_base ?? null;
       const perCapitaAtual = r.per_capita_g ?? null;
       const rendimentoAtual = r.rendimento_total ?? null;
 
       const porcoesBaseAlvo = 1;
-      const rendimentoAlvo = somaIngredientes;
+      // Esta rotina conhece apenas a correção estrutural da importação; não possui
+      // uma pesagem pós-preparo real. Mantém o valor histórico corrigido como
+      // estimativa importada e exige validação posterior.
+      const rendimentoAlvo = pesoPreAlvo;
 
       const mudaPorcoes = Number(porcoesBaseAtual) !== porcoesBaseAlvo;
       const mudaPerCapita = Number(perCapitaAtual) !== perCapitaAlvo;
       const mudaRendimento = Math.abs((Number(rendimentoAtual) || 0) - rendimentoAlvo) >= 0.01;
+      const mudaCanonico =
+        Math.abs((Number(r.peso_pre_preparo_total) || 0) - pesoPreAlvo) >= 0.01 ||
+        Math.abs((Number(r.peso_pos_preparo_total) || 0) - rendimentoAlvo) >= 0.01 ||
+        r.rendimento_origem !== 'importado' ||
+        r.rendimento_status !== 'a_validar';
 
-      if (!mudaPorcoes && !mudaPerCapita && !mudaRendimento) return; // já correta — idempotência
+      if (!mudaPorcoes && !mudaPerCapita && !mudaRendimento && !mudaCanonico) return;
 
-      updates.push({ id: r.id, porcoes_base: porcoesBaseAlvo, per_capita_g: perCapitaAlvo, rendimento_total: rendimentoAlvo });
+      updates.push({
+        id: r.id,
+        porcoes_base: porcoesBaseAlvo,
+        per_capita_g: perCapitaAlvo,
+        peso_pre_preparo_total: pesoPreAlvo,
+        peso_pos_preparo_total: rendimentoAlvo,
+        rendimento_total: rendimentoAlvo,
+        rendimento_origem: 'importado',
+        rendimento_status: 'a_validar',
+      });
       logs.push({
         receita_id: r.id,
         receita_nome: r.nome || '',
@@ -98,6 +115,7 @@ Deno.serve(async (req) => {
       total_sopas: sopas.length,
       total_aves_identificadas: avesCorrompidas.length,
       total_corrigido: updates.length,
+      observacao: 'Rendimentos corrigidos pela importação foram marcados como a_validar, não como medidos.',
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
