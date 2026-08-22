@@ -13,6 +13,11 @@ import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { useAuth } from "@/lib/AuthContext";
 import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+  salvarFavoritoIngrediente,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 export default function IngredienteAberto() {
   const { id } = useParams();
@@ -42,11 +47,25 @@ export default function IngredienteAberto() {
     enabled: !isAdmin && !!user?.id,
   });
 
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
   const ingrediente = useMemo(() => {
     if (!ingredienteRaw) return null;
-    if (isAdmin) return ingredienteRaw;
-    return aplicarPrecosPersonalizados([ingredienteRaw], precosPersonalizados)[0];
-  }, [ingredienteRaw, isAdmin, precosPersonalizados]);
+
+    const comPreco = isAdmin
+      ? ingredienteRaw
+      : aplicarPrecosPersonalizados([ingredienteRaw], precosPersonalizados)[0];
+
+    return aplicarPreferenciasIngredientes(
+      [comPreco],
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    )[0];
+  }, [ingredienteRaw, isAdmin, precosPersonalizados, preferenciasIngredientes]);
 
   const { data: todosIngredientes = [] } = useQuery({
     queryKey: ["ingredientes"],
@@ -58,8 +77,14 @@ export default function IngredienteAberto() {
   )].sort();
 
   const favoritarMut = useMutation({
-    mutationFn: () => base44.entities.Ingrediente.update(id, { favorito: !ingrediente.favorito }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["ingrediente", id] }),
+    mutationFn: ({ favorito }) => salvarFavoritoIngrediente({
+      ingredienteId: id,
+      userId: user?.id,
+      favorito,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["preferencias-ingredientes", user?.id] });
+    },
   });
 
   const saveMut = useSalvarIngrediente(() => setShowForm(false), { isAdmin, userId: user?.id });
@@ -81,10 +106,11 @@ export default function IngredienteAberto() {
     <div className="space-y-4 pb-24 md:pb-8">
       <IngredienteFichaHeader
         ingrediente={ingrediente}
+        isAdmin={isAdmin}
         onEditar={() => setShowForm(true)}
-        onToggleFavorito={() => favoritarMut.mutate()}
+        onToggleFavorito={() => favoritarMut.mutate({ favorito: !ingrediente.favorito })}
         favoritando={favoritarMut.isPending}
-        onFundir={() => setShowFundir(true)}
+        onFundir={() => isAdmin && setShowFundir(true)}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -105,14 +131,16 @@ export default function IngredienteAberto() {
         isAdmin={isAdmin}
       />
 
-      <FundirIngredienteDialog
-        open={showFundir}
-        ingrediente={ingrediente}
-        onClose={(fundido) => {
-          setShowFundir(false);
-          if (fundido) navigate("/ingredientes");
-        }}
-      />
+      {isAdmin && (
+        <FundirIngredienteDialog
+          open={showFundir}
+          ingrediente={ingrediente}
+          onClose={(fundido) => {
+            setShowFundir(false);
+            if (fundido) navigate("/ingredientes");
+          }}
+        />
+      )}
     </div>
   );
 }
