@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +9,9 @@ import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
- * Regra 3 — Cadastro de MedidaCaseira a partir da ficha da receita.
- * Usuário escolhe utensílio (g_medio pré-preenchido, ajustável) → grava → vale imediatamente.
+ * Cadastro de MedidaCaseira a partir da ficha da receita.
+ * Fase 4: grava os campos canônicos (ingrediente_id, utensilio_id, peso_g)
+ * e mantém os campos legados espelhados durante a migração.
  */
 export default function CadastrarMedidaDialog({ open, onClose, ingrediente, utensilios = [], medidaExistente = null }) {
   const qc = useQueryClient();
@@ -22,7 +23,6 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
   const uteMap = {};
   utensilios.forEach((u) => { uteMap[u.id] = u; });
 
-  // Quando o usuário troca o utensílio, pré-preenche referencia_g com g_medio (se não tocou manualmente)
   useEffect(() => {
     if (!utensilioId) return;
     const ute = uteMap[utensilioId];
@@ -31,12 +31,12 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
     }
   }, [utensilioId]);
 
-  // Reset ao abrir
   useEffect(() => {
     if (open) {
       if (medidaExistente) {
-        setUtensilioId(medidaExistente.utensilio || "");
-        setReferenciaG(medidaExistente.referencia_g != null ? String(medidaExistente.referencia_g) : "");
+        setUtensilioId(medidaExistente.utensilio_id || medidaExistente.utensilio || "");
+        const peso = medidaExistente.peso_g ?? medidaExistente.referencia_g ?? medidaExistente.equivalencia_g;
+        setReferenciaG(peso != null ? String(peso) : "");
         setSoGramas(!!medidaExistente.so_gramas);
       } else {
         setUtensilioId("");
@@ -58,23 +58,28 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
       toast.error("Informe a referência em gramas (ou marque 'Só gramas')");
       return;
     }
+
+    const payload = {
+      nome: `${ingrediente.nome} · ${ute.simbolo}`,
+      ingrediente_id: ingrediente.id,
+      utensilio_id: utensilioId,
+      quantidade_utensilio: 1,
+      peso_g: refG,
+      estado_alimento: "cru",
+      so_gramas: soGramas,
+      // Compatibilidade temporária
+      alimento: ingrediente.id,
+      utensilio: utensilioId,
+      referencia_g: refG,
+      equivalencia_g: refG,
+    };
+
     try {
       if (medidaExistente) {
-        await base44.entities.MedidaCaseira.update(medidaExistente.id, {
-          utensilio: utensilioId,
-          referencia_g: refG,
-          so_gramas: soGramas,
-          nome: `${ingrediente.nome} · ${ute.simbolo}`,
-        });
+        await base44.entities.MedidaCaseira.update(medidaExistente.id, payload);
         toast.success("Medida atualizada — conversão recalculada!");
       } else {
-        await base44.entities.MedidaCaseira.create({
-          nome: `${ingrediente.nome} · ${ute.simbolo}`,
-          alimento: ingrediente.id,
-          utensilio: utensilioId,
-          referencia_g: refG,
-          so_gramas: soGramas,
-        });
+        await base44.entities.MedidaCaseira.create(payload);
         toast.success("Medida cadastrada — conversão ativa!");
       }
       qc.invalidateQueries({ queryKey: ["medidas-caseiras"] });
