@@ -8,6 +8,7 @@ import { ArrowLeft, Printer, Share2, AlertTriangle } from "lucide-react";
 import { montarTextoCompartilhamentoDossie } from "@/lib/dossieIngredienteShare";
 import { useAuth } from "@/lib/AuthContext";
 import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 import {
   buscarPreferenciasIngredientes,
   aplicarPreferenciasIngredientes,
@@ -84,7 +85,7 @@ export default function DossieIngrediente() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
