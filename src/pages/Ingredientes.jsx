@@ -29,6 +29,11 @@ import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { useAuth } from "@/lib/AuthContext";
 import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+  salvarFavoritoIngrediente,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 const GRUPOS_INGREDIENTES = [
   { nome: "Carnes e Ovos",            icone: "🥩", cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C", match: ["Carnes e Ovos"] },
@@ -93,11 +98,26 @@ export default function Ingredientes() {
     enabled: !isAdmin && !!user?.id,
   });
 
-  // Não-admins veem o PRÓPRIO preço (quando personalizado) na listagem — nome,
-  // categoria e demais campos continuam vindo do cadastro compartilhado.
-  const ingredientes = useMemo(
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  // Preço e favorito são estados pessoais. Nome, categoria, unidade e FC sempre
+  // vêm do catálogo mestre compartilhado e somente o admin pode alterá-los.
+  const ingredientesComPreco = useMemo(
     () => (isAdmin ? ingredientesRaw : aplicarPrecosPersonalizados(ingredientesRaw, precosPersonalizados)),
     [ingredientesRaw, isAdmin, precosPersonalizados]
+  );
+
+  const ingredientes = useMemo(
+    () => aplicarPreferenciasIngredientes(
+      ingredientesComPreco,
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    ),
+    [ingredientesComPreco, preferenciasIngredientes, isAdmin]
   );
 
   const { data: ultimoLog } = useQuery({
@@ -106,6 +126,7 @@ export default function Ingredientes() {
       const logs = await base44.entities.LogAtualizacaoPrecos.filter({ tipo: "automático" }, "-data_execucao", 1);
       return logs[0] || null;
     },
+    enabled: isAdmin,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -115,6 +136,7 @@ export default function Ingredientes() {
       const res = await base44.functions.invoke("gerenciarAtualizacaoAutomatica", { acao: "status" });
       return res.data;
     },
+    enabled: isAdmin,
   });
 
   useEffect(() => {
@@ -124,7 +146,7 @@ export default function Ingredientes() {
   const { data: historicoLogs = [] } = useQuery({
     queryKey: ["historico-log-precos"],
     queryFn: () => base44.entities.LogAtualizacaoPrecos.filter({ tipo: "automático" }, "-data_execucao", 10),
-    enabled: showHistorico,
+    enabled: isAdmin && showHistorico,
   });
 
   const saveMut = useSalvarIngrediente(() => {
@@ -138,20 +160,14 @@ export default function Ingredientes() {
     return [...set].sort();
   }, [ingredientes]);
 
-  const delMut = useMutation({
-    mutationFn: (id) => base44.entities.Ingrediente.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      toast.success("Ingrediente excluído!");
-    },
-  });
-
   const favoritarMut = useMutation({
-    mutationFn: async ({ id, favorito }) => {
-      await base44.entities.Ingrediente.update(id, { favorito });
-    },
+    mutationFn: ({ id, favorito }) => salvarFavoritoIngrediente({
+      ingredienteId: id,
+      userId: user?.id,
+      favorito,
+    }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ingredientes"] });
+      qc.invalidateQueries({ queryKey: ["preferencias-ingredientes", user?.id] });
     },
   });
 
@@ -182,6 +198,10 @@ export default function Ingredientes() {
   };
 
   const handleToggleAutoUpdate = async () => {
+    if (!isAdmin) {
+      toast.error("Somente administradores podem alterar a atualização automática de preços.");
+      return;
+    }
     setTogglingAuto(true);
     try {
       const res = await base44.functions.invoke("gerenciarAtualizacaoAutomatica", { acao: "toggle" });
@@ -260,9 +280,7 @@ export default function Ingredientes() {
     return `${formatPrice(pricePerKg)}/kg · embalagem ${peso}g`;
   };
 
-  // Total count
   const totalIngredientes = ingredientes.length;
-
   const nenhumFiltroAtivo = !accordionAberto && !showDesatualizados && !showRevisar && !showFavoritos;
 
   return (
@@ -315,9 +333,11 @@ export default function Ingredientes() {
           <AlertTriangle className="w-4 h-4 mr-1" />
           A revisar {ingredientes.filter(i => i.revisar === true).length}
         </Button>
-        <Button size="sm" onClick={() => { setEditItem(null); setShowForm(true); }}>
-          <Plus className="w-4 h-4 mr-1" /> Novo
-        </Button>
+        {isAdmin && (
+          <Button size="sm" onClick={() => { setEditItem(null); setShowForm(true); }}>
+            <Plus className="w-4 h-4 mr-1" /> Novo
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -342,9 +362,11 @@ export default function Ingredientes() {
                 </DropdownMenuItem>
               </DropdownMenuSubContent>
             </DropdownMenuSub>
-            <DropdownMenuItem onClick={() => setShowRelatorioLote(true)}>
-              <History className="w-4 h-4 mr-2" /> Relatório de lote
-            </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={() => setShowRelatorioLote(true)}>
+                <History className="w-4 h-4 mr-2" /> Relatório de lote
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Dados</DropdownMenuLabel>
@@ -357,34 +379,41 @@ export default function Ingredientes() {
             >
               <Download className="w-4 h-4 mr-2" /> Exportar CSV
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowImport(true)}>
-              <Upload className="w-4 h-4 mr-2" /> Importar CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowImportSinonimos(true)}>
-              <Tags className="w-4 h-4 mr-2" /> Sinônimos
-            </DropdownMenuItem>
+            {isAdmin && (
+              <>
+                <DropdownMenuItem onClick={() => setShowImport(true)}>
+                  <Upload className="w-4 h-4 mr-2" /> Importar CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowImportSinonimos(true)}>
+                  <Tags className="w-4 h-4 mr-2" /> Sinônimos
+                </DropdownMenuItem>
+              </>
+            )}
 
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Preços e Compra</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigate("/lista-compras")}>
               <ShoppingCart className="w-4 h-4 mr-2" /> Carrinho
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setShowAtualizarPrecos(true)}>
-              <RefreshCw className="w-4 h-4 mr-2" /> Atualizar preços
-              {!autoUpdateAtiva && (
-                <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5">pausada</Badge>
-              )}
-            </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={() => setShowAtualizarPrecos(true)}>
+                <RefreshCw className="w-4 h-4 mr-2" /> Atualizar preços
+                {!autoUpdateAtiva && (
+                  <Badge variant="secondary" className="ml-auto text-[10px] h-4 px-1.5">pausada</Badge>
+                )}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Toggle sempre visível — atualização automática semanal de preços */}
-      <AutoUpdateToggle
-        ativa={autoUpdateAtiva}
-        toggling={togglingAuto}
-        onToggle={handleToggleAutoUpdate}
-      />
+      {isAdmin && (
+        <AutoUpdateToggle
+          ativa={autoUpdateAtiva}
+          toggling={togglingAuto}
+          onToggle={handleToggleAutoUpdate}
+        />
+      )}
 
       {/* Categorias — grade de cards coloridos (mesmo padrão de Receitas) */}
       {isLoading ? (
@@ -461,6 +490,7 @@ export default function Ingredientes() {
             setShowForm={setShowForm}
             onAddToCarrinho={handleAddToCarrinho}
             addingCarrinhoId={addingCarrinhoId}
+            isAdmin={isAdmin}
           />
         </>
       )}
@@ -476,37 +506,36 @@ export default function Ingredientes() {
         isAdmin={isAdmin}
       />
 
-      {/* Import Dialog */}
-      <ImportarIngredientesDialog
-        open={showImport}
-        onClose={() => setShowImport(false)}
-        onImported={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
-      />
+      {isAdmin && (
+        <>
+          <ImportarIngredientesDialog
+            open={showImport}
+            onClose={() => setShowImport(false)}
+            onImported={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
+          />
 
-      {/* Import Sinônimos Dialog */}
-      <ImportarSinonimosDialog open={showImportSinonimos} onClose={() => setShowImportSinonimos(false)} />
+          <ImportarSinonimosDialog open={showImportSinonimos} onClose={() => setShowImportSinonimos(false)} />
 
-      {/* Update Prices Dialog */}
-      <AtualizarPrecosDialog
-        open={showAtualizarPrecos}
-        onClose={() => setShowAtualizarPrecos(false)}
-        ingredientes={ingredientes}
-        ultimoLog={ultimoLog}
-        autoUpdateAtiva={autoUpdateAtiva}
-        togglingAuto={togglingAuto}
-        onToggleAutoUpdate={handleToggleAutoUpdate}
-        onVerHistorico={() => setShowHistorico(true)}
-      />
+          <AtualizarPrecosDialog
+            open={showAtualizarPrecos}
+            onClose={() => setShowAtualizarPrecos(false)}
+            ingredientes={ingredientes}
+            ultimoLog={ultimoLog}
+            autoUpdateAtiva={autoUpdateAtiva}
+            togglingAuto={togglingAuto}
+            onToggleAutoUpdate={handleToggleAutoUpdate}
+            onVerHistorico={() => setShowHistorico(true)}
+          />
 
-      {/* Histórico de atualizações automáticas */}
-      <HistoricoAtualizacoesDialog
-        open={showHistorico}
-        onClose={() => setShowHistorico(false)}
-        logs={historicoLogs}
-      />
+          <HistoricoAtualizacoesDialog
+            open={showHistorico}
+            onClose={() => setShowHistorico(false)}
+            logs={historicoLogs}
+          />
 
-      {/* Relatório da atualização em lote de preços zerados */}
-      <RelatorioLotePrecosDialog open={showRelatorioLote} onClose={() => setShowRelatorioLote(false)} />
+          <RelatorioLotePrecosDialog open={showRelatorioLote} onClose={() => setShowRelatorioLote(false)} />
+        </>
+      )}
     </div>
   );
 }
