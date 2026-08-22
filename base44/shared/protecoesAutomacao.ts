@@ -23,6 +23,14 @@ function normalizarTelefoneBrasil(telefone: string): string {
   return digits.length <= 11 ? `55${digits}` : digits;
 }
 
+const TIPOS_COM_WHATSAPP = new Set([
+  "pagamento_aprovado",
+  "pagamento_recusado",
+  "plano_vencendo",
+  "pagamento_pendente_lembrete",
+  "pagamento_estornado",
+]);
+
 export async function notificacaoJaProcessadaHoje(
   base44: any,
   tipo: string,
@@ -40,7 +48,7 @@ export async function notificacaoJaProcessadaHoje(
     )) return true;
   }
 
-  if (usuario?.telefone_whatsapp) {
+  if (usuario?.telefone_whatsapp && TIPOS_COM_WHATSAPP.has(tipo)) {
     const numero = normalizarTelefoneBrasil(usuario.telefone_whatsapp);
     const logsWhatsapp = await base44.asServiceRole.entities.LogWhatsapp.filter({
       destinatario_telefone: numero,
