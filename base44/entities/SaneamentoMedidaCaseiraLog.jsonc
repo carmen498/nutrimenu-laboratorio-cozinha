@@ -1,0 +1,48 @@
+{
+  "name": "SaneamentoMedidaCaseiraLog",
+  "type": "object",
+  "properties": {
+    "acao": {
+      "type": "string",
+      "enum": ["normalizar", "corrigir", "separar_pronto", "consolidar_duplicados"],
+      "description": "Operação administrativa executada sobre MedidaCaseira."
+    },
+    "medida_origem_id": {
+      "type": "string",
+      "description": "Registro principal/origem da operação."
+    },
+    "medida_destino_id": {
+      "type": "string",
+      "description": "Registro criado ou mantido como destino, quando aplicável."
+    },
+    "medidas_removidas_ids": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "IDs removidos em consolidação de duplicidades."
+    },
+    "ingrediente_receita_atualizados": {
+      "type": "number",
+      "description": "Quantidade de IngredienteReceita repontados durante a operação."
+    },
+    "detalhes_json": {
+      "type": "string",
+      "description": "Snapshot resumido de parâmetros/resultado em JSON para auditoria."
+    },
+    "executado_por_id": {
+      "type": "string",
+      "description": "ID do administrador que executou a operação."
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da operação."
+    }
+  },
+  "required": ["acao", "executado_em"],
+  "rls": {
+    "read": { "user_condition": { "role": "admin" } },
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}
