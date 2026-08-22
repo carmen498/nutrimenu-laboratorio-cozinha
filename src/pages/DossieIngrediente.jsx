@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
@@ -5,6 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Printer, Share2, AlertTriangle } from "lucide-react";
 import { montarTextoCompartilhamentoDossie } from "@/lib/dossieIngredienteShare";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
@@ -16,14 +23,40 @@ function diasDesde(dataIso) {
 export default function DossieIngrediente() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
-  const { data: ingrediente, isLoading } = useQuery({
+  const { data: ingredienteRaw, isLoading } = useQuery({
     queryKey: ["ingrediente", id],
     queryFn: async () => {
       const r = await base44.entities.Ingrediente.filter({ id });
       return r[0] || null;
     },
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  const ingrediente = useMemo(() => {
+    if (!ingredienteRaw) return null;
+    const comPrecoLegado = isAdmin
+      ? ingredienteRaw
+      : aplicarPrecosPersonalizados([ingredienteRaw], precosPersonalizados)[0];
+    return aplicarPreferenciasIngredientes(
+      [comPrecoLegado],
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    )[0];
+  }, [ingredienteRaw, isAdmin, precosPersonalizados, preferenciasIngredientes]);
 
   if (isLoading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
@@ -60,6 +93,7 @@ export default function DossieIngrediente() {
     ["Peso da embalagem", ingrediente.peso_embalagem_g != null ? `${ingrediente.peso_embalagem_g} g` : "—"],
     ["Preço da embalagem", ingrediente.preco_embalagem_rs != null ? formatCurrency(ingrediente.preco_embalagem_rs) : "—"],
     ["Preço por g/ml", `R$ ${(ingrediente.preco_por_g_rs || 0).toFixed(4).replace(".", ",")}`],
+    ["Fornecedor", ingrediente.fornecedor || "—"],
     ["Fator de Correção (FC)", ingrediente.fator_correcao != null ? String(ingrediente.fator_correcao).replace(".", ",") : "1,0"],
   ];
 
@@ -87,23 +121,22 @@ export default function DossieIngrediente() {
       `}</style>
 
       <div className="bg-white border rounded-xl overflow-hidden print:border-0 print:rounded-none">
-        {/* Cabeçalho timbrado */}
         <div className="bg-primary text-primary-foreground px-6 py-4 flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm">Laboratório de Cozinha · Receitas que se Multiplicam · por Carmen Reinstein</p>
           <p className="font-display text-sm text-right">DOSSIÊ DO INGREDIENTE · emitido em {dataEmissao}</p>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Identificação */}
           <div>
             <h2 className="font-display text-2xl font-bold">{ingrediente.nome}</h2>
             <div className="flex items-center gap-2 flex-wrap mt-1.5">
               <Badge variant="secondary" className="text-xs">{ingrediente.categoria || "Sem categoria"}</Badge>
-              {ingrediente.fornecedor && <Badge variant="secondary" className="text-xs">{ingrediente.fornecedor}</Badge>}
+              {!isAdmin && ingrediente._dados_comerciais_pessoais && (
+                <Badge variant="outline" className="text-xs">Dados de compra do usuário</Badge>
+              )}
             </div>
           </div>
 
-          {/* Compra e custo */}
           <div>
             <h3 className="font-display text-base font-bold mb-2">Compra e Custo</h3>
             <table className="w-full text-sm">
@@ -118,7 +151,6 @@ export default function DossieIngrediente() {
             </table>
           </div>
 
-          {/* Histórico de preços */}
           {historico.length > 0 && (
             <div style={{ breakInside: "avoid" }}>
               <h3 className="font-display text-base font-bold mb-2">Histórico de Preços ({historico.length})</h3>
@@ -153,7 +185,6 @@ export default function DossieIngrediente() {
             </div>
           )}
 
-          {/* Última atualização */}
           <div className="flex items-center gap-2 text-sm">
             {precoDesatualizado && <AlertTriangle className="w-4 h-4 text-red-600" />}
             <span className={precoDesatualizado ? "text-red-600 font-medium" : "text-muted-foreground"}>
@@ -164,7 +195,6 @@ export default function DossieIngrediente() {
             </span>
           </div>
 
-          {/* Rodapé */}
           <p className="text-[11px] text-muted-foreground text-center pt-4 border-t border-border">
             Laboratório de Cozinha · Gastronomia Planejada · dados na data de emissão · {dataEmissao}
           </p>
