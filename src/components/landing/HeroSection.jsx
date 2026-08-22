@@ -2,31 +2,35 @@ import React from "react";
 
 export default function HeroSection({ heroImage }) {
   return (
-    <section className="lc-hero">
+    <section className="lc-hero" aria-labelledby="landing-hero-title">
       <div className="lc-container lc-hero-grid">
-        <div>
-          <p className="lc-eyebrow">
-            Para cozinheiras profissionais, produtoras artesanais e quem quer organizar a cozinha de vez.
-          </p>
-          <h1>O que vamos cozinhar hoje?</h1>
+        <div className="lc-hero-copy">
+          <p className="lc-eyebrow">Planejamento de cozinha com método</p>
+          <h1 id="landing-hero-title">Planeje, calcule e produza com segurança antes de acender o fogo.</h1>
           <p className="lc-hero-sub">
-            Do planejamento ao prato — sem improviso, sem desperdício, sem estresse.
-            O app que organiza sua cozinha, escala suas receitas e calcula tudo por você.
+            Receitas, cardápios, custos, per capita e listas de compras reunidos em um único lugar para quem cozinha em casa ou profissionalmente.
           </p>
           <div className="lc-hero-cta">
             <a className="lc-btn lc-btn--primary lc-btn--lg" href="/register">
-              Quero experimentar 7 dias grátis →
+              Experimentar 7 dias grátis
+            </a>
+            <a className="lc-text-link" href="#planos">
+              Ver planos
             </a>
           </div>
-          <div className="lc-hero-seals lc-seals">
+          <div className="lc-hero-seals lc-seals" aria-label="Condições do teste">
             <span className="lc-seal">Acesso imediato</span>
-            <span className="lc-seal">Sem cobrança automática</span>
-            <span className="lc-seal">Sem fidelidade</span>
+            <span className="lc-seal">Sem cartão no teste</span>
+            <span className="lc-seal">Sem renovação automática</span>
           </div>
         </div>
-        <div className="lc-hero-media">
-          <img src={heroImage} alt="Casal maduro cozinhando junto em cozinha rústica com produção farta" />
-        </div>
+        <figure className="lc-hero-media">
+          <img
+            src={heroImage}
+            alt="Casal maduro preparando uma refeição em uma cozinha residencial organizada"
+            fetchPriority="high"
+          />
+        </figure>
       </div>
     </section>
   );
