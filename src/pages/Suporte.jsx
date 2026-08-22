@@ -22,9 +22,7 @@ export default function Suporte() {
     const texto = `*Suporte - Laboratório de Cozinha*\n\nDe: ${user?.email || ""}\nAssunto: ${assunto}\nMensagem: ${mensagem.trim()}`;
     const url = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(texto)}`;
     abrirUrlHttpsSegura(url);
-    toast.success("Mensagem enviada! Retornaremos em breve.");
-    setAssunto("");
-    setMensagem("");
+    toast.success("WhatsApp aberto. Envie a mensagem na conversa para concluir o contato.");
   };
 
   return (
@@ -74,7 +72,7 @@ export default function Suporte() {
           disabled={!assunto || !mensagem.trim()}
           onClick={handleEnviar}
         >
-          <Send className="w-4 h-4" /> Enviar
+          <Send className="w-4 h-4" /> Abrir WhatsApp
         </Button>
       </Card>
     </div>
