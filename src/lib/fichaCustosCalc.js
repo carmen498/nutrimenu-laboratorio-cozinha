@@ -93,7 +93,7 @@ export function montarFichaCustos({ cardapio, num, receitasView, receitaMap, ing
     gruposMap.get(cat).push(r);
   });
 
-  let maiorPctItem = null;
+  let maiorPctItem = /** @type {any} */ (null);
 
   const grupos = Array.from(gruposMap.entries()).map(([categoria, itensRaw]) => {
     const itens = itensRaw.map((r) => {
