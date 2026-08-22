@@ -1,6 +1,10 @@
 import React from "react";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function HeroSection({ heroImage }) {
+  const { isAuthenticated } = useAuth();
+  const primaryHref = isAuthenticated ? "/app" : "/register";
+  const primaryLabel = isAuthenticated ? "Entrar no app" : "Experimentar 7 dias grátis";
   return (
     <section className="lc-hero" aria-labelledby="landing-hero-title">
       <div className="lc-container lc-hero-grid">
@@ -11,8 +15,8 @@ export default function HeroSection({ heroImage }) {
             Receitas, cardápios, custos, per capita e listas de compras reunidos em um único lugar para quem cozinha em casa ou profissionalmente.
           </p>
           <div className="lc-hero-cta">
-            <a className="lc-btn lc-btn--primary lc-btn--lg" href="/register">
-              Experimentar 7 dias grátis
+            <a className="lc-btn lc-btn--primary lc-btn--lg" href={primaryHref}>
+              {primaryLabel}
             </a>
             <a className="lc-text-link" href="#planos">
               Ver planos
