@@ -171,15 +171,26 @@ export const AuthProvider = ({ children }) => {
     return url.toString();
   };
 
-  const logout = (shouldRedirect = true) => {
+  const logout = (redirectTarget = '/') => {
     setUser(null);
     setIsAuthenticated(false);
-    
-    if (shouldRedirect) {
-      // Use the SDK's logout method which handles token cleanup and redirect
-      base44.auth.logout(cleanUrlForRedirect());
+
+    // Remove somente dados efêmeros pertencentes a este app. Isso evita que um
+    // segundo usuário na mesma aba herde rascunhos ou marcadores da sessão anterior.
+    try {
+      for (const key of [
+        'labcozinha_evento_rascunho_v1',
+        'base44_pending_terms_acceptance',
+        'base44_pending_return_to',
+        'base44_pending_password_reset_token',
+      ]) {
+        sessionStorage.removeItem(key);
+      }
+    } catch {}
+
+    if (redirectTarget) {
+      base44.auth.logout(redirectTarget);
     } else {
-      // Just remove the token without redirect
       base44.auth.logout();
     }
   };
