@@ -4,16 +4,73 @@
   "properties": {
     "ingrediente_id": {
       "type": "string",
-      "description": "ID do Ingrediente mestre ao qual esta preferência pertence"
+      "description": "ID do Ingrediente mestre ao qual estes dados pessoais pertencem"
     },
     "user_id": {
       "type": "string",
-      "description": "ID do usuário dono da preferência (cache; a segurança usa created_by_id)"
+      "description": "ID do usuário dono do registro (cache; a segurança usa created_by_id)"
     },
     "favorito": {
       "type": "boolean",
       "default": false,
       "description": "Ingrediente marcado como favorito apenas para este usuário"
+    },
+    "unidade_compra": {
+      "type": "string",
+      "description": "Unidade em que este usuário compra o ingrediente (KG, LT, UN, CX, POTE...)"
+    },
+    "peso_embalagem_g": {
+      "type": "number",
+      "description": "Quantidade da embalagem comprada por este usuário, em g ou ml"
+    },
+    "preco_embalagem_rs": {
+      "type": "number",
+      "description": "Preço pago por este usuário pela embalagem, em R$"
+    },
+    "preco_por_g_rs": {
+      "type": "number",
+      "description": "Preço pessoal por g/ml, calculado a partir da embalagem"
+    },
+    "fornecedor": {
+      "type": "string",
+      "description": "Fornecedor utilizado por este usuário"
+    },
+    "estado_usuario": {
+      "type": "string",
+      "description": "UF/estado associado aos dados de compra deste usuário"
+    },
+    "fonte_preco": {
+      "type": "string",
+      "enum": [
+        "Manual",
+        "IA web",
+        "CONAB",
+        "CEASA"
+      ],
+      "description": "Fonte da última atualização do preço pessoal"
+    },
+    "preco_atualizado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da última alteração do preço pessoal"
+    },
+    "variacao_percentual": {
+      "type": "number",
+      "description": "Variação percentual do preço pessoal em relação ao registro anterior"
+    },
+    "historico_precos": {
+      "type": "array",
+      "description": "Histórico de preços deste usuário para o ingrediente",
+      "items": {
+        "type": "object",
+        "properties": {
+          "data": { "type": "string", "format": "date-time" },
+          "preco_por_kg": { "type": "number" },
+          "variacao_percentual": { "type": "number" },
+          "fonte": { "type": "string" },
+          "fornecedor": { "type": "string" }
+        }
+      }
     }
   },
   "required": [
