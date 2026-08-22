@@ -112,9 +112,10 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     // Executor efêmero da Fase 10.1. O endpoint aleatório é retirado/desativado após a operação.
     const actorId = 'fase10.1-runner';
-    const args = await lerArgs(req);
-    const dryRun = args?.dry_run === true;
-    const somenteLegado = true;
+    await lerArgs(req);
+    // Pós-migração: endpoint mantido temporariamente apenas para auditoria de leitura.
+    const dryRun = true;
+    const somenteLegado = false;
     const receitaIds = null;
 
     const sr = base44.asServiceRole.entities;
