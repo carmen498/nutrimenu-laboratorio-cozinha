@@ -11,6 +11,7 @@ import { montarFichaTecnica } from "@/lib/fichaTecnicaCalc";
 import { montarTextoCompartilhamentoFicha } from "@/lib/fichaTecnicaShare";
 import { printarElementoIsolado } from "@/lib/printIsolado";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
+import { formatarStatusRendimento } from "@/lib/rendimentoReceita";
 import TabelaFichaTecnica from "@/components/fichaTecnica/TabelaFichaTecnica";
 import TagBadge from "@/components/tags/TagBadge";
 import { useAuth } from "@/lib/AuthContext";
@@ -175,6 +176,7 @@ export default function FichaTecnicaReceita() {
   const dataEmissao = new Date().toLocaleDateString("pt-BR");
   const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
   const formatKg = (g) => `${((g || 0) / 1000).toFixed(2).replace(".", ",")} kg`;
+  const formatFator = (v) => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 
   const handleShare = () => {
     const text = montarTextoCompartilhamentoFicha({ receita, ficha, passos });
@@ -261,12 +263,19 @@ export default function FichaTecnicaReceita() {
               unidadeBase={receita.unidade_base}
               medidaDisplayMap={medidaDisplayMap}
             />
-            <p className="text-xs text-muted-foreground mt-2">
-              bruto {formatKg(ficha.pesoBruto)} · rendimento (PDP) {formatKg(ficha.rendimentoTotal)}
-              {ficha.perda && (
-                <> · {ficha.perda.tipo === "ganho" ? "ganho" : "perda"} {ficha.perda.pct.toFixed(1).replace(".", ",")}%</>
-              )}
-            </p>
+            <div className="mt-2 rounded-lg border bg-muted/20 px-3 py-2 text-xs text-muted-foreground" style={{ breakInside: "avoid" }}>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                <span><strong className="text-foreground">Pré-preparo:</strong> {formatKg(ficha.pesoPrePreparo)}</span>
+                <span><strong className="text-foreground">PB compra:</strong> {formatKg(ficha.pesoBruto)}</span>
+                <span><strong className="text-foreground">PDP:</strong> {formatKg(ficha.rendimentoTotal)}{ficha.rendimentoEstimado ? " (estimado)" : ""}</span>
+                <span><strong className="text-foreground">Fator rendimento:</strong> {formatFator(ficha.fatorRendimento)}</span>
+                {ficha.perda && ficha.perda.tipo !== "estavel" && (
+                  <span><strong className="text-foreground">{ficha.perda.tipo === "ganho" ? "Ganho" : "Perda"}:</strong> {ficha.perda.pct.toFixed(1).replace(".", ",")}%</span>
+                )}
+                <span><strong className="text-foreground">Status:</strong> {formatarStatusRendimento(ficha.rendimentoStatus)}</span>
+              </div>
+              <p className="mt-1 text-[10px]">Fator de rendimento = PDP ÷ peso líquido pré-preparo. O PB com FC é referência de compra/custo e não entra na perda de cocção.</p>
+            </div>
           </div>
 
           {(passos.length > 0 || ficha.temSubreceitas) && (
