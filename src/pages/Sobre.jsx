@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 const linkClass = "text-blue-600 hover:underline font-medium";
 const LINKS = {
