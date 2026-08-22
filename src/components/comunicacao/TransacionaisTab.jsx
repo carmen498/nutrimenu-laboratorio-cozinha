@@ -61,6 +61,7 @@ const LINHAS = [
     gatilho: "Nota fiscal solicitada",
     status: "Rascunho",
     tipoLog: "nota_fiscal_solicitada",
+    disponivel: false,
     assuntoPadrao: "Recebemos sua solicitação de nota fiscal",
     corpoPadrao: `<p>Olá {{nome}}, recebemos sua solicitação de nota fiscal.</p>
 <p>Em breve enviaremos o documento para este e-mail.</p>`,
@@ -107,7 +108,10 @@ export default function TransacionaisTab() {
   };
 
   const getTemplate = (tipo) => templates.find((t) => t.tipo === tipo);
-  const getStatus = (linha) => (getTemplate(linha.tipoLog)?.status === "ativo" ? "Ativo" : "Rascunho");
+  const getStatus = (linha) => {
+    if (linha.disponivel === false) return "Sem gatilho";
+    return getTemplate(linha.tipoLog)?.status === "ativo" ? "Ativo" : "Rascunho";
+  };
 
   const handleAlternarStatus = async (linha) => {
     const template = getTemplate(linha.tipoLog);
@@ -156,8 +160,8 @@ export default function TransacionaisTab() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={!linha.tipoLog || alternando === linha.tipoLog}
-                    onClick={() => linha.tipoLog && handleAlternarStatus(linha)}
+                    disabled={!linha.tipoLog || linha.disponivel === false || alternando === linha.tipoLog}
+                    onClick={() => linha.tipoLog && linha.disponivel !== false && handleAlternarStatus(linha)}
                   >
                     {alternando === linha.tipoLog && <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />}
                     {status === "Ativo" ? "Mover p/ rascunho" : "Ativar"}
