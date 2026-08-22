@@ -3,6 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { avaliarAcessoAssinatura, rotaLiberadaSemAssinatura } from '@/lib/acessoAssinatura';
+import { termosAtuaisAceitos } from '@/lib/termosVersao';
 
 const DefaultFallback = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -33,6 +34,10 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
 
   if (!isAuthenticated) {
     return unauthenticatedElement;
+  }
+
+  if (!termosAtuaisAceitos(user)) {
+    return <Navigate to="/aceitar-termos" replace state={{ from: location.pathname }} />;
   }
 
   const acesso = avaliarAcessoAssinatura(user);
