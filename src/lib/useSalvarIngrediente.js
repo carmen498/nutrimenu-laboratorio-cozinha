@@ -2,11 +2,14 @@ import { base44 } from "@/api/base44Client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
+import { salvarDadosComerciaisIngrediente } from "@/lib/preferenciaIngredienteUsuario";
 
 // Hook compartilhado de salvamento de Ingrediente.
-// Segurança: o catálogo Ingrediente é global e somente administradores podem
-// criar/alterar sua estrutura. Usuários comuns podem alterar exclusivamente o
-// próprio preço, persistido em PrecoIngredienteCliente.
+// Segurança/arquitetura:
+// - Ingrediente = catálogo mestre técnico, alterável somente por administradores.
+// - IngredienteUsuario = dados comerciais pessoais (compra, embalagem, fornecedor, preço).
+// - PrecoIngredienteCliente permanece espelhado temporariamente por compatibilidade
+//   com telas de custo que ainda usam a entidade legada.
 export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } = {}) {
   const qc = useQueryClient();
   return useMutation({
@@ -21,16 +24,38 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
           throw new Error("Somente administradores podem cadastrar novos ingredientes.");
         }
         if (!userId) {
-          throw new Error("Usuário não identificado para salvar o preço pessoal.");
+          throw new Error("Usuário não identificado para salvar os dados de compra.");
         }
 
+        await salvarDadosComerciaisIngrediente({
+          ingredienteId: data.id,
+          userId,
+          unidadeCompra: data.unidade_compra,
+          pesoEmbalagemG: data.peso_embalagem_g,
+          precoEmbalagemRs: data.preco_embalagem_rs,
+          fornecedor: data.fornecedor,
+          estadoUsuario: data.estado_usuario,
+          fontePreco: data.fonte_preco || "Manual",
+        });
+
+        // Compatibilidade Fase 3: mantém o preço pessoal disponível para módulos
+        // ainda não migrados de PrecoIngredienteCliente para IngredienteUsuario.
         await salvarPrecoPersonalizado({
           ingredienteId: data.id,
           userId,
           precoPorGRs: preco_por_g,
         });
 
-        return { id: data.id, preco_por_g_rs: preco_por_g, _preco_pessoal: true };
+        return {
+          id: data.id,
+          unidade_compra: data.unidade_compra,
+          peso_embalagem_g: data.peso_embalagem_g,
+          preco_embalagem_rs: data.preco_embalagem_rs,
+          preco_por_g_rs: preco_por_g,
+          fornecedor: data.fornecedor,
+          estado_usuario: data.estado_usuario,
+          _dados_comerciais_pessoais: true,
+        };
       }
 
       const payload = { ...data, preco_por_g_rs: preco_por_g };
@@ -63,6 +88,9 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
 
         delete rest._preco_anterior;
         delete rest._peso_anterior;
+        delete rest._preferencia_ingrediente_id;
+        delete rest._dados_comerciais_pessoais;
+        delete rest._preco_personalizado;
         return base44.entities.Ingrediente.update(id, rest);
       }
 
@@ -87,8 +115,9 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
       qc.invalidateQueries({ queryKey: ["sinonimos"] });
       qc.invalidateQueries({ queryKey: ["precos-personalizados"] });
+      qc.invalidateQueries({ queryKey: ["preferencias-ingredientes"] });
       if (result?.id) qc.invalidateQueries({ queryKey: ["ingrediente", result.id] });
-      toast.success(result?._preco_pessoal ? "Preço pessoal salvo!" : "Ingrediente salvo!");
+      toast.success(result?._dados_comerciais_pessoais ? "Dados de compra salvos!" : "Ingrediente salvo!");
       onSaved?.(result);
     },
   });
