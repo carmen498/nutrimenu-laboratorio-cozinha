@@ -30,10 +30,6 @@
         "simulado"
       ],
       "description": "Resultado do envio"
-    },
-    "resposta_bruta": {
-      "type": "string",
-      "description": "Conte\u00fado da mensagem (modo teste) ou resposta bruta da API Wascript (envio real), para diagn\u00f3stico"
     }
   },
   "required": [
