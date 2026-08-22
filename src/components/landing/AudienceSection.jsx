@@ -2,70 +2,74 @@ import React from "react";
 
 const AUDIENCE = [
   {
-    emoji: "🍳",
-    title: "A Profissional",
-    text: "Cozinheiras artesanais, buffets, marmitas, confeiteiras. Você trabalha com comida e precisa de controle real. Custo por receita, escala por número de pessoas, lista de compras automática, formação de preço. Tudo em um lugar só.",
+    kicker: "Produção e venda",
+    title: "Para quem precisa transformar receita em operação",
+    text: "Cozinheiras artesanais, buffets, marmitas, confeiteiras e nutricionistas que precisam controlar quantidade, custo e compra sem depender de planilhas paralelas.",
   },
   {
-    emoji: "💍",
-    title: "A Iniciante",
-    text: "Noivas, recém-casadas, mulheres aprendendo a cozinhar. A cozinha não precisa ser um mistério. O app te diz o que fazer, quanto comprar e como não desperdiçar. Você planeja a semana inteira em minutos.",
+    kicker: "Casa e rotina",
+    title: "Para quem quer organizar a cozinha antes da correria",
+    text: "Famílias, casais e pessoas aprendendo a cozinhar que querem decidir o cardápio, comprar na medida certa e aproveitar melhor o que já têm em casa.",
   },
   {
-    emoji: "👨",
-    title: "O Independente",
-    text: "Homens solteiros, divorciados, recém-independentes. Cozinhar para si mesmo é uma habilidade. O Laboratório de Cozinha te ajuda a planejar refeições simples, comprar na medida certa e não depender de delivery todo dia.",
+    kicker: "Autonomia",
+    title: "Para quem passou a cozinhar para si mesmo",
+    text: "Quem mora sozinho ou mudou de rotina e quer planejar refeições simples, evitar excesso de compras e depender menos de delivery no dia a dia.",
   },
 ];
 
 const YES = [
-  "Cozinheiras artesanais que produzem para vender",
-  "Buffets e produtoras de marmitas",
-  "Nutricionistas que planejam cardápios",
-  "Noivas e recém-casadas aprendendo a cozinhar",
-  "Homens que passaram a cozinhar para si mesmos",
-  "Quem quer parar de improvisar",
+  "Quer saber quanto produzir antes de começar",
+  "Precisa enxergar custo e rendimento da receita",
+  "Quer transformar cardápio em lista de compras",
+  "Prefere método a anotações espalhadas",
 ];
 
 const NO = [
-  "Quem busca receitas prontas para seguir sem pensar",
-  "Quem não quer saber o custo do que produz",
-  "Quem acha que cozinhar “no olho” é suficiente para vender",
+  "Procura apenas um catálogo de receitas para copiar",
+  "Não pretende acompanhar custos ou quantidades",
+  "Prefere manter planejamento e produção separados",
 ];
 
 export default function AudienceSection({ imageBaking, imageCouple }) {
   return (
-    <section className="lc-section" style={{ background: "rgba(226, 210, 184, 0.4)" }}>
+    <section className="lc-section lc-audience-section" aria-labelledby="audience-title">
       <div className="lc-container">
         <div className="lc-section-head lc-container--narrow">
-          <p className="lc-eyebrow">Para quem é</p>
-          <h2 className="lc-title">Para quem é o Laboratório de Cozinha?</h2>
+          <p className="lc-eyebrow">Para quem funciona melhor</p>
+          <h2 className="lc-title" id="audience-title">Uma ferramenta para cozinhas de tamanhos diferentes, com o mesmo problema: organizar antes de produzir.</h2>
         </div>
 
-        <div className="lc-audience-grid">
-          {AUDIENCE.map((a) => (
-            <div className="lc-audience-card" key={a.title}>
-              <div className="lc-emoji">{a.emoji}</div>
-              <h3>{a.title}</h3>
-              <p>{a.text}</p>
-            </div>
-          ))}
+        <div className="lc-audience-editorial">
+          <div className="lc-audience-copy">
+            {AUDIENCE.map((item) => (
+              <article className="lc-audience-row" key={item.title}>
+                <p className="lc-audience-kicker">{item.kicker}</p>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="lc-audience-photos">
+            <figure className="lc-audience-photo lc-audience-photo--large">
+              <img src={imageBaking} alt="Pessoa preparando um bolo em uma bancada organizada" loading="lazy" />
+            </figure>
+            <figure className="lc-audience-photo lc-audience-photo--small">
+              <img src={imageCouple} alt="Casal cozinhando junto em uma cozinha residencial" loading="lazy" />
+            </figure>
+          </div>
         </div>
 
         <div className="lc-yesno">
           <div className="lc-yesno-card lc-yesno-card--yes">
-            <h4>Para quem é ✓</h4>
-            <ul>{YES.map((y) => <li key={y}>{y}</li>)}</ul>
+            <h3>Faz sentido para você se...</h3>
+            <ul>{YES.map((item) => <li key={item}>{item}</li>)}</ul>
           </div>
           <div className="lc-yesno-card lc-yesno-card--no">
-            <h4>Para quem não é ✗</h4>
-            <ul>{NO.map((n) => <li key={n}>{n}</li>)}</ul>
+            <h3>Talvez não seja a melhor escolha se...</h3>
+            <ul>{NO.map((item) => <li key={item}>{item}</li>)}</ul>
           </div>
-        </div>
-
-        <div className="lc-audience-photos">
-          <figure><img src={imageBaking} alt="Mulher com aventil de linho polvilhando açúcar em bolo de morango" loading="lazy" /></figure>
-          <figure><img src={imageCouple} alt="Casal jovem cozinhando junto em cozinha clara com madeira" loading="lazy" /></figure>
         </div>
       </div>
     </section>
