@@ -17,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 const TEMAS = ["Fritura", "Congelamento", "Per Capita", "Precificação", "Ingredientes", "Rendimento", "Geral"];
 const AUTOR_FIXO = "Carmen Reinstein, Nutricionista";
@@ -39,9 +41,15 @@ export default function NovaDicaCarmen() {
     const file = e.target.files?.[0];
     if (!file) return;
     setEnviandoImagem(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setImagemCapa(file_url);
-    setEnviandoImagem(false);
+    try {
+      const fileUrl = await uploadImagemSeguro(base44, file);
+      setImagemCapa(fileUrl);
+    } catch (err) {
+      toast.error(err?.message || "Erro ao enviar imagem");
+    } finally {
+      setEnviandoImagem(false);
+      e.target.value = "";
+    }
   };
 
   const handleSalvar = async (statusFinal) => {
