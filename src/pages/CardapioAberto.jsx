@@ -31,6 +31,8 @@ import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
+import { carregarIngredientesEfetivosCusto, mapearIngredientesPorId } from "@/lib/custoContexto";
+import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -99,6 +101,9 @@ export default function CardapioAberto() {
   const [insumos, setInsumos] = useState([]);
   const [insumosGlobais, setInsumosGlobais] = useState([]);
   const [ingredientesPorReceita, setIngredientesPorReceita] = useState({});
+  const [ingredientesEfetivosCusto, setIngredientesEfetivosCusto] = useState([]);
+  const [insumosPorReceita, setInsumosPorReceita] = useState({});
+  const [esquecidosPorReceita, setEsquecidosPorReceita] = useState({});
 
   const [showVenda, setShowVenda] = useState(false);
   const [markup, setMarkup] = useState(30);
@@ -128,11 +133,26 @@ export default function CardapioAberto() {
     return map;
   }, [todasReceitas]);
 
+  const ingredienteMap = useMemo(
+    () => mapearIngredientesPorId(ingredientesEfetivosCusto),
+    [ingredientesEfetivosCusto]
+  );
+
   // Custo/preço de venda AO VIVO — via helper compartilhado com o Orçamento, para
   // garantir que ambos exibam exatamente o mesmo valor.
   const calcs = useMemo(
-    () => calcularCustoCardapio({ receitas, receitaMap, ingredientesPorReceita, insumos, num, markup }),
-    [receitas, receitaMap, ingredientesPorReceita, insumos, num, markup]
+    () => calcularCustoCardapio({
+      receitas,
+      receitaMap,
+      ingredientesPorReceita,
+      insumos,
+      num,
+      markup,
+      ingredienteMap,
+      insumosPorReceita,
+      esquecidosPorReceita,
+    }),
+    [receitas, receitaMap, ingredientesPorReceita, insumos, num, markup, ingredienteMap, insumosPorReceita, esquecidosPorReceita]
   );
   const receitasView = calcs.receitasView;
 
@@ -161,17 +181,29 @@ export default function CardapioAberto() {
       setCardapioTags(cTags || []);
       setFiltroDia("todos");
 
-      // Carrega ingredientes de cada receita do cardápio, para calcular custo ao vivo
+      // Fase 10 — carrega composição + contexto comercial efetivo do usuário.
       const receitaIds = [...new Set((recs || []).map(r => r.receita_id).filter(Boolean))];
-      const ingredientesArrays = await Promise.all(
-        receitaIds.map(rid => base44.entities.IngredienteReceita.filter({ receita_id: rid }, "ordem", 200))
-      );
+      const [ingredientesArrays, insumosArrays, esquecidosArrays, ingredientesEfetivos] = await Promise.all([
+        Promise.all(receitaIds.map(rid => base44.entities.IngredienteReceita.filter({ receita_id: rid }, "ordem", 500))),
+        Promise.all(receitaIds.map(rid => base44.entities.InsumoReceita.filter({ receita_id: rid }, "created_date", 500))),
+        Promise.all(receitaIds.map(rid => base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: rid }, "created_date", 500))),
+        carregarIngredientesEfetivosCusto({ userId: user?.id, isAdmin }),
+      ]);
       const ingredientesMap = {};
-      receitaIds.forEach((rid, i) => { ingredientesMap[rid] = ingredientesArrays[i] || []; });
+      const insumosReceitaMap = {};
+      const esquecidosReceitaMap = {};
+      receitaIds.forEach((rid, i) => {
+        ingredientesMap[rid] = ingredientesArrays[i] || [];
+        insumosReceitaMap[rid] = insumosArrays[i] || [];
+        esquecidosReceitaMap[rid] = esquecidosArrays[i] || [];
+      });
       setIngredientesPorReceita(ingredientesMap);
+      setInsumosPorReceita(insumosReceitaMap);
+      setEsquecidosPorReceita(esquecidosReceitaMap);
+      setIngredientesEfetivosCusto(ingredientesEfetivos || []);
     } catch (e) { console.error(e); }
     setLoading(false);
-  }, [id]);
+  }, [id, user?.id, isAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -317,7 +349,11 @@ export default function CardapioAberto() {
       if (!rec) return;
       const ingredientes = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId }, "ordem", 200);
       const qt = Number(cr.quantidade_total_g) || 0;
-      const custoEsc = custoEscalado(rec, ingredientes, qt);
+      const custoEsc = custoEscalado(rec, ingredientes, qt, {
+        ingredienteMap,
+        insumosReceita: insumosPorReceita[receitaId] || [],
+        esquecidos: esquecidosPorReceita[receitaId] || [],
+      });
       await base44.entities.CardapioReceita.update(cr.id, { custo_total: custoEsc });
       setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc, quantidade_total_g: qt } : r));
     } catch (e) { console.error(e); }
