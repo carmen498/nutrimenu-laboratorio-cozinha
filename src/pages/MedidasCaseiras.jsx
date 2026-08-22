@@ -13,9 +13,12 @@ import { useNavigate } from "react-router-dom";
 import ImportarMedidasDialog from "@/components/medida/ImportarMedidasDialog";
 import { downloadCsv } from "@/lib/exportCsv";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function MedidasCaseiras() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [tab, setTab] = useState("utensilios");
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
@@ -256,14 +259,18 @@ export default function MedidasCaseiras() {
           />
         </div>
         {tab === "utensilios" ? (
-          <Button onClick={startNewUte} className="gap-1">
-            <Plus className="w-4 h-4" /> Novo Utensílio
-          </Button>
+          isAdmin ? (
+            <Button onClick={startNewUte} className="gap-1">
+              <Plus className="w-4 h-4" /> Novo Utensílio
+            </Button>
+          ) : null
         ) : (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowImport(true)} className="gap-1">
-              <Upload className="w-4 h-4" /> Importar CSV
-            </Button>
+            {isAdmin && (
+              <Button variant="outline" onClick={() => setShowImport(true)} className="gap-1">
+                <Upload className="w-4 h-4" /> Importar CSV
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => downloadCsv(
@@ -281,9 +288,11 @@ export default function MedidasCaseiras() {
             >
               <Download className="w-4 h-4" /> Exportar CSV
             </Button>
-            <Button onClick={startNewMedida} className="gap-1">
-              <Plus className="w-4 h-4" /> Nova Medida
-            </Button>
+            {isAdmin && (
+              <Button onClick={startNewMedida} className="gap-1">
+                <Plus className="w-4 h-4" /> Nova Medida
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -313,14 +322,16 @@ export default function MedidasCaseiras() {
                   <td className="px-2 py-2 text-right tabular-nums">{fmtG(u.g_max)}</td>
                   <td className="px-2 py-2 text-right tabular-nums font-semibold" style={{ color: "#1B4332" }}>{fmtG(u.g_medio)}</td>
                   <td className="px-2 py-2">
-                    <div className="flex items-center gap-1 justify-end">
-                      <button className="p-1 rounded hover:bg-muted" onClick={() => startEditUte(u)} title="Editar">
-                        <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                      </button>
-                      <button className="p-1 rounded hover:bg-red-50" onClick={() => deleteUte(u)} title="Excluir">
-                        <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
-                      </button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 justify-end">
+                        <button className="p-1 rounded hover:bg-muted" onClick={() => startEditUte(u)} title="Editar">
+                          <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                        </button>
+                        <button className="p-1 rounded hover:bg-red-50" onClick={() => deleteUte(u)} title="Excluir">
+                          <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -369,14 +380,16 @@ export default function MedidasCaseiras() {
                           {m.so_gramas ? <Badge className="bg-amber-100 text-amber-700 border-amber-300">Sim</Badge> : "—"}
                         </td>
                         <td className="px-2 py-2">
-                          <div className="flex items-center gap-1 justify-end">
-                            <button className="p-1 rounded hover:bg-muted" onClick={() => startEditMedida(m)} title="Editar">
-                              <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
-                            </button>
-                            <button className="p-1 rounded hover:bg-red-50" onClick={() => deleteMedida(m)} title="Excluir">
-                              <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
-                            </button>
-                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1 justify-end">
+                              <button className="p-1 rounded hover:bg-muted" onClick={() => startEditMedida(m)} title="Editar">
+                                <Pencil className="w-3.5 h-3.5 text-muted-foreground hover:text-primary" />
+                              </button>
+                              <button className="p-1 rounded hover:bg-red-50" onClick={() => deleteMedida(m)} title="Excluir">
+                                <Trash2 className="w-3.5 h-3.5 text-red-400 hover:text-red-600" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -386,7 +399,7 @@ export default function MedidasCaseiras() {
               {medidasFiltered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center text-muted-foreground py-8 text-sm">
-                    Nenhuma medida encontrada. Clique em "Nova Medida" ou "Importar CSV".
+                    {isAdmin ? 'Nenhuma medida encontrada. Clique em "Nova Medida" ou "Importar CSV".' : "Nenhuma medida encontrada."}
                   </td>
                 </tr>
               )}
@@ -395,8 +408,8 @@ export default function MedidasCaseiras() {
         </Card>
       )}
 
-      {/* UtensilioPadrao form dialog */}
-      <Dialog open={showUteForm} onOpenChange={(v) => !v && setShowUteForm(false)}>
+      {/* Ferramentas de manutenção do catálogo — somente admin. */}
+      {isAdmin && <Dialog open={showUteForm} onOpenChange={(v) => !v && setShowUteForm(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display">{editUte ? "Editar Utensílio" : "Novo Utensílio"}</DialogTitle>
@@ -435,10 +448,10 @@ export default function MedidasCaseiras() {
             <Button onClick={saveUte}><Check className="w-4 h-4 mr-1" /> Salvar</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
 
       {/* MedidaCaseira form dialog */}
-      <Dialog open={showMedidaForm} onOpenChange={(v) => !v && setShowMedidaForm(false)}>
+      {isAdmin && <Dialog open={showMedidaForm} onOpenChange={(v) => !v && setShowMedidaForm(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display">{editMedida ? "Editar Medida" : "Nova Medida"}</DialogTitle>
@@ -485,14 +498,16 @@ export default function MedidasCaseiras() {
             <Button onClick={saveMedida}><Check className="w-4 h-4 mr-1" /> Salvar</Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
 
       {/* Import CSV dialog */}
-      <ImportarMedidasDialog
-        open={showImport}
-        onClose={() => setShowImport(false)}
-        onImported={() => queryClient.invalidateQueries({ queryKey: ["medidas-caseiras"] })}
-      />
+      {isAdmin && (
+        <ImportarMedidasDialog
+          open={showImport}
+          onClose={() => setShowImport(false)}
+          onImported={() => queryClient.invalidateQueries({ queryKey: ["medidas-caseiras"] })}
+        />
+      )}
 
       <p className="text-xs text-muted-foreground italic text-center pt-2">
         Conversor de produção — não substitui as medidas caseiras oficiais de rotulagem (RDC 429/2020 e IN 75/2020).
