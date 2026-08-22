@@ -116,7 +116,7 @@ export default function ImportarReceitaTextoDialog({ open, onClose, onCreated })
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => { setTexto(ev.target.result || ""); setError(""); };
+    reader.onload = (ev) => { setTexto(String(ev.target?.result || "")); setError(""); };
     reader.readAsText(file);
     e.target.value = "";
   };
