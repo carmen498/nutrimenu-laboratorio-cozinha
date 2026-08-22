@@ -1,4 +1,5 @@
 import { criarIngredienteReceita } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -59,7 +60,7 @@ async function criarReceitaDoItem(item, ingredientesById) {
   const nPorcoes = pcRecomendado > 0 && rendimentoTotal > 0 ? rendimentoTotal / pcRecomendado : 1;
   const custoPorPorcaoRounded = parseFloat((custoTotalRounded / nPorcoes).toFixed(2));
 
-  const receita = await base44.entities.Receita.create({
+  const receita = await criarReceitaSegura({
     nome: item.nome.toUpperCase(),
     categorias: categoriaValida ? [categoriaValida] : [],
     revisar: false,
