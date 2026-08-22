@@ -13,10 +13,18 @@ import { printarElementoIsolado } from "@/lib/printIsolado";
 import { getCorHex, getCorLabelCompleto } from "@/lib/coresReceita";
 import TabelaFichaTecnica from "@/components/fichaTecnica/TabelaFichaTecnica";
 import TagBadge from "@/components/tags/TagBadge";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 export default function FichaTecnicaReceita() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const { data: receita } = useQuery({
     queryKey: ["receita", id],
@@ -33,6 +41,29 @@ export default function FichaTecnicaReceita() {
     queryKey: ["ingredientes"],
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  const ingredientesEfetivos = useMemo(() => {
+    const comPrecoLegado = isAdmin
+      ? ingredientesDB
+      : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados);
+    return aplicarPreferenciasIngredientes(
+      comPrecoLegado,
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    );
+  }, [ingredientesDB, isAdmin, precosPersonalizados, preferenciasIngredientes]);
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
@@ -74,9 +105,9 @@ export default function FichaTecnicaReceita() {
 
   const ingMap = useMemo(() => {
     const map = {};
-    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    ingredientesEfetivos.forEach((i) => { map[i.id] = i; });
     return map;
-  }, [ingredientesDB]);
+  }, [ingredientesEfetivos]);
 
   const receitasBasicasMap = useMemo(() => {
     const map = {};
@@ -155,14 +186,12 @@ export default function FichaTecnicaReceita() {
       </div>
 
       <div id="ficha-tecnica-print-area" className="bg-white border rounded-xl overflow-hidden print:border-0 print:rounded-none">
-        {/* Cabeçalho timbrado */}
         <div className="bg-primary text-primary-foreground px-6 py-4 flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm">Laboratório de Cozinha · Receitas que se Multiplicam · por Carmen Reinstein</p>
           <p className="font-display text-sm text-right">FICHA TÉCNICA · emitida em {dataEmissao}</p>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Identificação */}
           <div>
             <div className="flex items-center gap-2">
               {receita.cor_predominante && (
@@ -188,7 +217,6 @@ export default function FichaTecnicaReceita() {
             </div>
           </div>
 
-          {/* Indicadores */}
           <div className="grid grid-cols-4 gap-3">
             <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
               <p className="text-[10px] uppercase text-muted-foreground tracking-wide">PC Recomendado</p>
@@ -209,7 +237,6 @@ export default function FichaTecnicaReceita() {
             </div>
           </div>
 
-          {/* Tabela de ingredientes */}
           <div>
             <h3 className="font-display text-base font-bold mb-2">Ingredientes</h3>
             <TabelaFichaTecnica
@@ -225,7 +252,6 @@ export default function FichaTecnicaReceita() {
             </p>
           </div>
 
-          {/* Modo de preparo */}
           {(passos.length > 0 || ficha.temSubreceitas) && (
             <div style={{ breakInside: "avoid" }}>
               <h3 className="font-display text-base font-bold mb-2">Modo de Preparo</h3>
@@ -262,7 +288,6 @@ export default function FichaTecnicaReceita() {
             </div>
           )}
 
-          {/* Descritivo (menu) */}
           {receita.descritivo_menu && (
             <div style={{ breakInside: "avoid" }}>
               <h3 className="font-display text-base font-bold mb-2">Descritivo (Menu)</h3>
@@ -270,7 +295,6 @@ export default function FichaTecnicaReceita() {
             </div>
           )}
 
-          {/* Insumos e Embalagens */}
           {insumosReceita.length > 0 && ficha.custoInsumos > 0 && (
             <div style={{ breakInside: "avoid" }}>
               <h3 className="font-display text-base font-bold mb-2">Insumos e Embalagens</h3>
@@ -293,7 +317,6 @@ export default function FichaTecnicaReceita() {
             </div>
           )}
 
-          {/* Rodapé */}
           <p className="text-[11px] text-muted-foreground text-center pt-4 border-t border-border">
             Laboratório de Cozinha · Gastronomia Planejada · custos na data de emissão · {dataEmissao}
           </p>
