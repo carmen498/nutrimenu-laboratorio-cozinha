@@ -56,20 +56,25 @@ export default async function(req: Request): Promise<Response> {
     // da conta — a entidade User embutida não suporta automação de "create").
     if (user.email) {
       const nome = user.nome_completo || user.full_name || "";
-      const { assunto, html } = await renderTemplateEmail(base44, "boas_vindas", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
+      const { assunto, html, ativo } = await renderTemplateEmail(base44, "boas_vindas", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
-      const resultadoEmail = await sendEmailViaResend(base44, {
-        to: user.email,
-        subject: assunto,
-        html,
-      });
+      if (ativo) {
+        const resultadoEmail = await sendEmailViaResend(base44, {
+          to: user.email,
+          subject: assunto,
+          html,
+        });
 
-      await base44.asServiceRole.entities.LogEmail.create({
-        destinatario_email: user.email,
-        tipo: "boas_vindas",
-        enviado_em: new Date().toISOString(),
-        status: resultadoEmail.ok ? "enviado" : "falhou",
-      });
+        await base44.asServiceRole.entities.LogEmail.create({
+          destinatario_email: user.email,
+          tipo: "boas_vindas",
+          enviado_em: new Date().toISOString(),
+          status: resultadoEmail.ok ? "enviado" : "falhou",
+          detalhe_erro: resultadoEmail.ok ? undefined : (resultadoEmail.detalhe_completo || resultadoEmail.error),
+        });
+      } else {
+        console.log('Template "boas_vindas" está em rascunho — e-mail não enviado.');
+      }
     }
 
     return Response.json({ success: true, userId: user.id, dataInicio, dataExpiracao });
