@@ -1,5 +1,5 @@
 {
-  "name": "untitled",
+  "name": "Laboratório de Cozinha",
   "site": {
     "installCommand": "npm install",
     "buildCommand": "npm run build",
