@@ -32,14 +32,82 @@
     },
     "custo_unitario": {
       "type": "number",
-      "description": "Custo unit\u00e1rio edit\u00e1vel (R$)"
+      "description": "Custo unitário editável (R$)"
     },
     "custo_total": {
       "type": "number",
       "description": "Custo total calculado: quantidade * custo_unitario"
+    },
+    "is_base": {
+      "type": "boolean",
+      "description": "Espelha se o receita-pai pertence ao catálogo-base compartilhado"
+    },
+    "usuario_dono_id": {
+      "type": "string",
+      "description": "ID do usuário dono quando o receita-pai é uma cópia pessoal"
     }
   },
   "required": [
     "receita_id"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.is_base": false
+            },
+            {
+              "data.usuario_dono_id": "{{user.id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_base": true
+        },
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

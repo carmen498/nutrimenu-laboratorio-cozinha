@@ -4,7 +4,7 @@
   "properties": {
     "cardapio_id": {
       "type": "string",
-      "description": "ID do card\u00e1pio"
+      "description": "ID do cardápio"
     },
     "receita_id": {
       "type": "string",
@@ -28,11 +28,11 @@
     },
     "custo_total": {
       "type": "number",
-      "description": "Custo total calculado da receita no card\u00e1pio"
+      "description": "Custo total calculado da receita no cardápio"
     },
     "ordem": {
       "type": "number",
-      "description": "Ordem de exibi\u00e7\u00e3o"
+      "description": "Ordem de exibição"
     },
     "dia_semana": {
       "type": "string",
@@ -55,10 +55,78 @@
         "lanche",
         "jantar"
       ],
-      "description": "Refei\u00e7\u00e3o (tipos semanal, diario, fim_de_semana)"
+      "description": "Refeição (tipos semanal, diario, fim_de_semana)"
+    },
+    "is_base": {
+      "type": "boolean",
+      "description": "Espelha se o cardápio-pai pertence ao catálogo-base compartilhado"
+    },
+    "usuario_dono_id": {
+      "type": "string",
+      "description": "ID do usuário dono quando o cardápio-pai é uma cópia pessoal"
     }
   },
   "required": [
     "cardapio_id"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.is_base": false
+            },
+            {
+              "data.usuario_dono_id": "{{user.id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_base": true
+        },
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

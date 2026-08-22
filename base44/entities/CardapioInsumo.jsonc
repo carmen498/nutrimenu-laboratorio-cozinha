@@ -4,7 +4,7 @@
   "properties": {
     "cardapio_id": {
       "type": "string",
-      "description": "ID do card\u00e1pio"
+      "description": "ID do cardápio"
     },
     "insumo_id": {
       "type": "string",
@@ -24,14 +24,82 @@
     },
     "custo_unitario": {
       "type": "number",
-      "description": "Custo unit\u00e1rio em R$"
+      "description": "Custo unitário em R$"
     },
     "custo_total": {
       "type": "number",
       "description": "Custo total calculado"
+    },
+    "is_base": {
+      "type": "boolean",
+      "description": "Espelha se o cardápio-pai pertence ao catálogo-base compartilhado"
+    },
+    "usuario_dono_id": {
+      "type": "string",
+      "description": "ID do usuário dono quando o cardápio-pai é uma cópia pessoal"
     }
   },
   "required": [
     "cardapio_id"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.is_base": false
+            },
+            {
+              "data.usuario_dono_id": "{{user.id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_base": true
+        },
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }

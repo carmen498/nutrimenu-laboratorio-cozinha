@@ -16,19 +16,19 @@
     },
     "pre_preparo": {
       "type": "string",
-      "description": "Pr\u00e9-preparo (picado, em cubos, desfiado)"
+      "description": "Pré-preparo (picado, em cubos, desfiado)"
     },
     "quantidade_por_porcao": {
       "type": "number",
-      "description": "Quantidade por por\u00e7\u00e3o em g/ml"
+      "description": "Quantidade por porção em g/ml"
     },
     "medida_caseira": {
       "type": "string",
-      "description": "Medida caseira usada (ex: 1 x\u00edcara)"
+      "description": "Medida caseira usada (ex: 1 xícara)"
     },
     "ordem": {
       "type": "number",
-      "description": "Ordem de exibi\u00e7\u00e3o"
+      "description": "Ordem de exibição"
     },
     "tipo": {
       "type": "string",
@@ -42,7 +42,7 @@
     },
     "titulo_grupo": {
       "type": "string",
-      "description": "T\u00edtulo do grupo (usado quando tipo=grupo)"
+      "description": "Título do grupo (usado quando tipo=grupo)"
     },
     "subreceita_id": {
       "type": "string",
@@ -54,15 +54,83 @@
     },
     "subreceita_parent_id": {
       "type": "string",
-      "description": "ID do item subreceita pai (para ingredientes explodidos de sub-receitas \u2014 agrupamento visual e exclus\u00e3o em cascata)"
+      "description": "ID do item subreceita pai (para ingredientes explodidos de sub-receitas — agrupamento visual e exclusão em cascata)"
     },
     "proporcional": {
       "type": "boolean",
       "default": true,
       "description": "Indica se o ingrediente escala proporcionalmente com a receita (true) ou tem quantidade fixa (false)"
+    },
+    "is_base": {
+      "type": "boolean",
+      "description": "Espelha se o receita-pai pertence ao catálogo-base compartilhado"
+    },
+    "usuario_dono_id": {
+      "type": "string",
+      "description": "ID do usuário dono quando o receita-pai é uma cópia pessoal"
     }
   },
   "required": [
     "receita_id"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.is_base": false
+            },
+            {
+              "data.usuario_dono_id": "{{user.id}}"
+            }
+          ]
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_base": true
+        },
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
 }
