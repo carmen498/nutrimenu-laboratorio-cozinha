@@ -1,10 +1,10 @@
 // Fonte única de verdade do Relatório de Pré-preparos (mise en place) — usada
 // pela tela de pré-visualização (PrePreparosPlanejamento.jsx) e pelo PDF exportado.
-// Escala: fator = (PC local do cardápio × pessoas) ÷ rendimento da receita.
-// Não altera nenhum outro relatório nem cálculo existente — apenas lê dados.
+// Escala: fator = (PC local do cardápio × pessoas) ÷ rendimento efetivo da receita.
 import { base44 } from "@/api/base44Client";
 import { carregarDadosRelatorios } from "@/lib/relatoriosPlanejamentoPDF";
 import { resolverFatorCorrecao } from "@/lib/ingredienteReceitaCalc";
+import { rendimentoEfetivo } from "@/lib/custoReceita";
 
 function fmtPeso(g) {
   const v = g || 0;
@@ -17,8 +17,6 @@ function fmtBrutoParen(liquidoG, brutoG) {
   return `(pegar ${fmtPeso(brutoG)} bruto)`;
 }
 
-// Carrega config/receitas/ingredientes-por-receita (reaproveitando o loader
-// compartilhado) + mapa de Ingrediente (para preço e FC padrão).
 export async function carregarDadosPrePreparos(planejamento) {
   const base = await carregarDadosRelatorios(planejamento);
   const todosIngredientes = await base44.entities.Ingrediente.list("nome", 3000);
@@ -41,11 +39,11 @@ export function montarPrePreparos(planejamento, dados) {
 
   itensComReceita.forEach((item) => {
     const receita = receitaMap[item.receita_id];
-    const rendimento = receita?.rendimento_total || 0;
+    const ingrs = ingredientesPorReceita[item.receita_id] || [];
+    const rendimento = rendimentoEfetivo(receita, ingrs);
     const porcoesBase = receita?.porcoes_base || 1;
     const pcG = item.pc_g || 0;
     const fatorReceita = rendimento > 0 ? (pcG * totalPessoas) / rendimento : 0;
-    const ingrs = ingredientesPorReceita[item.receita_id] || [];
     const nomeReceita = item.receita_nome || "—";
 
     ingrs.forEach((ing) => {
