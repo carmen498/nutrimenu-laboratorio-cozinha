@@ -8,6 +8,7 @@ import { ArrowLeft, Download, ChefHat, Share2 } from "lucide-react";
 import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { carregarDadosReceitasCardapio, montarReceitasCardapio } from "@/lib/receitasCardapioCalc";
 import { gerarReceitasCardapioPDF } from "@/lib/receitasCardapioPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização do caderno de produção "Receitas do Cardápio" —
 // mesmo padrão de tela-primeiro dos demais relatórios. Uma receita por bloco,
@@ -46,7 +47,7 @@ export default function ReceitasCardapio() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
