@@ -63,7 +63,7 @@ import {
 } from "@/lib/ingredienteReceitaCalc";
 import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 import { calcularCustoReceitaCanonico, CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
-import { uploadImagemSeguro } from "@/lib/securityHardening";
+import { consoleErrorSeguro, uploadImagemSeguro } from "@/lib/securityHardening";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -373,7 +373,7 @@ export default function ReceitaAberta() {
           params.set("ctxCardapioReceitaId", itemParaAtualizar.id);
           novaUrl += `?${params.toString()}`;
         } catch (err) {
-          console.error(err);
+          consoleErrorSeguro("Erro ao atualizar cardápio após personalizar receita", err);
           cardapioRewireOk = false;
         }
       }
