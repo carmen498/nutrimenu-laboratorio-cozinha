@@ -8,6 +8,7 @@ import { ArrowLeft, Download, MessageCircle } from "lucide-react";
 import { carregarDadosRelatorios } from "@/lib/relatoriosPlanejamentoPDF";
 import { montarOrcamentoEvento } from "@/lib/orcamentoEventoCalc";
 import { gerarOrcamentoEventoPDF } from "@/lib/orcamentoEventoPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização do Orçamento do Evento (documento comercial do
 // cliente). Regra de segurança: nenhum dado interno (custo, PC, kg, margem,
@@ -74,7 +75,7 @@ export default function OrcamentoEvento() {
     text += `Total: ${orc.totalFmt}\n\n`;
     text += `Válido por ${validadeDias} dias · condições de pagamento a combinar.\n`;
     text += `(PDF anexo)`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
   return (
