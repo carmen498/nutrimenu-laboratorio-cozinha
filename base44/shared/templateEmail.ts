@@ -9,7 +9,9 @@ export async function renderTemplateEmail(base44, tipo, nome, defaultAssunto, de
 
   const assunto = template?.assunto || defaultAssunto;
   const corpo = template?.corpo || defaultCorpo;
-  const ativo = template?.status === "ativo";
+  // Sem template salvo, o fallback de código continua operacional. Se existir
+  // template administrável, o status "rascunho" deve realmente interromper o envio.
+  const ativo = template ? template.status === "ativo" : true;
 
   const todasVariaveis = { nome: nome || "", ...variaveis };
   const substituir = (texto) => {
@@ -20,5 +22,12 @@ export async function renderTemplateEmail(base44, tipo, nome, defaultAssunto, de
     return resultado;
   };
 
-  return { assunto: substituir(assunto), html: substituir(corpo), ativo };
+  const assuntoResolvido = substituir(assunto);
+  const htmlResolvido = substituir(corpo);
+  const pendentes = [...`${assuntoResolvido}\n${htmlResolvido}`.matchAll(/{{\s*([\w.-]+)\s*}}/g)].map((m) => m[1]);
+  if (pendentes.length > 0) {
+    throw new Error(`Template de e-mail ${tipo} possui variáveis sem valor: ${[...new Set(pendentes)].join(", ")}`);
+  }
+
+  return { assunto: assuntoResolvido, html: htmlResolvido, ativo };
 }
