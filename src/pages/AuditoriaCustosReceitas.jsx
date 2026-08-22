@@ -95,10 +95,17 @@ export default function AuditoriaCustosReceitas() {
   const analisarPendencias = async () => {
     setProcessando(true);
     try {
-      const res = await base44.functions.invoke("sanearCustosPendentes", { dry_run: true });
+      const [res, preparacoes] = await Promise.all([
+        base44.functions.invoke("sanearCustosPendentes", { dry_run: true }),
+        base44.functions.invoke("sincronizarSubreceita", { migrar_preparacoes_exatas: true, dry_run: true }),
+      ]);
       const dados = res?.data || {};
-      setSaneamentoPreview(dados);
-      toast.success(`Pendências analisadas: ${dados.receitas_potencialmente_resolvidas || 0} receita(s) podem ser resolvidas automaticamente.`);
+      const preparacoesDados = preparacoes?.data || {};
+      setSaneamentoPreview({ ...dados, preparacoes_exatas: preparacoesDados });
+      toast.success(
+        `Pendências analisadas: ${dados.receitas_potencialmente_resolvidas || 0} receita(s) por preço/referência + ` +
+        `${preparacoesDados.candidatos || 0} preparação(ões) migrável(is) para sub-receita.`
+      );
     } catch (error) {
       toast.error("Erro ao analisar pendências: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
     } finally {
@@ -119,8 +126,10 @@ export default function AuditoriaCustosReceitas() {
 
     setProcessando(true);
     try {
+      const preparacoes = await base44.functions.invoke("sincronizarSubreceita", { migrar_preparacoes_exatas: true, dry_run: false });
       const saneamento = await base44.functions.invoke("sanearCustosPendentes", { dry_run: false });
       const recalculo = await base44.functions.invoke("normalizarCustosReceitas", { dry_run: false, somente_incompletas: true });
+      const preparacoesDados = preparacoes?.data || {};
       const saneamentoDados = saneamento?.data || {};
       const recalculoDados = recalculo?.data || {};
       setSaneamentoPreview(null);
@@ -133,6 +142,7 @@ export default function AuditoriaCustosReceitas() {
       ]);
       toast.success(
         `${recalculoDados.migraveis || 0} receita(s) saneada(s); ${recalculoDados.incompletas || 0} continuam em revisão manual. ` +
+        `${preparacoesDados.migrados || 0} preparação(ões) migrada(s) para sub-receita e ` +
         `${(saneamentoDados.correcoes?.referencias_reapontaveis || 0)} referência(s) reapontada(s).`
       );
     } catch (error) {
@@ -221,9 +231,10 @@ export default function AuditoriaCustosReceitas() {
               <p className="text-xs text-muted-foreground">Somente vínculo exato/único e preço matematicamente derivável são classificados como automáticos.</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
             <div><p className="text-xs text-muted-foreground">Incompletas</p><p className="text-lg font-bold">{saneamentoPreview.receitas_incompletas || 0}</p></div>
             <div><p className="text-xs text-muted-foreground">Resolvíveis</p><p className="text-lg font-bold text-primary">{saneamentoPreview.receitas_potencialmente_resolvidas || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Preparações → sub-receita</p><p className="text-lg font-bold text-primary">{saneamentoPreview.preparacoes_exatas?.candidatos || 0}</p></div>
             <div><p className="text-xs text-muted-foreground">Revisão manual</p><p className="text-lg font-bold text-destructive">{saneamentoPreview.receitas_com_revisao_manual || 0}</p></div>
             <div><p className="text-xs text-muted-foreground">Preços deriváveis</p><p className="text-lg font-bold">{(saneamentoPreview.correcoes?.precos_derivados_mestre || 0) + (saneamentoPreview.correcoes?.precos_derivados_usuario || 0)}</p></div>
             <div><p className="text-xs text-muted-foreground">Referências</p><p className="text-lg font-bold">{saneamentoPreview.correcoes?.referencias_reapontaveis || 0}</p></div>
