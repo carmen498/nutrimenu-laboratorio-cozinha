@@ -1,0 +1,260 @@
+import { useMemo, useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, CheckCircle2, GitBranch, Loader2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
+import { fetchAllPages } from "@/lib/fetchAllPages";
+
+const atualizadoEm = (r) => r?.updated_date || r?.updated_at || r?.created_date || "";
+const assinatura = (deps) => [...deps.entries()]
+  .sort(([a], [b]) => String(a).localeCompare(String(b)))
+  .map(([id, data]) => `${id}@${data || "sem-data"}`)
+  .join("|");
+
+const STATUS_LABEL = {
+  sincronizada: "Sincronizada",
+  desatualizada: "Desatualizada",
+  a_validar: "A validar",
+  pendente: "Pendente",
+  erro_ciclo: "Ciclo",
+  origem_ausente: "Origem ausente",
+};
+
+export default function AuditoriaSubreceitas() {
+  const qc = useQueryClient();
+  const [sincronizando, setSincronizando] = useState(null);
+  const [sincronizandoTodas, setSincronizandoTodas] = useState(false);
+
+  const { data: receitas = [], isLoading: l1 } = useQuery({
+    queryKey: ["auditoria-subreceitas-receitas"],
+    queryFn: () => fetchAllPages(base44.entities.Receita, "nome"),
+  });
+  const { data: itens = [], isLoading: l2 } = useQuery({
+    queryKey: ["auditoria-subreceitas-itens"],
+    queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "ordem"),
+  });
+  const { data: logs = [] } = useQuery({
+    queryKey: ["auditoria-subreceitas-logs"],
+    queryFn: () => base44.entities.SincronizacaoSubreceitaLog.list("-executado_em", 20),
+    staleTime: 30 * 1000,
+  });
+
+  const receitaMap = useMemo(() => Object.fromEntries(receitas.map((r) => [r.id, r])), [receitas]);
+
+  const diagnostico = useMemo(() => {
+    const itensPorReceita = new Map();
+    const markerMap = new Map();
+    const filhosPorMarker = new Map();
+
+    for (const item of itens) {
+      if (!itensPorReceita.has(item.receita_id)) itensPorReceita.set(item.receita_id, []);
+      itensPorReceita.get(item.receita_id).push(item);
+      if (item.tipo === "subreceita") markerMap.set(item.id, item);
+      if (item.subreceita_parent_id) {
+        if (!filhosPorMarker.has(item.subreceita_parent_id)) filhosPorMarker.set(item.subreceita_parent_id, []);
+        filhosPorMarker.get(item.subreceita_parent_id).push(item);
+      }
+    }
+
+    const calcularAssinatura = (sourceId, parentId) => {
+      const deps = new Map();
+      const visitar = (id, pilha) => {
+        if (pilha.includes(id)) {
+          const nomes = [...pilha, id].map((rid) => receitaMap[rid]?.nome || rid);
+          const err = new Error(`Ciclo: ${nomes.join(" → ")}`);
+          err.code = "CICLO";
+          throw err;
+        }
+        const receita = receitaMap[id];
+        if (!receita) {
+          const err = new Error(`Origem não encontrada: ${id}`);
+          err.code = "ORIGEM";
+          throw err;
+        }
+        deps.set(id, atualizadoEm(receita));
+        const sourceItens = itensPorReceita.get(id) || [];
+        for (const item of sourceItens) {
+          if (item.tipo !== "subreceita" || item.subreceita_parent_id) continue;
+          if (!item.subreceita_id) continue;
+          visitar(item.subreceita_id, [...pilha, id]);
+        }
+      };
+      visitar(sourceId, parentId ? [parentId] : []);
+      return { valor: assinatura(deps), dependencias: deps };
+    };
+
+    const rows = [...markerMap.values()].map((marker) => {
+      const parent = receitaMap[marker.receita_id];
+      const source = receitaMap[marker.subreceita_id];
+      const filhos = filhosPorMarker.get(marker.id) || [];
+      const cacheAssinatura = marker.subreceita_dependencias_assinatura
+        || filhos.find((f) => f.subreceita_dependencias_assinatura)?.subreceita_dependencias_assinatura
+        || "";
+      const cacheV2 = filhos.length > 0 && filhos.every((f) => f.subreceita_cache === true && Number(f.subreceita_cache_versao) >= 2);
+
+      let status = "pendente";
+      let assinaturaAtual = "";
+      let dependencias = 0;
+      let erro = "";
+      if (!source) {
+        status = "origem_ausente";
+      } else {
+        try {
+          const atual = calcularAssinatura(source.id, marker.receita_id);
+          assinaturaAtual = atual.valor;
+          dependencias = atual.dependencias.size;
+          if (filhos.length === 0) status = cacheAssinatura === assinaturaAtual ? "a_validar" : "pendente";
+          else if (!cacheAssinatura || !cacheV2) status = "a_validar";
+          else status = cacheAssinatura === assinaturaAtual ? "sincronizada" : "desatualizada";
+        } catch (e) {
+          status = e?.code === "CICLO" ? "erro_ciclo" : "origem_ausente";
+          erro = e?.message || "Erro de linhagem";
+        }
+      }
+
+      return {
+        marker,
+        parent,
+        source,
+        filhos,
+        status,
+        cacheAssinatura,
+        assinaturaAtual,
+        cacheV2,
+        dependencias,
+        erro,
+      };
+    });
+
+    const orfaos = itens.filter((item) => item.subreceita_parent_id && !markerMap.has(item.subreceita_parent_id));
+    return {
+      rows,
+      orfaos,
+      total: rows.length,
+      sincronizadas: rows.filter((r) => r.status === "sincronizada").length,
+      desatualizadas: rows.filter((r) => r.status === "desatualizada").length,
+      revisar: rows.filter((r) => ["a_validar", "pendente"].includes(r.status)).length,
+      erros: rows.filter((r) => ["erro_ciclo", "origem_ausente"].includes(r.status)).length,
+      legado: rows.filter((r) => r.filhos.length > 0 && !r.cacheV2).length,
+    };
+  }, [itens, receitaMap]);
+
+  const refresh = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ["auditoria-subreceitas-itens"] }),
+      qc.invalidateQueries({ queryKey: ["itens-receita"] }),
+      qc.invalidateQueries({ queryKey: ["auditoria-subreceitas-logs"] }),
+    ]);
+  };
+
+  const sincronizarUma = async (markerId) => {
+    setSincronizando(markerId);
+    try {
+      const res = await base44.functions.invoke("sincronizarSubreceita", { marker_id: markerId });
+      const dados = res?.data || {};
+      await refresh();
+      toast.success(`Sub-receita ${STATUS_LABEL[dados.status] || dados.status || "sincronizada"}. Cache: ${dados.filhos_novos ?? "—"} item(ns).`);
+    } catch (error) {
+      toast.error("Erro ao sincronizar: " + (error?.message || "erro desconhecido"));
+    } finally {
+      setSincronizando(null);
+    }
+  };
+
+  const sincronizarTodas = async () => {
+    setSincronizandoTodas(true);
+    try {
+      const res = await base44.functions.invoke("sincronizarSubreceita", { todos_desatualizados: true });
+      const dados = res?.data || {};
+      await refresh();
+      toast.success(`${dados.processados || 0} relação(ões) processada(s); ${dados.sincronizados_ja_atualizados || 0} já estavam atualizadas.`);
+    } catch (error) {
+      toast.error("Erro na sincronização em lote: " + (error?.message || "erro desconhecido"));
+    } finally {
+      setSincronizandoTodas(false);
+    }
+  };
+
+  if (l1 || l2) {
+    return <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-primary" /></div>;
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl font-bold">Sub-receitas · Linhagem e Sincronização</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
+            Fase 8: a relação por subreceita_id é a fonte de verdade. Os ingredientes puxados são cache derivado e podem ser reconstruídos quando qualquer receita da linhagem mudar.
+          </p>
+        </div>
+        <Button onClick={sincronizarTodas} disabled={sincronizandoTodas} className="gap-2">
+          {sincronizandoTodas ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Sincronizar pendentes
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Relações</p><p className="text-xl font-bold">{diagnostico.total}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Sincronizadas</p><p className="text-xl font-bold text-primary">{diagnostico.sincronizadas}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Desatualizadas</p><p className="text-xl font-bold text-amber-700">{diagnostico.desatualizadas}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">A revisar</p><p className="text-xl font-bold text-amber-600">{diagnostico.revisar}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Erros</p><p className="text-xl font-bold text-destructive">{diagnostico.erros}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Snapshots legados</p><p className="text-xl font-bold">{diagnostico.legado}</p></Card>
+      </div>
+
+      {diagnostico.orfaos.length > 0 && (
+        <Card className="p-4 border-destructive/40 bg-destructive/5">
+          <p className="font-semibold text-destructive flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> {diagnostico.orfaos.length} filho(s) de sub-receita sem marcador pai</p>
+          <p className="text-xs text-muted-foreground mt-1">Esses registros são preservados e devem ser revisados; não são excluídos automaticamente.</p>
+        </Card>
+      )}
+
+      {diagnostico.rows.length === 0 ? (
+        <Card className="p-8 text-center"><CheckCircle2 className="w-8 h-8 text-primary mx-auto mb-2" /><p>Nenhuma sub-receita referenciada encontrada.</p></Card>
+      ) : (
+        <div className="rounded-lg border overflow-hidden">
+          <div className="hidden md:grid grid-cols-[1.2fr_1.2fr_110px_90px_90px_160px] gap-2 px-3 py-2 bg-secondary/50 text-[10px] uppercase font-semibold text-muted-foreground">
+            <div>Receita-pai</div><div>Sub-receita</div><div>Status</div><div>Cache</div><div>Depend.</div><div>Ação</div>
+          </div>
+          {diagnostico.rows.map((row) => (
+            <div key={row.marker.id} className="grid md:grid-cols-[1.2fr_1.2fr_110px_90px_90px_160px] gap-2 px-3 py-2.5 border-t items-center text-sm">
+              <div className="min-w-0 truncate" title={row.parent?.nome || row.marker.receita_id}>{row.parent?.nome || "Receita não encontrada"}</div>
+              <div className="min-w-0">
+                <p className="font-medium truncate" title={row.source?.nome || row.marker.subreceita_id}>{row.source?.nome || row.marker.subreceita_nome || "Origem ausente"}</p>
+                {row.erro && <p className="text-[10px] text-destructive truncate" title={row.erro}>{row.erro}</p>}
+              </div>
+              <div><Badge variant={row.status === "sincronizada" ? "outline" : "secondary"} className="text-[10px]">{STATUS_LABEL[row.status] || row.status}</Badge></div>
+              <div className="text-xs">{row.filhos.length} item(ns)</div>
+              <div className="text-xs">{row.dependencias || "—"}</div>
+              <div>
+                <Button size="sm" variant="outline" disabled={!!sincronizando} onClick={() => sincronizarUma(row.marker.id)}>
+                  {sincronizando === row.marker.id ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1" />}
+                  Sincronizar
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {logs.length > 0 && (
+        <Card className="p-4">
+          <h3 className="font-semibold flex items-center gap-2 mb-3"><GitBranch className="w-4 h-4" /> Histórico recente</h3>
+          <div className="space-y-1.5 text-xs">
+            {logs.slice(0, 10).map((log) => (
+              <div key={log.id} className="flex flex-wrap gap-x-3 gap-y-1 border-t first:border-0 pt-1.5 first:pt-0">
+                <span className="font-medium">{log.acao}</span>
+                <span>{log.filhos_anteriores ?? 0} → {log.filhos_novos ?? 0} itens</span>
+                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
