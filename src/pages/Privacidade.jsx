@@ -39,8 +39,6 @@ const SECOES = [
       "Mercado Pago — processamento de pagamentos;",
       "Resend — envio de e-mails transacionais;",
       "Wascript/To Talk — envio de mensagens via WhatsApp;",
-      "Google (Google Analytics) — mensuração de audiência do site;",
-      "Meta (Facebook/Instagram) — mensuração e direcionamento de campanhas publicitárias;",
       "autoridades públicas, mediante obrigação legal ou ordem judicial.",
     ],
     posLista: [
@@ -89,17 +87,12 @@ const SECOES = [
     ],
   },
   {
-    titulo: "9. Cookies e tecnologias de rastreamento",
+    titulo: "9. Cookies e armazenamento local",
     paragrafos: [
-      "9.1. A Plataforma e seu site público utilizam cookies e tecnologias semelhantes para funcionamento técnico, mensuração de audiência e publicidade direcionada, incluindo:",
-    ],
-    lista: [
-      "Google Analytics — para mensuração de tráfego, origem dos visitantes e comportamento de navegação no site;",
-      "Meta Pixel (Facebook/Instagram) — para mensuração de campanhas publicitárias veiculadas nessas plataformas e para direcionamento de anúncios a visitantes do site.",
-    ],
-    posLista: [
-      "9.2. Essas ferramentas podem coletar dados como endereço IP, identificadores de dispositivo, páginas visitadas e interações no site, de acordo com as políticas de privacidade próprias do Google e da Meta.",
-      "9.3. O Usuário pode gerenciar ou desativar cookies diretamente nas configurações de seu navegador, o que pode limitar algumas funcionalidades do site. Informações adicionais sobre como essas empresas tratam os dados coletados por essas ferramentas estão disponíveis nas respectivas políticas de privacidade do Google e da Meta.",
+      "9.1. A Plataforma utiliza cookies, armazenamento local do navegador e tecnologias estritamente necessárias para autenticação, manutenção da sessão, segurança e funcionamento das funcionalidades solicitadas pelo Usuário.",
+      "9.2. Na versão atualmente disponibilizada da Plataforma, não são utilizados Google Analytics nem Meta Pixel para rastreamento de audiência ou publicidade comportamental dentro do aplicativo.",
+      "9.3. Caso ferramentas adicionais de mensuração ou publicidade sejam implementadas futuramente, esta Política será atualizada e, quando exigido pela legislação aplicável, os mecanismos de informação e consentimento serão apresentados antes da respectiva coleta.",
+      "9.4. O Usuário pode gerenciar cookies e dados locais nas configurações do navegador, observando que a desativação de recursos técnicos essenciais pode impedir o funcionamento correto da autenticação e da Plataforma.",
     ],
   },
   {
