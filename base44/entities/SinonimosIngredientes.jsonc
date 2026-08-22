@@ -8,11 +8,14 @@
     },
     "sinonimo": {
       "type": "string",
-      "description": "Texto do sin\u00f4nimo (\u00fanico na tabela, case-insensitive)"
+      "description": "Texto do sinônimo (único na tabela, case-insensitive)"
     }
   },
-  "required": [
-    "ingrediente_id",
-    "sinonimo"
-  ]
+  "required": ["ingrediente_id", "sinonimo"],
+  "rls": {
+    "read": {},
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
 }
