@@ -18,6 +18,11 @@ export default function FinalCtaSection() {
             <span className="lc-seal">Sem renovação automática</span>
             <span className="lc-seal">Sem fidelidade</span>
           </div>
+          <nav aria-label="Links legais" style={{ marginTop: 20, display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", fontSize: 13 }}>
+            <a href="/termos">Termos de Uso</a>
+            <a href="/privacidade">Política de Privacidade</a>
+            <a href="https://wa.me/555134160886" target="_blank" rel="noopener noreferrer">Suporte</a>
+          </nav>
         </div>
       </div>
     </section>
