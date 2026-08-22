@@ -169,6 +169,8 @@ Deno.serve(async (req) => {
       const receitaId = receita.id;
       const ownerId = receita.is_base === false ? (txt(receita.usuario_dono_id) || txt(receita.created_by_id)) : '';
       const componentes = itensPorReceita.get(receitaId) || [];
+      const insumosDaReceita = insumosPorReceita.get(receitaId) || [];
+      const esquecidosDaReceita = esquecidosPorReceita.get(receitaId) || [];
       const porcoesBase = positivo(receita.porcoes_base) || 1;
       let custoIngredientes = 0;
       let custoInsumos = 0;
@@ -176,7 +178,20 @@ Deno.serve(async (req) => {
       let semPreco = 0;
       let refAusente = 0;
       let fallbackEsquecido = 0;
+      let itensComQuantidadePositiva = 0;
       const problemas: any[] = [];
+
+      // Uma sub-receita só é custeável com segurança quando existe cache/filhos derivados.
+      // O marcador isolado não carrega custo atômico e não pode ser interpretado como custo zero.
+      const parentsComFilhos = new Set(
+        componentes.map((item: any) => txt(item?.subreceita_parent_id)).filter(Boolean),
+      );
+      for (const item of componentes) {
+        if (item?.tipo === 'subreceita' && txt(item.id) && !parentsComFilhos.has(txt(item.id))) {
+          refAusente++;
+          problemas.push({ item_id: item.id, subreceita_id: txt(item.subreceita_id), tipo: 'subreceita_sem_cache' });
+        }
+      }
 
       for (const item of componentes) {
         if (!item || item.tipo === 'grupo' || item.tipo === 'subreceita') continue;
@@ -193,6 +208,7 @@ Deno.serve(async (req) => {
           continue;
         }
         const pl = num(item.quantidade_por_porcao) * porcoesBase;
+        if (pl > 0) itensComQuantidadePositiva++;
         const pb = pl * fcEfetivo(item, ingrediente);
         const preco = precoEfetivo({ ingrediente, ownerId, prefMap, legacyMap });
         custoIngredientes += pb * preco;
@@ -202,12 +218,18 @@ Deno.serve(async (req) => {
         }
       }
 
-      for (const insumo of insumosPorReceita.get(receitaId) || []) {
-        const cache = num(insumo.custo_total);
-        custoInsumos += cache > 0 ? cache : num(insumo.quantidade) * num(insumo.custo_unitario);
+      for (const insumo of insumosDaReceita) {
+        const quantidade = positivo(insumo.quantidade);
+        const cache = positivo(insumo.custo_total);
+        const unitario = positivo(insumo.custo_unitario);
+        custoInsumos += cache > 0 ? cache : quantidade * unitario;
+        if (quantidade > 0 && cache <= 0 && unitario <= 0) {
+          semPreco++;
+          problemas.push({ item_id: insumo.id, insumo_id: txt(insumo.insumo_id), tipo: 'insumo_sem_preco' });
+        }
       }
 
-      for (const esquecido of esquecidosPorReceita.get(receitaId) || []) {
+      for (const esquecido of esquecidosDaReceita) {
         const ingredienteId = txt(esquecido.ingrediente_id);
         const quantidade = num(esquecido.quantidade_g);
         if (ingredienteId && ingredienteMap.has(ingredienteId)) {
@@ -231,6 +253,15 @@ Deno.serve(async (req) => {
             problemas.push({ item_id: esquecido.id, tipo: 'esquecido_sem_preco' });
           }
         }
+      }
+
+      const temComposicaoCusteavel = itensComQuantidadePositiva > 0
+        || insumosDaReceita.some((i: any) => positivo(i?.quantidade) > 0)
+        || esquecidosDaReceita.some((i: any) => positivo(i?.quantidade_g) > 0);
+
+      if (!temComposicaoCusteavel) {
+        refAusente++;
+        problemas.push({ tipo: 'receita_sem_composicao_custeavel' });
       }
 
       const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
