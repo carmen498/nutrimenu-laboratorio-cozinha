@@ -14,7 +14,6 @@ export async function buildEmailHtml(base44, corpoHtml) {
   const assinatura = cfg.assinatura_rodape || "Carmen Reinstein · Laboratório de Cozinha";
   const emailContato = cfg.email_contato || "";
   const endereco = cfg.endereco_rodape || "";
-  const textoCancelamento = cfg.texto_cancelamento || "Cancelar inscrição";
 
   return `<!DOCTYPE html>
 <html>
@@ -32,7 +31,6 @@ export async function buildEmailHtml(base44, corpoHtml) {
         <div>${assinatura}</div>
         ${emailContato ? `<div>${emailContato}</div>` : ""}
         ${endereco ? `<div>${endereco}</div>` : ""}
-        <div style="margin-top:8px;"><a href="#" style="color:#888;text-decoration:underline;">${textoCancelamento}</a></div>
       </div>
     </div>
   </body>
