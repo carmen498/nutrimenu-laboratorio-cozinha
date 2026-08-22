@@ -14,6 +14,7 @@ import { buscarFuzzy, removerMarca } from "@/lib/normalizarNome";
 import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import ImportarLoteReport from "@/components/receita/ImportarLoteReport";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { uploadArquivoSeguro, validarDocumentoReceitaUpload } from "@/lib/securityHardening";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -198,14 +199,15 @@ export default function ImportarLoteDialog({ open, onClose }) {
 
   const handleFile = (f) => {
     if (!f) return;
-    const ext = f.name?.split(".").pop()?.toLowerCase();
-    if (!["docx", "pdf", "txt"].includes(ext)) {
-      toast.error("Formato não suportado. Use .docx, .pdf ou .txt");
-      return;
+    try {
+      validarDocumentoReceitaUpload(f);
+      setFile(f);
+      setError(false);
+      setResult(null);
+    } catch (err) {
+      setFile(null);
+      toast.error(err?.message || "Arquivo inválido");
     }
-    setFile(f);
-    setError(false);
-    setResult(null);
   };
 
   const responseSchema = {
