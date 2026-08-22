@@ -18,24 +18,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v7-2026-08-22-redacao-diagnosticos";
-
-function sanitizarDiagnostico(valor: unknown): unknown {
-  if (Array.isArray(valor)) return valor.map(sanitizarDiagnostico);
-  if (!valor || typeof valor !== 'object') return valor;
-
-  const saida: Record<string, unknown> = {};
-  for (const [chave, item] of Object.entries(valor as Record<string, unknown>)) {
-    const k = chave.toLowerCase();
-    if (k === 'token' || k === 'email' || k === 'first_name' || k === 'last_name' ||
-        k === 'identification' || k === 'card' || k === 'security_code') {
-      saida[chave] = '[REDACTED]';
-    } else {
-      saida[chave] = sanitizarDiagnostico(item);
-    }
-  }
-  return saida;
-}
+const VERSAO_CODIGO = "v8-2026-08-22-minimizacao-dados";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -178,23 +161,24 @@ export default async function(req: Request): Promise<Response> {
     const mpData = await mpResponse.json().catch(() => null);
 
     if (!mpResponse.ok) {
-      console.log("Erro ao criar order no Mercado Pago:", JSON.stringify(mpData));
+      console.log("Mercado Pago recusou a criação da order", { http_status: mpResponse.status, pagamento_id: pagamento.id });
       const causaDetalhada = Array.isArray(mpData?.cause) && mpData.cause.length
         ? mpData.cause.map((c: any) => c.description || c.code).join("; ")
         : Array.isArray(mpData?.errors) && mpData.errors.length
           ? mpData.errors.map((e: any) => `${e.code || ""} ${e.message || ""}`.trim()).join("; ")
           : null;
       const mensagemPrincipal = mpData?.message || mpData?.error || causaDetalhada || "sem mensagem";
+      const detalheSeguro = `HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`;
+      const orderIdFalha = mpData?.data?.id || mpData?.id || undefined;
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
-        detalhe_erro: `HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`,
-        resposta_erro_mp_completa: JSON.stringify(sanitizarDiagnostico(mpData)),
-        payload_enviado_mp: JSON.stringify(sanitizarDiagnostico(orderBody)),
+        detalhe_erro: detalheSeguro.slice(0, 500),
+        ...(orderIdFalha ? { mercadopago_order_id: orderIdFalha } : {}),
       });
-      return Response.json({ error: "Não foi possível processar o pagamento", detalhe: mpData }, { status: 400 });
+      return Response.json({ error: "Não foi possível processar o pagamento", detalhe: detalheSeguro.slice(0, 300) }, { status: 400 });
     }
 
-    console.log("Order criada no Mercado Pago:", JSON.stringify(mpData));
+    console.log("Order criada no Mercado Pago", { order_id: mpData?.id || null, status: mpData?.status || null, pagamento_id: pagamento.id });
 
     const pagamentoTransacao = mpData?.transactions?.payments?.[0];
     const qrCode = pagamentoTransacao?.payment_method?.qr_code
