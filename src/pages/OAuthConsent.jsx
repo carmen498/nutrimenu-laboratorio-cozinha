@@ -14,7 +14,7 @@ import { caminhoInternoSeguro, redirectOAuthSeguro } from "@/lib/securityHardeni
 // and copy are safe to edit.
 export default function OAuthConsent() {
   const ctx = new URLSearchParams(window.location.search).get("ctx");
-  const [info, setInfo] = useState(null);
+  const [info, setInfo] = useState(/** @type {any} */ (null));
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [decided, setDecided] = useState("");
