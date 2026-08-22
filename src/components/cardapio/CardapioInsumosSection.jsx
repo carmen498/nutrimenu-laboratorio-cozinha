@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd, onUpdate, onRemove, onReloadGlobais }) {
   const [busca, setBusca] = useState("");
@@ -53,7 +54,7 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
       setPopoverOpen(false);
       setBusca("");
       setCustomNome("");
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro ao criar insumo do cardápio", e); }
     setCreating(false);
   };
 
