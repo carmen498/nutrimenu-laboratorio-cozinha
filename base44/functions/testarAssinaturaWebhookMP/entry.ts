@@ -4,11 +4,17 @@
 // e confere que validarAssinatura aceita; depois testa uma assinatura errada e confere
 // que é rejeitada.
 
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (user.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
+
     const secretBruto = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
     const secret = (secretBruto || "").trim();
     if (!secret) {
@@ -52,9 +58,9 @@ export default async function(req: Request): Promise<Response> {
     const resultadoInvalido = await validarAssinatura(reqInvalido, dataIdSimulado);
 
     return Response.json({
+      success: resultadoValido.valida && !resultadoInvalido.valida,
       teste_assinatura_correta_deveria_ser_valida: resultadoValido.valida,
       teste_assinatura_errada_deveria_ser_invalida: !resultadoInvalido.valida,
-      diagnostico_teste_valido: resultadoValido.diagnostico,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
