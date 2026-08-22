@@ -15,6 +15,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+const VARIAVEIS_POR_TIPO = {
+  boas_vindas: ["nome"],
+  trial_expirando: ["nome"],
+  trial_vencido: ["nome"],
+  pagamento_aprovado: ["nome", "plano", "data_expiracao"],
+  pagamento_recusado: ["nome"],
+  plano_vencendo: ["nome", "plano", "dias_restantes", "data_expiracao"],
+  nota_fiscal_solicitada: ["nome"],
+  pagamento_estornado: ["nome"],
+  pagamento_pendente_lembrete: ["nome"],
+};
+
 export default function TemplateEmailDialog({ open, onOpenChange, tipo, titulo, assuntoPadrao, corpoPadrao }) {
   const [templateId, setTemplateId] = useState(null);
   const [assunto, setAssunto] = useState("");
@@ -40,6 +52,17 @@ export default function TemplateEmailDialog({ open, onOpenChange, tipo, titulo, 
       toast({ title: "Assunto e corpo são obrigatórios", variant: "destructive" });
       return;
     }
+    const permitidas = new Set(VARIAVEIS_POR_TIPO[tipo] || ["nome"]);
+    const encontradas = [...`${assunto}\n${corpo}`.matchAll(/{{\s*([\w.-]+)\s*}}/g)].map((m) => m[1]);
+    const invalidas = [...new Set(encontradas.filter((v) => !permitidas.has(v)))];
+    if (invalidas.length > 0) {
+      toast({
+        title: "Variável não disponível neste e-mail",
+        description: invalidas.map((v) => `{{${v}}}`).join(", "),
+        variant: "destructive",
+      });
+      return;
+    }
     setSalvando(true);
     try {
       if (templateId) {
@@ -61,7 +84,7 @@ export default function TemplateEmailDialog({ open, onOpenChange, tipo, titulo, 
         <DialogHeader>
           <DialogTitle>{titulo}</DialogTitle>
           <DialogDescription>
-            Use {"{{nome}}"} no assunto ou no corpo para personalizar com o nome do destinatário.
+            Variáveis disponíveis: {(VARIAVEIS_POR_TIPO[tipo] || ["nome"]).map((v) => `{{${v}}}`).join(", ")}.
           </DialogDescription>
         </DialogHeader>
         {carregando ? (
