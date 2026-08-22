@@ -54,5 +54,25 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
     .join("");
   diagnostico.v1_calculado_por_nos = computedHex;
 
-  return { valida: computedHex === v1, diagnostico };
+  // Comparação em tempo constante, alinhada à recomendação do SDK oficial.
+  // O tamanho pode falhar cedo (não é segredo); bytes de mesmo tamanho são
+  // sempre comparados por completo para não vazar o primeiro ponto divergente.
+  const hexToBytes = (hex: string): Uint8Array | null => {
+    if (!/^[0-9a-f]+$/i.test(hex) || hex.length % 2 !== 0) return null;
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < bytes.length; i++) {
+      bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+    }
+    return bytes;
+  };
+
+  const esperado = hexToBytes(computedHex);
+  const recebido = hexToBytes(v1);
+  if (!esperado || !recebido || esperado.length !== recebido.length) {
+    return { valida: false, diagnostico };
+  }
+
+  let diff = 0;
+  for (let i = 0; i < esperado.length; i++) diff |= esperado[i] ^ recebido[i];
+  return { valida: diff === 0, diagnostico };
 }
