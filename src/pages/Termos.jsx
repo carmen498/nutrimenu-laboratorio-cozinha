@@ -47,7 +47,7 @@ const SECOES = [
     ],
     lista: [
       "Teste Grátis: 7 (sete) dias de acesso, sem cobrança, com acesso completo aos recursos disponíveis no plano;",
-      "Plano Mensal: R$ 29,90 por mês;",
+      "Plano 30 dias: R$ 29,90 por 30 (trinta) dias;",
       "Plano Anual: equivalente a R$ 16,50/mês, cobrado em parcela única de R$ 198,00/ano;",
       "Renovação (a partir do 2º ano de uso contínuo): R$ 16,50/mês em até 6 (seis) parcelas, ou R$ 99,00 à vista/ano, como benefício de fidelidade.",
     ],
