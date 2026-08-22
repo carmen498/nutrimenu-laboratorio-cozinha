@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, DollarSign, Eye, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, DollarSign, Eye, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
