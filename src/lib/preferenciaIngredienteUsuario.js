@@ -18,15 +18,30 @@ const CAMPOS_COMERCIAIS = [
 const temCampo = (obj, campo) => Object.prototype.hasOwnProperty.call(obj || {}, campo)
   && obj[campo] !== undefined;
 
+async function listarRegistrosUsuario(userId) {
+  const pageSize = 500;
+  let skip = 0;
+  let todos = [];
+
+  while (true) {
+    const pagina = await base44.entities.IngredienteUsuario.filter(
+      { user_id: userId },
+      "-updated_date",
+      pageSize,
+      skip
+    );
+    todos = todos.concat(pagina || []);
+    if (!pagina || pagina.length < pageSize) break;
+    skip += pageSize;
+  }
+
+  return todos;
+}
+
 export async function buscarPreferenciasIngredientes(userId) {
   if (!userId) return {};
 
-  const registros = await base44.entities.IngredienteUsuario.filter(
-    { user_id: userId },
-    "-updated_date",
-    500
-  );
-
+  const registros = await listarRegistrosUsuario(userId);
   const map = {};
   for (const registro of registros || []) {
     if (!registro?.ingrediente_id || map[registro.ingrediente_id]) continue;
