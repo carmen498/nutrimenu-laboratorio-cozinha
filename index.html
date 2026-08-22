@@ -16,6 +16,7 @@
           var qp = new URLSearchParams(window.location.search);
           var accessToken = qp.get('access_token');
           var pendingReturn = qp.get('returnTo') || qp.get('from_url');
+          var resetToken = window.location.pathname === '/reset-password' ? qp.get('token') : null;
           var changed = false;
 
           if (accessToken) {
@@ -28,6 +29,12 @@
             sessionStorage.setItem('base44_pending_return_to', pendingReturn);
             qp.delete('returnTo');
             qp.delete('from_url');
+            changed = true;
+          }
+
+          if (resetToken) {
+            sessionStorage.setItem('base44_pending_password_reset_token', resetToken);
+            qp.delete('token');
             changed = true;
           }
 
@@ -48,6 +55,16 @@
         if (!isInAppBrowser) return;
 
         var url = window.location.href;
+        // Em reset de senha, o token foi retirado da barra antes dos scripts externos.
+        // Para abrir o mesmo link em Chrome/Safari, ele é reinserido somente na cópia.
+        try {
+          var resetToken = sessionStorage.getItem('base44_pending_password_reset_token');
+          if (resetToken && window.location.pathname === '/reset-password') {
+            var copyUrl = new URL(url);
+            copyUrl.searchParams.set('token', resetToken);
+            url = copyUrl.toString();
+          }
+        } catch (e) {}
         var overlay = document.createElement('div');
         overlay.id = 'inapp-browser-warning';
         overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#f4f4f2;display:flex;align-items:center;justify-content:center;padding:24px;font-family:Arial,Helvetica,sans-serif;';
