@@ -1,39 +1,48 @@
 import React from "react";
 
 const FEATURES = [
-  { emoji: "📖", title: "Banco de receitas vivo", text: "Organize por categoria e tags. Escale qualquer receita para o número de porções que precisar — os ingredientes recalculam sozinhos." },
-  { emoji: "💰", title: "Custo real, não chute", text: "Custo por porção, kg e unidade. Ingredientes + insumos + margem. Preço sugerido na tela. Sem planilha." },
-  { emoji: "📅", title: "Cardápios que se multiplicam", text: "Do almoço ao buffet de 200 pessoas. Altera o Nº de pessoas e tudo atualiza. Lista de compras automática." },
-  { emoji: "🔄", title: "Receitas que rendem mais", text: "Escale para qualquer porção. Peso Bruto, Rendimento (PDP) e Fator de Correção automáticos." },
-  { emoji: "🛒", title: "Ingredientes atualizados", text: "Base de ingredientes com preço por grama e fator de correção, para custo sempre preciso — sem estimativa no olho." },
-  { emoji: "📊", title: "Per capita com base técnica", text: "149 preparações com dados oficiais do IBGE. Nunca mais sobra demais. Nunca mais falta." },
+  { index: "01", title: "Receitas que escalam com você", text: "Ajuste porções e rendimentos sem refazer contas. Os ingredientes acompanham a nova escala automaticamente." },
+  { index: "02", title: "Custos que mostram o preço real", text: "Visualize custo por porção, quilo ou unidade, some insumos e margem e decida o preço com base em dados." },
+  { index: "03", title: "Cardápios ligados à lista de compras", text: "Planeje uma semana, um almoço ou um evento e transforme o cardápio em uma compra organizada." },
+  { index: "04", title: "Rendimento e fator de correção", text: "Considere peso bruto, rendimento e fator de correção para reduzir erro de produção e desperdício." },
+  { index: "05", title: "Ingredientes com base de apoio", text: "Centralize ingredientes, preços e fatores para não depender de anotações soltas ou estimativas feitas no olho." },
+  { index: "06", title: "Per capita com referência técnica", text: "Use referências de consumo para dimensionar preparações e planejar quantidades com mais segurança." },
 ];
 
 export default function FeaturesSection() {
   return (
-    <section className="lc-section">
+    <section className="lc-section lc-features" aria-labelledby="features-title">
       <div className="lc-container">
         <div className="lc-section-head lc-container--narrow">
-          <p className="lc-eyebrow">O que o app faz</p>
-          <h2 className="lc-title">
-            Não é só um app de receitas. É a sua cozinha funcionando com inteligência.
+          <p className="lc-eyebrow">O método dentro do app</p>
+          <h2 className="lc-title" id="features-title">
+            Da receita à compra, cada etapa conversa com a próxima.
           </h2>
+          <p className="lc-lead">
+            O Laboratório de Cozinha foi pensado para reduzir retrabalho. Você informa uma vez e reaproveita os dados no planejamento, na produção e no custo.
+          </p>
         </div>
-        <div className="lc-features-grid">
-          {FEATURES.map((f) => (
-            <div className="lc-feature" key={f.title}>
-              <div className="lc-emoji">{f.emoji}</div>
-              <h3>{f.title}</h3>
-              <p>{f.text}</p>
-            </div>
+
+        <div className="lc-feature-list">
+          {FEATURES.map((feature) => (
+            <article className="lc-feature-row" key={feature.title}>
+              <span className="lc-feature-index" aria-hidden="true">{feature.index}</span>
+              <div>
+                <h3>{feature.title}</h3>
+                <p>{feature.text}</p>
+              </div>
+            </article>
           ))}
         </div>
+
         <div className="lc-features-close">
-          Sua cozinha continua a mesma. Mas agora ela:{" "}
-          <strong>Produz na quantidade certa</strong> — sem sobrar, sem faltar ·{" "}
-          <strong>Cobra com confiança</strong> — porque sabe exatamente o que custa ·{" "}
-          <strong>Planeja antes de acender o fogo</strong> — sem improviso, sem caos ·{" "}
-          <strong>Cresce com você</strong> — do almoço de domingo ao buffet de 200 pessoas.
+          <p>Menos improviso entre uma etapa e outra.</p>
+          <div className="lc-outcome-strip">
+            <span>Quantidade certa</span>
+            <span>Custo conhecido</span>
+            <span>Compra planejada</span>
+            <span>Produção organizada</span>
+          </div>
         </div>
       </div>
     </section>
