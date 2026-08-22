@@ -61,8 +61,15 @@
     },
     "is_base": {
       "type": "boolean",
-      "default": true,
-      "description": "true = card\u00e1pio do cat\u00e1logo compartilhado original; false = c\u00f3pia pessoal criada automaticamente ao editar (fork-on-edit)"
+      "default": false,
+      "description": "true = card\u00e1pio do cat\u00e1logo compartilhado original; false = c\u00f3pia pessoal criada automaticamente ao editar (fork-on-edit)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "forked_from_id": {
       "type": "string",
