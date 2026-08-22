@@ -16,8 +16,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Executa uma operação de escrita com retry/backoff para lidar com rate limit
-// da plataforma quando muitas escritas ocorrem em sequência (fusões grandes).
 async function comRetry(fn, tentativas = 4) {
   let ultimoErro;
   for (let i = 0; i < tentativas; i++) {
@@ -27,7 +25,7 @@ async function comRetry(fn, tentativas = 4) {
       ultimoErro = err;
       const isRateLimit = /rate limit/i.test(err.message || "");
       if (!isRateLimit || i === tentativas - 1) throw err;
-      await sleep(500 * Math.pow(2, i)); // 500ms, 1s, 2s...
+      await sleep(500 * Math.pow(2, i));
     }
   }
   throw ultimoErro;
@@ -38,6 +36,7 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const { origem_id, destino_id, acao } = body;
@@ -54,7 +53,6 @@ export default async function(req) {
     if (!origem) return Response.json({ error: 'Ingrediente origem não encontrado' }, { status: 404 });
     if (!destino) return Response.json({ error: 'Ingrediente destino não encontrado' }, { status: 404 });
 
-    // Processa um lote de linhas ainda pendentes (que não falharam antes).
     if (acao === 'confirmar_lote') {
       const limit = body.limit || 30;
       const failedIds = Array.isArray(body.failedIds) ? body.failedIds : [];
@@ -103,7 +101,7 @@ export default async function(req) {
             destinoPorReceita[linha.receita_id] = { id: linha.id, quantidade_por_porcao: linha.quantidade_por_porcao || 0 };
           }
           processedCount++;
-          await sleep(80); // espaça as escritas para não estourar o limite de requisições
+          await sleep(80);
         } catch (err) {
           novasFalhas.push({ linha_id: linha.id, receita_id: linha.receita_id, erro: err.message });
         }
@@ -118,8 +116,6 @@ export default async function(req) {
       });
     }
 
-    // Exclui o ingrediente origem — só deve ser chamado depois que todos os
-    // lotes forem processados com sucesso (nenhuma falha pendente).
     if (acao === 'excluir_origem') {
       const restantes = await base44.asServiceRole.entities.IngredienteReceita.filter({
         ingrediente_id: origem_id,
@@ -132,7 +128,6 @@ export default async function(req) {
       return Response.json({ success: true });
     }
 
-    // Preview — busca os nomes das receitas em lotes (evita 1 consulta por receita)
     const linhasOrigem = await base44.asServiceRole.entities.IngredienteReceita.filter({
       ingrediente_id: origem_id,
       tipo: 'ingrediente',
