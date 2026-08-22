@@ -29,11 +29,7 @@ export default function MedidasCaseirasReceitaDialog({ open, onClose, itens = []
   }, [open, itens, medidaByIngrediente]);
 
   const updateRow = (ingId, patch) => setRows(prev => ({ ...prev, [ingId]: { ...prev[ingId], ...patch } }));
-
-  const handleUtensilioChange = (ingId, utensilioId) => {
-    const ute = uteMap[utensilioId];
-    updateRow(ingId, { utensilioId, referenciaG: ute && ute.g_medio != null ? String(ute.g_medio) : "" });
-  };
+  const handleUtensilioChange = (ingId, utensilioId) => updateRow(ingId, { utensilioId, referenciaG: "" });
 
   const handleSave = async () => {
     setSaving(true);
@@ -80,7 +76,7 @@ export default function MedidasCaseirasReceitaDialog({ open, onClose, itens = []
         <DialogHeader><DialogTitle className="font-display">Medidas Caseiras da Receita</DialogTitle></DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto">
           <div className="grid grid-cols-12 gap-2 items-center py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b">
-            <div className="col-span-4">Ingrediente · Medida atual</div><div className="col-span-5">Utensílio</div><div className="col-span-2 text-center">Ref. (g)</div><div className="col-span-1 text-center">só gramas</div>
+            <div className="col-span-4">Ingrediente · Medida atual</div><div className="col-span-5">Utensílio</div><div className="col-span-2 text-center">Peso/medida (g)</div><div className="col-span-1 text-center">só gramas</div>
           </div>
           {itens.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum ingrediente na receita.</p>}
           {itens.map(item => {
@@ -91,12 +87,13 @@ export default function MedidasCaseirasReceitaDialog({ open, onClose, itens = []
             return (
               <div key={item.id} className="grid grid-cols-12 gap-2 items-center py-1.5 border-b border-border/50">
                 <div className="col-span-4 min-w-0"><p className="text-sm font-medium truncate">{item.ing.nome}</p><p className="text-xs text-muted-foreground truncate">{display}</p></div>
-                <div className="col-span-5"><select value={row.utensilioId} onChange={e => handleUtensilioChange(item.ing.id, e.target.value)} disabled={row.soGramas} className="w-full h-8 rounded-md border border-input bg-transparent px-2 text-xs"><option value="">— utensílio —</option>{utensilios.map(u => <option key={u.id} value={u.id}>{u.simbolo} {u.capacidade_ml != null ? `(${u.capacidade_ml} ml)` : ""}</option>)}</select></div>
-                <div className="col-span-2"><input type="text" value={row.referenciaG} onChange={e => updateRow(item.ing.id, { referenciaG: e.target.value })} disabled={row.soGramas} placeholder="g" className="w-full h-8 text-xs border rounded px-1 text-center" /></div>
+                <div className="col-span-5"><select value={row.utensilioId} onChange={e => handleUtensilioChange(item.ing.id, e.target.value)} disabled={row.soGramas} className="w-full h-8 rounded-md border border-input bg-transparent px-2 text-xs"><option value="">— utensílio —</option>{utensilios.map(u => <option key={u.id} value={u.id}>{u.simbolo}{u.capacidade_ml != null ? ` (${u.capacidade_ml} ml)` : ""}</option>)}</select></div>
+                <div className="col-span-2"><input type="text" value={row.referenciaG} onChange={e => updateRow(item.ing.id, { referenciaG: e.target.value })} disabled={row.soGramas} placeholder="medir g" className="w-full h-8 text-xs border rounded px-1 text-center" /></div>
                 <div className="col-span-1 flex items-center justify-center"><input type="checkbox" checked={row.soGramas} onChange={e => updateRow(item.ing.id, { soGramas: e.target.checked })} className="w-4 h-4" /></div>
               </div>
             );
           })}
+          <p className="text-[11px] text-muted-foreground mt-2">A massa não é preenchida pelo utensílio: deve corresponder ao alimento medido.</p>
         </div>
         <DialogFooter><Button variant="outline" onClick={onClose}>Cancelar</Button><Button onClick={handleSave} disabled={saving}>{saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Check className="w-4 h-4 mr-1" />}Salvar tudo</Button></DialogFooter>
       </DialogContent>
