@@ -1,10 +1,12 @@
 import * as React from "react"
+
+const forwardRefAny = /** @type {any} */ (React.forwardRef)
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox"
 import { Check, Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Checkbox = React.forwardRef(({ className, ...props }, ref) => (
+const Checkbox = forwardRefAny(({ className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(

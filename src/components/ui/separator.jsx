@@ -1,9 +1,11 @@
 import * as React from "react"
+
+const forwardRefAny = /** @type {any} */ (React.forwardRef)
 import * as SeparatorPrimitive from "@radix-ui/react-separator"
 
 import { cn } from "@/lib/utils"
 
-const Separator = React.forwardRef((
+const Separator = forwardRefAny((
   { className, orientation = "horizontal", decorative = true, ...props },
   ref
 ) => (

@@ -1,5 +1,7 @@
 "use client";
 import * as React from "react"
+
+const forwardRefAny = /** @type {any} */ (React.forwardRef)
 import * as RechartsPrimitive from "recharts"
 
 import { cn } from "@/lib/utils"
@@ -22,7 +24,7 @@ function useChart() {
   return context
 }
 
-const ChartContainer = React.forwardRef(({ id, className, children, config, ...props }, ref) => {
+const ChartContainer = forwardRefAny(({ id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 
@@ -79,7 +81,7 @@ return color ? `  --color-${key}: ${color};` : null
 
 const ChartTooltip = RechartsPrimitive.Tooltip
 
-const ChartTooltipContent = React.forwardRef((
+const ChartTooltipContent = forwardRefAny((
   {
     active,
     payload,
@@ -216,7 +218,7 @@ ChartTooltipContent.displayName = "ChartTooltip"
 
 const ChartLegend = RechartsPrimitive.Legend
 
-const ChartLegendContent = React.forwardRef((
+const ChartLegendContent = forwardRefAny((
   { className, hideIcon = false, payload, verticalAlign = "bottom", nameKey },
   ref
 ) => {

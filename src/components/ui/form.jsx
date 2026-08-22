@@ -1,5 +1,7 @@
 "use client";
 import * as React from "react"
+
+const forwardRefAny = /** @type {any} */ (React.forwardRef)
 import { Slot } from "@radix-ui/react-slot"
 import { Controller, FormProvider, useFormContext } from "react-hook-form";
 
@@ -47,7 +49,7 @@ const useFormField = () => {
 
 const FormItemContext = React.createContext({})
 
-const FormItem = React.forwardRef(({ className, ...props }, ref) => {
+const FormItem = forwardRefAny(({ className, ...props }, ref) => {
   const id = React.useId()
 
   return (
@@ -58,7 +60,7 @@ const FormItem = React.forwardRef(({ className, ...props }, ref) => {
 })
 FormItem.displayName = "FormItem"
 
-const FormLabel = React.forwardRef(({ className, ...props }, ref) => {
+const FormLabel = forwardRefAny(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField()
 
   return (
@@ -71,7 +73,7 @@ const FormLabel = React.forwardRef(({ className, ...props }, ref) => {
 })
 FormLabel.displayName = "FormLabel"
 
-const FormControl = React.forwardRef(({ ...props }, ref) => {
+const FormControl = forwardRefAny(({ ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
   return (
@@ -89,7 +91,7 @@ const FormControl = React.forwardRef(({ ...props }, ref) => {
 })
 FormControl.displayName = "FormControl"
 
-const FormDescription = React.forwardRef(({ className, ...props }, ref) => {
+const FormDescription = forwardRefAny(({ className, ...props }, ref) => {
   const { formDescriptionId } = useFormField()
 
   return (
@@ -102,7 +104,7 @@ const FormDescription = React.forwardRef(({ className, ...props }, ref) => {
 })
 FormDescription.displayName = "FormDescription"
 
-const FormMessage = React.forwardRef(({ className, children, ...props }, ref) => {
+const FormMessage = forwardRefAny(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message) : children
 

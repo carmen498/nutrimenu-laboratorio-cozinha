@@ -19,6 +19,7 @@ export default async function(req: Request): Promise<Response> {
         to: user.email,
         subject: assunto || "Teste de campanha",
         html: (corpo || "").replace(/\n/g, "<br/>"),
+        marketing: true,
       });
       return Response.json({ success: resultado.ok, error: resultado.error });
     }
@@ -40,6 +41,7 @@ export default async function(req: Request): Promise<Response> {
           to: email,
           subject: assunto,
           html: (corpo || "").replace(/\n/g, "<br/>"),
+          marketing: true,
         });
         if (resultado.ok) enviados++;
       }
