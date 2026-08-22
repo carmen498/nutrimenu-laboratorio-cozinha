@@ -1,4 +1,5 @@
 import { criarIngredienteReceita } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -159,7 +160,7 @@ export default function Receitas() {
   const duplicarMut = useMutation({
     mutationFn: async (receita) => {
       const { id, created_date, updated_date, created_by_id, ...rest } = receita;
-      const nova = await base44.entities.Receita.create({ ...rest, nome: `${receita.nome} — cópia` });
+      const nova = await criarReceitaSegura({ ...rest, nome: `${receita.nome} — cópia` });
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: receita.id });
       for (const ing of ings) {
         const { id: iid, created_date: cd, updated_date: ud, created_by_id: cb, ...irest } = ing;
@@ -806,7 +807,7 @@ function ImportReceitasCsvDialog({ open, onClose }) {
               await base44.entities.Receita.update(existingItem.id, { ...payload, revisar: false });
               updated++;
             } else {
-              await base44.entities.Receita.create({ ...payload, revisar: false });
+              await criarReceitaSegura({ ...payload, revisar: false });
               created++;
             }
           } catch {
