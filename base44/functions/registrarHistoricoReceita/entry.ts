@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { exigirAssinaturaAtiva } from "../../shared/acessoAssinatura.ts";
 
 // Invocado diretamente pelo frontend (não mais por automação de entidade), logo
 // após uma alteração real feita pelo usuário autenticado. Isso garante que o
@@ -8,8 +9,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, response } = await exigirAssinaturaAtiva(base44);
+    if (response) return response;
 
     const payload = await req.json();
     const { receita_id, receita_nome, campos_alterados } = payload || {};
