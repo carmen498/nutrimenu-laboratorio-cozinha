@@ -1,4 +1,5 @@
 import { criarIngredienteReceita } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -441,7 +442,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           }
           updated++;
         } else {
-          const newReceita = await base44.entities.Receita.create(payload);
+          const newReceita = await criarReceitaSegura(payload);
           receitaId = newReceita.id;
           created++;
         }
