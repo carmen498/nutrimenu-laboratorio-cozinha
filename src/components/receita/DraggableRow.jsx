@@ -31,7 +31,6 @@ export default function DraggableRow({ draggableId, index, isDragDisabled = fals
           }`}>
             {typeof children === "function" ? children(provided, snapshot) : children}
           </div>
-          {provided.placeholder}
         </div>
       )}
     </Draggable>
