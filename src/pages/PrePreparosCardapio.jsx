@@ -7,6 +7,7 @@ import { ArrowLeft, Download, Share2 } from "lucide-react";
 import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { carregarDadosPrePreparosCardapio, montarPrePreparosCardapio } from "@/lib/prePreparosCalcCardapio";
 import { gerarPrePreparosPDF } from "@/lib/prePreparosPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização do Relatório de Pré-preparos (mise en place) do
 // Cardápio avulso — mesmo padrão visual da versão do Evento (PrePreparosPlanejamento.jsx),
@@ -56,7 +57,7 @@ export default function PrePreparosCardapio() {
       });
     }
     if (navigator.share) navigator.share({ text });
-    else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    else abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
   const isBuffet = cardapio.tipo === "buffet";
