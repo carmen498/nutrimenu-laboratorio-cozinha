@@ -22,7 +22,7 @@ const numeroPositivo = (valor) => {
 
 const texto = (valor) => typeof valor === "string" ? valor.trim() : "";
 
-export function inferirTipoIngredienteReceita(payload = {}) {
+export function inferirTipoIngredienteReceita(/** @type {any} */ payload = {}) {
   if (payload.tipo && TIPOS_INGREDIENTE_RECEITA.has(payload.tipo)) return payload.tipo;
   if (payload.subreceita_id) return "subreceita";
   if (payload.titulo_grupo) return "grupo";
@@ -33,7 +33,7 @@ export function inferirTipoIngredienteReceita(payload = {}) {
  * Normaliza um NOVO registro antes do create. Campos cache legados podem continuar
  * presentes em payloads antigos, mas nunca são usados para decidir identidade/tipo.
  */
-export function normalizarNovoIngredienteReceita(payload = {}, receita = null) {
+export function normalizarNovoIngredienteReceita(/** @type {any} */ payload = {}, /** @type {any} */ receita = null) {
   const dados = { ...payload };
   const tipo = inferirTipoIngredienteReceita(dados);
   const unidadePadrao = receita?.unidade_base === "ml" ? "ml" : "g";
@@ -92,7 +92,7 @@ export function normalizarNovoIngredienteReceita(payload = {}, receita = null) {
  * Validação não destrutiva. Durante a transição, registros antigos sem ID são
  * classificados como legado em vez de serem apagados ou rejeitados na leitura.
  */
-export function diagnosticarIngredienteReceita(item = {}) {
+export function diagnosticarIngredienteReceita(/** @type {any} */ item = {}) {
   const tipo = inferirTipoIngredienteReceita(item);
   const problemas = [];
 
@@ -122,7 +122,7 @@ export function diagnosticarIngredienteReceita(item = {}) {
  * Resolve nomes para exibição dando preferência às entidades relacionadas.
  * Os campos *_nome ficam apenas como fallback para registros legados/cache.
  */
-export function resolverNomeIngredienteReceita(item, ingredienteMap = {}, receitaMap = {}) {
+export function resolverNomeIngredienteReceita(/** @type {any} */ item, /** @type {any} */ ingredienteMap = {}, /** @type {any} */ receitaMap = {}) {
   const tipo = inferirTipoIngredienteReceita(item);
   if (tipo === "grupo") return texto(item?.titulo_grupo);
   if (tipo === "subreceita") {
@@ -134,7 +134,7 @@ export function resolverNomeIngredienteReceita(item, ingredienteMap = {}, receit
 /**
  * Hidrata somente a camada de leitura. Não grava caches derivados no banco.
  */
-export function hidratarIngredienteReceita(item, ingredienteMap = {}, receitaMap = {}) {
+export function hidratarIngredienteReceita(/** @type {any} */ item, /** @type {any} */ ingredienteMap = {}, /** @type {any} */ receitaMap = {}) {
   const tipo = inferirTipoIngredienteReceita(item);
   const nome = resolverNomeIngredienteReceita(item, ingredienteMap, receitaMap);
   const diagnostico = diagnosticarIngredienteReceita(item);
