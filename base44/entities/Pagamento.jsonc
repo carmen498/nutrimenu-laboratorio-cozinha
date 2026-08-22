@@ -68,14 +68,6 @@
       "type": "string",
       "description": "Detalhe de erro retornado pelo Mercado Pago, se a tentativa falhar"
     },
-    "resposta_erro_mp_completa": {
-      "type": "string",
-      "description": "Corpo JSON completo da resposta de erro do Mercado Pago (cause/errors/details/etc), para diagn\u00f3stico sem depender de console.log"
-    },
-    "payload_enviado_mp": {
-      "type": "string",
-      "description": "JSON completo do orderBody enviado ao Mercado Pago nesta tentativa, para diagn\u00f3stico"
-    },
     "versao_codigo": {
       "type": "string",
       "description": "Identificador da vers\u00e3o do c\u00f3digo da function que processou esta tentativa (para confirmar se o deploy mais recente est\u00e1 ativo)"
