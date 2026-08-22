@@ -62,6 +62,7 @@ import {
   resolverMedidaCaseiraItem,
 } from "@/lib/ingredienteReceitaCalc";
 import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
+import { calcularCustoReceitaCanonico, CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -646,22 +647,44 @@ export default function ReceitaAberta() {
     if (item.tipo === "subreceita" && subreceitasComFilhos.has(item.id)) return sum;
     return sum + (item.qtdComprar || 0);
   }, 0);
-  const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
-  const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
-  const custoEsquecidos = esquecidos.reduce((sum, i) => sum + ((i.custo_total || 0) * fator), 0);
-  const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
+  const custoCanonico = useMemo(() => calcularCustoReceitaCanonico({
+    receita,
+    ingredientesReceita: itens,
+    ingredienteMap: ingMap,
+    insumosReceita,
+    esquecidos,
+    fator,
+  }), [receita, itens, ingMap, insumosReceita, esquecidos, fator]);
+  const custoIngredientes = custoCanonico.custoIngredientes;
+  const custoInsumos = custoCanonico.custoInsumos;
+  const custoEsquecidos = custoCanonico.custoEsquecidos;
+  const custoTotal = custoCanonico.custoTotal;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
 
+  // O cache persistido é apenas referência. Nunca grava preços pessoais numa
+  // receita compartilhada; o admin atualiza somente o contexto global/mestre.
   useEffect(() => {
-    if (isAdmin && receita && fator === 1 && custoTotal > 0) {
-      const newCT = parseFloat(custoTotal.toFixed(2));
-      const newCP = parseFloat(custoPorcao.toFixed(2));
-      const newCI = parseFloat(custoInsumos.toFixed(2));
-      if (newCT !== receita.custo_total || newCP !== receita.custo_por_porcao || newCI !== (receita.custo_insumos || 0)) {
-        base44.entities.Receita.update(id, { custo_total: newCT, custo_por_porcao: newCP, custo_insumos: newCI });
+    if (isAdmin && receita && fator === 1) {
+      const newCT = parseFloat(custoTotal.toFixed(4));
+      const newCP = parseFloat(custoPorcao.toFixed(4));
+      const newCI = parseFloat(custoInsumos.toFixed(4));
+      const status = custoCanonico.completo ? "atual" : "incompleto";
+      const patch = {
+        custo_modelo_versao: CUSTO_RECEITA_MODELO_VERSAO,
+        custo_cache_status: status,
+        custo_cache_contexto: receita.is_base === false ? "proprietario" : "global",
+        custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
+        custo_cache_atualizado_em: new Date().toISOString(),
+      };
+      if (custoCanonico.completo) {
+        patch.custo_total = newCT;
+        patch.custo_por_porcao = newCP;
+        patch.custo_insumos = newCI;
       }
+      const mudou = Object.entries(patch).some(([campo, valor]) => String(receita[campo] ?? "") !== String(valor ?? ""));
+      if (mudou) base44.entities.Receita.update(id, patch);
     }
-  }, [custoTotal, custoPorcao, custoInsumos, receita, fator, id, isAdmin]);
+  }, [custoTotal, custoPorcao, custoInsumos, custoCanonico, receita, fator, id, isAdmin]);
 
   const updatePriceMut = useMutation({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
