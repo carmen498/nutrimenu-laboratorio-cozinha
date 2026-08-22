@@ -2,12 +2,14 @@
   "name": "UtensilioPadrao",
   "type": "object",
   "properties": {
+    "nome": { "type": "string", "description": "Nome canônico do utensílio (ex: Xícara de chá, Colher de sopa)" },
     "simbolo": { "type": "string", "description": "Símbolo curto exibido no conversor (ex: col. sopa, xíc P, concha M)" },
     "descricao_singular": { "type": "string", "description": "Descrição por extenso no singular (ex: colher de sopa)" },
     "descricao_plural": { "type": "string", "description": "Descrição por extenso no plural (ex: colheres de sopa)" },
-    "g_min": { "type": "number", "description": "Gramas mínimas de referência (null quando sem gramatura)" },
-    "g_max": { "type": "number", "description": "Gramas máximas de referência (null quando sem gramatura)" },
-    "g_medio": { "type": "number", "description": "Gramas médias de referência (null quando sem gramatura)" }
+    "capacidade_ml": { "type": "number", "description": "Capacidade volumétrica nominal do utensílio em ml, quando aplicável" },
+    "g_min": { "type": "number", "description": "LEGADO/REFERÊNCIA: gramas mínimas observadas (null quando sem gramatura)" },
+    "g_max": { "type": "number", "description": "LEGADO/REFERÊNCIA: gramas máximas observadas (null quando sem gramatura)" },
+    "g_medio": { "type": "number", "description": "LEGADO/REFERÊNCIA: gramas médias genéricas. A equivalência específica do alimento deve ficar em MedidaCaseira.peso_g" }
   },
   "required": ["simbolo", "descricao_singular"],
   "rls": {
