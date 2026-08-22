@@ -8,16 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
+  chaveCanonicaMedida,
   getPesoPorMedidaG,
   getUtensilioIdMedida,
   normalizarPayloadMedidaCaseira,
 } from "@/lib/medidaCaseiraModel";
 
-/**
- * Cadastro de MedidaCaseira a partir da ficha da receita.
- * Fase 7: IDs + equivalência física são a fonte de verdade. referencia_g fica
- * somente como cache temporário de runtime para consumidores legados.
- */
 export default function CadastrarMedidaDialog({ open, onClose, ingrediente, utensilios = [], medidaExistente = null }) {
   const qc = useQueryClient();
   const [utensilioId, setUtensilioId] = useState("");
@@ -25,18 +21,9 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
   const [estadoAlimento, setEstadoAlimento] = useState("cru");
   const [fonte, setFonte] = useState("Medição própria");
   const [soGramas, setSoGramas] = useState(false);
-  const [userTouchedRef, setUserTouchedRef] = useState(false);
 
   const uteMap = {};
   utensilios.forEach((u) => { uteMap[u.id] = u; });
-
-  useEffect(() => {
-    if (!utensilioId) return;
-    const ute = uteMap[utensilioId];
-    if (ute && !userTouchedRef) {
-      setReferenciaG(ute.g_medio != null ? String(ute.g_medio) : "");
-    }
-  }, [utensilioId]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,30 +41,21 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
       setFonte("Medição própria");
       setSoGramas(false);
     }
-    setUserTouchedRef(false);
   }, [open, medidaExistente]);
 
   const handleSave = async () => {
-    if (!ingrediente?.id) {
-      toast.error("Ingrediente inválido");
-      return;
-    }
-    if (!soGramas && !utensilioId) {
-      toast.error("Selecione um utensílio");
-      return;
-    }
+    if (!ingrediente?.id) { toast.error("Ingrediente inválido"); return; }
+    if (!soGramas && !utensilioId) { toast.error("Selecione um utensílio"); return; }
 
     const ute = uteMap[utensilioId];
     const refG = referenciaG !== "" ? parseFloat(referenciaG.replace(",", ".")) : null;
     if (!soGramas && (!refG || refG <= 0)) {
-      toast.error("Informe a referência em gramas (ou marque 'Só gramas')");
+      toast.error("Informe o peso correspondente à medida (ou marque 'Só gramas')");
       return;
     }
 
     const payload = normalizarPayloadMedidaCaseira({
-      nome: soGramas
-        ? `${ingrediente.nome} · só gramas`
-        : `${ingrediente.nome} · ${ute?.simbolo || ute?.nome || "medida"}`,
+      nome: soGramas ? `${ingrediente.nome} · só gramas` : `${ingrediente.nome} · ${ute?.simbolo || ute?.nome || "medida"}`,
       ingrediente_id: ingrediente.id,
       utensilio_id: soGramas ? "" : utensilioId,
       quantidade_utensilio: 1,
@@ -88,13 +66,10 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
     });
 
     try {
-      if (!medidaExistente && !soGramas) {
-        const duplicadas = await base44.entities.MedidaCaseira.filter({
-          ingrediente_id: ingrediente.id,
-          utensilio_id: utensilioId,
-          estado_alimento: estadoAlimento,
-        });
-        if (duplicadas.length > 0) {
+      if (!medidaExistente) {
+        const existentes = await base44.entities.MedidaCaseira.list("-created_date", 1000);
+        const novaChave = chaveCanonicaMedida(payload);
+        if (existentes.some((mc) => chaveCanonicaMedida(mc) === novaChave)) {
           toast.error("Já existe uma equivalência para este ingrediente, utensílio e estado.");
           return;
         }
@@ -123,11 +98,7 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Estado do alimento *</Label>
-            <select
-              value={estadoAlimento}
-              onChange={(e) => setEstadoAlimento(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1"
-            >
+            <select value={estadoAlimento} onChange={(e) => setEstadoAlimento(e.target.value)} className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1">
               <option value="cru">Cru / antes do preparo</option>
               <option value="pronto">Pronto / depois do preparo</option>
               <option value="não informado">Não informado</option>
@@ -135,51 +106,25 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
           </div>
           <div>
             <Label className="text-xs">Utensílio {!soGramas && "*"}</Label>
-            <select
-              value={utensilioId}
-              onChange={(e) => setUtensilioId(e.target.value)}
-              disabled={soGramas}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1 disabled:opacity-50"
-            >
+            <select value={utensilioId} onChange={(e) => setUtensilioId(e.target.value)} disabled={soGramas} className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1 disabled:opacity-50">
               <option value="">Selecione...</option>
               {utensilios.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.simbolo} — {u.descricao_singular || u.nome}
-                  {u.capacidade_ml != null ? ` (${u.capacidade_ml} ml)` : ""}
-                </option>
+                <option key={u.id} value={u.id}>{u.simbolo} — {u.descricao_singular || u.nome}{u.capacidade_ml != null ? ` (${u.capacidade_ml} ml)` : ""}</option>
               ))}
             </select>
           </div>
           <div>
             <Label className="text-xs">Peso correspondente a 1 medida (g) {!soGramas && "*"}</Label>
-            <Input
-              type="text"
-              value={referenciaG}
-              onChange={(e) => { setReferenciaG(e.target.value); setUserTouchedRef(true); }}
-              placeholder="ex: 120"
-              disabled={soGramas}
-              className="mt-1"
-            />
+            <Input type="text" value={referenciaG} onChange={(e) => setReferenciaG(e.target.value)} placeholder="ex: 120" disabled={soGramas} className="mt-1" />
+            {!soGramas && <p className="text-[11px] text-muted-foreground mt-1">Informe a massa medida para este alimento; o app não usa gramatura genérica do utensílio.</p>}
           </div>
           <div>
             <Label className="text-xs">Fonte</Label>
-            <Input
-              value={fonte}
-              onChange={(e) => setFonte(e.target.value)}
-              placeholder="Ex.: medição própria, fabricante, literatura"
-              className="mt-1"
-            />
+            <Input value={fonte} onChange={(e) => setFonte(e.target.value)} placeholder="Ex.: medição própria, fabricante, literatura" className="mt-1" />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={soGramas}
-              onChange={(e) => setSoGramas(e.target.checked)}
-              className="w-4 h-4 rounded"
-            />
-            <span className="text-sm" title="Marcado, este ingrediente mostra apenas o peso em g; a medida caseira não é exibida nas fichas.">
-              Exibir só gramas (oculta a medida caseira)
-            </span>
+            <input type="checkbox" checked={soGramas} onChange={(e) => setSoGramas(e.target.checked)} className="w-4 h-4 rounded" />
+            <span className="text-sm">Exibir só gramas (oculta a medida caseira)</span>
           </label>
         </div>
         <DialogFooter>
@@ -190,12 +135,8 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
                 qc.invalidateQueries({ queryKey: ["medidas-caseiras"] });
                 toast.success("Medida removida");
                 onClose();
-              } catch (err) {
-                toast.error("Erro ao remover: " + (err.message || ""));
-              }
-            }}>
-              <Trash2 className="w-4 h-4 mr-1" /> Excluir
-            </Button>
+              } catch (err) { toast.error("Erro ao remover: " + (err.message || "")); }
+            }}><Trash2 className="w-4 h-4 mr-1" /> Excluir</Button>
           )}
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave}><Check className="w-4 h-4 mr-1" /> Salvar</Button>
