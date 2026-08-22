@@ -14,10 +14,9 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
   const diagnostico: Record<string, unknown> = {
     secret_configurado: !!secretBruto,
     secret_tinha_espacos_extras: !!secretBruto && secretBruto !== secret,
-    secret_tamanho: secret.length,
-    x_signature_recebido: xSignature,
-    x_request_id_recebido: xRequestId,
-    data_id_usado_no_manifest: dataId,
+    x_signature_presente: !!xSignature,
+    x_request_id_presente: !!xRequestId,
+    data_id_presente: !!dataId,
   };
 
   if (!secret) return { valida: false, diagnostico };
@@ -30,15 +29,14 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
   }
   const ts = parts["ts"];
   const v1 = parts["v1"];
-  diagnostico.ts_extraido = ts || null;
-  diagnostico.v1_recebido = v1 || null;
+  diagnostico.ts_presente = !!ts;
+  diagnostico.v1_presente = !!v1;
   if (!ts || !v1) return { valida: false, diagnostico };
 
   // IMPORTANTE: o Mercado Pago exige o data.id em minúsculas no manifest — não documentado
   // claramente, mas confirmado tanto por exemplos oficiais (ex: "ORD01JQ..." -> "ord01jq...")
   // quanto por testes reais feitos aqui: sem o toLowerCase() a assinatura nunca bate.
   const manifest = `id:${(dataId ?? "").toLowerCase()};request-id:${xRequestId ?? ""};ts:${ts};`;
-  diagnostico.manifest_usado = manifest;
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -52,8 +50,6 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
   const computedHex = Array.from(new Uint8Array(signatureBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-  diagnostico.v1_calculado_por_nos = computedHex;
-
   // Comparação em tempo constante, alinhada à recomendação do SDK oficial.
   // O tamanho pode falhar cedo (não é segredo); bytes de mesmo tamanho são
   // sempre comparados por completo para não vazar o primeiro ponto divergente.
@@ -69,10 +65,13 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
   const esperado = hexToBytes(computedHex);
   const recebido = hexToBytes(v1);
   if (!esperado || !recebido || esperado.length !== recebido.length) {
+    diagnostico.assinatura_confere = false;
     return { valida: false, diagnostico };
   }
 
   let diff = 0;
   for (let i = 0; i < esperado.length; i++) diff |= esperado[i] ^ recebido[i];
-  return { valida: diff === 0, diagnostico };
+  const valida = diff === 0;
+  diagnostico.assinatura_confere = valida;
+  return { valida, diagnostico };
 }
