@@ -1,21 +1,21 @@
 import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
 import { criarReceitaSegura } from '@/lib/secureRootEntities';
+import {
+  construirLinhagemDerivada,
+  resolverReceitaRaizId,
+  TIPOS_LINHAGEM_RECEITA,
+} from '@/lib/receitaLineage';
 import { base44 } from "@/api/base44Client";
 
 /**
  * Garante que o usuário atual pode editar a receita diretamente.
  *
- * - Admins sempre editam a receita original diretamente (sem cópia).
- * - Não-admins editando uma receita já pessoal (is_base=false) editam direto.
- * - Não-admins editando uma receita do catálogo (is_base=true):
- *   - Se já existir uma cópia pessoal desta receita (receita_origem_id + usuario_dono_id),
- *     NÃO cria outra — retorna blocked=true e existingCopyId para o chamador avisar o usuário.
- *   - Caso contrário, faz uma cópia completa (receita + ingredientes + tags), marcada
- *     is_base=false, forked_from_id/receita_origem_id apontando para a original,
- *     usuario_dono_id = usuário atual e data_personalizacao = agora. A edição deve
- *     ser aplicada pelo chamador na receita/id retornados — nunca na original.
- *
- * Retorna { receitaId, mapItemId, forked, blocked, existingCopyId }.
+ * Fase 9:
+ * - is_base define catálogo x pessoal;
+ * - usuario_dono_id é a propriedade canônica;
+ * - receita_origem_id é a origem imediata;
+ * - receita_raiz_id preserva o ancestral original;
+ * - forked_from_id permanece como alias legado da personalização.
  */
 export async function garantirReceitaEditavel({ receita, itens = [], receitaTags = [], isAdmin, userId }) {
   if (!receita) return { receitaId: null, mapItemId: (x) => x, forked: false };
@@ -24,22 +24,54 @@ export async function garantirReceitaEditavel({ receita, itens = [], receitaTags
     return { receitaId: receita.id, mapItemId: (x) => x, mapTagId: (x) => x, forked: false };
   }
 
-  const copiasExistentes = await base44.entities.Receita.filter({
-    receita_origem_id: receita.id,
+  const raizId = resolverReceitaRaizId(receita) || receita.id;
+  let copiasExistentes = await base44.entities.Receita.filter({
+    receita_raiz_id: raizId,
     usuario_dono_id: userId,
-  });
-  if (copiasExistentes.length > 0) {
-    return { receitaId: null, mapItemId: (x) => x, mapTagId: (x) => x, forked: false, blocked: true, existingCopyId: copiasExistentes[0].id };
+    linhagem_tipo: TIPOS_LINHAGEM_RECEITA.PERSONALIZACAO,
+  }, "-data_personalizacao", 20);
+
+  // Compatibilidade com forks criados antes da Fase 9.
+  if (copiasExistentes.length === 0) {
+    copiasExistentes = await base44.entities.Receita.filter({
+      receita_origem_id: receita.id,
+      usuario_dono_id: userId,
+    }, "-data_personalizacao", 20);
   }
 
-  const { id: _oldId, created_date, updated_date, created_by_id, created_by, is_base, forked_from_id, receita_origem_id, usuario_dono_id, data_personalizacao, ...rest } = receita;
+  if (copiasExistentes.length > 0) {
+    return {
+      receitaId: null,
+      mapItemId: (x) => x,
+      mapTagId: (x) => x,
+      forked: false,
+      blocked: true,
+      existingCopyId: copiasExistentes[0].id,
+    };
+  }
+
+  const {
+    id: _oldId,
+    created_date,
+    updated_date,
+    created_by_id,
+    created_by,
+    is_base,
+    forked_from_id,
+    receita_origem_id,
+    receita_raiz_id,
+    usuario_dono_id,
+    data_personalizacao,
+    linhagem_geracao,
+    linhagem_tipo,
+    linhagem_versao,
+    linhagem_status,
+    ...rest
+  } = receita;
+
   const nova = await criarReceitaSegura({
     ...rest,
-    is_base: false,
-    forked_from_id: receita.id,
-    receita_origem_id: receita.id,
-    usuario_dono_id: userId,
-    data_personalizacao: new Date().toISOString(),
+    __linhagem: construirLinhagemDerivada(receita, TIPOS_LINHAGEM_RECEITA.PERSONALIZACAO),
   });
 
   const idMap = {};
