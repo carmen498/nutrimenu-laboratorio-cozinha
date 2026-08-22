@@ -52,6 +52,12 @@ import { garantirReceitaEditavel } from "@/lib/forkReceita";
 import { garantirCardapioEditavel } from "@/lib/forkCardapio";
 import { useAuth } from "@/lib/AuthContext";
 import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados, salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
+import {
+  calcularItemIngredienteReceita,
+  getMedidaIngredienteId,
+  getMedidaUtensilioId,
+  resolverMedidaCaseiraItem,
+} from "@/lib/ingredienteReceitaCalc";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -504,19 +510,28 @@ export default function ReceitaAberta() {
     return map;
   }, [utensiliosPadrao]);
 
+  const medidaById = useMemo(() => {
+    const map = {};
+    medidasCaseiras.forEach((mc) => {
+      if (mc.id) map[mc.id] = mc;
+    });
+    return map;
+  }, [medidasCaseiras]);
+
   const medidaByIngrediente = useMemo(() => {
     const map = {};
     medidasCaseiras.forEach((mc) => {
-      if (mc.alimento && !map[mc.alimento]) map[mc.alimento] = mc;
+      const ingredienteId = getMedidaIngredienteId(mc);
+      if (ingredienteId && !map[ingredienteId]) map[ingredienteId] = mc;
     });
     return map;
   }, [medidasCaseiras]);
 
   const getMedidaDisplay = (item) => {
     if (!item.ing) return null;
-    const mc = medidaByIngrediente[item.ing.id];
+    const mc = resolverMedidaCaseiraItem(item, item.ing, medidaById, medidaByIngrediente);
     if (!mc) return null;
-    const ute = uteMap[mc.utensilio];
+    const ute = uteMap[getMedidaUtensilioId(mc)];
     return converterGramasParaMedida(item.qtdNova, mc, ute);
   };
 
@@ -548,12 +563,27 @@ export default function ReceitaAberta() {
         const ing = ingMap[item.ingrediente_id];
         const qtdOriginal = item.quantidade_por_porcao * (receita?.porcoes_base || 1);
         const qtdNova = qtdOriginal * fator;
-        const fc = ing?.fator_correcao || 1;
-        const qtdComprar = qtdNova * fc;
-        const custo = qtdComprar * (ing?.preco_por_g_rs || 0);
+        const calculado = calcularItemIngredienteReceita({
+          item,
+          ingrediente: ing,
+          quantidadeLiquida: qtdNova,
+        });
         const isNA = !!(item.ingrediente_nome && item.ingrediente_nome.toUpperCase() === "N/A");
         const isChildOfSubreceita = !!item.subreceita_parent_id;
-        return { ...item, ing, qtdOriginal, qtdNova, qtdComprar, custo, isGrupo: false, isNA, isChildOfSubreceita };
+        return {
+          ...item,
+          ing,
+          qtdOriginal,
+          qtdNova: calculado.pesoLiquido,
+          qtdComprar: calculado.pesoBruto,
+          custo: calculado.custo,
+          fcEfetivo: calculado.fc,
+          fcOrigem: calculado.fcOrigem,
+          fcOverride: calculado.fcOverride,
+          isGrupo: false,
+          isNA,
+          isChildOfSubreceita,
+        };
       });
   }, [itens, ingMap, fator, receita, temOrdemManual]);
 
@@ -636,7 +666,7 @@ export default function ReceitaAberta() {
     return -1;
   };
 
-  // Peso Bruto (PB) = Peso Líquido (PL) × FC. Se a sub-receita está explodida,
+  // Peso Bruto (PB) = Peso Líquido (PL) × FC efetivo. Se a sub-receita está explodida,
   // ignora o marcador e soma os ingredientes-filhos para não contar o peso duas vezes.
   const subreceitasComFilhos = useMemo(() => {
     const ids = new Set();
@@ -688,9 +718,12 @@ export default function ReceitaAberta() {
   });
 
   const updateQtdMut = useMutation({
-    mutationFn: async ({ itemId, quantidade_por_porcao }) => {
+    mutationFn: async ({ itemId, quantidade_por_porcao, medida_caseira_id, quantidade_medida_caseira }) => {
       const { receitaId, mapItemId } = await ensureEditavel();
-      await base44.entities.IngredienteReceita.update(mapItemId(itemId), { quantidade_por_porcao });
+      const updates = { quantidade_por_porcao };
+      if (medida_caseira_id !== undefined) updates.medida_caseira_id = medida_caseira_id || "";
+      if (quantidade_medida_caseira !== undefined) updates.quantidade_medida_caseira = quantidade_medida_caseira;
+      await base44.entities.IngredienteReceita.update(mapItemId(itemId), updates);
       return receitaId;
     },
     onSuccess: (receitaId) => {
@@ -701,12 +734,18 @@ export default function ReceitaAberta() {
   });
 
   const updateFCMut = useMutation({
-    mutationFn: async ({ ingId, fator_correcao }) => {
-      await base44.entities.Ingrediente.update(ingId, { fator_correcao });
+    mutationFn: async ({ itemId, fator_correcao_override }) => {
+      const { receitaId, mapItemId } = await ensureEditavel();
+      const valor = Number(fator_correcao_override);
+      await base44.entities.IngredienteReceita.update(mapItemId(itemId), {
+        fator_correcao_override: Number.isFinite(valor) && valor > 0 ? valor : 0,
+      });
+      return receitaId;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["ingredientes"] });
-      toast.success("Fator de correção atualizado em todas as receitas!");
+    onSuccess: (receitaId) => {
+      registrarHistorico(receitaId, receita?.nome, ["Ingredientes", "FC"]);
+      qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
+      toast.success("FC específico da receita atualizado!");
     },
   });
 
@@ -1377,11 +1416,11 @@ REGRAS:
               <PopoverContent className="w-80 max-h-96 overflow-y-auto text-sm" align="start">
                 <p className="text-foreground font-medium mb-1">FC (Fator de Correção)</p>
                 <p className="text-muted-foreground mb-3">
-                  Adiciona à tabela de ingredientes o Fator de Correção — também chamado de Índice de Parte Comestível (IPC). Representa a razão entre o peso bruto (antes do preparo) e o peso líquido (já limpo/preparado) do ingrediente: FC = Peso Bruto ÷ Peso Líquido.
+                  Representa a razão entre o peso bruto e o peso líquido: FC = Peso Bruto ÷ Peso Líquido. Cada ingrediente herda o FC padrão do cadastro mestre; se necessário, você pode definir um FC específico apenas para esta receita. O × ao lado do FC restaura o valor padrão.
                 </p>
                 <p className="text-foreground font-medium mb-1">Medida caseira</p>
                 <p className="text-muted-foreground mb-3">
-                  Adiciona à tabela de ingredientes uma coluna que converte a quantidade em gramas para uma medida caseira (xícara, colher, unidade, etc.). O utensílio usado na conversão pode ser alterado a qualquer momento.
+                  Adiciona à tabela uma conversão da quantidade em gramas para uma medida caseira. Quando você digita uma medida na própria receita, o vínculo da medida e a quantidade informada ficam registrados no item, enquanto g/ml permanecem como base dos cálculos.
                 </p>
                 <p className="text-foreground font-medium mb-1">Sub-título</p>
                 <p className="text-muted-foreground">
@@ -1428,6 +1467,7 @@ REGRAS:
               blocos={blocos}
               findBlocoIdx={findBlocoIdx}
               medidaByIngrediente={medidaByIngrediente}
+              medidaById={medidaById}
               uteMap={uteMap}
               getMedidaDisplay={getMedidaDisplay}
               editingQtdId={editingQtdId}
