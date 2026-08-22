@@ -2,18 +2,13 @@
   "name": "LogUserAgentDiagnostico",
   "type": "object",
   "properties": {
-    "user_agent": {
-      "type": "string",
-      "description": "String completa do user-agent capturada no acesso, para diagn\u00f3stico do problema de navegador interno (Outlook, WhatsApp, etc.)"
-    },
-    "url_acessada": {
-      "type": "string",
-      "description": "URL completa que estava sendo acessada no momento da captura"
+    "deprecated": {
+      "type": "boolean",
+      "default": true,
+      "description": "Entidade descontinuada. Mantida apenas como tombstone t\u00e9cnico; n\u00e3o armazena mais dados de navega\u00e7\u00e3o."
     }
   },
-  "required": [
-    "user_agent"
-  ],
+  "required": [],
   "rls": {
     "read": {
       "user_condition": {
