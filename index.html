@@ -6,38 +6,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="manifest" href="/manifest.json" />
     <title>Laboratório de Cozinha</title>
+    <script>
+      (function () {
+        // Security: capture and remove sensitive/auth navigation parameters before
+        // any third-party script or application code can observe the full URL.
+        try {
+          var qp = new URLSearchParams(window.location.search);
+          var accessToken = qp.get('access_token');
+          var pendingReturn = qp.get('returnTo') || qp.get('from_url');
+          var changed = false;
+
+          if (accessToken) {
+            localStorage.setItem('base44_access_token', accessToken);
+            qp.delete('access_token');
+            changed = true;
+          }
+
+          if (pendingReturn) {
+            sessionStorage.setItem('base44_pending_return_to', pendingReturn);
+            qp.delete('returnTo');
+            qp.delete('from_url');
+            changed = true;
+          }
+
+          if (changed) {
+            var cleanUrl = window.location.pathname + (qp.toString() ? '?' + qp.toString() : '') + window.location.hash;
+            window.history.replaceState({}, document.title, cleanUrl);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
   </head>
   <body>
     <script>
       (function () {
-        // Cosmetic only: hide "?returnTo=/from_url=" from the address bar as early
-        // as possible (before React even mounts), so the user never sees the long
-        // URL — not even briefly while the auth check/spinner is running. The raw
-        // value is kept in sessionStorage; src/lib/authReturnTo.js reads it from
-        // there when the URL no longer has the param.
-        try {
-          var qp = new URLSearchParams(window.location.search);
-          var pendingReturn = qp.get('returnTo') || qp.get('from_url');
-          if (pendingReturn) {
-            sessionStorage.setItem('base44_pending_return_to', pendingReturn);
-            qp.delete('returnTo');
-            qp.delete('from_url');
-            var cleanUrl = window.location.pathname + (qp.toString() ? '?' + qp.toString() : '') + window.location.hash;
-            window.history.replaceState({}, document.title, cleanUrl);
-          }
-        } catch (e) {}
-
         var ua = navigator.userAgent || navigator.vendor || window.opera || '';
-
-        // DIAGNÓSTICO TEMPORÁRIO — registra o user-agent de todo acesso para
-        // descobrir por que o Outlook da Carmen não está caindo na detecção
-        // abaixo. Remover este bloco e a função logUserAgentDiagnostico depois.
-        try {
-          var beaconUrl = window.location.origin + '/functions/logUserAgentDiagnostico?ua=' + encodeURIComponent(ua) + '&url=' + encodeURIComponent(window.location.href);
-          fetch(beaconUrl, { method: 'GET', mode: 'no-cors' }).catch(function () {});
-        } catch (e) {}
-
         var isInAppBrowser = /FBAN|FBAV|Instagram|WhatsApp|LinkedInApp|Line\/|Outlook|ms-office/i.test(ua);
         if (!isInAppBrowser) return;
 
