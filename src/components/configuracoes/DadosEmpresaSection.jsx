@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Building2, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 const CHAVE_NOME = "empresa_nome";
 const CHAVE_LOGO = "empresa_logo_url";
@@ -54,8 +55,8 @@ export default function DadosEmpresaSection() {
     if (!file) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setLogoUrl(file_url);
+      const fileUrl = await uploadImagemSeguro(base44, file);
+      setLogoUrl(fileUrl);
     } catch (err) {
       toast.error("Erro ao enviar logo: " + (err.message || ""));
     } finally {
