@@ -33,7 +33,7 @@ function precoEfetivo({ ingrediente, ownerId, prefMap, legacyMap }: any) {
   if (!ownerId || !ingrediente?.id) return preco;
   const key = `${ownerId}|${ingrediente.id}`;
   const legacy = legacyMap.get(key);
-  if (legacy && num(legacy.preco_por_g_rs) >= 0) preco = num(legacy.preco_por_g_rs);
+  if (legacy && legacy.preco_por_g_rs != null && legacy.preco_por_g_rs !== '') preco = num(legacy.preco_por_g_rs);
   const pref = prefMap.get(key);
   if (pref && Object.prototype.hasOwnProperty.call(pref, 'preco_por_g_rs')) preco = num(pref.preco_por_g_rs);
   return preco;
