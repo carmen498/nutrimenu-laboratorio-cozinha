@@ -24,6 +24,14 @@ export default async function (req) {
       return Response.json({ error: "Receita não encontrada ou sem acesso" }, { status: 404 });
     }
 
+    const podeRegistrar = user.role === "admin" || (
+      receita.is_base === false &&
+      (receita.usuario_dono_id === user.id || receita.created_by_id === user.id)
+    );
+    if (!podeRegistrar) {
+      return Response.json({ error: "Sem permissão para registrar alteração nesta receita" }, { status: 403 });
+    }
+
     const campos = campos_alterados
       .filter((campo: unknown) => typeof campo === "string")
       .map((campo: string) => campo.trim().slice(0, 80))
