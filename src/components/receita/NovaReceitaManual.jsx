@@ -21,6 +21,7 @@ import { normalizarNome, buscarFuzzy, buscarIngredientesRanqueado, buscarReceita
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 export default function NovaReceitaManual({ open, onClose, onCreated, receitasExistentes = [] }) {
   const [form, setForm] = useState({
@@ -328,8 +329,8 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
     const file = e.target.files[0];
     if (!file) return;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setForm({ ...form, foto_url: file_url });
+      const fileUrl = await uploadImagemSeguro(base44, file);
+      setForm({ ...form, foto_url: fileUrl });
     } catch {
       toast.error("Erro ao enviar foto");
     }
