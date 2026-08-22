@@ -1,0 +1,62 @@
+{
+  "name": "IngredienteUsuario",
+  "type": "object",
+  "properties": {
+    "ingrediente_id": {
+      "type": "string",
+      "description": "ID do Ingrediente mestre ao qual esta preferência pertence"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID do usuário dono da preferência (cache; a segurança usa created_by_id)"
+    },
+    "favorito": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ingrediente marcado como favorito apenas para este usuário"
+    }
+  },
+  "required": [
+    "ingrediente_id",
+    "user_id"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
