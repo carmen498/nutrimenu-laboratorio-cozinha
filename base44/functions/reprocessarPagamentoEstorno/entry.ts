@@ -46,7 +46,8 @@ export default async function(req: Request): Promise<Response> {
     const order = await mpResponse.json().catch(() => null);
 
     if (!mpResponse.ok || !order) {
-      return Response.json({ error: "Não foi possível consultar a order no Mercado Pago", detalhe: order }, { status: 400 });
+      console.log("Falha ao consultar order para reprocessamento de estorno", { order_id: pagamento.mercadopago_order_id, http_status: mpResponse.status });
+      return Response.json({ error: "Não foi possível consultar a order no Mercado Pago" }, { status: 400 });
     }
 
     const paymentStatus = order.transactions?.payments?.[0]?.status;
