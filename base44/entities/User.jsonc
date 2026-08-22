@@ -176,11 +176,25 @@
     "termos_aceitos_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora exata em que o usu\u00e1rio aceitou os Termos de Uso e a Pol\u00edtica de Privacidade no cadastro"
+      "description": "Data/hora exata em que o usu\u00e1rio aceitou os Termos de Uso e a Pol\u00edtica de Privacidade no cadastro",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "termos_versao_aceita": {
       "type": "string",
-      "description": "Vers\u00e3o do documento de Termos de Uso aceita pelo usu\u00e1rio no cadastro (ex: 'Termos de Uso v.18/08/2026'), para fins de prova de aceite"
+      "description": "Vers\u00e3o do documento de Termos de Uso aceita pelo usu\u00e1rio no cadastro (ex: 'Termos de Uso v.18/08/2026'), para fins de prova de aceite",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [
