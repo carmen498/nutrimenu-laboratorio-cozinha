@@ -636,7 +636,21 @@ export default function ReceitaAberta() {
     return -1;
   };
 
-  const pesoBruto = itensFicha.filter(i => !i.isGrupo).reduce((sum, i) => sum + (i.qtdNova || 0), 0);
+  // Peso Bruto (PB) = Peso Líquido (PL) × FC. Se a sub-receita está explodida,
+  // ignora o marcador e soma os ingredientes-filhos para não contar o peso duas vezes.
+  const subreceitasComFilhos = useMemo(() => {
+    const ids = new Set();
+    itensFicha.forEach((item) => {
+      if (item.subreceita_parent_id) ids.add(item.subreceita_parent_id);
+    });
+    return ids;
+  }, [itensFicha]);
+
+  const pesoBruto = itensFicha.reduce((sum, item) => {
+    if (item.isGrupo) return sum;
+    if (item.tipo === "subreceita" && subreceitasComFilhos.has(item.id)) return sum;
+    return sum + (item.qtdComprar || 0);
+  }, 0);
   const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
   const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
   const custoEsquecidos = esquecidos.reduce((sum, i) => sum + ((i.custo_total || 0) * fator), 0);
