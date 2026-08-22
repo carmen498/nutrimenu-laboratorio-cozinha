@@ -56,6 +56,19 @@
       "type": "string",
       "description": "Chave de idempot\u00eancia gerada pelo servidor no in\u00edcio da tentativa"
     },
+    "termos_aceitos_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora server-side do aceite expl\u00edcito dos documentos legais para esta contrata\u00e7\u00e3o"
+    },
+    "termos_versao_aceita": {
+      "type": "string",
+      "description": "Vers\u00e3o dos Termos de Uso vigente e aceita nesta contrata\u00e7\u00e3o"
+    },
+    "privacidade_versao_aceita": {
+      "type": "string",
+      "description": "Vers\u00e3o da Pol\u00edtica de Privacidade vigente e aceita nesta contrata\u00e7\u00e3o"
+    },
     "qr_code": {
       "type": "string",
       "description": "C\u00f3digo copia-e-cola do PIX (quando forma_pagamento=pix)"

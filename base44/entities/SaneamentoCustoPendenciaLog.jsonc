@@ -1,0 +1,65 @@
+{
+  "name": "SaneamentoCustoPendenciaLog",
+  "type": "object",
+  "properties": {
+    "executado_por_id": {
+      "type": "string"
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modo": {
+      "type": "string",
+      "enum": [
+        "analise",
+        "aplicar"
+      ]
+    },
+    "receitas_incompletas_antes": {
+      "type": "number"
+    },
+    "precos_derivados_mestre": {
+      "type": "number"
+    },
+    "precos_derivados_usuario": {
+      "type": "number"
+    },
+    "referencias_reapontadas": {
+      "type": "number"
+    },
+    "insumos_recalculados": {
+      "type": "number"
+    },
+    "pendencias_manuais": {
+      "type": "number"
+    },
+    "detalhes": {
+      "type": "string",
+      "description": "Resumo JSON compacto do saneamento de pend\u00eancias de custo."
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
