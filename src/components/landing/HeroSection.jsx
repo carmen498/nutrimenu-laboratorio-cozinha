@@ -10,9 +10,9 @@ export default function HeroSection({ heroImage }) {
       <div className="lc-container lc-hero-grid">
         <div className="lc-hero-copy">
           <p className="lc-eyebrow">Planejamento de cozinha com método</p>
-          <h1 id="landing-hero-title">O que vamos cozinhar hoje?</h1>
+          <h1 id="landing-hero-title">Planeje, calcule e produza com segurança antes de acender o fogo.</h1>
           <p className="lc-hero-sub">
-            Do planejamento ao prato — sem improviso, sem desperdício, sem estresse. O app que organiza sua cozinha, escala suas receitas e calcula tudo por você.
+            O que vamos cozinhar hoje? Do planejamento ao prato — sem improviso, sem desperdício, sem estresse. O app que organiza sua cozinha, escala suas receitas e calcula tudo por você.
           </p>
           <div className="lc-hero-cta">
             <a className="lc-btn lc-btn--primary lc-btn--lg" href={primaryHref}>
