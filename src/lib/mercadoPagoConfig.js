@@ -14,13 +14,14 @@ export function carregarMercadoPagoSdk() {
   if (typeof window === "undefined") {
     return Promise.reject(new Error("SDK do Mercado Pago indisponível fora do navegador."));
   }
-  if (window.MercadoPago) return Promise.resolve(window.MercadoPago);
+  const browserWindow = /** @type {any} */ (window);
+  if (browserWindow.MercadoPago) return Promise.resolve(browserWindow.MercadoPago);
   if (sdkPromise) return sdkPromise;
 
   sdkPromise = new Promise((resolve, reject) => {
     const existente = document.querySelector('script[data-mercadopago-sdk="v2"]');
     if (existente) {
-      existente.addEventListener("load", () => resolve(window.MercadoPago), { once: true });
+      existente.addEventListener("load", () => resolve(browserWindow.MercadoPago), { once: true });
       existente.addEventListener("error", () => reject(new Error("Falha ao carregar SDK do Mercado Pago.")), { once: true });
       return;
     }
@@ -29,8 +30,8 @@ export function carregarMercadoPagoSdk() {
     script.src = "https://sdk.mercadopago.com/js/v2";
     script.async = true;
     script.dataset.mercadopagoSdk = "v2";
-    script.onload = () => window.MercadoPago
-      ? resolve(window.MercadoPago)
+    script.onload = () => browserWindow.MercadoPago
+      ? resolve(browserWindow.MercadoPago)
       : reject(new Error("SDK do Mercado Pago carregou sem inicializar."));
     script.onerror = () => reject(new Error("Falha ao carregar SDK do Mercado Pago."));
     document.head.appendChild(script);
