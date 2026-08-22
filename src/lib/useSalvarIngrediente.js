@@ -35,7 +35,7 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
           precoEmbalagemRs: data.preco_embalagem_rs,
           fornecedor: data.fornecedor,
           estadoUsuario: data.estado_usuario,
-          fontePreco: data.fonte_preco || "Manual",
+          fontePreco: "Manual",
         });
 
         // Compatibilidade Fase 3: mantém o preço pessoal disponível para módulos
