@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
 
     // Check if auto-update is enabled
-    const configs = await base44.asServiceRole.entities.AppConfig.filter({ chave: 'auto_update_prices' });
+    const configs = await base44.asServiceRole.entities.ConfiguracaoSistema.filter({ chave: 'auto_update_prices' });
     if (configs[0] && configs[0].valor === 'false') {
       return Response.json({ message: "Atualização automática pausada pelo usuário." });
     }
