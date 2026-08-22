@@ -9,10 +9,10 @@ function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
 function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
 
 export default function CardapioPratoLinha({
-  rec, descritivo, pcSuffix, kg, pct, selected, onSelect,
+  rec, descritivo = "", pcSuffix, kg, pct, selected, onSelect,
   onUpdatePC, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown,
-  temDias, diasOptions, refeicoesOptions, onUpdateField, semCusto, showTrashInRow,
-  contexto,
+  temDias, diasOptions = [], refeicoesOptions = [], onUpdateField = () => {}, semCusto = false, showTrashInRow = false,
+  contexto = null,
 }) {
   const linkTo = contexto && contexto.nome
     ? `/receita/${rec.receita_id}?ctxPc=${rec.per_capita_g || 0}&ctxPessoas=${contexto.pessoas || 0}&ctxNome=${encodeURIComponent(contexto.nome)}${contexto.cardapioId ? `&ctxCardapioId=${contexto.cardapioId}&ctxCardapioReceitaId=${rec.id}` : ""}`
