@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, CheckCircle2, DollarSign, Eye, Loader2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, DollarSign, Eye, Loader2, ShieldCheck, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
@@ -22,12 +22,16 @@ const MOTIVO_LABEL = {
   ingrediente_nao_encontrado: "ingrediente não encontrado",
   esquecido_sem_preco: "ingrediente esquecido sem preço",
   esquecido_preco_legado: "ingrediente esquecido depende de cache legado",
+  insumo_sem_preco: "insumo sem preço",
+  subreceita_sem_cache: "sub-receita sem cache",
+  receita_sem_composicao_custeavel: "receita sem composição custeável",
 };
 
 export default function AuditoriaCustosReceitas() {
   const qc = useQueryClient();
   const [processando, setProcessando] = useState(false);
   const [preview, setPreview] = useState(null);
+  const [saneamentoPreview, setSaneamentoPreview] = useState(null);
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["auditoria-custos-receitas"],
@@ -38,6 +42,12 @@ export default function AuditoriaCustosReceitas() {
   const { data: logs = [] } = useQuery({
     queryKey: ["auditoria-custos-receitas-logs"],
     queryFn: () => base44.entities.NormalizacaoCustoReceitaLog.list("-executado_em", 20),
+    staleTime: 30 * 1000,
+  });
+
+  const { data: logsSaneamento = [] } = useQuery({
+    queryKey: ["auditoria-custos-pendencias-logs"],
+    queryFn: () => base44.entities.SaneamentoCustoPendenciaLog.list("-executado_em", 20),
     staleTime: 30 * 1000,
   });
 
@@ -75,6 +85,56 @@ export default function AuditoriaCustosReceitas() {
       toast.success(`Análise concluída: ${dados.migraveis || 0} migrável(is), ${dados.incompletas || 0} incompleta(s).`);
     } catch (error) {
       toast.error("Erro ao analisar custos: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const analisarPendencias = async () => {
+    setProcessando(true);
+    try {
+      const res = await base44.functions.invoke("sanearCustosPendentes", { dry_run: true });
+      const dados = res?.data || {};
+      setSaneamentoPreview(dados);
+      toast.success(`Pendências analisadas: ${dados.receitas_potencialmente_resolvidas || 0} receita(s) podem ser resolvidas automaticamente.`);
+    } catch (error) {
+      toast.error("Erro ao analisar pendências: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const aplicarSaneamento = async () => {
+    if (!saneamentoPreview) {
+      toast.error("Execute a análise das pendências antes de aplicar correções.");
+      return;
+    }
+    const ok = window.confirm(
+      `Aplicar somente as correções determinísticas encontradas? ` +
+      `${saneamentoPreview.receitas_potencialmente_resolvidas || 0} receita(s) podem ficar completas; casos ambíguos permanecerão para revisão manual.`
+    );
+    if (!ok) return;
+
+    setProcessando(true);
+    try {
+      const saneamento = await base44.functions.invoke("sanearCustosPendentes", { dry_run: false });
+      const recalculo = await base44.functions.invoke("normalizarCustosReceitas", { dry_run: false, somente_incompletas: true });
+      const saneamentoDados = saneamento?.data || {};
+      const recalculoDados = recalculo?.data || {};
+      setSaneamentoPreview(null);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas"] }),
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas-logs"] }),
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-pendencias-logs"] }),
+        qc.invalidateQueries({ queryKey: ["receitas"] }),
+        qc.invalidateQueries({ queryKey: ["ingredientes"] }),
+      ]);
+      toast.success(
+        `${recalculoDados.migraveis || 0} receita(s) saneada(s); ${recalculoDados.incompletas || 0} continuam em revisão manual. ` +
+        `${(saneamentoDados.correcoes?.referencias_reapontaveis || 0)} referência(s) reapontada(s).`
+      );
+    } catch (error) {
+      toast.error("Erro ao aplicar saneamento: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
     } finally {
       setProcessando(false);
     }
@@ -119,10 +179,18 @@ export default function AuditoriaCustosReceitas() {
         <div>
           <h2 className="font-display text-xl font-bold">Receitas · Custos</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-            Fase 10.1: saneamento e migração controlada. Primeiro simula todo o cálculo; depois aplica somente caches completos. Registros incompletos preservam os valores monetários existentes.
+            Fases 10.1–10.2: custos canônicos, saneamento por causa-raiz e correções determinísticas. Registros ambíguos ou sem fonte confiável permanecem bloqueados para revisão manual.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={analisarPendencias} disabled={processando || diagnostico.incompletas === 0} className="gap-2">
+            {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wrench className="w-4 h-4" />}
+            Analisar pendências
+          </Button>
+          <Button onClick={aplicarSaneamento} disabled={processando || !saneamentoPreview} className="gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            Aplicar saneamento seguro
+          </Button>
           <Button variant="outline" onClick={analisarMigracao} disabled={processando} className="gap-2">
             {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
             Analisar migração
@@ -141,6 +209,52 @@ export default function AuditoriaCustosReceitas() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Incompletas</p><p className="text-xl font-bold text-destructive">{diagnostico.incompletas}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Itens problemáticos</p><p className="text-xl font-bold">{diagnostico.semPreco}</p></Card>
       </div>
+
+      {saneamentoPreview && (
+        <Card className="p-4 border-amber-400/40">
+          <div className="flex items-center gap-2 mb-3">
+            <Wrench className="w-5 h-5 text-amber-700" />
+            <div>
+              <h3 className="font-semibold">Fase 10.2 — análise das pendências por causa-raiz</h3>
+              <p className="text-xs text-muted-foreground">Somente vínculo exato/único e preço matematicamente derivável são classificados como automáticos.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div><p className="text-xs text-muted-foreground">Incompletas</p><p className="text-lg font-bold">{saneamentoPreview.receitas_incompletas || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Resolvíveis</p><p className="text-lg font-bold text-primary">{saneamentoPreview.receitas_potencialmente_resolvidas || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Revisão manual</p><p className="text-lg font-bold text-destructive">{saneamentoPreview.receitas_com_revisao_manual || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Preços deriváveis</p><p className="text-lg font-bold">{(saneamentoPreview.correcoes?.precos_derivados_mestre || 0) + (saneamentoPreview.correcoes?.precos_derivados_usuario || 0)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Referências</p><p className="text-lg font-bold">{saneamentoPreview.correcoes?.referencias_reapontaveis || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Insumos</p><p className="text-lg font-bold">{saneamentoPreview.correcoes?.insumos_recalculaveis || 0}</p></div>
+          </div>
+
+          {(saneamentoPreview.grupos?.precos || []).length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Principais ingredientes sem preço</p>
+              <div className="flex flex-wrap gap-1.5">
+                {saneamentoPreview.grupos.precos.slice(0, 12).map((g, idx) => (
+                  <Badge key={`${g.ingrediente_id || g.ingrediente_nome}-${idx}`} variant={g.automatico ? "secondary" : "outline"} className="text-[10px]">
+                    {g.ingrediente_nome || "Sem nome"} · {g.ocorrencias} ocorrência(s) · {g.automatico ? "automático" : "manual"}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(saneamentoPreview.grupos?.referencias || []).length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Referências quebradas</p>
+              <div className="flex flex-wrap gap-1.5">
+                {saneamentoPreview.grupos.referencias.slice(0, 12).map((g, idx) => (
+                  <Badge key={`${g.ingrediente_id_antigo || g.ingrediente_nome_cache}-${idx}`} variant={g.automatico ? "secondary" : "outline"} className="text-[10px]">
+                    {g.ingrediente_nome_cache || g.tipo} · {g.ocorrencias} · {g.automatico ? "reapontável" : "manual"}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       {preview && (
         <Card className="p-4 border-primary/30">
@@ -210,6 +324,24 @@ export default function AuditoriaCustosReceitas() {
             </div>
           ))}
         </div>
+      )}
+
+      {logsSaneamento.length > 0 && (
+        <Card className="p-4">
+          <h3 className="font-semibold flex items-center gap-2 mb-3"><Wrench className="w-4 h-4" /> Histórico de saneamento 10.2</h3>
+          <div className="space-y-1.5 text-xs">
+            {logsSaneamento.slice(0, 10).map((log) => (
+              <div key={log.id} className="flex flex-wrap gap-x-3 gap-y-1 border-t first:border-0 pt-1.5 first:pt-0">
+                <span className="font-medium">{log.receitas_incompletas_antes || 0} incompleta(s) analisada(s)</span>
+                <span>{log.precos_derivados_mestre || 0} preço(s) mestre derivado(s)</span>
+                <span>{log.referencias_reapontadas || 0} referência(s) reapontada(s)</span>
+                <span>{log.insumos_recalculados || 0} insumo(s) corrigido(s)</span>
+                <span>{log.pendencias_manuais || 0} receita(s) manual(is)</span>
+                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {logs.length > 0 && (
