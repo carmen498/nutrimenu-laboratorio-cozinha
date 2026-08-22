@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CheckCircle, RefreshCw, XCircle, FileText, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { uploadArquivoSeguro, validarCsvUpload } from "@/lib/securityHardening";
 
 export default function ImportarIngredientesDialog({ open, onClose, onImported }) {
   const [file, setFile] = useState(null);
@@ -25,11 +26,9 @@ export default function ImportarIngredientesDialog({ open, onClose, onImported }
 
     let file_url;
     try {
-      const uploadRes = await base44.integrations.Core.UploadFile({ file });
-      file_url = uploadRes.file_url;
-      if (!file_url) throw new Error("Upload não retornou URL do arquivo.");
+      file_url = await uploadArquivoSeguro(base44, file, validarCsvUpload);
     } catch (err) {
-      const msg = "Falha ao enviar arquivo: " + (err?.message || JSON.stringify(err) || "erro desconhecido");
+      const msg = "Falha ao enviar arquivo: " + (err?.message || "erro desconhecido");
       setError(msg);
       toast.error(msg);
       setImporting(false);
@@ -42,7 +41,7 @@ export default function ImportarIngredientesDialog({ open, onClose, onImported }
       const res = await base44.functions.invoke("importarIngredientesCsv", { file_url });
       const data = res.data;
       if (!data || typeof data !== "object") {
-        throw new Error("Resposta inválida da função: " + JSON.stringify(res));
+        throw new Error("Resposta inválida da função de importação.");
       }
       if (data.error) {
         throw new Error(data.error);
@@ -53,7 +52,7 @@ export default function ImportarIngredientesDialog({ open, onClose, onImported }
       }
       if (onImported) onImported();
     } catch (err) {
-      const msg = "Erro no processamento: " + (err?.response?.data?.error || err?.message || JSON.stringify(err) || "erro desconhecido");
+      const msg = "Erro no processamento: " + (err?.response?.data?.error || err?.message || "erro desconhecido");
       setError(msg);
       toast.error(msg);
     } finally {
