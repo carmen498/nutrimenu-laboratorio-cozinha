@@ -4,6 +4,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
+import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Seu teste gratuito terminou";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu período de teste no Laboratório de Cozinha terminou hoje.</p>
@@ -23,6 +24,7 @@ export default async function(req: Request): Promise<Response> {
     let enviados = 0;
     for (const usuario of usuarios) {
       if (!usuario.email) continue;
+      if (await notificacaoJaProcessadaHoje(base44, "trial_vencido", usuario)) continue;
       const nome = usuario.nome_completo || usuario.full_name || "";
       const { assunto, html } = await renderTemplateEmail(base44, "trial_vencido", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
