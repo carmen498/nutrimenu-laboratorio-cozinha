@@ -452,19 +452,31 @@ export default function CardapioAberto() {
           const nome = ing.ingrediente_nome || ing.subreceita_nome || "";
           if (!nome) continue;
           const key = nome.toLowerCase();
-          const qtd = (Number(ing.quantidade_por_porcao) || 0) * fator;
+          const qtdLiquida = (Number(ing.quantidade_por_porcao) || 0) * fator;
           if (!mapa[key]) mapa[key] = { nome, tipo: ing.tipo, quantidade_g: 0, custo: 0, origens: [], categoria: "" };
-          mapa[key].quantidade_g += qtd;
           if (!mapa[key].origens.includes(cr.receita_nome)) mapa[key].origens.push(cr.receita_nome);
-          if (ing.tipo === "subreceita") mapa[key].origemSub = cr.receita_nome;
+          if (ing.tipo === "subreceita") {
+            mapa[key].quantidade_g += qtdLiquida;
+            mapa[key].origemSub = cr.receita_nome;
+            continue;
+          }
           if (ing.ingrediente_id) {
-            try {
-              const ingData = await base44.entities.Ingrediente.get(ing.ingrediente_id);
-              if (ingData) {
-                mapa[key].custo += qtd * (Number(ingData.preco_por_g_rs) || 0);
-                mapa[key].categoria = ingData.categoria || "";
-              }
-            } catch (e) { /* ignore */ }
+            const ingData = ingredienteMap[ing.ingrediente_id];
+            if (ingData) {
+              const calculado = calcularItemIngredienteReceita({
+                item: ing,
+                ingrediente: ingData,
+                quantidadeLiquida: qtdLiquida,
+              });
+              // Lista de compras usa PB (PL × FC), a mesma base usada pelo custo.
+              mapa[key].quantidade_g += calculado.pesoBruto;
+              mapa[key].custo += calculado.custo;
+              mapa[key].categoria = ingData.categoria || "";
+            } else {
+              mapa[key].quantidade_g += qtdLiquida;
+            }
+          } else {
+            mapa[key].quantidade_g += qtdLiquida;
           }
         }
       } catch (e) { console.error(e); }
