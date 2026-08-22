@@ -6,7 +6,14 @@
       "enum": [
         "admin",
         "user"
-      ]
+      ],
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "nome_completo": {
       "type": "string",
@@ -28,7 +35,14 @@
         "anual",
         "renovacao"
       ],
-      "description": "Plano comercial atual do usu\u00e1rio"
+      "description": "Plano comercial atual do usu\u00e1rio",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "status_assinatura": {
       "type": "string",
@@ -39,27 +53,62 @@
         "cancelado",
         "inativo"
       ],
-      "description": "Status atual da assinatura do usu\u00e1rio. 'inativo' \u00e9 usado quando o admin desativa manualmente a conta"
+      "description": "Status atual da assinatura do usu\u00e1rio. 'inativo' \u00e9 usado quando o admin desativa manualmente a conta",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "data_inicio": {
       "type": "string",
       "format": "date",
-      "description": "Data de in\u00edcio do plano/assinatura atual"
+      "description": "Data de in\u00edcio do plano/assinatura atual",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "data_expiracao": {
       "type": "string",
       "format": "date",
-      "description": "Data em que o acesso deixa de ser v\u00e1lido se n\u00e3o houver renova\u00e7\u00e3o/pagamento"
+      "description": "Data em que o acesso deixa de ser v\u00e1lido se n\u00e3o houver renova\u00e7\u00e3o/pagamento",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "data_proxima_cobranca": {
       "type": "string",
       "format": "date",
-      "description": "Data prevista da pr\u00f3xima cobran\u00e7a (planos recorrentes, opcional)"
+      "description": "Data prevista da pr\u00f3xima cobran\u00e7a (planos recorrentes, opcional)",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "ciclo_renovacao": {
       "type": "number",
       "default": 0,
-      "description": "Contador de quantas vezes o usu\u00e1rio j\u00e1 renovou o plano, usado para liberar o plano 'Renova\u00e7\u00e3o' a partir do 2\u00ba ano"
+      "description": "Contador de quantas vezes o usu\u00e1rio j\u00e1 renovou o plano, usado para liberar o plano 'Renova\u00e7\u00e3o' a partir do 2\u00ba ano",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "cpf_cnpj": {
       "type": "string",
@@ -110,7 +159,19 @@
     },
     "anotacoes_admin": {
       "type": "string",
-      "description": "Anota\u00e7\u00f5es internas sobre o cliente (contatos feitos, pedidos especiais, hist\u00f3rico). Vis\u00edvel e edit\u00e1vel apenas pelo admin, nunca pelo usu\u00e1rio titular"
+      "description": "Anota\u00e7\u00f5es internas sobre o cliente (contatos feitos, pedidos especiais, hist\u00f3rico). Vis\u00edvel e edit\u00e1vel apenas pelo admin, nunca pelo usu\u00e1rio titular",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "termos_aceitos_em": {
       "type": "string",
