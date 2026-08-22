@@ -94,10 +94,6 @@ export default function ConfiguracoesEmailTab() {
           <Label>Endereço (rodapé)</Label>
           <Input value={form.endereco_rodape} onChange={set("endereco_rodape")} />
         </div>
-        <div className="space-y-1.5">
-          <Label>Texto do link de cancelamento</Label>
-          <Input value={form.texto_cancelamento} onChange={set("texto_cancelamento")} />
-        </div>
         <Button onClick={handleSalvar} disabled={salvando}>
           {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           Salvar
@@ -127,7 +123,6 @@ export default function ConfiguracoesEmailTab() {
             <div>{form.assinatura_rodape}</div>
             {form.email_contato && <div>{form.email_contato}</div>}
             {form.endereco_rodape && <div>{form.endereco_rodape}</div>}
-            <div className="mt-2 underline">{form.texto_cancelamento}</div>
           </div>
         </div>
       </div>
