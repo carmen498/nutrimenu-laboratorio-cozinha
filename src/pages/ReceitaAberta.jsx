@@ -1,4 +1,5 @@
 import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -860,7 +861,7 @@ export default function ReceitaAberta() {
   const duplicarReceitaMut = useMutation({
     mutationFn: async () => {
       const { id: _id, created_date, updated_date, created_by_id, ...rest } = receita;
-      const nova = await base44.entities.Receita.create({ ...rest, nome: `${receita.nome} (cópia)` });
+      const nova = await criarReceitaSegura({ ...rest, nome: `${receita.nome} (cópia)` });
       for (const item of itens) {
         const { id: iid, created_date: cd, updated_date: ud, created_by_id: cb, ...irest } = item;
         await criarIngredienteReceita({ ...irest, receita_id: nova.id });
