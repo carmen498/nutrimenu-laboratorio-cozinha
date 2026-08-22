@@ -61,8 +61,8 @@ export default function CalculadoraCusto({
 }) {
   const [itens, setItens] = useState(initialItens);
   const [unidades, setUnidades] = useState(initialUnidades);
-  const [quantidade, setQuantidade] = useState(initialQuantidade);
-  const [precoTotal, setPrecoTotal] = useState(initialPrecoTotal);
+  const [quantidade, setQuantidade] = useState(/** @type {any} */ (initialQuantidade));
+  const [precoTotal, setPrecoTotal] = useState(/** @type {any} */ (initialPrecoTotal));
   const [showExemplos, setShowExemplos] = useState(false);
 
   const resultado =
