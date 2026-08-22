@@ -10,6 +10,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     // Load all tags — only care about the auto tags
     const tags = await base44.asServiceRole.entities.Tag.list('nome', 200);
