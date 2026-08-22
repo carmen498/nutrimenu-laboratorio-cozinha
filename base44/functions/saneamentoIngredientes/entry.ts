@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const normalize = (s) => {
       if (!s) return "";
@@ -17,10 +18,8 @@ Deno.serve(async (req) => {
         .trim();
     };
 
-    // 1. Get all ingredients
     const allIngredientes = await base44.asServiceRole.entities.Ingrediente.list("nome", 2000);
 
-    // Build normalized name → ingredient map (prefer one with valid price on conflicts)
     const ingByNormName = {};
     allIngredientes.forEach(ing => {
       const norm = normalize(ing.nome);
@@ -34,17 +33,14 @@ Deno.serve(async (req) => {
     const ingMap = {};
     allIngredientes.forEach(i => { ingMap[i.id] = i; });
 
-    // 2. Get all IngredienteReceita with tipo="ingrediente"
     const allItems = await base44.asServiceRole.entities.IngredienteReceita.filter(
       { tipo: "ingrediente" }, "ordem", 5000
     );
 
-    // 3. Find lines with missing or invalid ingrediente_id
     const broken = allItems.filter(item =>
       !item.ingrediente_id || !ingIdSet.has(item.ingrediente_id)
     );
 
-    // 4. Re-link by name
     let fixed = 0;
     const notFound = [];
     const updates = [];
@@ -62,7 +58,6 @@ Deno.serve(async (req) => {
         fixed++;
         continue;
       }
-      // Partial match: line name contained in ingredient name or vice versa (min 4 chars)
       if (norm.length >= 4) {
         let partialMatch = null;
         for (const [ingNorm, ing] of Object.entries(ingByNormName)) {
@@ -80,7 +75,6 @@ Deno.serve(async (req) => {
       notFound.push({ id: item.id, nome: nome, receita_id: item.receita_id, reason: "no match" });
     }
 
-    // 5. Second pass: fix mismatched lines (valid ingrediente_id but name doesn't match)
     let mismatchFixed = 0;
     const mismatchNotFound = [];
     for (const item of allItems) {
@@ -91,7 +85,6 @@ Deno.serve(async (req) => {
       const lineNorm = normalize(item.ingrediente_nome);
       const ingNorm = normalize(ing.nome);
       if (lineNorm === ingNorm) continue;
-      // Mismatch detected — try to find correct ingredient by name
       const correctIng = ingByNormName[lineNorm];
       if (correctIng && correctIng.id !== item.ingrediente_id) {
         updates.push({ id: item.id, ingrediente_id: correctIng.id });
@@ -101,7 +94,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 6. Bulk update in batches of 500
     if (updates.length > 0) {
       for (let i = 0; i < updates.length; i += 500) {
         await base44.asServiceRole.entities.IngredienteReceita.bulkUpdate(updates.slice(i, i + 500));
