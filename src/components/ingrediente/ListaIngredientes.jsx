@@ -41,6 +41,7 @@ export default function ListaIngredientes({
   setShowForm,
   onAddToCarrinho,
   addingCarrinhoId,
+  isAdmin = false,
 }) {
   const [excluirIng, setExcluirIng] = useState(null);
   const [editarAlertIng, setEditarAlertIng] = useState(null);
@@ -75,6 +76,15 @@ export default function ListaIngredientes({
   }, [ingredientes]);
 
   const isTodasCategorias = !accordionAberto;
+
+  const abrirEdicao = (ing) => {
+    if (isAdmin) {
+      setEditarAlertIng(ing);
+      return;
+    }
+    setEditItem(ing);
+    setShowForm(true);
+  };
 
   const renderLinha = (ing) => {
     const dias = diasDesdeAtualizacao(ing);
@@ -126,7 +136,7 @@ export default function ListaIngredientes({
             className={`p-1 rounded-full hover:bg-muted ${favoritarMut.isPending ? "opacity-50 pointer-events-none" : ""}`}
             onClick={() => favoritarMut.mutate({ id: ing.id, favorito: !ing.favorito })}
             disabled={favoritarMut.isPending}
-            title={ing.favorito ? "Remover dos favoritos" : "Marcar como favorito"}
+            title={ing.favorito ? "Remover dos meus favoritos" : "Marcar como meu favorito"}
           >
             <Star className={`w-3.5 h-3.5 ${ing.favorito ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
           </button>
@@ -138,16 +148,43 @@ export default function ListaIngredientes({
           >
             <ShoppingCart className={`w-3.5 h-3.5 ${addingCarrinhoId === ing.id ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
           </button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditarAlertIng(ing)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => abrirEdicao(ing)}
+            title={isAdmin ? "Editar ingrediente" : "Editar meu preço"}
+          >
             <Pencil className="w-3 h-3" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setExcluirIng(ing)}>
-            <Trash2 className="w-3 h-3" />
-          </Button>
+          {isAdmin && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setExcluirIng(ing)} title="Excluir ingrediente">
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          )}
         </div>
       </div>
     );
   };
+
+  const dialogsAdmin = isAdmin ? (
+    <>
+      <ExcluirIngredienteDialog
+        open={!!excluirIng}
+        onClose={() => setExcluirIng(null)}
+        ingrediente={excluirIng}
+        mode="delete"
+        onConfirm={() => { setExcluirIng(null); onDeleteComplete(); }}
+      />
+      <ExcluirIngredienteDialog
+        open={!!editarAlertIng}
+        onClose={() => setEditarAlertIng(null)}
+        ingrediente={editarAlertIng}
+        mode="edit"
+        onConfirm={() => { const ing = editarAlertIng; setEditarAlertIng(null); setEditItem(ing); setShowForm(true); }}
+      />
+    </>
+  ) : null;
 
   if (accordionAberto && grupoAtivo) {
     return (
@@ -188,20 +225,7 @@ export default function ListaIngredientes({
             </Button>
           </div>
         )}
-        <ExcluirIngredienteDialog
-          open={!!excluirIng}
-          onClose={() => setExcluirIng(null)}
-          ingrediente={excluirIng}
-          mode="delete"
-          onConfirm={() => { setExcluirIng(null); onDeleteComplete(); }}
-        />
-        <ExcluirIngredienteDialog
-          open={!!editarAlertIng}
-          onClose={() => setEditarAlertIng(null)}
-          ingrediente={editarAlertIng}
-          mode="edit"
-          onConfirm={() => { const ing = editarAlertIng; setEditarAlertIng(null); setEditItem(ing); setShowForm(true); }}
-        />
+        {dialogsAdmin}
       </>
     );
   }
@@ -212,7 +236,7 @@ export default function ListaIngredientes({
       return (
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg font-medium">Nenhum ingrediente encontrado</p>
-          <p className="text-sm mt-1">Importe um CSV ou cadastre manualmente.</p>
+          <p className="text-sm mt-1">Nenhum ingrediente disponível.</p>
         </div>
       );
     }
@@ -254,20 +278,7 @@ export default function ListaIngredientes({
             </Button>
           </div>
         )}
-        <ExcluirIngredienteDialog
-          open={!!excluirIng}
-          onClose={() => setExcluirIng(null)}
-          ingrediente={excluirIng}
-          mode="delete"
-          onConfirm={() => { setExcluirIng(null); onDeleteComplete(); }}
-        />
-        <ExcluirIngredienteDialog
-          open={!!editarAlertIng}
-          onClose={() => setEditarAlertIng(null)}
-          ingrediente={editarAlertIng}
-          mode="edit"
-          onConfirm={() => { const ing = editarAlertIng; setEditarAlertIng(null); setEditItem(ing); setShowForm(true); }}
-        />
+        {dialogsAdmin}
       </>
     );
   }
