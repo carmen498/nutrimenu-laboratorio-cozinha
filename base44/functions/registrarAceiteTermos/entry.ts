@@ -8,9 +8,10 @@ export default async function(req: Request): Promise<Response> {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    // Preserva o primeiro aceite registrado. Nova versão de termos deve ter um
-    // fluxo explícito de reaceite, em vez de sobrescrever silenciosamente a prova anterior.
-    if (user.termos_aceitos_em && user.termos_versao_aceita) {
+    // Se a versão vigente já foi aceita, a operação é idempotente. Uma versão
+    // anterior não serve como aceite da versão atual: o usuário deve confirmar
+    // novamente pela interface antes de este endpoint ser chamado.
+    if (user.termos_aceitos_em && user.termos_versao_aceita === VERSAO_TERMOS) {
       return Response.json({
         success: true,
         already_recorded: true,
