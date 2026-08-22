@@ -1,20 +1,39 @@
 import { base44 } from "@/api/base44Client";
 
-// Preços personalizados por cliente (não-admin) — sobrescrevem, só para quem os
-// criou, o preco_por_g_rs do cadastro compartilhado de Ingrediente. O cadastro
-// original NUNCA é alterado por um não-admin; a "edição" vira um registro pessoal
-// aqui, de forma transparente (sem erro de permissão visível).
+// LEGADO DE COMPATIBILIDADE — Fase 3
+// A fonte principal dos dados comerciais pessoais passou a ser IngredienteUsuario.
+// Esta entidade continua sendo lida/escrita temporariamente para não quebrar módulos
+// de custo que ainda dependem exclusivamente de PrecoIngredienteCliente.
 
 export async function buscarPrecosPersonalizados(userId) {
   if (!userId) return {};
-  const registros = await base44.entities.PrecoIngredienteCliente.filter({ user_id: userId });
+
+  const pageSize = 500;
+  let skip = 0;
+  let registros = [];
+  while (true) {
+    const pagina = await base44.entities.PrecoIngredienteCliente.filter(
+      { user_id: userId },
+      "-updated_at",
+      pageSize,
+      skip
+    );
+    registros = registros.concat(pagina || []);
+    if (!pagina || pagina.length < pageSize) break;
+    skip += pageSize;
+  }
+
   const map = {};
-  registros.forEach((r) => { map[r.ingrediente_id] = r; });
+  registros.forEach((r) => {
+    if (!r?.ingrediente_id || map[r.ingrediente_id]) return;
+    map[r.ingrediente_id] = r;
+  });
   return map;
 }
 
-// Retorna uma NOVA lista de ingredientes com preco_por_g_rs (e preco_embalagem_rs
-// derivado) sobrescritos onde houver preço personalizado — nunca muta o original.
+// Fallback legado: sobrescreve somente preço. Depois desta etapa,
+// aplicarPreferenciasIngredientes pode sobrescrever todos os dados comerciais
+// com os valores mais novos vindos de IngredienteUsuario.
 export function aplicarPrecosPersonalizados(ingredientes, precosMap) {
   if (!precosMap || Object.keys(precosMap).length === 0) return ingredientes;
   return ingredientes.map((ing) => {
@@ -30,7 +49,8 @@ export function aplicarPrecosPersonalizados(ingredientes, precosMap) {
   });
 }
 
-// Cria ou atualiza o preço personalizado do usuário para um ingrediente.
+// Espelho temporário do preço pessoal. Novas funcionalidades devem usar
+// salvarDadosComerciaisIngrediente em preferenciaIngredienteUsuario.js.
 export async function salvarPrecoPersonalizado({ ingredienteId, userId, precoPorGRs }) {
   const existentes = await base44.entities.PrecoIngredienteCliente.filter({
     ingrediente_id: ingredienteId,
