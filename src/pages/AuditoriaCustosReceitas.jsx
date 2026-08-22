@@ -338,7 +338,7 @@ export default function AuditoriaCustosReceitas() {
                 <span>{log.precos_derivados_mestre || 0} preço(s) mestre derivado(s)</span>
                 <span>{log.referencias_reapontadas || 0} referência(s) reapontada(s)</span>
                 <span>{log.insumos_recalculados || 0} insumo(s) corrigido(s)</span>
-                <span>{log.pendencias_manuais || 0} receita(s) manual(is)</span>
+                <span>{log.pendencias_manuais == null ? "—" : log.pendencias_manuais} receita(s) manual(is)</span>
                 <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
               </div>
             ))}
