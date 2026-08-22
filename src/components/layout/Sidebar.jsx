@@ -84,7 +84,7 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           </button>
         </div>
         <button
-          onClick={() => base44.auth.logout()}
+          onClick={() => base44.auth.logout('/')}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground transition-colors"
         >
           <LogOut className="w-4 h-4" /> Sair
