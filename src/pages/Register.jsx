@@ -56,9 +56,8 @@ export default function Register() {
       await base44.auth.updateMe({
         nome_completo: fullName,
         telefone_whatsapp: telefone,
-        termos_aceitos_em: new Date().toISOString(),
-        termos_versao_aceita: VERSAO_TERMOS,
       });
+      await base44.functions.invoke("registrarAceiteTermos", {});
       await base44.functions.invoke("inicializarTrialUsuario", {});
       window.location.href = "/";
     } catch (err) {
