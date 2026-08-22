@@ -20,6 +20,7 @@ import ListaPlanejamentos from "@/components/planejamento/ListaPlanejamentos";
 import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 import { useAuth } from "@/lib/AuthContext";
 import MeusCardapiosCard from "@/components/cardapio/MeusCardapiosCard";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 const TIPOS_CARDAPIO = [
   { nome: "Diário",        key: "diario",        icone: "🏠", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
@@ -71,7 +72,7 @@ export default function Cardapios() {
       ]);
       setCardapios(lista || []);
       setTags(todasTags || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
     setLoading(false);
   };
 
@@ -81,7 +82,7 @@ export default function Cardapios() {
     if (!user?.id) return;
     base44.entities.Cardapio.filter({ usuario_dono_id: user.id }, "", 500)
       .then((lista) => setMeusCardapiosCount((lista || []).length))
-      .catch((e) => console.error(e));
+      .catch((e) => consoleErrorSeguro("Erro em cardápios", e));
   }, [user?.id]);
 
   // Load cardapio tags when filter is active
@@ -135,7 +136,7 @@ export default function Cardapios() {
       setShowNovo(false);
       load();
       navigate(`/cardapio/${c.id}`);
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
     setSalvando(false);
   };
 
@@ -147,7 +148,7 @@ export default function Cardapios() {
     try {
       await base44.entities.Cardapio.update(c.id, { favorito: !c.favorito });
       setCardapios(prev => prev.map(x => x.id === c.id ? { ...x, favorito: !c.favorito } : x));
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
     setFavPending(p => ({ ...p, [c.id]: false }));
   };
 
@@ -198,7 +199,7 @@ export default function Cardapios() {
       }
       load();
       navigate(`/cardapio/${novo.id}`);
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
   };
 
   const formatarData = (d) => {
