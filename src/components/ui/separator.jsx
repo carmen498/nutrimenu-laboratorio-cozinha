@@ -6,7 +6,7 @@ import * as SeparatorPrimitive from "@radix-ui/react-separator"
 import { cn } from "@/lib/utils"
 
 const Separator = forwardRefAny((
-  { className, orientation = "horizontal", decorative = true, ...props },
+  /** @type {any} */ { className, orientation = "horizontal", decorative = true, ...props },
   ref
 ) => (
   <SeparatorPrimitive.Root
