@@ -5,12 +5,13 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json();
     const file_url = body.file_url;
     if (!file_url) return Response.json({ error: 'file_url é obrigatório' }, { status: 400 });
 
-    // ── Fetch & parse CSV ──
+    // Sinônimos fazem parte do catálogo mestre e só podem ser importados por admin.
     const response = await fetch(file_url);
     const csvText = await response.text();
     const rows = parseCSV(csvText);
@@ -28,22 +29,18 @@ Deno.serve(async (req) => {
 
     const dataRows = rows.slice(1).filter(r => r.length > 0 && r.some(c => c.trim() !== ''));
 
-    // ── READ-ONLY: load ingredients into map (case-insensitive key) ──
-    // ABSOLUTELY NO create/update/delete on Ingrediente — list only
     const ingredientes = await base44.entities.Ingrediente.list('-nome', 500);
     const ingMap = {};
     ingredientes.forEach(ing => {
       if (ing.nome) ingMap[ing.nome.toLowerCase().trim()] = ing;
     });
 
-    // ── READ-ONLY: load existing synonyms for duplicate detection ──
     const sinonimosExistentes = await base44.entities.SinonimosIngredientes.list('-created_date', 1000);
     const sinonimoSet = new Set();
     sinonimosExistentes.forEach(s => {
       if (s.sinonimo) sinonimoSet.add(s.sinonimo.toLowerCase().trim());
     });
 
-    // ── FIRST PASS: validate all rows, collect valid records & rejections ──
     const validRecords = [];
     const rejeitados = [];
     let ignorados = 0;
@@ -64,14 +61,12 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Look up ingredient (READ ONLY — never create)
       const ing = ingMap[nome.toLowerCase()];
       if (!ing) {
         rejeitados.push({ linha: linhaNum, ingrediente_nome: nome, sinonimo, motivo: 'ingrediente não encontrado' });
         continue;
       }
 
-      // Check duplicate (case-insensitive, across ALL ingredients)
       const sinKey = sinonimo.toLowerCase().trim();
       if (sinonimoSet.has(sinKey) || batchDupSet.has(sinKey)) {
         ignorados++;
@@ -85,7 +80,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── SECOND PASS: batch create valid records (batches of 50) ──
     let criados = 0;
     const BATCH_SIZE = 50;
     for (let i = 0; i < validRecords.length; i += BATCH_SIZE) {
