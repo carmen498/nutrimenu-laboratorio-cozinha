@@ -1,3 +1,4 @@
+import { criarCardapioInsumo, criarCardapioReceita } from '@/lib/secureChildEntities';
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -168,7 +169,7 @@ export default function Cardapios() {
       // Duplicate receitas
       const recs = await base44.entities.CardapioReceita.filter({ cardapio_id: c.id }, "ordem", 100);
       for (const r of (recs || [])) {
-        await base44.entities.CardapioReceita.create({
+        await criarCardapioReceita({
           cardapio_id: novo.id,
           receita_id: r.receita_id,
           receita_nome: r.receita_nome,
@@ -184,7 +185,7 @@ export default function Cardapios() {
       // Duplicate insumos
       const ins = await base44.entities.CardapioInsumo.filter({ cardapio_id: c.id }, "created_date", 100);
       for (const i of (ins || [])) {
-        await base44.entities.CardapioInsumo.create({
+        await criarCardapioInsumo({
           cardapio_id: novo.id,
           insumo_id: i.insumo_id,
           nome: i.nome,

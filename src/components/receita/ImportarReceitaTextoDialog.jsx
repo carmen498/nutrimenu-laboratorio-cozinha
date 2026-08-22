@@ -1,3 +1,4 @@
+import { criarIngredienteReceita } from '@/lib/secureChildEntities';
 import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,7 +75,7 @@ async function criarReceitaDoItem(item, ingredientesById) {
 
   for (let i = 0; i < resolvidos.length; i++) {
     const ing = resolvidos[i];
-    await base44.entities.IngredienteReceita.create({
+    await criarIngredienteReceita({
       receita_id: receita.id,
       tipo: "ingrediente",
       ingrediente_id: ing.ingrediente_id,

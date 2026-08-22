@@ -1,3 +1,4 @@
+import { criarIngredienteReceita } from '@/lib/secureChildEntities';
 import { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -498,7 +499,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         let ordem = 0;
         for (const ing of ingredientes) {
           if (ing.tipo === "grupo") {
-            await base44.entities.IngredienteReceita.create({
+            await criarIngredienteReceita({
               receita_id: receitaId,
               ingrediente_id: "",
               ingrediente_nome: "",
@@ -561,7 +562,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
             ingredienteMap[ingNomeFinal.toLowerCase()] = novoIng;
           }
 
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             receita_id: receitaId,
             ingrediente_id: ingId,
             ingrediente_nome: ingNomeFinal,

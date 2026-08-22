@@ -1,3 +1,4 @@
+import { criarInsumoReceita } from '@/lib/secureChildEntities';
 import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -88,7 +89,7 @@ export default function InsumosSection({ receitaId }) {
           preco_unitario: 0,
         });
       }
-      await base44.entities.InsumoReceita.create({
+      await criarInsumoReceita({
         receita_id: receitaId,
         insumo_id: insumoDB.id,
         insumo_nome: insumoDB.nome,
@@ -117,7 +118,7 @@ export default function InsumosSection({ receitaId }) {
         unidade: customUnidade,
         preco_unitario: 0,
       });
-      await base44.entities.InsumoReceita.create({
+      await criarInsumoReceita({
         receita_id: receitaId,
         insumo_id: insumoDB.id,
         insumo_nome: insumoDB.nome,

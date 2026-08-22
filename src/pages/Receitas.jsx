@@ -1,3 +1,4 @@
+import { criarIngredienteReceita } from '@/lib/secureChildEntities';
 import { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -162,7 +163,7 @@ export default function Receitas() {
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: receita.id });
       for (const ing of ings) {
         const { id: iid, created_date: cd, updated_date: ud, created_by_id: cb, ...irest } = ing;
-        await base44.entities.IngredienteReceita.create({ ...irest, receita_id: nova.id });
+        await criarIngredienteReceita({ ...irest, receita_id: nova.id });
       }
       return nova;
     },

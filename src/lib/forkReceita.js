@@ -1,3 +1,4 @@
+import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -44,7 +45,7 @@ export async function garantirReceitaEditavel({ receita, itens = [], receitaTags
   const criados = [];
   for (const item of itens) {
     const { id: oldItemId, created_date: cd, updated_date: ud, created_by_id: cb, created_by: cbn, subreceita_parent_id, ...irest } = item;
-    const novoItem = await base44.entities.IngredienteReceita.create({ ...irest, receita_id: nova.id });
+    const novoItem = await criarIngredienteReceita({ ...irest, receita_id: nova.id });
     idMap[oldItemId] = novoItem.id;
     criados.push({ novoItem, subreceita_parent_id });
   }
@@ -58,7 +59,7 @@ export async function garantirReceitaEditavel({ receita, itens = [], receitaTags
 
   const tagIdMap = {};
   for (const rt of receitaTags) {
-    const novoTag = await base44.entities.ReceitaTag.create({
+    const novoTag = await criarReceitaTag({
       receita_id: nova.id,
       tag_id: rt.tag_id,
       tag_nome: rt.tag_nome,

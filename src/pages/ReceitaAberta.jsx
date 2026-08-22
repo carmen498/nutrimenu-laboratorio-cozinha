@@ -1,3 +1,4 @@
+import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -764,7 +765,7 @@ export default function ReceitaAberta() {
   const addGrupoMut = useMutation({
     mutationFn: async (titulo) => {
       const maxOrdem = itens.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
-      await base44.entities.IngredienteReceita.create({
+      await criarIngredienteReceita({
         receita_id: id,
         tipo: "grupo",
         titulo_grupo: titulo,
@@ -783,7 +784,7 @@ export default function ReceitaAberta() {
     mutationFn: async ({ itemId, titulo }) => {
       const maxOrdem = itens.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
       await base44.entities.IngredienteReceita.delete(itemId);
-      await base44.entities.IngredienteReceita.create({
+      await criarIngredienteReceita({
         receita_id: id,
         tipo: "grupo",
         titulo_grupo: titulo,
@@ -842,7 +843,7 @@ export default function ReceitaAberta() {
       const nova = await base44.entities.Receita.create({ ...rest, nome: `${receita.nome} (cópia)` });
       for (const item of itens) {
         const { id: iid, created_date: cd, updated_date: ud, created_by_id: cb, ...irest } = item;
-        await base44.entities.IngredienteReceita.create({ ...irest, receita_id: nova.id });
+        await criarIngredienteReceita({ ...irest, receita_id: nova.id });
       }
       return nova;
     },
@@ -1262,7 +1263,7 @@ REGRAS:
                 if (exists) {
                   await base44.entities.ReceitaTag.delete(mapTagId(exists.id));
                 } else {
-                  await base44.entities.ReceitaTag.create({
+                  await criarReceitaTag({
                     receita_id: receitaId,
                     tag_id: tag.id,
                     tag_nome: tag.nome,

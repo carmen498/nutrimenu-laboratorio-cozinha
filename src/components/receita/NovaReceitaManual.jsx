@@ -1,3 +1,4 @@
+import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -226,7 +227,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
       for (const tagId of selectedTagIds) {
         const tag = await base44.entities.Tag.get(tagId);
         if (tag) {
-          await base44.entities.ReceitaTag.create({
+          await criarReceitaTag({
             receita_id: receita.id,
             tag_id: tag.id,
             tag_nome: tag.nome,
@@ -241,14 +242,14 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
         const ing = addedIngs[i];
         if (ing.tipo === "grupo") {
           currentParentId = "";
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             receita_id: receita.id,
             tipo: "grupo",
             titulo_grupo: ing.titulo_grupo,
             ordem: i * 10,
           });
         } else if (ing.tipo === "subreceita" && !ing._isChild) {
-          const marker = await base44.entities.IngredienteReceita.create({
+          const marker = await criarIngredienteReceita({
             receita_id: receita.id,
             tipo: "subreceita",
             subreceita_id: ing.subreceita_id,
@@ -259,7 +260,7 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
           currentParentId = marker.id;
         } else {
           const isChild = !!ing._isChild;
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             receita_id: receita.id,
             tipo: ing.tipo === "subreceita" ? "subreceita" : "ingrediente",
             ingrediente_id: ing.ingrediente_id || "",

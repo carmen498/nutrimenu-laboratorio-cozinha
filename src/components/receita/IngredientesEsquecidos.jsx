@@ -1,3 +1,4 @@
+import { criarIngredienteEsquecidoReceita } from '@/lib/secureChildEntities';
 import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,7 +70,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const addMut = useMutation({
     mutationFn: async (nome) => {
       const ing = findIngrediente(nome);
-      await base44.entities.IngredienteEsquecidoReceita.create({
+      await criarIngredienteEsquecidoReceita({
         receita_id: receitaId,
         nome,
         quantidade_g: 30,
@@ -90,7 +91,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
       if (!customNome.trim()) return;
       const qtd = parseFloat(customQtd) || 30;
       const match = ingredientesDB.find(i => i.nome?.toLowerCase().includes(customNome.trim().toLowerCase()));
-      await base44.entities.IngredienteEsquecidoReceita.create({
+      await criarIngredienteEsquecidoReceita({
         receita_id: receitaId,
         nome: customNome.trim(),
         quantidade_g: qtd,

@@ -1,3 +1,4 @@
+import { criarCardapioInsumo, criarCardapioReceita, criarCardapioTag } from '@/lib/secureChildEntities';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -233,7 +234,7 @@ export default function CardapioAberto() {
       favorito: false,
     });
     for (const r of receitas) {
-      await base44.entities.CardapioReceita.create({
+      await criarCardapioReceita({
         cardapio_id: novo.id, receita_id: r.receita_id, receita_nome: r.receita_nome,
         receita_categoria: r.receita_categoria, per_capita_g: r.per_capita_g,
         quantidade_total_g: r.quantidade_total_g, custo_total: r.custo_total,
@@ -241,7 +242,7 @@ export default function CardapioAberto() {
       });
     }
     for (const i of insumos) {
-      await base44.entities.CardapioInsumo.create({
+      await criarCardapioInsumo({
         cardapio_id: novo.id, insumo_id: i.insumo_id, nome: i.nome,
         quantidade: i.quantidade, unidade: i.unidade,
         custo_unitario: i.custo_unitario, custo_total: i.custo_total,
@@ -264,7 +265,7 @@ export default function CardapioAberto() {
       quantidade_total_g: perCapitaDefault * num,
       custo_total: 0, ordem: receitas.length + 1,
     };
-    const criada = await base44.entities.CardapioReceita.create(nova);
+    const criada = await criarCardapioReceita(nova);
     setReceitas(prev => [...prev, criada]);
     setShowAddReceita(false); setBuscaReceita("");
     recalcularCusto(criada, receita.id);
@@ -365,7 +366,7 @@ export default function CardapioAberto() {
       custo_unitario: Number(insumo.preco_unitario) || 0,
       custo_total: qtd * (Number(insumo.preco_unitario) || 0),
     };
-    const criado = await base44.entities.CardapioInsumo.create(novo);
+    const criado = await criarCardapioInsumo(novo);
     setInsumos(prev => [...prev, criado]);
   };
 
@@ -626,7 +627,7 @@ export default function CardapioAberto() {
                 await base44.entities.CardapioTag.delete(newId);
                 setCardapioTags(prev => prev.filter(t => t.id !== newId));
               } else {
-                const novo = await base44.entities.CardapioTag.create({
+                const novo = await criarCardapioTag({
                   cardapio_id: cardapioId,
                   tag_id: tag.id,
                   tag_nome: tag.nome,

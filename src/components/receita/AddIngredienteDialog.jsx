@@ -1,3 +1,4 @@
+import { criarIngredienteReceita } from '@/lib/secureChildEntities';
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
 
       if (selectedType === "subreceita") {
         const qtdPorPorcao = qty / (porcoes || 1);
-        const markerItem = await base44.entities.IngredienteReceita.create({
+        const markerItem = await criarIngredienteReceita({
           receita_id: receitaId,
           tipo: "subreceita",
           subreceita_id: selected.id,
@@ -81,7 +82,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
         const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selected, qtdPorPorcao);
         let nextOrdem = maxOrdem + 11;
         for (const child of children) {
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             ...child,
             receita_id: receitaId,
             ordem: nextOrdem++,
@@ -97,7 +98,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
       } else {
         const qtdGramas = convertToGrams(qty, medidaSel);
         const qtdPorPorcao = qtdGramas / (porcoes || 1);
-        await base44.entities.IngredienteReceita.create({
+        await criarIngredienteReceita({
           receita_id: receitaId,
           ingrediente_id: selected.id,
           ingrediente_nome: selected.nome,

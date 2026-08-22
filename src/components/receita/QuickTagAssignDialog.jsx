@@ -1,3 +1,4 @@
+import { criarReceitaTag } from '@/lib/secureChildEntities';
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,7 @@ export default function QuickTagAssignDialog({ open, onClose, receita }) {
         const existing = receitaTags.find(rt => rt.tag_id === tag.id);
         if (existing) await base44.entities.ReceitaTag.delete(existing.id);
       } else {
-        await base44.entities.ReceitaTag.create({
+        await criarReceitaTag({
           receita_id: receita.id,
           tag_id: tag.id,
           tag_nome: tag.nome,
@@ -62,7 +63,7 @@ export default function QuickTagAssignDialog({ open, onClose, receita }) {
     onSuccess: (newTag) => {
       qc.invalidateQueries({ queryKey: ["tags"] });
       // Auto-assign to this recipe
-      base44.entities.ReceitaTag.create({
+      criarReceitaTag({
         receita_id: receita.id,
         tag_id: newTag.id,
         tag_nome: newTag.nome,

@@ -1,3 +1,4 @@
+import { criarReceitaTag } from '@/lib/secureChildEntities';
 import { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -273,7 +274,7 @@ ${form.modo_preparo}`,
                   if (exists) {
                     await base44.entities.ReceitaTag.delete(mapTagId(exists.id));
                   } else {
-                    await base44.entities.ReceitaTag.create({
+                    await criarReceitaTag({
                       receita_id: rid,
                       tag_id: tag.id,
                       tag_nome: tag.nome,

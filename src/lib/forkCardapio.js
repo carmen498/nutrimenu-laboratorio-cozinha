@@ -1,3 +1,4 @@
+import { criarCardapioInsumo, criarCardapioReceita, criarCardapioTag } from '@/lib/secureChildEntities';
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -49,7 +50,7 @@ export async function garantirCardapioEditavel({ cardapio, receitas = [], insumo
   const novasReceitas = [];
   for (const r of receitas) {
     const { id: oldId, created_date: cd, updated_date: ud, created_by_id: cb, created_by: cbn, ...rrest } = r;
-    const novoItem = await base44.entities.CardapioReceita.create({ ...rrest, cardapio_id: novoCardapio.id });
+    const novoItem = await criarCardapioReceita({ ...rrest, cardapio_id: novoCardapio.id });
     mapReceitaItem[oldId] = novoItem.id;
     novasReceitas.push(novoItem);
   }
@@ -58,7 +59,7 @@ export async function garantirCardapioEditavel({ cardapio, receitas = [], insumo
   const novosInsumos = [];
   for (const i of insumos) {
     const { id: oldId, created_date: cd, updated_date: ud, created_by_id: cb, created_by: cbn, ...irest } = i;
-    const novoItem = await base44.entities.CardapioInsumo.create({ ...irest, cardapio_id: novoCardapio.id });
+    const novoItem = await criarCardapioInsumo({ ...irest, cardapio_id: novoCardapio.id });
     mapInsumo[oldId] = novoItem.id;
     novosInsumos.push(novoItem);
   }
@@ -67,7 +68,7 @@ export async function garantirCardapioEditavel({ cardapio, receitas = [], insumo
   const novasTags = [];
   for (const t of cardapioTags) {
     const { id: oldId, created_date: cd, updated_date: ud, created_by_id: cb, created_by: cbn, ...trest } = t;
-    const novoItem = await base44.entities.CardapioTag.create({ ...trest, cardapio_id: novoCardapio.id });
+    const novoItem = await criarCardapioTag({ ...trest, cardapio_id: novoCardapio.id });
     mapTag[oldId] = novoItem.id;
     novasTags.push(novoItem);
   }

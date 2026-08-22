@@ -1,3 +1,4 @@
+import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
 import { useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -358,7 +359,7 @@ IMPORTANTE:
       for (const tagId of selectedTagIds) {
         const tag = await base44.entities.Tag.get(tagId);
         if (tag) {
-          await base44.entities.ReceitaTag.create({
+          await criarReceitaTag({
             receita_id: receita.id,
             tag_id: tag.id,
             tag_nome: tag.nome,
@@ -419,7 +420,7 @@ IMPORTANTE:
 
         // Group header
         if (ing.tipo === "grupo") {
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             receita_id: receita.id,
             tipo: "grupo",
             titulo_grupo: ing.titulo_grupo,
@@ -439,7 +440,7 @@ IMPORTANTE:
         // If receita básica matched, create as subreceita
         if (matchedRecBasica) {
           const qtdPorPorcao = (ing.quantidade_g || 0) / (p.porcoes_base || 1);
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             receita_id: receita.id,
             tipo: "subreceita",
             subreceita_id: matchedRecBasica.id,
@@ -486,7 +487,7 @@ IMPORTANTE:
           }
         }
         const qtdPorPorcao = (ing.quantidade_g || 0) / (p.porcoes_base || 1);
-        await base44.entities.IngredienteReceita.create({
+        await criarIngredienteReceita({
           receita_id: receita.id,
           ingrediente_id: matchedIng.id,
           ingrediente_nome: matchedIng.nome,
@@ -644,7 +645,7 @@ Para cada variação, retorne:
         for (let i = 0; i < ingNomesFinais.length; i++) {
           const ing = ingNomesFinais[i];
           if (!ing.matched) continue;
-          await base44.entities.IngredienteReceita.create({
+          await criarIngredienteReceita({
             receita_id: novaReceita.id,
             ingrediente_id: ing.matched.id,
             ingrediente_nome: ing.matched.nome,
