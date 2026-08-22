@@ -4,28 +4,28 @@
   "properties": {
     "modelo_versao": {
       "type": "number",
-      "description": "Versão do modelo. Novos registros normalizados usam 2; ausência/1 identifica legado."
+      "description": "Vers\u00e3o do modelo. Novos registros normalizados usam 2; aus\u00eancia/1 identifica legado."
     },
     "nome": {
       "type": "string",
-      "description": "Rótulo de exibição da equivalência. Não é identidade; as referências canônicas são ingrediente_id + utensilio_id + estado_alimento."
+      "description": "R\u00f3tulo de exibi\u00e7\u00e3o da equival\u00eancia. N\u00e3o \u00e9 identidade; as refer\u00eancias can\u00f4nicas s\u00e3o ingrediente_id + utensilio_id + estado_alimento."
     },
     "chave_canonica": {
       "type": "string",
-      "description": "Chave derivada ingrediente_id|utensilio_id|estado_alimento para diagnóstico e prevenção de duplicidades."
+      "description": "Chave derivada ingrediente_id|utensilio_id|estado_alimento para diagn\u00f3stico e preven\u00e7\u00e3o de duplicidades."
     },
     "ingrediente_id": {
       "type": "string",
-      "description": "ID canônico do Ingrediente ao qual a equivalência se aplica."
+      "description": "ID can\u00f4nico do Ingrediente ao qual a equival\u00eancia se aplica."
     },
     "utensilio_id": {
       "type": "string",
-      "description": "ID canônico do UtensilioPadrao."
+      "description": "ID can\u00f4nico do UtensilioPadrao."
     },
     "quantidade_utensilio": {
       "type": "number",
       "default": 1,
-      "description": "Quantidade do utensílio correspondente a peso_g/volume_ml. Ex.: 2 xícaras = 240 g."
+      "description": "Quantidade do utens\u00edlio correspondente a peso_g/volume_ml. Ex.: 2 x\u00edcaras = 240 g."
     },
     "peso_g": {
       "type": "number",
@@ -33,76 +33,79 @@
     },
     "volume_ml": {
       "type": "number",
-      "description": "Volume em ml correspondente a quantidade_utensilio, quando aplicável."
+      "description": "Volume em ml correspondente a quantidade_utensilio, quando aplic\u00e1vel."
     },
     "estado_alimento": {
       "type": "string",
-      "enum": ["cru", "pronto", "não informado"],
-      "default": "não informado",
-      "description": "Estado físico da equivalência. Medidas de alimento cru e pronto são registros distintos."
+      "enum": [
+        "cru",
+        "pronto",
+        "n\u00e3o informado"
+      ],
+      "default": "n\u00e3o informado",
+      "description": "Estado f\u00edsico da equival\u00eancia. Medidas de alimento cru e pronto s\u00e3o registros distintos."
     },
     "fonte": {
       "type": "string",
-      "description": "Fonte da equivalência: medição própria, tabela, fabricante, literatura, importação etc."
+      "description": "Fonte da equival\u00eancia: medi\u00e7\u00e3o pr\u00f3pria, tabela, fabricante, literatura, importa\u00e7\u00e3o etc."
     },
     "so_gramas": {
       "type": "boolean",
       "default": false,
-      "description": "Quando true, o conversor não exibe medida caseira para este alimento e mantém apenas g/ml."
+      "description": "Quando true, o conversor n\u00e3o exibe medida caseira para este alimento e mant\u00e9m apenas g/ml."
     },
     "descricao": {
       "type": "string",
-      "description": "Observação livre sobre a equivalência."
+      "description": "Observa\u00e7\u00e3o livre sobre a equival\u00eancia."
     },
     "ingrediente_especifico": {
       "type": "string",
-      "description": "LEGADO: nome textual do ingrediente. Não usar em novas gravações."
+      "description": "LEGADO: nome textual do ingrediente. N\u00e3o usar em novas grava\u00e7\u00f5es."
     },
     "equivalencia_g": {
       "type": "number",
-      "description": "LEGADO: equivalência em gramas. Leitura compatível; novas gravações usam peso_g."
+      "description": "LEGADO: equival\u00eancia em gramas. Leitura compat\u00edvel; novas grava\u00e7\u00f5es usam peso_g."
     },
     "equivalencia_ml": {
       "type": "number",
-      "description": "LEGADO: equivalência em ml. Leitura compatível; novas gravações usam volume_ml."
+      "description": "LEGADO: equival\u00eancia em ml. Leitura compat\u00edvel; novas grava\u00e7\u00f5es usam volume_ml."
     },
     "alimento": {
       "type": "string",
-      "description": "LEGADO: ID do Ingrediente. Leitura compatível; novas gravações usam ingrediente_id."
+      "description": "LEGADO: ID do Ingrediente. Leitura compat\u00edvel; novas grava\u00e7\u00f5es usam ingrediente_id."
     },
     "utensilio": {
       "type": "string",
-      "description": "LEGADO: ID do UtensilioPadrao. Leitura compatível; novas gravações usam utensilio_id."
+      "description": "LEGADO: ID do UtensilioPadrao. Leitura compat\u00edvel; novas grava\u00e7\u00f5es usam utensilio_id."
     },
     "referencia_g": {
       "type": "number",
-      "description": "LEGADO/CACHE TEMPORÁRIO: gramas por 1 medida. Mantido enquanto consumidores antigos são retirados; peso_g é a fonte canônica."
+      "description": "LEGADO/CACHE TEMPOR\u00c1RIO: gramas por 1 medida. Mantido enquanto consumidores antigos s\u00e3o retirados; peso_g \u00e9 a fonte can\u00f4nica."
     },
     "medida_pronto_g": {
       "type": "number",
-      "description": "LEGADO: equivalência de alimento pronto armazenada no mesmo registro. Deve ser revisada e separada em registro estado_alimento=pronto."
+      "description": "LEGADO: equival\u00eancia de alimento pronto armazenada no mesmo registro. Deve ser revisada e separada em registro estado_alimento=pronto."
     }
   },
-  "required": ["nome"],
+  "required": [
+    "nome"
+  ],
   "rls": {
-    "create": {},
-    "read": {
-      "$or": [
-        {"created_by_id": "{{user.id}}"},
-        {"user_condition": {"role": "admin"}}
-      ]
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
-      "$or": [
-        {"created_by_id": "{{user.id}}"},
-        {"user_condition": {"role": "admin"}}
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {"created_by_id": "{{user.id}}"},
-        {"user_condition": {"role": "admin"}}
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
