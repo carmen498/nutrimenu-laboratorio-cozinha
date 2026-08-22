@@ -674,7 +674,6 @@ export default function ReceitaAberta() {
         custo_cache_status: status,
         custo_cache_contexto: receita.is_base === false ? "proprietario" : "global",
         custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
-        custo_cache_atualizado_em: new Date().toISOString(),
       };
       if (custoCanonico.completo) {
         patch.custo_total = newCT;
@@ -682,7 +681,10 @@ export default function ReceitaAberta() {
         patch.custo_insumos = newCI;
       }
       const mudou = Object.entries(patch).some(([campo, valor]) => String(receita[campo] ?? "") !== String(valor ?? ""));
-      if (mudou) base44.entities.Receita.update(id, patch);
+      if (mudou) {
+        patch.custo_cache_atualizado_em = new Date().toISOString();
+        base44.entities.Receita.update(id, patch);
+      }
     }
   }, [custoTotal, custoPorcao, custoInsumos, custoCanonico, receita, fator, id, isAdmin]);
 
