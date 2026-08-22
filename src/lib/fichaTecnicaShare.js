@@ -27,7 +27,9 @@ export function montarTextoCompartilhamentoFicha({ receita, ficha, passos }) {
       text += `\n${item.titulo_grupo}:\n`;
       return;
     }
-    const nome = item.isSubreceita ? item.subreceita_nome : (item.ing?.nome || item.ingrediente_nome);
+    const nome = item.isSubreceita
+      ? (item.receitaBase?.nome || item.subreceita_nome)
+      : (item.ing?.nome || item.ingrediente_nome);
     if (!nome) return;
     text += `• ${nome} — ${formatKg(item.qtdNova)}\n`;
   });
