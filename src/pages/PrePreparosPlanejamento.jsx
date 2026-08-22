@@ -7,6 +7,7 @@ import { ArrowLeft, Download, Share2 } from "lucide-react";
 import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { carregarDadosPrePreparos, montarPrePreparos } from "@/lib/prePreparosCalc";
 import { gerarPrePreparosPDF } from "@/lib/prePreparosPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização do Relatório de Pré-preparos (mise en place) do Evento —
 // mesmo padrão visual das telas Ficha do Cardápio / Orçamento. Conteúdo idêntico
@@ -56,7 +57,7 @@ export default function PrePreparosPlanejamento() {
       });
     }
     if (navigator.share) navigator.share({ text });
-    else window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    else abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
   };
 
   const tipoLabel = [planejamento.tipo_planejamento, planejamento.tipo_servico].filter(Boolean).join(" · ");
