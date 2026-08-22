@@ -1,8 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
+// Fase 10.1 — saneamento/migração segura do cache de custos.
+// dry_run=true calcula e diagnostica sem gravar Receita nem criar log.
+// dry_run=false aplica SOMENTE caches completos; incompletos recebem apenas diagnóstico.
 const VERSAO = 2;
 const num = (v: any) => Number.isFinite(Number(v)) ? Number(v) : 0;
 const txt = (v: any) => v == null ? '' : String(v).trim();
+const positivo = (v: any) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
 
 async function listarTudo(entity: any, sort = 'created_date', pageSize = 500) {
   const out: any[] = [];
@@ -32,10 +39,17 @@ function precoEfetivo({ ingrediente, ownerId, prefMap, legacyMap }: any) {
   let preco = num(ingrediente?.preco_por_g_rs);
   if (!ownerId || !ingrediente?.id) return preco;
   const key = `${ownerId}|${ingrediente.id}`;
+
+  // Legado e IngredienteUsuario só substituem o preço mestre quando há preço positivo.
+  // Preço pessoal ausente/0 não pode zerar silenciosamente o preço global.
   const legacy = legacyMap.get(key);
-  if (legacy && legacy.preco_por_g_rs != null && legacy.preco_por_g_rs !== '') preco = num(legacy.preco_por_g_rs);
+  const precoLegacy = num(legacy?.preco_por_g_rs);
+  if (precoLegacy > 0) preco = precoLegacy;
+
   const pref = prefMap.get(key);
-  if (pref && Object.prototype.hasOwnProperty.call(pref, 'preco_por_g_rs')) preco = num(pref.preco_por_g_rs);
+  const precoPessoal = num(pref?.preco_por_g_rs);
+  if (precoPessoal > 0) preco = precoPessoal;
+
   return preco;
 }
 
@@ -46,6 +60,53 @@ function fcEfetivo(item: any, ingrediente: any) {
   return mestre > 0 ? mestre : 1;
 }
 
+// Réplica server-side da regra de Fases 5/8 usada por resolverRendimentoReceita.
+function calcularPesoPrePreparo(receita: any, itens: any[]) {
+  const porcoesBase = positivo(receita?.porcoes_base) || 1;
+  const parentsComFilhos = new Set<string>();
+  const parentsComCacheNovo = new Set<string>();
+
+  for (const item of itens || []) {
+    const parentId = txt(item?.subreceita_parent_id);
+    if (!parentId) continue;
+    parentsComFilhos.add(parentId);
+    if (item.subreceita_cache === true && num(item.subreceita_cache_versao) >= 2) {
+      parentsComCacheNovo.add(parentId);
+    }
+  }
+
+  return (itens || []).reduce((sum, item) => {
+    if (!item || item.tipo === 'grupo') return sum;
+    const parentId = txt(item.subreceita_parent_id);
+
+    if (parentId) {
+      if (parentsComCacheNovo.has(parentId)) return sum;
+      return sum + positivo(item.quantidade_por_porcao) * porcoesBase;
+    }
+
+    if (item.tipo === 'subreceita') {
+      if (parentsComCacheNovo.has(item.id)) {
+        return sum + positivo(item.quantidade_por_porcao) * porcoesBase;
+      }
+      if (parentsComFilhos.has(item.id)) return sum;
+    }
+
+    return sum + positivo(item.quantidade_por_porcao) * porcoesBase;
+  }, 0);
+}
+
+function rendimentoEfetivo(receita: any, itens: any[]) {
+  const pre = calcularPesoPrePreparo(receita, itens);
+  return positivo(receita?.peso_pos_preparo_total)
+    || positivo(receita?.rendimento_total)
+    || pre;
+}
+
+function lerArgs(req: Request) {
+  if (req.method === 'GET') return Promise.resolve({});
+  return req.json().catch(() => ({}));
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -53,8 +114,15 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
+    const args = await lerArgs(req);
+    const dryRun = args?.dry_run === true;
+    const somenteLegado = args?.somente_legado === true;
+    const receitaIds = Array.isArray(args?.receita_ids)
+      ? new Set(args.receita_ids.map((id: any) => txt(id)).filter(Boolean))
+      : null;
+
     const sr = base44.asServiceRole.entities;
-    const [receitas, ingredientes, itens, insumos, esquecidos, preferencias, precosLegados] = await Promise.all([
+    const [todasReceitas, ingredientes, itens, insumos, esquecidos, preferencias, precosLegados] = await Promise.all([
       listarTudo(sr.Receita, 'created_date'),
       listarTudo(sr.Ingrediente, 'nome'),
       listarTudo(sr.IngredienteReceita, 'created_date'),
@@ -64,10 +132,17 @@ Deno.serve(async (req) => {
       listarTudo(sr.PrecoIngredienteCliente, '-updated_date'),
     ]);
 
+    const receitas = todasReceitas.filter((r: any) => {
+      if (receitaIds && !receitaIds.has(txt(r.id))) return false;
+      if (somenteLegado && num(r.custo_modelo_versao) >= VERSAO) return false;
+      return true;
+    });
+
     const ingredienteMap = new Map(ingredientes.map((i: any) => [i.id, i]));
     const itensPorReceita = agruparPorReceita(itens);
     const insumosPorReceita = agruparPorReceita(insumos);
     const esquecidosPorReceita = agruparPorReceita(esquecidos);
+
     const prefMap = new Map<string, any>();
     for (const p of preferencias) {
       const key = `${txt(p.user_id)}|${txt(p.ingrediente_id)}`;
@@ -81,16 +156,20 @@ Deno.serve(async (req) => {
 
     const atualizacoes: any[] = [];
     const revisar: any[] = [];
+    const migraveis: any[] = [];
     let jaAtuais = 0;
     let incompletas = 0;
     let totalSemPreco = 0;
     let totalRefAusente = 0;
+    let totalEsquecidosLegado = 0;
+
+    const agora = new Date().toISOString();
 
     for (const receita of receitas) {
       const receitaId = receita.id;
       const ownerId = receita.is_base === false ? (txt(receita.usuario_dono_id) || txt(receita.created_by_id)) : '';
       const componentes = itensPorReceita.get(receitaId) || [];
-      const porcoesBase = num(receita.porcoes_base) > 0 ? num(receita.porcoes_base) : 1;
+      const porcoesBase = positivo(receita.porcoes_base) || 1;
       let custoIngredientes = 0;
       let custoInsumos = 0;
       let custoEsquecidos = 0;
@@ -155,13 +234,19 @@ Deno.serve(async (req) => {
       }
 
       const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
-      const custoPorPorcao = porcoesBase > 0 ? custoTotal / porcoesBase : 0;
+      const rendimento = rendimentoEfetivo(receita, componentes);
+      const perCapita = positivo(receita.per_capita_g);
+      const porcoesEfetivas = perCapita > 0 && rendimento > 0
+        ? rendimento / perCapita
+        : porcoesBase;
+      const custoPorPorcao = porcoesEfetivas > 0 ? custoTotal / porcoesEfetivas : 0;
       const incompleta = semPreco > 0 || refAusente > 0 || fallbackEsquecido > 0;
       const status = incompleta ? 'incompleto' : 'atual';
       const contexto = receita.is_base === false ? 'proprietario' : 'global';
 
       totalSemPreco += semPreco;
       totalRefAusente += refAusente;
+      totalEsquecidosLegado += fallbackEsquecido;
       if (incompleta) incompletas++;
 
       const patch: any = {
@@ -169,19 +254,28 @@ Deno.serve(async (req) => {
         custo_cache_status: status,
         custo_cache_contexto: contexto,
         custo_cache_itens_sem_preco: semPreco + refAusente + fallbackEsquecido,
-        custo_cache_atualizado_em: new Date().toISOString(),
+        custo_cache_atualizado_em: agora,
       };
 
-      // Não sobrescreve custo total com cálculo parcial/ambíguo.
+      // Nunca substitui valores monetários por cálculo parcial/ambíguo.
       if (!incompleta) {
         patch.custo_total = Number(custoTotal.toFixed(4));
         patch.custo_insumos = Number(custoInsumos.toFixed(4));
         patch.custo_por_porcao = Number(custoPorPorcao.toFixed(4));
+        migraveis.push({
+          id: receitaId,
+          nome: receita.nome,
+          contexto,
+          custo_anterior: num(receita.custo_total),
+          custo_calculado: patch.custo_total,
+          custo_por_porcao_calculado: patch.custo_por_porcao,
+        });
       } else {
         revisar.push({
           id: receitaId,
           nome: receita.nome,
           contexto,
+          custo_preservado: num(receita.custo_total),
           itens_sem_preco: semPreco,
           referencias_ausentes: refAusente,
           esquecidos_legado: fallbackEsquecido,
@@ -194,29 +288,39 @@ Deno.serve(async (req) => {
       else if (!incompleta) jaAtuais++;
     }
 
-    for (let i = 0; i < atualizacoes.length; i += 200) {
-      await sr.Receita.bulkUpdate(atualizacoes.slice(i, i + 200));
+    if (!dryRun) {
+      for (let i = 0; i < atualizacoes.length; i += 200) {
+        await sr.Receita.bulkUpdate(atualizacoes.slice(i, i + 200));
+      }
+
+      await sr.NormalizacaoCustoReceitaLog.create({
+        executado_por_id: user.id,
+        executado_em: agora,
+        total_receitas: receitas.length,
+        normalizadas: atualizacoes.length,
+        ja_atuais: jaAtuais,
+        incompletas,
+        itens_sem_preco: totalSemPreco,
+        referencias_ausentes: totalRefAusente,
+        detalhes: JSON.stringify({
+          modo: 'aplicar',
+          esquecidos_legado: totalEsquecidosLegado,
+          revisar: revisar.slice(0, 500),
+        }),
+      });
     }
 
-    await sr.NormalizacaoCustoReceitaLog.create({
-      executado_por_id: user.id,
-      executado_em: new Date().toISOString(),
-      total_receitas: receitas.length,
-      normalizadas: atualizacoes.length,
-      ja_atuais: jaAtuais,
-      incompletas,
-      itens_sem_preco: totalSemPreco,
-      referencias_ausentes: totalRefAusente,
-      detalhes: JSON.stringify({ revisar: revisar.slice(0, 500) }),
-    });
-
     return Response.json({
+      dry_run: dryRun,
       total_receitas: receitas.length,
-      normalizadas: atualizacoes.length,
+      migraveis: migraveis.length,
+      normalizadas: dryRun ? 0 : atualizacoes.length,
       ja_atuais: jaAtuais,
       incompletas,
       itens_sem_preco: totalSemPreco,
       referencias_ausentes: totalRefAusente,
+      esquecidos_legado: totalEsquecidosLegado,
+      amostra_migraveis: migraveis.slice(0, 100),
       revisar: revisar.slice(0, 500),
     });
   } catch (error: any) {
