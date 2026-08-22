@@ -23,6 +23,15 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           {footer && (
             <p className="text-center text-sm text-muted-foreground mt-6">{footer}</p>
           )}
+          <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+            <a href="/termos" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+              Termos de Uso
+            </a>
+            <span aria-hidden="true">·</span>
+            <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="hover:text-foreground hover:underline">
+              Política de Privacidade
+            </a>
+          </div>
         </div>
       </div>
     </div>
