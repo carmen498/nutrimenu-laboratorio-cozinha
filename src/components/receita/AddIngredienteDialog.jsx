@@ -15,13 +15,15 @@ import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/n
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { registrarHistorico } from "@/lib/registrarHistorico";
+import { getMedidaIngredienteId, getMedidaPesoG } from "@/lib/ingredienteReceitaCalc";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, receitaNome, porcoes, unidadeBase }) {
+  const unidadeCanonica = unidadeBase === "ml" ? "ml" : "g";
   const [busca, setBusca] = useState("");
   const [selected, setSelected] = useState(null);
   const [selectedType, setSelectedType] = useState(null); // "ingrediente" | "subreceita"
   const [quantidade, setQuantidade] = useState("");
-  const [medidaSel, setMedidaSel] = useState("g");
+  const [medidaSel, setMedidaSel] = useState(unidadeCanonica);
   const [prePreparo, setPrePreparo] = useState("");
   const [saving, setSaving] = useState(false);
   const [showNovoIng, setShowNovoIng] = useState(false);
@@ -39,22 +41,37 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
   });
 
   const { data: medidas = [] } = useQuery({
-    queryKey: ["medidas"],
-    queryFn: () => base44.entities.MedidaCaseira.list("-nome", 200),
+    queryKey: ["medidas-caseiras"],
+    queryFn: () => base44.entities.MedidaCaseira.list("-nome", 500),
   });
 
   const filteredIng = buscarIngredientesRanqueado(busca, ingredientes, 20);
-
   const favoritos = !busca ? ingredientes.filter(i => i.favorito).slice(0, 8) : [];
   const outros = !busca ? filteredIng.filter(i => !i.favorito) : filteredIng;
-
   const filteredRec = buscarReceitasMultiPalavra(busca, receitasBasicas, receitaId, 20);
 
-  const convertToGrams = (qty, measure) => {
-    if (measure === "g" || measure === "ml") return qty;
-    const medida = medidas.find(m => m.nome === measure);
+  const medidaSelecionada = medidaSel?.startsWith("mc:")
+    ? medidas.find((m) => m.id === medidaSel.slice(3)) || null
+    : null;
+
+  const medidaCompativelComSelecionado = (m) => {
+    if (!selected || selectedType !== "ingrediente") return !getMedidaIngredienteId(m) && !m.ingrediente_especifico;
+    const ingredienteId = getMedidaIngredienteId(m);
+    if (ingredienteId) return ingredienteId === selected.id;
+    if (m.ingrediente_especifico) {
+      return m.ingrediente_especifico.trim().toLowerCase() === selected.nome?.trim().toLowerCase();
+    }
+    return true;
+  };
+
+  const convertToGrams = (qty, measureValue) => {
+    if (measureValue === "g" || measureValue === "ml") return qty;
+    const medida = measureValue?.startsWith("mc:")
+      ? medidas.find((m) => m.id === measureValue.slice(3))
+      : null;
     if (!medida) return qty;
-    return qty * (medida.equivalencia_g || medida.equivalencia_ml || 1);
+    const refG = getMedidaPesoG(medida) || Number(medida.equivalencia_ml) || 0;
+    return refG > 0 ? qty * refG : qty;
   };
 
   const handleSave = async () => {
@@ -75,10 +92,10 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
           subreceita_id: selected.id,
           subreceita_nome: selected.nome,
           quantidade_por_porcao: qtdPorPorcao,
+          unidade_quantidade: unidadeCanonica,
           ordem: maxOrdem + 10,
         });
 
-        // Pull ingredients from the sub-receita automatically (proportional)
         const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selected, qtdPorPorcao);
         let nextOrdem = maxOrdem + 11;
         for (const child of children) {
@@ -100,11 +117,15 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
         const qtdPorPorcao = qtdGramas / (porcoes || 1);
         await criarIngredienteReceita({
           receita_id: receitaId,
+          tipo: "ingrediente",
           ingrediente_id: selected.id,
           ingrediente_nome: selected.nome,
           pre_preparo: prePreparo,
           quantidade_por_porcao: qtdPorPorcao,
-          medida_caseira: medidaSel !== "g" && medidaSel !== "ml" ? `${quantidade} ${medidaSel}` : "",
+          unidade_quantidade: unidadeCanonica,
+          medida_caseira_id: medidaSelecionada?.id || "",
+          quantidade_medida_caseira: medidaSelecionada ? qty : undefined,
+          medida_caseira: medidaSelecionada ? `${quantidade} ${medidaSelecionada.nome}` : "",
           ordem: maxOrdem + 10,
         });
         toast.success(`${selected.nome} adicionado!`);
@@ -115,7 +136,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
       setSelected(null);
       setSelectedType(null);
       setQuantidade("");
-      setMedidaSel("g");
+      setMedidaSel(unidadeCanonica);
       setPrePreparo("");
       setBusca("");
     } catch (err) {
@@ -126,16 +147,15 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
   };
 
   const medidasOptions = [
-    { value: "g", label: unidadeBase === "ml" ? "ml" : "g" },
+    { value: unidadeCanonica, label: unidadeCanonica },
     ...medidas
-      .filter(m => !m.ingrediente_especifico)
-      .reduce((acc, m) => {
-        if (!acc.find(x => x.value === m.nome)) acc.push({ value: m.nome, label: m.nome });
-        return acc;
-      }, [])
+      .filter((m) => !m.so_gramas && medidaCompativelComSelecionado(m))
+      .map((m) => ({ value: `mc:${m.id}`, label: m.nome }))
+      .filter((m, idx, arr) => arr.findIndex((x) => x.value === m.value) === idx),
   ];
 
   const noResults = filteredIng.length === 0 && filteredRec.length === 0;
+  const usandoMedidaCaseira = !!medidaSelecionada;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -151,7 +171,6 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                 <Input placeholder="Buscar ingrediente ou sub-receita..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9" />
               </div>
               <div className="max-h-60 overflow-y-auto space-y-1">
-                {/* Favoritos — quick suggestions when no search */}
                 {favoritos.length > 0 && (
                   <>
                     <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 pt-1 pb-0.5 tracking-wide flex items-center gap-1">
@@ -161,7 +180,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                       <button
                         key={`fav-${ing.id}`}
                         className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
-                        onClick={() => { setSelected(ing); setSelectedType("ingrediente"); }}
+                        onClick={() => { setSelected(ing); setSelectedType("ingrediente"); setMedidaSel(unidadeCanonica); }}
                       >
                         <span className="font-medium flex items-center gap-1.5">
                           <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
@@ -173,12 +192,11 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                     <div className="border-t border-border mx-3 my-1" />
                   </>
                 )}
-                {/* Todos os ingredientes */}
                 {(busca ? filteredIng : outros).slice(0, 20).map((ing) => (
                   <button
                     key={`ing-${ing.id}`}
                     className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
-                    onClick={() => { setSelected(ing); setSelectedType("ingrediente"); }}
+                    onClick={() => { setSelected(ing); setSelectedType("ingrediente"); setMedidaSel(unidadeCanonica); }}
                   >
                     <span className="font-medium">{ing.nome}</span>
                     <span className="text-xs text-muted-foreground">{ing.categoria}</span>
@@ -193,7 +211,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                       <button
                         key={`rec-${rec.id}`}
                         className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
-                        onClick={() => { setSelected(rec); setSelectedType("subreceita"); }}
+                        onClick={() => { setSelected(rec); setSelectedType("subreceita"); setMedidaSel(unidadeCanonica); }}
                       >
                         <span className="font-medium flex items-center gap-1">
                           <ChefHat className="w-3.5 h-3.5 text-primary" />
@@ -233,12 +251,12 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-sm flex items-center gap-1">
                     {selectedType === "subreceita" && <ChefHat className="w-3.5 h-3.5 text-primary" />}
-                    {selected.nome || selectedType === "subreceita" ? selected.nome : selected.nome}
+                    {selected.nome}
                     {selectedType === "subreceita" && (
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1">Sub-receita</Badge>
                     )}
                   </p>
-                  <Button variant="ghost" size="sm" onClick={() => { setSelected(null); setSelectedType(null); }}>Trocar</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setSelected(null); setSelectedType(null); setMedidaSel(unidadeCanonica); }}>Trocar</Button>
                 </div>
                 {selectedType === "subreceita" && (
                   <p className="text-xs text-muted-foreground mt-1">
@@ -264,7 +282,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                   />
                   {selectedType === "subreceita" ? (
                     <div className="w-40 flex items-center px-3 border rounded-md text-sm text-muted-foreground bg-muted/50">
-                      {unidadeBase}
+                      {unidadeCanonica}
                     </div>
                   ) : (
                     <Select value={medidaSel} onValueChange={setMedidaSel}>
@@ -279,9 +297,9 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                     </Select>
                   )}
                 </div>
-                {medidaSel !== "g" && medidaSel !== "ml" && quantidade && selectedType !== "subreceita" && (
+                {usandoMedidaCaseira && quantidade && selectedType !== "subreceita" && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    ≈ {convertToGrams(parseFloat(quantidade) || 0, medidaSel).toFixed(0)}{unidadeBase}
+                    ≈ {convertToGrams(parseFloat(quantidade) || 0, medidaSel).toFixed(0)}{unidadeCanonica}
                   </p>
                 )}
               </div>
@@ -311,6 +329,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
             setSelected(ing);
             setSelectedType("ingrediente");
             setBusca(ing.nome);
+            setMedidaSel(unidadeCanonica);
             setShowNovoIng(false);
             qc.invalidateQueries({ queryKey: ["ingredientes"] });
           }}
