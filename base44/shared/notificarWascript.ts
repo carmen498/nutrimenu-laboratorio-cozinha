@@ -50,13 +50,12 @@ export async function enviarNotificacaoWhatsapp(
   const token = secrets.get("WASCRIPT_API_TOKEN");
 
   if (modoTeste || !token) {
-    console.log(`[MODO TESTE] WhatsApp "${tipo}" para ${numero}: ${mensagem}`);
+    console.log(`[MODO TESTE] WhatsApp "${tipo}" simulado.`);
     await base44.asServiceRole.entities.LogWhatsapp.create({
       destinatario_telefone: numero,
       tipo,
       modo_teste: true,
       status: "simulado",
-      resposta_bruta: mensagem,
     }).catch((e: any) => console.log("Falha ao gravar LogWhatsapp:", e.message));
     return;
   }
@@ -69,7 +68,7 @@ export async function enviarNotificacaoWhatsapp(
   const dados = await resposta.json().catch(() => null);
 
   if (!resposta.ok) {
-    console.log(`Erro ao enviar WhatsApp "${tipo}":`, JSON.stringify(dados));
+    console.log(`Erro ao enviar WhatsApp "${tipo}" (HTTP ${resposta.status}).`);
   }
 
   await base44.asServiceRole.entities.LogWhatsapp.create({
@@ -77,6 +76,5 @@ export async function enviarNotificacaoWhatsapp(
     tipo,
     modo_teste: false,
     status: resposta.ok ? "enviado" : "falhou",
-    resposta_bruta: JSON.stringify(dados).slice(0, 1000),
   }).catch((e: any) => console.log("Falha ao gravar LogWhatsapp:", e.message));
 }
