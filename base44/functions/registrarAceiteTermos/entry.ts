@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-
-const VERSAO_TERMOS = "Termos de Uso v.18/08/2026";
+import { VERSAO_TERMOS_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -11,7 +10,7 @@ export default async function(req: Request): Promise<Response> {
     // Se a versão vigente já foi aceita, a operação é idempotente. Uma versão
     // anterior não serve como aceite da versão atual: o usuário deve confirmar
     // novamente pela interface antes de este endpoint ser chamado.
-    if (user.termos_aceitos_em && user.termos_versao_aceita === VERSAO_TERMOS) {
+    if (user.termos_aceitos_em && user.termos_versao_aceita === VERSAO_TERMOS_ATUAL) {
       return Response.json({
         success: true,
         already_recorded: true,
@@ -22,14 +21,14 @@ export default async function(req: Request): Promise<Response> {
     const aceitoEm = new Date().toISOString();
     await base44.asServiceRole.entities.User.update(user.id, {
       termos_aceitos_em: aceitoEm,
-      termos_versao_aceita: VERSAO_TERMOS,
+      termos_versao_aceita: VERSAO_TERMOS_ATUAL,
     });
 
     return Response.json({
       success: true,
       already_recorded: false,
       aceito_em: aceitoEm,
-      versao: VERSAO_TERMOS,
+      versao: VERSAO_TERMOS_ATUAL,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
