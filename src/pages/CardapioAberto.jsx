@@ -33,6 +33,7 @@ import { custoEscalado } from "@/lib/custoReceita";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { carregarIngredientesEfetivosCusto, mapearIngredientesPorId } from "@/lib/custoContexto";
 import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -201,7 +202,7 @@ export default function CardapioAberto() {
       setInsumosPorReceita(insumosReceitaMap);
       setEsquecidosPorReceita(esquecidosReceitaMap);
       setIngredientesEfetivosCusto(ingredientesEfetivos || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
     setLoading(false);
   }, [id, user?.id, isAdmin]);
 
@@ -243,7 +244,7 @@ export default function CardapioAberto() {
     const { cardapioId } = await ensureEditavel();
     setCardapio(prev => ({ ...prev, [field]: value }));
     try { await base44.entities.Cardapio.update(cardapioId, { [field]: value }); }
-    catch (e) { console.error(e); }
+    catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   // Favorito
@@ -253,7 +254,7 @@ export default function CardapioAberto() {
     try {
       const { cardapioId } = await ensureEditavel();
       await base44.entities.Cardapio.update(cardapioId, { favorito: novo });
-    } catch (e) { setFavLocal(!novo); console.error(e); }
+    } catch (e) { setFavLocal(!novo); consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   // Duplicar
@@ -325,7 +326,7 @@ export default function CardapioAberto() {
     const newId = mapReceitaItemId(recId);
     setReceitas(prev => prev.map(r => r.id === newId ? { ...r, ...updates } : r));
     try { await base44.entities.CardapioReceita.update(newId, updates); }
-    catch (e) { console.error(e); }
+    catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   const moveReceita = async (recId, dir) => {
@@ -340,7 +341,7 @@ export default function CardapioAberto() {
     try {
       await base44.entities.CardapioReceita.update(upd[ni].id, { ordem: ni + 1 });
       await base44.entities.CardapioReceita.update(upd[idx].id, { ordem: idx + 1 });
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   const recalcularCusto = async (cr, receitaId) => {
@@ -363,7 +364,7 @@ export default function CardapioAberto() {
       });
       await base44.entities.CardapioReceita.update(cr.id, { custo_total: custoEsc });
       setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc, quantidade_total_g: qt } : r));
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   // Persiste quantidade_total_g (usado por outras telas/relatórios) sempre que o
@@ -426,7 +427,7 @@ export default function CardapioAberto() {
     }
     setInsumos(prev => prev.map(i => i.id === newId ? { ...i, ...upd } : i));
     try { await base44.entities.CardapioInsumo.update(newId, upd); }
-    catch (e) { console.error(e); }
+    catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   const removeInsumo = async (insId) => {
@@ -442,7 +443,7 @@ export default function CardapioAberto() {
     try {
       const { cardapioId } = await ensureEditavel();
       await base44.entities.Cardapio.update(cardapioId, { markup_percentual: val });
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
   };
 
   // === LISTA DE COMPRAS ===
@@ -486,7 +487,7 @@ export default function CardapioAberto() {
             mapa[key].quantidade_g += qtdLiquida;
           }
         }
-      } catch (e) { console.error(e); }
+      } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
     }
     // Agrupar por categoria
     const agrupado = {};
@@ -528,7 +529,7 @@ export default function CardapioAberto() {
       await base44.entities.Cardapio.update(cardapioId, upd);
       setCardapio(prev => ({ ...prev, ...upd }));
       setShowEditar(false);
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
     setSalvandoEditar(false);
   };
 
