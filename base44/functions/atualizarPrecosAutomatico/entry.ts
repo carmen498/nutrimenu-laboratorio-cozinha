@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { adquirirCooldownAtualizacaoPrecos } from "../../shared/protecoesAutomacao.ts";
 
 const CATS_VOLATEIS = [
   "Carnes e Ovos", "LATICÍNIOS", "Frutas",
@@ -69,6 +70,16 @@ Deno.serve(async (req) => {
     const configs = await base44.asServiceRole.entities.ConfiguracaoSistema.filter({ chave: 'auto_update_prices' });
     if (configs[0] && configs[0].valor === 'false') {
       return Response.json({ message: "Atualização automática pausada pelo usuário." });
+    }
+
+    // A function também possui endpoint HTTP público. O cooldown limita disparos
+    // repetidos fora do scheduler e evita reprocessamento caro/spam de e-mail.
+    const cooldown = await adquirirCooldownAtualizacaoPrecos(base44, 20);
+    if (!cooldown.permitido) {
+      return Response.json({
+        message: "Atualização automática ignorada por cooldown de segurança.",
+        ultima_execucao: cooldown.ultimaExecucao,
+      });
     }
 
     // Buscar todos os ingredientes das categorias voláteis com preço cadastrado
