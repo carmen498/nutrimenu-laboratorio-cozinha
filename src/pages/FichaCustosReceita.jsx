@@ -8,10 +8,18 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { montarFichaTecnica } from "@/lib/fichaTecnicaCalc";
 import { printarElementoIsolado } from "@/lib/printIsolado";
 import TabelaComposicaoCusto from "@/components/fichaCustos/TabelaComposicaoCusto";
+import { useAuth } from "@/lib/AuthContext";
+import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import {
+  buscarPreferenciasIngredientes,
+  aplicarPreferenciasIngredientes,
+} from "@/lib/preferenciaIngredienteUsuario";
 
 export default function FichaCustosReceita() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const { data: receita } = useQuery({
     queryKey: ["receita", id],
@@ -28,6 +36,29 @@ export default function FichaCustosReceita() {
     queryKey: ["ingredientes"],
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
+
+  const { data: precosPersonalizados = {} } = useQuery({
+    queryKey: ["precos-personalizados", user?.id],
+    queryFn: () => buscarPrecosPersonalizados(user.id),
+    enabled: !isAdmin && !!user?.id,
+  });
+
+  const { data: preferenciasIngredientes = {} } = useQuery({
+    queryKey: ["preferencias-ingredientes", user?.id],
+    queryFn: () => buscarPreferenciasIngredientes(user.id),
+    enabled: !!user?.id,
+  });
+
+  const ingredientesEfetivos = useMemo(() => {
+    const comPrecoLegado = isAdmin
+      ? ingredientesDB
+      : aplicarPrecosPersonalizados(ingredientesDB, precosPersonalizados);
+    return aplicarPreferenciasIngredientes(
+      comPrecoLegado,
+      preferenciasIngredientes,
+      { usarFavoritoLegado: isAdmin }
+    );
+  }, [ingredientesDB, isAdmin, precosPersonalizados, preferenciasIngredientes]);
 
   const { data: receitasBasicas = [] } = useQuery({
     queryKey: ["receitas-basicas"],
@@ -46,9 +77,9 @@ export default function FichaCustosReceita() {
 
   const ingMap = useMemo(() => {
     const map = {};
-    ingredientesDB.forEach((i) => { map[i.id] = i; });
+    ingredientesEfetivos.forEach((i) => { map[i.id] = i; });
     return map;
-  }, [ingredientesDB]);
+  }, [ingredientesEfetivos]);
 
   const receitasBasicasMap = useMemo(() => {
     const map = {};
@@ -105,14 +136,12 @@ export default function FichaCustosReceita() {
       </div>
 
       <div id="ficha-custos-print-area" className="bg-white border rounded-xl overflow-hidden print:border-0 print:rounded-none">
-        {/* Cabeçalho timbrado */}
         <div className="bg-primary text-primary-foreground px-6 py-4 flex items-center justify-between flex-wrap gap-2">
           <p className="text-sm">Laboratório de Cozinha · Receitas que se Multiplicam · por Carmen Reinstein</p>
           <p className="font-display text-sm text-right">FICHA DE CUSTOS · emitida em {dataEmissao}</p>
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Identificação */}
           <div>
             <h2 className="font-display text-2xl font-bold">{receita.nome}</h2>
             <p className="text-sm text-muted-foreground mt-1">
@@ -121,7 +150,6 @@ export default function FichaCustosReceita() {
             </p>
           </div>
 
-          {/* Indicadores */}
           <div className="grid grid-cols-3 gap-3">
             <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
               <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Custo Total</p>
@@ -137,13 +165,11 @@ export default function FichaCustosReceita() {
             </div>
           </div>
 
-          {/* Tabela de composição do custo */}
           <div>
             <h3 className="font-display text-base font-bold mb-2">Composição do Custo</h3>
             <TabelaComposicaoCusto itensOrdenados={itensOrdenados} totalCusto={custoComposicao} />
           </div>
 
-          {/* Caixa de leitura */}
           {concentracao && (
             <div className="p-3 rounded-lg bg-muted/40 border border-border text-sm">
               <p>
@@ -159,7 +185,6 @@ export default function FichaCustosReceita() {
             </div>
           )}
 
-          {/* Insumos e Embalagens */}
           {temInsumos && (
             <div style={{ breakInside: "avoid" }} className="text-sm space-y-1">
               <div className="flex justify-between">
@@ -173,7 +198,6 @@ export default function FichaCustosReceita() {
             </div>
           )}
 
-          {/* Rodapé */}
           <p className="text-[11px] text-muted-foreground text-center pt-4 border-t border-border">
             Laboratório de Cozinha · Gastronomia Planejada · custos na data de emissão · {dataEmissao}
           </p>
