@@ -13,13 +13,6 @@ import {
   resolverDonoReceitaId,
 } from "@/lib/receitaLineage";
 
-const STATUS_LABEL = {
-  canonica: "Canônica",
-  a_validar: "A validar",
-  origem_ausente: "Origem ausente",
-  ciclo: "Ciclo",
-};
-
 const PROBLEMA_LABEL = {
   origens_conflitantes: "origens conflitantes",
   auto_referencia: "auto-referência",
