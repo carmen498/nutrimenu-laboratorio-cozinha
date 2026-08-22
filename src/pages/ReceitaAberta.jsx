@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -17,9 +16,8 @@ import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
   AlertDialogFooter, AlertDialogCancel, AlertDialogAction
 } from "@/components/ui/alert-dialog";
-import {
-  ChefHat, ArrowLeft, Plus, ShoppingCart, FileText, Copy,
-  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Sparkles, Loader2, Check, X, ArrowUp, ArrowDown, ArrowUpDown, Star, Scale, HelpCircle
+import { ArrowLeft, Plus, ShoppingCart, FileText, Copy,
+  Pencil, Trash2, GripVertical, DollarSign, AlertTriangle, Camera, Check, X, Star, Scale, HelpCircle
 } from "lucide-react";
 import MedidasCaseirasReceitaDialog from "@/components/receita/MedidasCaseirasReceitaDialog";
 import RendimentoTecnicoCard from "@/components/receita/RendimentoTecnicoCard";
@@ -30,17 +28,14 @@ import InsumosSection from "@/components/receita/InsumosSection";
 import IngredientesEsquecidos from "@/components/receita/IngredientesEsquecidos";
 import EditItemDialog from "@/components/receita/EditItemDialog";
 import CalculadoraCusto from "@/components/CalculadoraCusto";
-import TagBadge from "@/components/tags/TagBadge";
 import TagList from "@/components/tags/TagList";
 import TagSelector from "@/components/tags/TagSelector";
 import { formatarModoPreparo } from "@/lib/formatarModoPreparo";
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 import ModoPreparoComposto from "@/components/receita/ModoPreparoComposto";
 import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
-import { DragDropContext, Droppable } from "@hello-pangea/dnd";
-import DraggableRow from "@/components/receita/DraggableRow";
 import CadastrarMedidaDialog from "@/components/receita/CadastrarMedidaDialog";
-import { converterGramasParaMedida, converterMedidaParaGramas } from "@/lib/conversorMedidas";
+import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
 import EscalarReceitaDialog from "@/components/receita/EscalarReceitaDialog";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";

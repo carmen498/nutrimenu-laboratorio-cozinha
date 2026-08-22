@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Search, X } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 
 const GRUPO_LABELS = {
   molho: "Molhos",

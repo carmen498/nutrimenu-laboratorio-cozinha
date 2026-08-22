@@ -17,12 +17,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  ArrowLeft, Trash2, ShoppingCart, Download, Plus,
+  ArrowLeft, ShoppingCart, Download, Plus,
   Star, MoreHorizontal, Package, Scale, Calendar, PartyPopper,
   GlassWater, Sun, Sparkles, MapPin, FileText, Pencil, HelpCircle
 } from "lucide-react";
 import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
-import { sugerirPerCapita, getPerCapitaInfo } from "@/lib/perCapitaData";
+import { sugerirPerCapita } from "@/lib/perCapitaData";
 import TagBadge from "@/components/tags/TagBadge";
 import TagSelector from "@/components/tags/TagSelector";
 import CardapioInsumosSection from "@/components/cardapio/CardapioInsumosSection";

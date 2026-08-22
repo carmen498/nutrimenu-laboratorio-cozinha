@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, AlertTriangle, Loader2, ClipboardPaste, ChefHat, ChevronDown, FileText, Ban } from "lucide-react";
+import { AlertTriangle, Loader2, ClipboardPaste, ChefHat, ChevronDown, FileText, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import ImportarReceitaTextoItemDetail from "@/components/receita/ImportarReceitaTextoItemDetail";

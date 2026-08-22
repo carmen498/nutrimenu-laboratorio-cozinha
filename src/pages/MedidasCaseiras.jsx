@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, Plus, Pencil, Trash2, Upload, Check, X, Utensils, Download, ArrowLeft } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Upload, Check, Utensils, Download, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import ImportarMedidasDialog from "@/components/medida/ImportarMedidasDialog";

@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Check } from "lucide-react";
+import { Plus } from "lucide-react";
 import TagBadge from "@/components/tags/TagBadge";
 import { toast } from "sonner";
 

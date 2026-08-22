@@ -1,12 +1,12 @@
 import { criarIngredienteEsquecidoReceita } from '@/lib/secureChildEntities';
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Check, X, HelpCircle } from "lucide-react";
+import { Plus, Trash2, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 

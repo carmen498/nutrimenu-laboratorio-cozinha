@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Plus, Trash2, Package, Search, Check, X, HelpCircle } from "lucide-react";
+import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 
 const INSUMOS_PREDEFINIDOS = [
