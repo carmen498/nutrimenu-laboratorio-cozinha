@@ -16,6 +16,7 @@ import TabelaFichaTecnica from "@/components/fichaTecnica/TabelaFichaTecnica";
 import TagBadge from "@/components/tags/TagBadge";
 import { useAuth } from "@/lib/AuthContext";
 import { buscarPrecosPersonalizados, aplicarPrecosPersonalizados } from "@/lib/precoIngredienteCliente";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 import {
   buscarPreferenciasIngredientes,
   aplicarPreferenciasIngredientes,
@@ -183,7 +184,7 @@ export default function FichaTecnicaReceita() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
