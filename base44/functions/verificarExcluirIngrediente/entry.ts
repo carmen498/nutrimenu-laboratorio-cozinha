@@ -5,6 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json().catch(() => ({}));
     const ingredienteId = body.ingrediente_id;
@@ -14,11 +15,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'ingrediente_id obrigatório' }, { status: 400 });
     }
 
-    // Find all recipe lines using this ingredient
+    // Esta função usa service role para enxergar todas as referências do catálogo.
+    // Por isso, tanto a verificação quanto a exclusão são exclusivas de admin.
     const lines = await base44.asServiceRole.entities.IngredienteReceita.filter({ ingrediente_id: ingredienteId });
     const receitaIds = [...new Set(lines.map(l => l.receita_id))];
 
-    // Get recipe names
     const receitas = [];
     for (const recId of receitaIds) {
       try {
@@ -28,29 +29,28 @@ Deno.serve(async (req) => {
     }
 
     if (acao === 'excluir') {
-      // Delete all recipe lines referencing this ingredient
       if (lines.length > 0) {
         await base44.asServiceRole.entities.IngredienteReceita.deleteMany({ ingrediente_id: ingredienteId });
       }
-      // Mark affected recipes as revisar
+
       for (const recId of receitaIds) {
         try {
           await base44.asServiceRole.entities.Receita.update(recId, { revisar: true });
         } catch {}
       }
-      // Delete the ingredient
+
       await base44.asServiceRole.entities.Ingrediente.delete(ingredienteId);
 
       return Response.json({
         success: true,
         receitasAfetadas: receitas.length,
-        receitas: receitas
+        receitas,
       });
     }
 
     return Response.json({
-      receitas: receitas,
-      total: receitas.length
+      receitas,
+      total: receitas.length,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
