@@ -18,14 +18,14 @@ Deno.serve(async (req) => {
     // Get or create config record. A criação também é mudança global e, portanto,
     // só pode acontecer para admin. Para usuários comuns sem configuração ainda,
     // apenas devolve status inativo.
-    const configs = await base44.asServiceRole.entities.AppConfig.filter({ chave: 'auto_update_prices' });
+    const configs = await base44.asServiceRole.entities.ConfiguracaoSistema.filter({ chave: 'auto_update_prices' });
     let config = configs[0];
 
     if (!config) {
       if (user.role !== 'admin') {
         return Response.json({ ativa: false });
       }
-      config = await base44.asServiceRole.entities.AppConfig.create({
+      config = await base44.asServiceRole.entities.ConfiguracaoSistema.create({
         chave: 'auto_update_prices',
         valor: 'false'
       });
@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
 
     if (acao === 'toggle') {
       const currentValue = config.valor === 'true';
-      config = await base44.asServiceRole.entities.AppConfig.update(config.id, {
+      config = await base44.asServiceRole.entities.ConfiguracaoSistema.update(config.id, {
         valor: String(!currentValue)
       });
     }
