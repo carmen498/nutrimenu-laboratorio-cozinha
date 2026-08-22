@@ -7,16 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  getPesoPorMedidaG,
+  getUtensilioIdMedida,
+  normalizarPayloadMedidaCaseira,
+} from "@/lib/medidaCaseiraModel";
 
 /**
  * Cadastro de MedidaCaseira a partir da ficha da receita.
- * Fase 4: grava os campos canônicos (ingrediente_id, utensilio_id, peso_g)
- * e mantém os campos legados espelhados durante a migração.
+ * Fase 7: IDs + equivalência física são a fonte de verdade. referencia_g fica
+ * somente como cache temporário de runtime para consumidores legados.
  */
 export default function CadastrarMedidaDialog({ open, onClose, ingrediente, utensilios = [], medidaExistente = null }) {
   const qc = useQueryClient();
   const [utensilioId, setUtensilioId] = useState("");
   const [referenciaG, setReferenciaG] = useState("");
+  const [estadoAlimento, setEstadoAlimento] = useState("cru");
+  const [fonte, setFonte] = useState("Medição própria");
   const [soGramas, setSoGramas] = useState(false);
   const [userTouchedRef, setUserTouchedRef] = useState(false);
 
@@ -32,26 +39,34 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
   }, [utensilioId]);
 
   useEffect(() => {
-    if (open) {
-      if (medidaExistente) {
-        setUtensilioId(medidaExistente.utensilio_id || medidaExistente.utensilio || "");
-        const peso = medidaExistente.peso_g ?? medidaExistente.referencia_g ?? medidaExistente.equivalencia_g;
-        setReferenciaG(peso != null ? String(peso) : "");
-        setSoGramas(!!medidaExistente.so_gramas);
-      } else {
-        setUtensilioId("");
-        setReferenciaG("");
-        setSoGramas(false);
-      }
-      setUserTouchedRef(false);
+    if (!open) return;
+    if (medidaExistente) {
+      setUtensilioId(getUtensilioIdMedida(medidaExistente) || "");
+      const peso = getPesoPorMedidaG(medidaExistente);
+      setReferenciaG(peso != null ? String(peso) : "");
+      setEstadoAlimento(medidaExistente.estado_alimento || "não informado");
+      setFonte(medidaExistente.fonte || "Medição própria");
+      setSoGramas(!!medidaExistente.so_gramas);
+    } else {
+      setUtensilioId("");
+      setReferenciaG("");
+      setEstadoAlimento("cru");
+      setFonte("Medição própria");
+      setSoGramas(false);
     }
+    setUserTouchedRef(false);
   }, [open, medidaExistente]);
 
   const handleSave = async () => {
-    if (!utensilioId) {
+    if (!ingrediente?.id) {
+      toast.error("Ingrediente inválido");
+      return;
+    }
+    if (!soGramas && !utensilioId) {
       toast.error("Selecione um utensílio");
       return;
     }
+
     const ute = uteMap[utensilioId];
     const refG = referenciaG !== "" ? parseFloat(referenciaG.replace(",", ".")) : null;
     if (!soGramas && (!refG || refG <= 0)) {
@@ -59,22 +74,32 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
       return;
     }
 
-    const payload = {
-      nome: `${ingrediente.nome} · ${ute.simbolo}`,
+    const payload = normalizarPayloadMedidaCaseira({
+      nome: soGramas
+        ? `${ingrediente.nome} · só gramas`
+        : `${ingrediente.nome} · ${ute?.simbolo || ute?.nome || "medida"}`,
       ingrediente_id: ingrediente.id,
-      utensilio_id: utensilioId,
+      utensilio_id: soGramas ? "" : utensilioId,
       quantidade_utensilio: 1,
-      peso_g: refG,
-      estado_alimento: "cru",
+      peso_g: soGramas ? null : refG,
+      estado_alimento: estadoAlimento,
+      fonte: fonte.trim() || "Medição própria",
       so_gramas: soGramas,
-      // Compatibilidade temporária
-      alimento: ingrediente.id,
-      utensilio: utensilioId,
-      referencia_g: refG,
-      equivalencia_g: refG,
-    };
+    });
 
     try {
+      if (!medidaExistente && !soGramas) {
+        const duplicadas = await base44.entities.MedidaCaseira.filter({
+          ingrediente_id: ingrediente.id,
+          utensilio_id: utensilioId,
+          estado_alimento: estadoAlimento,
+        });
+        if (duplicadas.length > 0) {
+          toast.error("Já existe uma equivalência para este ingrediente, utensílio e estado.");
+          return;
+        }
+      }
+
       if (medidaExistente) {
         await base44.entities.MedidaCaseira.update(medidaExistente.id, payload);
         toast.success("Medida atualizada — conversão recalculada!");
@@ -97,29 +122,51 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label className="text-xs">Utensílio *</Label>
+            <Label className="text-xs">Estado do alimento *</Label>
+            <select
+              value={estadoAlimento}
+              onChange={(e) => setEstadoAlimento(e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1"
+            >
+              <option value="cru">Cru / antes do preparo</option>
+              <option value="pronto">Pronto / depois do preparo</option>
+              <option value="não informado">Não informado</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-xs">Utensílio {!soGramas && "*"}</Label>
             <select
               value={utensilioId}
               onChange={(e) => setUtensilioId(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1"
+              disabled={soGramas}
+              className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm mt-1 disabled:opacity-50"
             >
               <option value="">Selecione...</option>
               {utensilios.map((u) => (
                 <option key={u.id} value={u.id}>
-                  {u.simbolo} — {u.descricao_singular}
-                  {u.g_medio != null ? ` (g médio: ${u.g_medio})` : ""}
+                  {u.simbolo} — {u.descricao_singular || u.nome}
+                  {u.capacidade_ml != null ? ` (${u.capacidade_ml} ml)` : ""}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <Label className="text-xs">Referência (g cru) {!soGramas && "*"}</Label>
+            <Label className="text-xs">Peso correspondente a 1 medida (g) {!soGramas && "*"}</Label>
             <Input
               type="text"
               value={referenciaG}
               onChange={(e) => { setReferenciaG(e.target.value); setUserTouchedRef(true); }}
-              placeholder="ex: 200"
+              placeholder="ex: 120"
               disabled={soGramas}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Fonte</Label>
+            <Input
+              value={fonte}
+              onChange={(e) => setFonte(e.target.value)}
+              placeholder="Ex.: medição própria, fabricante, literatura"
               className="mt-1"
             />
           </div>
@@ -141,7 +188,7 @@ export default function CadastrarMedidaDialog({ open, onClose, ingrediente, uten
               try {
                 await base44.entities.MedidaCaseira.delete(medidaExistente.id);
                 qc.invalidateQueries({ queryKey: ["medidas-caseiras"] });
-                toast.success("Medida removida — linha volta a exibir apenas gramas");
+                toast.success("Medida removida");
                 onClose();
               } catch (err) {
                 toast.error("Erro ao remover: " + (err.message || ""));
