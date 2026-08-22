@@ -9,6 +9,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { montarOrcamento } from "@/lib/orcamentoCalc";
 import { gerarOrcamentoPDF } from "@/lib/orcamentoPDF";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 // Tela de pré-visualização do Orçamento (documento comercial do cliente).
 // Regra de segurança: nenhum dado interno (custo, custo por pessoa, markup, %, kg de
@@ -123,7 +124,7 @@ export default function OrcamentoCardapio() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
