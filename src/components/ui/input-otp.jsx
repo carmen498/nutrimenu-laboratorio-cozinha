@@ -6,7 +6,7 @@ import { Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const InputOTP = forwardRefAny(({ className, containerClassName, ...props }, ref) => (
+const InputOTP = forwardRefAny((/** @type {any} */ { className, containerClassName, ...props }, ref) => (
   <OTPInput
     ref={ref}
     containerClassName={cn("flex items-center gap-2 has-[:disabled]:opacity-50", containerClassName)}
@@ -15,12 +15,12 @@ const InputOTP = forwardRefAny(({ className, containerClassName, ...props }, ref
 ))
 InputOTP.displayName = "InputOTP"
 
-const InputOTPGroup = forwardRefAny(({ className, ...props }, ref) => (
+const InputOTPGroup = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div ref={ref} className={cn("flex items-center", className)} {...props} />
 ))
 InputOTPGroup.displayName = "InputOTPGroup"
 
-const InputOTPSlot = forwardRefAny(({ index, className, ...props }, ref) => {
+const InputOTPSlot = forwardRefAny((/** @type {any} */ { index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext)
   const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index]
 
@@ -45,7 +45,7 @@ const InputOTPSlot = forwardRefAny(({ index, className, ...props }, ref) => {
 })
 InputOTPSlot.displayName = "InputOTPSlot"
 
-const InputOTPSeparator = forwardRefAny(({ ...props }, ref) => (
+const InputOTPSeparator = forwardRefAny((/** @type {any} */ { ...props }, ref) => (
   <div ref={ref} role="separator" {...props}>
     <Minus />
   </div>

@@ -5,7 +5,7 @@ import { cva } from "class-variance-authority";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ToastProvider = forwardRefAny(({ ...props }, ref) => (
+const ToastProvider = forwardRefAny((/** @type {any} */ { ...props }, ref) => (
   <div
     ref={ref}
     className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
@@ -14,7 +14,7 @@ const ToastProvider = forwardRefAny(({ ...props }, ref) => (
 ));
 ToastProvider.displayName = "ToastProvider";
 
-const ToastViewport = forwardRefAny(({ ...props }, ref) => (
+const ToastViewport = forwardRefAny((/** @type {any} */ { ...props }, ref) => (
   <div
     ref={ref}
     className="fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]"
@@ -39,7 +39,7 @@ const toastVariants = cva(
   }
 );
 
-const Toast = forwardRefAny(({ className, variant, ...props }, ref) => {
+const Toast = forwardRefAny((/** @type {any} */ { className, variant, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -50,7 +50,7 @@ const Toast = forwardRefAny(({ className, variant, ...props }, ref) => {
 });
 Toast.displayName = "Toast";
 
-const ToastAction = forwardRefAny(({ className, ...props }, ref) => (
+const ToastAction = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
@@ -62,7 +62,7 @@ const ToastAction = forwardRefAny(({ className, ...props }, ref) => (
 ));
 ToastAction.displayName = "ToastAction";
 
-const ToastClose = forwardRefAny(({ className, ...props }, ref) => (
+const ToastClose = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <button
     ref={ref}
     className={cn(
@@ -77,7 +77,7 @@ const ToastClose = forwardRefAny(({ className, ...props }, ref) => (
 ));
 ToastClose.displayName = "ToastClose";
 
-const ToastTitle = forwardRefAny(({ className, ...props }, ref) => (
+const ToastTitle = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("text-sm font-semibold", className)}
@@ -86,7 +86,7 @@ const ToastTitle = forwardRefAny(({ className, ...props }, ref) => (
 ));
 ToastTitle.displayName = "ToastTitle";
 
-const ToastDescription = forwardRefAny(({ className, ...props }, ref) => (
+const ToastDescription = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("text-sm opacity-90", className)}

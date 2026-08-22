@@ -4,7 +4,7 @@ const forwardRefAny = /** @type {any} */ (React.forwardRef)
 
 import { cn } from "@/lib/utils"
 
-const Textarea = forwardRefAny(({ className, ...props }, ref) => {
+const Textarea = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => {
   return (
     (<textarea
       className={cn(

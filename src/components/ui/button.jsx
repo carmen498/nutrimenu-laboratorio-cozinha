@@ -36,7 +36,7 @@ const buttonVariants = cva(
   }
 )
 
-const Button = forwardRefAny(({ className, variant, size, asChild = false, ...props }, ref) => {
+const Button = forwardRefAny((/** @type {any} */ { className, variant, size, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "button"
   return (
     (<Comp

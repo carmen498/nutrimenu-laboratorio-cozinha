@@ -7,7 +7,7 @@ import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const NavigationMenu = forwardRefAny(({ className, children, ...props }, ref) => (
+const NavigationMenu = forwardRefAny((/** @type {any} */ { className, children, ...props }, ref) => (
   <NavigationMenuPrimitive.Root
     ref={ref}
     className={cn(
@@ -21,7 +21,7 @@ const NavigationMenu = forwardRefAny(({ className, children, ...props }, ref) =>
 ))
 NavigationMenu.displayName = NavigationMenuPrimitive.Root.displayName
 
-const NavigationMenuList = forwardRefAny(({ className, ...props }, ref) => (
+const NavigationMenuList = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <NavigationMenuPrimitive.List
     ref={ref}
     className={cn(
@@ -38,7 +38,7 @@ const navigationMenuTriggerStyle = cva(
   "group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50"
 )
 
-const NavigationMenuTrigger = forwardRefAny(({ className, children, ...props }, ref) => (
+const NavigationMenuTrigger = forwardRefAny((/** @type {any} */ { className, children, ...props }, ref) => (
   <NavigationMenuPrimitive.Trigger
     ref={ref}
     className={cn(navigationMenuTriggerStyle(), "group", className)}
@@ -51,7 +51,7 @@ const NavigationMenuTrigger = forwardRefAny(({ className, children, ...props }, 
 ))
 NavigationMenuTrigger.displayName = NavigationMenuPrimitive.Trigger.displayName
 
-const NavigationMenuContent = forwardRefAny(({ className, ...props }, ref) => (
+const NavigationMenuContent = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <NavigationMenuPrimitive.Content
     ref={ref}
     className={cn(
@@ -64,7 +64,7 @@ NavigationMenuContent.displayName = NavigationMenuPrimitive.Content.displayName
 
 const NavigationMenuLink = NavigationMenuPrimitive.Link
 
-const NavigationMenuViewport = forwardRefAny(({ className, ...props }, ref) => (
+const NavigationMenuViewport = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div className={cn("absolute left-0 top-full flex justify-center")}>
     <NavigationMenuPrimitive.Viewport
       className={cn(
@@ -78,7 +78,7 @@ const NavigationMenuViewport = forwardRefAny(({ className, ...props }, ref) => (
 NavigationMenuViewport.displayName =
   NavigationMenuPrimitive.Viewport.displayName
 
-const NavigationMenuIndicator = forwardRefAny(({ className, ...props }, ref) => (
+const NavigationMenuIndicator = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <NavigationMenuPrimitive.Indicator
     ref={ref}
     className={cn(

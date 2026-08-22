@@ -21,7 +21,7 @@ const alertVariants = cva(
   }
 )
 
-const Alert = forwardRefAny(({ className, variant, ...props }, ref) => (
+const Alert = forwardRefAny((/** @type {any} */ { className, variant, ...props }, ref) => (
   <div
     ref={ref}
     role="alert"
@@ -30,7 +30,7 @@ const Alert = forwardRefAny(({ className, variant, ...props }, ref) => (
 ))
 Alert.displayName = "Alert"
 
-const AlertTitle = forwardRefAny(({ className, ...props }, ref) => (
+const AlertTitle = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <h5
     ref={ref}
     className={cn("mb-1 font-medium leading-none tracking-tight", className)}
@@ -38,7 +38,7 @@ const AlertTitle = forwardRefAny(({ className, ...props }, ref) => (
 ))
 AlertTitle.displayName = "AlertTitle"
 
-const AlertDescription = forwardRefAny(({ className, ...props }, ref) => (
+const AlertDescription = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("text-sm [&_p]:leading-relaxed", className)}

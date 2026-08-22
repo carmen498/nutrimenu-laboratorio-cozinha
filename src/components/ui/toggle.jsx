@@ -28,7 +28,7 @@ const toggleVariants = cva(
   }
 )
 
-const Toggle = forwardRefAny(({ className, variant, size, ...props }, ref) => (
+const Toggle = forwardRefAny((/** @type {any} */ { className, variant, size, ...props }, ref) => (
   <TogglePrimitive.Root
     ref={ref}
     className={cn(toggleVariants({ variant, size, className }))}

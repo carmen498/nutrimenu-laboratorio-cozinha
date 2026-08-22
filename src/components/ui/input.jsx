@@ -4,7 +4,7 @@ const forwardRefAny = /** @type {any} */ (React.forwardRef)
 
 import { cn } from "@/lib/utils"
 
-const Input = forwardRefAny(({ className, type, ...props }, ref) => {
+const Input = forwardRefAny((/** @type {any} */ { className, type, ...props }, ref) => {
   return (
     (<input
       type={type}

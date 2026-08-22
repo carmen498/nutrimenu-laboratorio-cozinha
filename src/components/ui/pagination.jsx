@@ -18,7 +18,7 @@ const Pagination = (/** @type {any} */ {
 )
 Pagination.displayName = "Pagination"
 
-const PaginationContent = forwardRefAny(({ className, ...props }, ref) => (
+const PaginationContent = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <ul
     ref={ref}
     className={cn("flex flex-row items-center gap-1", className)}
@@ -26,7 +26,7 @@ const PaginationContent = forwardRefAny(({ className, ...props }, ref) => (
 ))
 PaginationContent.displayName = "PaginationContent"
 
-const PaginationItem = forwardRefAny(({ className, ...props }, ref) => (
+const PaginationItem = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <li ref={ref} className={cn("", className)} {...props} />
 ))
 PaginationItem.displayName = "PaginationItem"

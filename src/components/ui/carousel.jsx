@@ -114,7 +114,7 @@ const Carousel = forwardRefAny((
 })
 Carousel.displayName = "Carousel"
 
-const CarouselContent = forwardRefAny(({ className, ...props }, ref) => {
+const CarouselContent = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => {
   const { carouselRef, orientation } = useCarousel()
 
   return (
@@ -132,7 +132,7 @@ const CarouselContent = forwardRefAny(({ className, ...props }, ref) => {
 })
 CarouselContent.displayName = "CarouselContent"
 
-const CarouselItem = forwardRefAny(({ className, ...props }, ref) => {
+const CarouselItem = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => {
   const { orientation } = useCarousel()
 
   return (
@@ -150,7 +150,7 @@ const CarouselItem = forwardRefAny(({ className, ...props }, ref) => {
 })
 CarouselItem.displayName = "CarouselItem"
 
-const CarouselPrevious = forwardRefAny(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+const CarouselPrevious = forwardRefAny((/** @type {any} */ { className, variant = "outline", size = "icon", ...props }, ref) => {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
 
   return (
@@ -171,7 +171,7 @@ const CarouselPrevious = forwardRefAny(({ className, variant = "outline", size =
 })
 CarouselPrevious.displayName = "CarouselPrevious"
 
-const CarouselNext = forwardRefAny(({ className, variant = "outline", size = "icon", ...props }, ref) => {
+const CarouselNext = forwardRefAny((/** @type {any} */ { className, variant = "outline", size = "icon", ...props }, ref) => {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
 
   return (

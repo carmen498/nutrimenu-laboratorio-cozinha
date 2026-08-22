@@ -11,7 +11,7 @@ const PopoverTrigger = PopoverPrimitive.Trigger
 
 const PopoverAnchor = PopoverPrimitive.Anchor
 
-const PopoverContent = forwardRefAny(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
+const PopoverContent = forwardRefAny((/** @type {any} */ { className, align = "center", sideOffset = 4, ...props }, ref) => (
   <PopoverPrimitive.Portal>
     <PopoverPrimitive.Content
       ref={ref}

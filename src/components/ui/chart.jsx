@@ -24,7 +24,7 @@ function useChart() {
   return context
 }
 
-const ChartContainer = forwardRefAny(({ id, className, children, config, ...props }, ref) => {
+const ChartContainer = forwardRefAny((/** @type {any} */ { id, className, children, config, ...props }, ref) => {
   const uniqueId = React.useId()
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`
 

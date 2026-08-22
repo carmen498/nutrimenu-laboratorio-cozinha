@@ -4,7 +4,7 @@ const forwardRefAny = /** @type {any} */ (React.forwardRef)
 
 import { cn } from "@/lib/utils"
 
-const Card = forwardRefAny(({ className, ...props }, ref) => (
+const Card = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("rounded-xl border bg-card text-card-foreground shadow", className)}
@@ -12,7 +12,7 @@ const Card = forwardRefAny(({ className, ...props }, ref) => (
 ))
 Card.displayName = "Card"
 
-const CardHeader = forwardRefAny(({ className, ...props }, ref) => (
+const CardHeader = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("flex flex-col space-y-1.5 p-6", className)}
@@ -20,7 +20,7 @@ const CardHeader = forwardRefAny(({ className, ...props }, ref) => (
 ))
 CardHeader.displayName = "CardHeader"
 
-const CardTitle = forwardRefAny(({ className, ...props }, ref) => (
+const CardTitle = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("font-semibold leading-none tracking-tight", className)}
@@ -28,7 +28,7 @@ const CardTitle = forwardRefAny(({ className, ...props }, ref) => (
 ))
 CardTitle.displayName = "CardTitle"
 
-const CardDescription = forwardRefAny(({ className, ...props }, ref) => (
+const CardDescription = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
@@ -36,12 +36,12 @@ const CardDescription = forwardRefAny(({ className, ...props }, ref) => (
 ))
 CardDescription.displayName = "CardDescription"
 
-const CardContent = forwardRefAny(({ className, ...props }, ref) => (
+const CardContent = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
-const CardFooter = forwardRefAny(({ className, ...props }, ref) => (
+const CardFooter = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("flex items-center p-6 pt-0", className)}

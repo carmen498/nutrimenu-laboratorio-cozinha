@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 
 const Tabs = TabsPrimitive.Root
 
-const TabsList = forwardRefAny(({ className, ...props }, ref) => (
+const TabsList = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
     className={cn(
@@ -18,7 +18,7 @@ const TabsList = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 
-const TabsTrigger = forwardRefAny(({ className, ...props }, ref) => (
+const TabsTrigger = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
@@ -29,7 +29,7 @@ const TabsTrigger = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
-const TabsContent = forwardRefAny(({ className, ...props }, ref) => (
+const TabsContent = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
     className={cn(

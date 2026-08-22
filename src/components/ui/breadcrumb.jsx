@@ -11,7 +11,7 @@ const Breadcrumb = forwardRefAny(
 )
 Breadcrumb.displayName = "Breadcrumb"
 
-const BreadcrumbList = forwardRefAny(({ className, ...props }, ref) => (
+const BreadcrumbList = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <ol
     ref={ref}
     className={cn(
@@ -22,7 +22,7 @@ const BreadcrumbList = forwardRefAny(({ className, ...props }, ref) => (
 ))
 BreadcrumbList.displayName = "BreadcrumbList"
 
-const BreadcrumbItem = forwardRefAny(({ className, ...props }, ref) => (
+const BreadcrumbItem = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <li
     ref={ref}
     className={cn("inline-flex items-center gap-1.5", className)}
@@ -30,7 +30,7 @@ const BreadcrumbItem = forwardRefAny(({ className, ...props }, ref) => (
 ))
 BreadcrumbItem.displayName = "BreadcrumbItem"
 
-const BreadcrumbLink = forwardRefAny(({ asChild, className, ...props }, ref) => {
+const BreadcrumbLink = forwardRefAny((/** @type {any} */ { asChild, className, ...props }, ref) => {
   const Comp = asChild ? Slot : "a"
 
   return (
@@ -42,7 +42,7 @@ const BreadcrumbLink = forwardRefAny(({ asChild, className, ...props }, ref) => 
 })
 BreadcrumbLink.displayName = "BreadcrumbLink"
 
-const BreadcrumbPage = forwardRefAny(({ className, ...props }, ref) => (
+const BreadcrumbPage = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <span
     ref={ref}
     role="link"

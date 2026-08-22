@@ -4,7 +4,7 @@ const forwardRefAny = /** @type {any} */ (React.forwardRef)
 
 import { cn } from "@/lib/utils"
 
-const Table = forwardRefAny(({ className, ...props }, ref) => (
+const Table = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
@@ -14,12 +14,12 @@ const Table = forwardRefAny(({ className, ...props }, ref) => (
 ))
 Table.displayName = "Table"
 
-const TableHeader = forwardRefAny(({ className, ...props }, ref) => (
+const TableHeader = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
 ))
 TableHeader.displayName = "TableHeader"
 
-const TableBody = forwardRefAny(({ className, ...props }, ref) => (
+const TableBody = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <tbody
     ref={ref}
     className={cn("[&_tr:last-child]:border-0", className)}
@@ -27,7 +27,7 @@ const TableBody = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TableBody.displayName = "TableBody"
 
-const TableFooter = forwardRefAny(({ className, ...props }, ref) => (
+const TableFooter = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <tfoot
     ref={ref}
     className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
@@ -35,7 +35,7 @@ const TableFooter = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TableFooter.displayName = "TableFooter"
 
-const TableRow = forwardRefAny(({ className, ...props }, ref) => (
+const TableRow = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <tr
     ref={ref}
     className={cn(
@@ -46,7 +46,7 @@ const TableRow = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TableRow.displayName = "TableRow"
 
-const TableHead = forwardRefAny(({ className, ...props }, ref) => (
+const TableHead = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <th
     ref={ref}
     className={cn(
@@ -57,7 +57,7 @@ const TableHead = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TableHead.displayName = "TableHead"
 
-const TableCell = forwardRefAny(({ className, ...props }, ref) => (
+const TableCell = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <td
     ref={ref}
     className={cn(
@@ -68,7 +68,7 @@ const TableCell = forwardRefAny(({ className, ...props }, ref) => (
 ))
 TableCell.displayName = "TableCell"
 
-const TableCaption = forwardRefAny(({ className, ...props }, ref) => (
+const TableCaption = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <caption
     ref={ref}
     className={cn("mt-4 text-sm text-muted-foreground", className)}

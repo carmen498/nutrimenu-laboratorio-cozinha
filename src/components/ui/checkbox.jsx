@@ -6,7 +6,7 @@ import { Check, Minus } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
-const Checkbox = forwardRefAny(({ className, ...props }, ref) => (
+const Checkbox = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(

@@ -21,7 +21,7 @@ const DrawerPortal = DrawerPrimitive.Portal
 
 const DrawerClose = DrawerPrimitive.Close
 
-const DrawerOverlay = forwardRefAny(({ className, ...props }, ref) => (
+const DrawerOverlay = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
     className={cn("fixed inset-0 z-50 bg-black/80", className)}
@@ -29,7 +29,7 @@ const DrawerOverlay = forwardRefAny(({ className, ...props }, ref) => (
 ))
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
-const DrawerContent = forwardRefAny(({ className, children, ...props }, ref) => (
+const DrawerContent = forwardRefAny((/** @type {any} */ { className, children, ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
     <DrawerPrimitive.Content
@@ -64,7 +64,7 @@ const DrawerFooter = (/** @type {any} */ {
 )
 DrawerFooter.displayName = "DrawerFooter"
 
-const DrawerTitle = forwardRefAny(({ className, ...props }, ref) => (
+const DrawerTitle = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
     className={cn("text-lg font-semibold leading-none tracking-tight", className)}
@@ -72,7 +72,7 @@ const DrawerTitle = forwardRefAny(({ className, ...props }, ref) => (
 ))
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName
 
-const DrawerDescription = forwardRefAny(({ className, ...props }, ref) => (
+const DrawerDescription = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}

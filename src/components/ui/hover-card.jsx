@@ -11,7 +11,7 @@ const HoverCard = HoverCardPrimitive.Root
 
 const HoverCardTrigger = HoverCardPrimitive.Trigger
 
-const HoverCardContent = forwardRefAny(({ className, align = "center", sideOffset = 4, ...props }, ref) => (
+const HoverCardContent = forwardRefAny((/** @type {any} */ { className, align = "center", sideOffset = 4, ...props }, ref) => (
   <HoverCardPrimitive.Content
     ref={ref}
     align={align}

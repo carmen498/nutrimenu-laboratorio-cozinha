@@ -49,7 +49,7 @@ const useFormField = () => {
 
 const FormItemContext = React.createContext({})
 
-const FormItem = forwardRefAny(({ className, ...props }, ref) => {
+const FormItem = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => {
   const id = React.useId()
 
   return (
@@ -60,7 +60,7 @@ const FormItem = forwardRefAny(({ className, ...props }, ref) => {
 })
 FormItem.displayName = "FormItem"
 
-const FormLabel = forwardRefAny(({ className, ...props }, ref) => {
+const FormLabel = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => {
   const { error, formItemId } = useFormField()
 
   return (
@@ -73,7 +73,7 @@ const FormLabel = forwardRefAny(({ className, ...props }, ref) => {
 })
 FormLabel.displayName = "FormLabel"
 
-const FormControl = forwardRefAny(({ ...props }, ref) => {
+const FormControl = forwardRefAny((/** @type {any} */ { ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } = useFormField()
 
   return (
@@ -91,7 +91,7 @@ const FormControl = forwardRefAny(({ ...props }, ref) => {
 })
 FormControl.displayName = "FormControl"
 
-const FormDescription = forwardRefAny(({ className, ...props }, ref) => {
+const FormDescription = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => {
   const { formDescriptionId } = useFormField()
 
   return (
@@ -104,7 +104,7 @@ const FormDescription = forwardRefAny(({ className, ...props }, ref) => {
 })
 FormDescription.displayName = "FormDescription"
 
-const FormMessage = forwardRefAny(({ className, children, ...props }, ref) => {
+const FormMessage = forwardRefAny((/** @type {any} */ { className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
   const body = error ? String(error?.message) : children
 

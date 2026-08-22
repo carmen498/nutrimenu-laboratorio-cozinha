@@ -10,7 +10,7 @@ const labelVariants = cva(
   "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 )
 
-const Label = forwardRefAny(({ className, ...props }, ref) => (
+const Label = forwardRefAny((/** @type {any} */ { className, ...props }, ref) => (
   <LabelPrimitive.Root ref={ref} className={cn(labelVariants(), className)} {...props} />
 ))
 Label.displayName = LabelPrimitive.Root.displayName
