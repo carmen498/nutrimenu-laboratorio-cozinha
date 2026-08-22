@@ -19,7 +19,7 @@ export function montarTextoCompartilhamentoDossie({ ingrediente }) {
     text += `\nHISTÓRICO DE PREÇOS:\n`;
     historico
       .slice()
-      .sort((a, b) => new Date(b.data) - new Date(a.data))
+      .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
       .forEach((h) => {
         const variacao = h.variacao_percentual > 0 ? `+${h.variacao_percentual}%` : `${h.variacao_percentual ?? 0}%`;
         text += `• ${new Date(h.data).toLocaleDateString("pt-BR")} — ${formatCurrency(h.preco_por_kg)}/kg (${variacao}) · ${h.fonte || "—"}\n`;
