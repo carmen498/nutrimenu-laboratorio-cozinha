@@ -207,18 +207,26 @@ Deno.serve(async (req) => {
 
         if (item.tipo !== 'ingrediente') continue;
         let ingrediente = txt(item.ingrediente_id) ? ingredienteMap.get(txt(item.ingrediente_id)) : null;
+        const nomeCache = txt(item.ingrediente_nome);
+        const nomeDivergente = Boolean(ingrediente && nomeCache && norm(nomeCache) !== norm(ingrediente.nome));
 
-        if (!ingrediente) {
-          const nomeCache = txt(item.ingrediente_nome);
+        // Fase 10.2: referência também é inválida quando o ID existe, mas o nome
+        // preservado no item identifica outro ingrediente. Isso ocorreu no legado
+        // com IDs reaproveitados para nomes diferentes.
+        if (!ingrediente || nomeDivergente) {
           const candidatos = nomeCache ? (ingredienteNomeMap.get(norm(nomeCache)) || []) : [];
           const direto = !txt(item.subreceita_parent_id);
           const unico = candidatos.length === 1 ? candidatos[0] : null;
-          const fixavel = Boolean(direto && unico);
+          const jaApontaCorreto = Boolean(unico && ingrediente?.id === unico.id);
+          const fixavel = Boolean(direto && unico && !jaApontaCorreto);
           registrarIssue(receita.id, fixavel);
           const refKey = `${txt(item.ingrediente_id) || '*'}|${norm(nomeCache) || '*'}`;
           addGrupo(gruposReferencia, refKey, {
-            tipo: txt(item.subreceita_parent_id) ? 'referencia_subreceita_quebrada' : 'referencia_ingrediente_quebrada',
+            tipo: txt(item.subreceita_parent_id)
+              ? 'referencia_subreceita_quebrada'
+              : (nomeDivergente ? 'referencia_nome_id_divergente' : 'referencia_ingrediente_quebrada'),
             ingrediente_id_antigo: txt(item.ingrediente_id),
+            ingrediente_nome_mestre_atual: ingrediente?.nome || null,
             ingrediente_nome_cache: nomeCache,
             candidatos_exatos: candidatos.map((c: any) => ({ id: c.id, nome: c.nome })),
             automatico: fixavel,
@@ -228,7 +236,7 @@ Deno.serve(async (req) => {
           if (fixavel) {
             updItem.set(item.id, { id: item.id, ingrediente_id: unico.id, ingrediente_nome: unico.nome, modelo_versao: 2 });
             ingrediente = unico;
-          } else {
+          } else if (!jaApontaCorreto) {
             continue;
           }
         }
