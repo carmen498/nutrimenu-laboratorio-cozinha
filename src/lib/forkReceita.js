@@ -1,4 +1,5 @@
 import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
+import { criarReceitaSegura } from '@/lib/secureRootEntities';
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -32,7 +33,7 @@ export async function garantirReceitaEditavel({ receita, itens = [], receitaTags
   }
 
   const { id: _oldId, created_date, updated_date, created_by_id, created_by, is_base, forked_from_id, receita_origem_id, usuario_dono_id, data_personalizacao, ...rest } = receita;
-  const nova = await base44.entities.Receita.create({
+  const nova = await criarReceitaSegura({
     ...rest,
     is_base: false,
     forked_from_id: receita.id,
