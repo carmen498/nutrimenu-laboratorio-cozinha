@@ -154,17 +154,18 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
+    // Idempotência para TODOS os estados finais. Replays legítimos do Mercado Pago
+    // (ou repetição da mesma notificação assinada) não devem reenviar e-mail/WhatsApp,
+    // reativar plano nem executar revogação de estorno uma segunda vez.
+    if (pagamento.status === novoStatus) {
+      console.log(`Pagamento já estava ${novoStatus} — efeitos colaterais ignorados (idempotência).`);
+      await registrarLog({ assinatura_valida: true, resultado: "processado", pagamento_id: pagamentoId, status_resolvido: novoStatus });
+      return Response.json({ received: true, status: novoStatus, idempotent: true });
+    }
+
     if (novoStatus === "approved") {
-      // Idempotência: se este Pagamento já estava "approved" antes desta notificação
-      // (por exemplo, já foi ativado de forma síncrona na criação da order), não
-      // reprocessa — evita reenviar o e-mail ou somar a data de expiração de novo.
-      const jaEstavaAprovado = pagamento.status === "approved";
-      if (!jaEstavaAprovado) {
-        await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
-        await ativarPlanoEEnviarEmail(base44, pagamento);
-      } else {
-        console.log("Pagamento já estava approved — ativação ignorada (idempotência).");
-      }
+      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
+      await ativarPlanoEEnviarEmail(base44, pagamento);
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
 
