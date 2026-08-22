@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { normalizarNovoIngredienteReceita } from '@/lib/ingredienteReceitaModel';
 
 const parentCache = new Map();
 
@@ -29,13 +30,9 @@ function metadadosDoPai(pai) {
 
 async function criarFilhoReceita(entityName, payload) {
   const pai = await carregarPai('receita', payload?.receita_id);
-  const dados = { ...payload };
-
-  // Fase 4: todo novo IngredienteReceita nasce com unidade canônica. Fluxos
-  // antigos não precisam conhecer o novo campo; o helper deriva da receita-pai.
-  if (entityName === 'IngredienteReceita' && !dados.unidade_quantidade) {
-    dados.unidade_quantidade = pai?.unidade_base === 'ml' ? 'ml' : 'g';
-  }
+  const dados = entityName === 'IngredienteReceita'
+    ? normalizarNovoIngredienteReceita(payload, pai)
+    : { ...payload };
 
   return base44.entities[entityName].create({
     ...dados,
