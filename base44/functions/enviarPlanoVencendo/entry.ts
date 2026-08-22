@@ -1,21 +1,29 @@
 // Disparada por automação agendada (diária). Envia o e-mail e o WhatsApp de
-// "plano perto de vencer" para assinantes pagantes cujo data_expiracao é em 5 dias.
+// "plano perto de vencer" para assinantes pagantes cujo data_expiracao é em 5 dias
+// e normaliza assinaturas já vencidas.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
+import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
 
 const ASSUNTO_PADRAO = "Seu plano está perto de vencer";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve.</p>
 <p>Renove agora para não perder o acesso às suas receitas e cardápios.</p>`;
 
+function somarDiasISO(dataISO: string, dias: number): string {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const data = new Date(Date.UTC(ano, mes - 1, dia));
+  data.setUTCDate(data.getUTCDate() + dias);
+  return data.toISOString().split("T")[0];
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
 
-    const alvo = new Date();
-    alvo.setDate(alvo.getDate() + 5);
-    const dataAlvo = alvo.toISOString().split('T')[0];
+    const hoje = hojeSaoPauloISO();
+    const dataAlvo = somarDiasISO(hoje, 5);
 
     const usuarios = await base44.asServiceRole.entities.User.filter({
       status_assinatura: "ativo",
@@ -49,7 +57,13 @@ export default async function(req: Request): Promise<Response> {
       );
     }
 
-    return Response.json({ processados: usuarios.length, enviados });
+    const normalizacao = await normalizarAssinaturasVencidas(base44);
+
+    return Response.json({
+      processados: usuarios.length,
+      enviados,
+      normalizacao,
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
