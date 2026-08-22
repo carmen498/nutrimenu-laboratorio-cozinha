@@ -12,19 +12,36 @@
     },
     "ingrediente_nome": {
       "type": "string",
-      "description": "Nome do ingrediente (cache)"
+      "description": "LEGADO/CACHE: nome do ingrediente. A identidade canônica é ingrediente_id."
     },
     "pre_preparo": {
       "type": "string",
-      "description": "Pré-preparo (picado, em cubos, desfiado)"
+      "description": "Pré-preparo específico deste ingrediente nesta receita (picado, em cubos, desfiado...)"
     },
     "quantidade_por_porcao": {
       "type": "number",
-      "description": "Quantidade por porção em g/ml"
+      "description": "Quantidade líquida por porção. A unidade é definida em unidade_quantidade; legado assume g/ml conforme a receita."
+    },
+    "unidade_quantidade": {
+      "type": "string",
+      "enum": ["g", "ml"],
+      "description": "Unidade canônica da quantidade deste item. Quando ausente, usa receita.unidade_base como compatibilidade."
+    },
+    "fator_correcao_override": {
+      "type": "number",
+      "description": "FC específico deste ingrediente nesta receita. Valor > 0 prevalece sobre Ingrediente.fator_correcao; 0/ausente significa usar o padrão do ingrediente."
+    },
+    "medida_caseira_id": {
+      "type": "string",
+      "description": "ID da MedidaCaseira escolhida especificamente para este item da receita. Quando ausente, o app pode usar a medida padrão do ingrediente."
+    },
+    "quantidade_medida_caseira": {
+      "type": "number",
+      "description": "Quantidade de medidas informada pelo usuário quando a quantidade do item foi digitada em medida caseira. É metadado de entrada; os gramas/ml continuam sendo a base de cálculo."
     },
     "medida_caseira": {
       "type": "string",
-      "description": "Medida caseira usada (ex: 1 xícara)"
+      "description": "LEGADO/CACHE: texto livre de medida caseira. Novas relações devem usar medida_caseira_id."
     },
     "ordem": {
       "type": "number",
@@ -50,7 +67,7 @@
     },
     "subreceita_nome": {
       "type": "string",
-      "description": "Nome da sub-receita (cache)"
+      "description": "LEGADO/CACHE: nome da sub-receita. A relação canônica é subreceita_id."
     },
     "subreceita_parent_id": {
       "type": "string",
@@ -63,11 +80,11 @@
     },
     "is_base": {
       "type": "boolean",
-      "description": "Espelha se o receita-pai pertence ao catálogo-base compartilhado"
+      "description": "Espelha se a receita-pai pertence ao catálogo-base compartilhado"
     },
     "usuario_dono_id": {
       "type": "string",
-      "description": "ID do usuário dono quando o receita-pai é uma cópia pessoal"
+      "description": "ID do usuário dono quando a receita-pai é uma cópia pessoal"
     }
   },
   "required": [
