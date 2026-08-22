@@ -252,6 +252,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
 
     try {
       let conteudo = "";
+      let fileUrlSeguro = "";
       const ext = tab === TABS.FILE ? file.name?.split(".").pop()?.toLowerCase() : null;
 
       // — PASTE TAB: use text directly —
@@ -261,18 +262,18 @@ export default function ImportarLoteDialog({ open, onClose }) {
       // — FILE TAB: extract text first —
       else {
         setLoadingStep("uploading");
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        fileUrlSeguro = await uploadArquivoSeguro(base44, file, validarDocumentoReceitaUpload);
 
         if (ext === "txt") {
           // Fetch .txt content directly
-          const response = await fetch(file_url);
+          const response = await fetch(fileUrlSeguro, { credentials: "omit", referrerPolicy: "no-referrer" });
           conteudo = await response.text();
         } else if (ext === "pdf") {
           // Use ExtractDataFromUploadedFile for PDF
           setLoadingStep("extracting");
           try {
             const extraction = await base44.integrations.Core.ExtractDataFromUploadedFile({
-              file_url,
+              file_url: fileUrlSeguro,
               json_schema: {
                 type: "object",
                 properties: {
@@ -291,7 +292,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
             setLoadingStep("extracting");
             const textResult = await base44.integrations.Core.InvokeLLM({
               prompt: "Extraia TODO o texto deste arquivo, palavra por palavra. Retorne o texto bruto. Se não conseguir ler, retorne string vazia.",
-              file_urls: [file_url],
+              file_urls: [fileUrlSeguro],
               response_json_schema: {
                 type: "object",
                 properties: { texto: { type: "string" } }
@@ -304,7 +305,7 @@ export default function ImportarLoteDialog({ open, onClose }) {
           setLoadingStep("extracting");
           const textResult = await base44.integrations.Core.InvokeLLM({
             prompt: "Extraia TODO o texto deste arquivo .docx, palavra por palavra, preservando quebras de linha. Retorne o texto bruto completo. Se não conseguir ler o arquivo, retorne string vazia.",
-            file_urls: [file_url],
+            file_urls: [fileUrlSeguro],
             response_json_schema: {
               type: "object",
               properties: { texto: { type: "string" } }
@@ -319,12 +320,14 @@ export default function ImportarLoteDialog({ open, onClose }) {
         // Try one more approach for files: let LLM read file directly with strict anti-hallucination
         if (tab === TABS.FILE && file) {
           setLoadingStep("identifying");
-          const { file_url: url2 } = await base44.integrations.Core.UploadFile({ file });
+          if (!fileUrlSeguro) {
+            fileUrlSeguro = await uploadArquivoSeguro(base44, file, validarDocumentoReceitaUpload);
+          }
           const directResult = await base44.integrations.Core.InvokeLLM({
             prompt: `⚠️ CRÍTICO: Leia SOMENTE o que está neste arquivo. Se o arquivo não contiver receitas claramente identificáveis, retorne receitas vazio E marque conteudo_vazio=true. NUNCA invente receitas.
 
 ${RECIPE_EXTRACTION_PROMPT}`,
-            file_urls: [url2],
+            file_urls: [fileUrlSeguro],
             response_json_schema: {
               type: "object",
               properties: {
