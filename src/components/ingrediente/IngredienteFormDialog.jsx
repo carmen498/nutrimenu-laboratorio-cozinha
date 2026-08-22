@@ -11,8 +11,9 @@ import CalculadoraCusto from "@/components/CalculadoraCusto";
 import SinonimosSection from "@/components/ingrediente/SinonimosSection";
 import { toSentenceCaseName } from "@/lib/textCase";
 
-// O cadastro estrutural do ingrediente é compartilhado e administrado globalmente.
-// Usuários comuns editam somente o próprio preço, salvo em PrecoIngredienteCliente.
+// Fase 3:
+// - nome, categoria e fator de correção pertencem ao catálogo mestre;
+// - unidade de compra, embalagem, preço e fornecedor são dados comerciais pessoais.
 export default function IngredienteFormDialog({ open, onClose, item, onSave, saving, fornecedorSuggestions = [], isAdmin = true }) {
   const [form, setForm] = useState({});
   const [erroQuantidade, setErroQuantidade] = useState(null);
@@ -55,7 +56,7 @@ export default function IngredienteFormDialog({ open, onClose, item, onSave, sav
       <DialogContent className="max-w-md max-h-[90vh] flex flex-col p-0 overflow-hidden gap-0" onOpenAutoFocus={(e) => { e.preventDefault(); resetForm(); }}>
         <DialogHeader className="px-6 pt-6 pb-3 shrink-0">
           <DialogTitle className="font-display">
-            {!isAdmin && item ? "Editar meu preço" : item ? "Editar Ingrediente" : "Novo Ingrediente"}
+            {!isAdmin && item ? "Editar meus dados de compra" : item ? "Editar Ingrediente" : "Novo Ingrediente"}
           </DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto px-6 space-y-3">
@@ -83,15 +84,6 @@ export default function IngredienteFormDialog({ open, onClose, item, onSave, sav
             </Select>
           </div>
           <div>
-            <Label>Unidade de compra</Label>
-            <Input
-              value={form.unidade_compra || ""}
-              onChange={(e) => setForm({ ...form, unidade_compra: e.target.value })}
-              placeholder="KG, LT, UN..."
-              disabled={!isAdmin}
-            />
-          </div>
-          <div>
             <Label>Fator de correção</Label>
             <Input
               type="number"
@@ -105,9 +97,18 @@ export default function IngredienteFormDialog({ open, onClose, item, onSave, sav
 
           {!isAdmin && (
             <p className="text-xs text-muted-foreground bg-muted/50 rounded-md px-2 py-1.5">
-              O cadastro acima é compartilhado e somente leitura. Abaixo você altera apenas o seu preço, sem afetar outros usuários.
+              Nome, categoria e fator de correção pertencem ao cadastro técnico compartilhado. Os dados de compra abaixo são somente seus e não afetam outros usuários.
             </p>
           )}
+
+          <div>
+            <Label>Unidade de compra</Label>
+            <Input
+              value={form.unidade_compra || ""}
+              onChange={(e) => setForm({ ...form, unidade_compra: e.target.value.toUpperCase() })}
+              placeholder="KG, LT, UN, CX, POTE..."
+            />
+          </div>
 
           <CalculadoraCusto
             initialQuantidade={form.peso_embalagem_g || ""}
@@ -120,20 +121,18 @@ export default function IngredienteFormDialog({ open, onClose, item, onSave, sav
             }}
           />
 
-          {isAdmin && (
-            <div>
-              <Label>Fornecedor</Label>
-              <Input
-                value={form.fornecedor || ""}
-                onChange={(e) => setForm({ ...form, fornecedor: e.target.value })}
-                placeholder="Nome do fornecedor"
-                list="fornecedores-sugestoes"
-              />
-              <datalist id="fornecedores-sugestoes">
-                {fornecedorSuggestions.map((f) => <option key={f} value={f} />)}
-              </datalist>
-            </div>
-          )}
+          <div>
+            <Label>Fornecedor</Label>
+            <Input
+              value={form.fornecedor || ""}
+              onChange={(e) => setForm({ ...form, fornecedor: e.target.value })}
+              placeholder="Nome do fornecedor"
+              list="fornecedores-sugestoes"
+            />
+            <datalist id="fornecedores-sugestoes">
+              {fornecedorSuggestions.map((f) => <option key={f} value={f} />)}
+            </datalist>
+          </div>
 
           {isAdmin && item && (item.historico_precos || []).length > 0 && (
             <div>
