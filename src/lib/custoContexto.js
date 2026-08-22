@@ -22,7 +22,7 @@ import {
  * O retorno existe apenas em memória. Preços pessoais NUNCA são gravados em
  * Receita.custo_* porque esses campos são cache global de referência.
  */
-export async function carregarIngredientesEfetivosCusto({ userId, isAdmin = false } = {}) {
+export async function carregarIngredientesEfetivosCusto(/** @type {any} */ { userId, isAdmin = false } = {}) {
   const ingredientesMestre = await fetchAllPages(base44.entities.Ingrediente, "-nome");
   if (isAdmin || !userId) return ingredientesMestre || [];
 
