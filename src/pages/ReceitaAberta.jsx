@@ -63,6 +63,7 @@ import {
 } from "@/lib/ingredienteReceitaCalc";
 import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 import { calcularCustoReceitaCanonico, CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -1304,9 +1305,9 @@ REGRAS:
                 const file = e.target.files[0];
                 if (!file) return;
                 try {
-                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                  const fileUrl = await uploadImagemSeguro(base44, file);
                   const { receitaId } = await ensureEditavel();
-                  await base44.entities.Receita.update(receitaId, { foto_url: file_url });
+                  await base44.entities.Receita.update(receitaId, { foto_url: fileUrl });
                   registrarHistorico(receitaId, receita?.nome, ["Foto"]);
                   qc.invalidateQueries({ queryKey: ["receita", receitaId] });
                   toast.success("Foto adicionada!");
