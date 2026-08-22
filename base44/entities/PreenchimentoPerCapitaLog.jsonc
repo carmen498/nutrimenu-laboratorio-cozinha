@@ -2,59 +2,32 @@
   "name": "PreenchimentoPerCapitaLog",
   "type": "object",
   "properties": {
-    "data_execucao": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Data/hora da execu\u00e7\u00e3o do lote"
-    },
-    "total_processado": {
-      "type": "number",
-      "description": "Total de receitas encontradas sem per_capita_g nesta execu\u00e7\u00e3o"
-    },
-    "total_aplicado": {
-      "type": "number",
-      "description": "Total de receitas que receberam PC padr\u00e3o"
-    },
-    "total_sem_categoria_definida": {
-      "type": "number",
-      "description": "Total de receitas cuja categoria principal n\u00e3o consta na tabela de PC padr\u00e3o"
-    },
+    "data_execucao": { "type": "string", "format": "date-time", "description": "Data/hora da execução do lote" },
+    "total_processado": { "type": "number", "description": "Total de receitas encontradas sem per_capita_g nesta execução" },
+    "total_aplicado": { "type": "number", "description": "Total de receitas que receberam PC padrão" },
+    "total_sem_categoria_definida": { "type": "number", "description": "Total de receitas cuja categoria principal não consta na tabela de PC padrão" },
     "aplicados": {
       "type": "array",
-      "description": "Receitas atualizadas com PC padr\u00e3o",
+      "description": "Receitas atualizadas com PC padrão",
       "items": {
         "type": "object",
         "properties": {
-          "receita_id": {
-            "type": "string"
-          },
-          "receita_nome": {
-            "type": "string"
-          },
-          "categoria": {
-            "type": "string"
-          },
-          "pc_aplicado": {
-            "type": "number"
-          }
+          "receita_id": { "type": "string" },
+          "receita_nome": { "type": "string" },
+          "categoria": { "type": "string" },
+          "pc_aplicado": { "type": "number" }
         }
       }
     },
     "sem_categoria_definida": {
       "type": "array",
-      "description": "Receitas n\u00e3o alteradas por falta de PC padr\u00e3o definido para a categoria",
+      "description": "Receitas não alteradas por falta de PC padrão definido para a categoria",
       "items": {
         "type": "object",
         "properties": {
-          "receita_id": {
-            "type": "string"
-          },
-          "receita_nome": {
-            "type": "string"
-          },
-          "categoria": {
-            "type": "string"
-          }
+          "receita_id": { "type": "string" },
+          "receita_nome": { "type": "string" },
+          "categoria": { "type": "string" }
         }
       }
     },
@@ -64,20 +37,18 @@
       "items": {
         "type": "object",
         "properties": {
-          "categoria": {
-            "type": "string"
-          },
-          "pc_aplicado": {
-            "type": "number"
-          },
-          "quantidade": {
-            "type": "number"
-          }
+          "categoria": { "type": "string" },
+          "pc_aplicado": { "type": "number" },
+          "quantidade": { "type": "number" }
         }
       }
     }
   },
-  "required": [
-    "data_execucao"
-  ]
+  "required": ["data_execucao"],
+  "rls": {
+    "read": { "user_condition": { "role": "admin" } },
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
 }
