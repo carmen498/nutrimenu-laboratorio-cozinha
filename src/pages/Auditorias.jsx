@@ -1,19 +1,20 @@
 import { useSearchParams, Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus, DatabaseZap, Scale, GitBranch } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus, DatabaseZap, Scale, GitBranch, User } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
 import AuditoriaComposicaoReceita from "./AuditoriaComposicaoReceita";
 import AuditoriaMedidasCaseiras from "./AuditoriaMedidasCaseiras";
 import AuditoriaSubreceitas from "./AuditoriaSubreceitas";
+import AuditoriaLinhagemReceitas from "./AuditoriaLinhagemReceitas";
 import HistoricoSaneamentoMedidas from "@/components/auditoria/HistoricoSaneamentoMedidas";
 import RelatorioCategorias from "./RelatorioCategorias";
 import RelatorioDuplicados from "./RelatorioDuplicados";
 import RelatorioFaxinaCategorias from "./RelatorioFaxinaCategorias";
 import RelatorioPoucosIngredientes from "./RelatorioPoucosIngredientes";
 
-const TABS = ["rendimento", "composicao", "subreceitas", "medidas", "receitas", "categorias", "duplicados", "faxina", "poucos"];
+const TABS = ["rendimento", "composicao", "subreceitas", "linhagem", "medidas", "receitas", "categorias", "duplicados", "faxina", "poucos"];
 
 export default function Auditorias() {
   const { user } = useAuth();
@@ -32,6 +33,7 @@ export default function Auditorias() {
           <TabsTrigger value="rendimento" className="gap-1.5"><AlertTriangle className="w-4 h-4" /> Rendimento</TabsTrigger>
           <TabsTrigger value="composicao" className="gap-1.5"><DatabaseZap className="w-4 h-4" /> Composição</TabsTrigger>
           <TabsTrigger value="subreceitas" className="gap-1.5"><GitBranch className="w-4 h-4" /> Sub-receitas</TabsTrigger>
+          <TabsTrigger value="linhagem" className="gap-1.5"><User className="w-4 h-4" /> Linhagem</TabsTrigger>
           <TabsTrigger value="medidas" className="gap-1.5"><Scale className="w-4 h-4" /> Medidas</TabsTrigger>
           <TabsTrigger value="receitas" className="gap-1.5"><ClipboardCheck className="w-4 h-4" /> Receitas</TabsTrigger>
           <TabsTrigger value="categorias" className="gap-1.5"><PieChart className="w-4 h-4" /> Categorias</TabsTrigger>
@@ -42,6 +44,7 @@ export default function Auditorias() {
         <TabsContent value="rendimento" className="mt-4"><AuditoriaRendimento /></TabsContent>
         <TabsContent value="composicao" className="mt-4"><AuditoriaComposicaoReceita /></TabsContent>
         <TabsContent value="subreceitas" className="mt-4"><AuditoriaSubreceitas /></TabsContent>
+        <TabsContent value="linhagem" className="mt-4"><AuditoriaLinhagemReceitas /></TabsContent>
         <TabsContent value="medidas" className="mt-4 space-y-4">
           <AuditoriaMedidasCaseiras />
           <HistoricoSaneamentoMedidas />
