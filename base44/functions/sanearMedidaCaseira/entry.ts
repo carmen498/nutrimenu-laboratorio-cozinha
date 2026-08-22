@@ -10,7 +10,7 @@ const estadoValido = (v: unknown) => ['cru', 'pronto', 'não informado'].include
 const ingredienteId = (m: any) => m?.ingrediente_id || m?.alimento || '';
 const utensilioId = (m: any) => m?.utensilio_id || m?.utensilio || '';
 const estado = (m: any) => estadoValido(m?.estado_alimento) ? m.estado_alimento : 'não informado';
-const chave = (m: any) => `${ingredienteId(m) || '*'}|${utensilioId(m) || '*'}|${estado(m)}`;
+const chave = (m: any) => `${ingredienteId(m) || '*'}|${m?.so_gramas ? '*' : (utensilioId(m) || '*')}|${estado(m)}`;
 const pesoPorMedida = (m: any) => {
   const qtd = positivo(m?.quantidade_utensilio) || 1;
   if (positivo(m?.peso_g)) return positivo(m.peso_g) / qtd;
@@ -64,12 +64,7 @@ Deno.serve(async (req) => {
       if (!soGramas && !ute) return Response.json({ error: 'Utensílio não encontrado' }, { status: 400 });
 
       const novaChave = `${novoIngredienteId}|${soGramas ? '*' : novoUtensilioId}|${novoEstado}`;
-      const conflito = (medidas || []).find((m: any) => m.id !== medidaId && chave({
-        ...m,
-        ingrediente_id: ingredienteId(m),
-        utensilio_id: utensilioId(m),
-        estado_alimento: estado(m),
-      }) === novaChave);
+      const conflito = (medidas || []).find((m: any) => m.id !== medidaId && chave(m) === novaChave);
       if (conflito) {
         return Response.json({
           error: 'Já existe outra medida com a mesma chave canônica. Use Consolidação de duplicidades.',
@@ -142,18 +137,19 @@ Deno.serve(async (req) => {
         referencia_g: prontoG,
         estado_alimento: 'pronto',
         fonte: atual.fonte ? `${atual.fonte} · separado do legado` : 'Saneamento 7.1 · separado do legado',
-        so_gramas: !!atual.so_gramas,
+        so_gramas: false,
         descricao: atual.descricao || '',
       });
 
       const origemPatch: any = {
         modelo_versao: 2,
         ingrediente_id: ingId,
-        utensilio_id: atual.so_gramas ? '' : uteId,
+        utensilio_id: uteId,
         quantidade_utensilio: qtd,
         estado_alimento: origemEstado,
-        chave_canonica: `${ingId}|${atual.so_gramas ? '*' : uteId}|${origemEstado}`,
+        chave_canonica: `${ingId}|${uteId}|${origemEstado}`,
         medida_pronto_g: 0,
+        so_gramas: false,
       };
       if (origemPeso) {
         origemPatch.peso_g = origemPeso * qtd;
