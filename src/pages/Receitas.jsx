@@ -32,6 +32,7 @@ import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { normalizarNome } from "@/lib/normalizarNome";
 import MinhasReceitasCard from "@/components/home/MinhasReceitasCard";
+import { uploadArquivoSeguro, validarCsvUpload } from "@/lib/securityHardening";
 
 const CORES_CATEGORIA = {
   "Carnes Bovinas e Suínos":       { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -745,9 +746,9 @@ function ImportReceitasCsvDialog({ open, onClose }) {
     if (!file) return;
     setImporting(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const fileUrl = await uploadArquivoSeguro(base44, file, validarCsvUpload);
       const result = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
+        file_url: fileUrl,
         json_schema: {
           type: "array",
           items: {
