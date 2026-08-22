@@ -65,8 +65,6 @@ export async function enviarNotificacaoWhatsapp(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ number: numero, message: mensagem }),
   });
-  const dados = await resposta.json().catch(() => null);
-
   if (!resposta.ok) {
     console.log(`Erro ao enviar WhatsApp "${tipo}" (HTTP ${resposta.status}).`);
   }
