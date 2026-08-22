@@ -17,35 +17,35 @@
         "Frutas",
         "Óleos e Gorduras"
       ],
-      "description": "Categoria do ingrediente"
+      "description": "DADO MESTRE: categoria técnica do ingrediente"
     },
     "nome": {
       "type": "string",
-      "description": "Nome do ingrediente"
+      "description": "DADO MESTRE: nome canônico do ingrediente"
     },
     "unidade_compra": {
       "type": "string",
-      "description": "Unidade de compra (G, KG, LT, UN, MOLHO, CX, PACOTE, BALDE...)"
+      "description": "REFERÊNCIA GLOBAL/LEGADO: unidade de compra padrão. Dados pessoais ficam em IngredienteUsuario."
     },
     "peso_embalagem_g": {
       "type": "number",
-      "description": "Peso da embalagem em gramas (ou ml para líquidos)"
+      "description": "REFERÊNCIA GLOBAL/LEGADO: embalagem padrão em g/ml. Dados pessoais ficam em IngredienteUsuario."
     },
     "preco_embalagem_rs": {
       "type": "number",
-      "description": "Preço pago pela embalagem em R$"
+      "description": "REFERÊNCIA GLOBAL: preço de referência da embalagem. Preço de compra do cliente fica em IngredienteUsuario."
     },
     "preco_por_g_rs": {
       "type": "number",
-      "description": "Calculado: preco_embalagem_rs / peso_embalagem_g"
+      "description": "REFERÊNCIA GLOBAL: preço por g/ml usado como fallback quando o usuário não possui preço pessoal."
     },
     "fator_correcao": {
       "type": "number",
-      "description": "Fator de correção (padrão 1.0)"
+      "description": "DADO MESTRE TÉCNICO: fator de correção padrão (1.0 quando não há perda)"
     },
     "revisar": {
       "type": "boolean",
-      "description": "Flag: Duplicado — revisar"
+      "description": "Flag global de qualidade cadastral: ingrediente precisa de revisão"
     },
     "favorito": {
       "type": "boolean",
@@ -55,12 +55,12 @@
     "preco_estimado": {
       "type": "boolean",
       "default": false,
-      "description": "Preço é estimado por IA, não confirmado manualmente"
+      "description": "REFERÊNCIA GLOBAL: preço de referência estimado por IA e ainda não confirmado manualmente"
     },
     "preco_atualizado_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data da última atualização do preço"
+      "description": "REFERÊNCIA GLOBAL: data da última atualização do preço de referência"
     },
     "fonte_preco": {
       "type": "string",
@@ -70,27 +70,27 @@
         "CONAB",
         "CEASA"
       ],
-      "description": "Fonte da última atualização de preço"
+      "description": "REFERÊNCIA GLOBAL: fonte da última atualização do preço de referência"
     },
     "preco_medio_nacional": {
       "type": "number",
-      "description": "Preço médio nacional de referência (R$/kg)"
+      "description": "REFERÊNCIA GLOBAL: preço médio nacional (R$/kg)"
     },
     "variacao_percentual": {
       "type": "number",
-      "description": "Variação % em relação ao preço anterior"
+      "description": "REFERÊNCIA GLOBAL: variação percentual do preço de referência"
     },
     "estado_usuario": {
       "type": "string",
-      "description": "Estado do usuário para preços regionalizados (uso futuro CONAB/CEASA)"
+      "description": "LEGADO: não usar para novos dados pessoais. Estado do cliente fica em IngredienteUsuario."
     },
     "fornecedor": {
       "type": "string",
-      "description": "Nome do fornecedor atual do ingrediente"
+      "description": "REFERÊNCIA GLOBAL/LEGADO: fornecedor padrão. Fornecedor do cliente fica em IngredienteUsuario."
     },
     "historico_precos": {
       "type": "array",
-      "description": "Histórico de preços (todas as atualizações)",
+      "description": "REFERÊNCIA GLOBAL: histórico das atualizações do preço de referência",
       "items": {
         "type": "object",
         "properties": {
