@@ -10,6 +10,7 @@ import { formatarModoPreparo, passosParaTexto } from "@/lib/formatarModoPreparo"
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
 import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
 export default function ExportarReceita() {
   const { id } = useParams();
@@ -198,7 +199,7 @@ export default function ExportarReceita() {
     if (navigator.share) {
       navigator.share({ text });
     } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+      abrirUrlHttpsSegura(`https://wa.me/?text=${encodeURIComponent(text)}`);
     }
   };
 
