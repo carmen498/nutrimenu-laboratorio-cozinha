@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { fetchCsvSeguro } from '../../shared/fetchCsvSeguro.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -12,8 +13,7 @@ Deno.serve(async (req) => {
     if (!file_url) return Response.json({ error: 'file_url é obrigatório' }, { status: 400 });
 
     // Sinônimos fazem parte do catálogo mestre e só podem ser importados por admin.
-    const response = await fetch(file_url);
-    const csvText = await response.text();
+    const csvText = await fetchCsvSeguro(file_url);
     const rows = parseCSV(csvText);
     if (rows.length === 0) {
       return Response.json({ error: 'CSV vazio ou sem dados' }, { status: 400 });
