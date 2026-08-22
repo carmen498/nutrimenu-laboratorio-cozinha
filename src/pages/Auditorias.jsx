@@ -1,15 +1,16 @@
 import { useSearchParams, Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus, DatabaseZap } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
+import AuditoriaComposicaoReceita from "./AuditoriaComposicaoReceita";
 import RelatorioCategorias from "./RelatorioCategorias";
 import RelatorioDuplicados from "./RelatorioDuplicados";
 import RelatorioFaxinaCategorias from "./RelatorioFaxinaCategorias";
 import RelatorioPoucosIngredientes from "./RelatorioPoucosIngredientes";
 
-const TABS = ["rendimento", "receitas", "categorias", "duplicados", "faxina", "poucos"];
+const TABS = ["rendimento", "composicao", "receitas", "categorias", "duplicados", "faxina", "poucos"];
 
 export default function Auditorias() {
   const { user } = useAuth();
@@ -21,9 +22,6 @@ export default function Auditorias() {
   const tabParam = searchParams.get("tab");
   const tab = TABS.includes(tabParam) ? tabParam : "rendimento";
 
-  // Mantém a aba ativa sincronizada com a URL (replace, sem empilhar histórico
-  // extra) — assim, ao voltar pelo histórico do navegador a partir da ficha
-  // de uma receita, a URL já contém a aba correta e ela é restaurada ao remontar.
   const handleTabChange = (value) => {
     setSearchParams({ tab: value }, { replace: true });
   };
@@ -35,9 +33,12 @@ export default function Auditorias() {
       </h1>
 
       <Tabs value={tab} onValueChange={handleTabChange}>
-        <TabsList>
+        <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="rendimento" className="gap-1.5">
             <AlertTriangle className="w-4 h-4" /> Rendimento
+          </TabsTrigger>
+          <TabsTrigger value="composicao" className="gap-1.5">
+            <DatabaseZap className="w-4 h-4" /> Composição
           </TabsTrigger>
           <TabsTrigger value="receitas" className="gap-1.5">
             <ClipboardCheck className="w-4 h-4" /> Receitas
@@ -57,6 +58,9 @@ export default function Auditorias() {
         </TabsList>
         <TabsContent value="rendimento" className="mt-4">
           <AuditoriaRendimento />
+        </TabsContent>
+        <TabsContent value="composicao" className="mt-4">
+          <AuditoriaComposicaoReceita />
         </TabsContent>
         <TabsContent value="receitas" className="mt-4">
           <AuditoriaReceitas />
