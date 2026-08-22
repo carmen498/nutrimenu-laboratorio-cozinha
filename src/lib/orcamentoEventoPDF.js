@@ -23,7 +23,7 @@ function slugify(s) {
 export function gerarOrcamentoEventoPDF({ planejamento, dados, precoPorPessoa, validadeDias }) {
   const orc = montarOrcamentoEvento({ planejamento, dados, precoPorPessoa, validadeDias });
 
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   const pageWidth = doc.internal.pageSize.getWidth();
   const rightX = pageWidth - MARGIN;
   let y = TOP_START;

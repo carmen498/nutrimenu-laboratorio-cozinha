@@ -61,7 +61,7 @@ function formatarData(data) {
  * @param {string|null} categoriaFiltro Se informado, restringe o relatório a essa categoria
  */
 export function exportarIngredientesPDF(ingredientes, categoriaFiltro = null) {
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   const pageWidth = doc.internal.pageSize.getWidth();
   const colDataRight = pageWidth - MARGIN;
   let y = TOP_START;

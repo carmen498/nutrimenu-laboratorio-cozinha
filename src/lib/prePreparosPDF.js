@@ -17,7 +17,7 @@ function slugify(s) {
 }
 
 export function gerarPrePreparosPDF(planejamento, relatorio, opts = {}) {
-  const doc = opts.doc || new jsPDF();
+  const doc = /** @type {any} */ (opts.doc || new jsPDF());
   if (opts.doc) doc.addPage();
   const pageWidth = doc.internal.pageSize.getWidth();
   const rightX = pageWidth - MARGIN;

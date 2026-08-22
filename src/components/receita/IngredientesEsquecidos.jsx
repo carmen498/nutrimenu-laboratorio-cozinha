@@ -2,6 +2,7 @@ import { criarIngredienteEsquecidoReceita } from '@/lib/secureChildEntities';
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -67,7 +68,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
     return null;
   };
 
-  const addMut = useMutation({
+  const addMut = useMutationAny({
     mutationFn: async (nome) => {
       const ing = findIngrediente(nome);
       await criarIngredienteEsquecidoReceita({
@@ -86,7 +87,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
     },
   });
 
-  const addCustomMut = useMutation({
+  const addCustomMut = useMutationAny({
     mutationFn: async () => {
       if (!customNome.trim()) return;
       const qtd = parseFloat(customQtd) || 30;
@@ -108,7 +109,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
     },
   });
 
-  const updateQtdMut = useMutation({
+  const updateQtdMut = useMutationAny({
     mutationFn: async ({ itemId, quantidade_g }) => {
       const item = esquecidos.find(e => e.id === itemId);
       const cu = item?.custo_unitario || 0;
@@ -120,7 +121,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] }),
   });
 
-  const updateCustoMut = useMutation({
+  const updateCustoMut = useMutationAny({
     mutationFn: async ({ itemId, custo_unitario }) => {
       const item = esquecidos.find(e => e.id === itemId);
       const qtd = item?.quantidade_g || 0;
@@ -141,7 +142,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
     },
   });
 
-  const deleteMut = useMutation({
+  const deleteMut = useMutationAny({
     mutationFn: (itemId) => base44.entities.IngredienteEsquecidoReceita.delete(itemId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });

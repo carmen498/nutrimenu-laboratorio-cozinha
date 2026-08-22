@@ -187,7 +187,7 @@ function drawRodapePadrao(doc) {
 
 // anexos = { ficha_cardapio: bool, pre_preparos: bool }
 export async function gerarDossiePDF(planejamento, dossie, anexos = {}, dadosCardapio = null) {
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   drawCapa(doc, dossie);
 
   if (anexos.ficha_cardapio && dadosCardapio) {

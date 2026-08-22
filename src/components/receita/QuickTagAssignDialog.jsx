@@ -2,6 +2,7 @@ import { criarReceitaTag } from '@/lib/secureChildEntities';
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,7 @@ export default function QuickTagAssignDialog({ open, onClose, receita }) {
     staleTime: 0,
   });
 
-  const toggleMut = useMutation({
+  const toggleMut = useMutationAny({
     mutationFn: async ({ tag, assigned }) => {
       if (assigned) {
         const existing = receitaTags.find(rt => rt.tag_id === tag.id);
@@ -58,7 +59,7 @@ export default function QuickTagAssignDialog({ open, onClose, receita }) {
     },
   });
 
-  const createMut = useMutation({
+  const createMut = useMutationAny({
     mutationFn: async (data) => base44.entities.Tag.create(data),
     onSuccess: (newTag) => {
       qc.invalidateQueries({ queryKey: ["tags"] });

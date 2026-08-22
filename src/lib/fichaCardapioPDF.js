@@ -22,7 +22,7 @@ function slugify(s) {
 export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, tagNomes = [] }) {
   const ficha = montarFichaCardapio({ cardapio, num, receitasView, insumos, tagNomes });
 
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   const pageWidth = doc.internal.pageSize.getWidth();
   const rightX = pageWidth - MARGIN;
   let y = TOP_START;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,7 @@ export default function GerenciarTagsDialog({ open, onClose }) {
   });
 
   // Auto-seed initial tags if none exist
-  const seedMut = useMutation({
+  const seedMut = useMutationAny({
     mutationFn: async () => {
       for (const t of TAGS_INICIAIS) {
         await base44.entities.Tag.create(t);
@@ -67,7 +68,7 @@ export default function GerenciarTagsDialog({ open, onClose }) {
     }
   }, [open, tags.length]);
 
-  const createMut = useMutation({
+  const createMut = useMutationAny({
     mutationFn: (data) => base44.entities.Tag.create(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tags"] });
@@ -76,7 +77,7 @@ export default function GerenciarTagsDialog({ open, onClose }) {
     },
   });
 
-  const renameMut = useMutation({
+  const renameMut = useMutationAny({
     mutationFn: async ({ id, nome }) => {
       await base44.entities.Tag.update(id, { nome });
       // Update cached nome in ReceitaTag
@@ -98,7 +99,7 @@ export default function GerenciarTagsDialog({ open, onClose }) {
     },
   });
 
-  const deleteMut = useMutation({
+  const deleteMut = useMutationAny({
     mutationFn: async (tag) => {
       // Remove all ReceitaTag associations (never delete recipes)
       const rts = await base44.entities.ReceitaTag.filter({ tag_id: tag.id }, "", 5000);

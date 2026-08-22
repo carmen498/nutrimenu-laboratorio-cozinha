@@ -102,7 +102,7 @@ function checkPageBreak(doc, y, minSpace = 10) {
 
 // ─── Report 1: Produção ───
 export function gerarRelatorioProducao(planejamento, dados, opts = {}) {
-  const doc = opts.doc || new jsPDF();
+  const doc = /** @type {any} */ (opts.doc || new jsPDF());
   if (opts.doc) doc.addPage();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
@@ -208,7 +208,7 @@ export function gerarRelatorioProducao(planejamento, dados, opts = {}) {
 
 // ─── Report 2: Receitas do Planejamento ───
 export function gerarRelatorioReceitas(planejamento, dados) {
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   const margin = 14;
   let y = drawHeader(doc, planejamento, "Receitas do Evento");
 
@@ -240,7 +240,7 @@ export function gerarRelatorioReceitas(planejamento, dados) {
 
 // ─── Report 4: Ficha de Custos ───
 export function gerarRelatorioFichaCustos(planejamento, dados) {
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 14;
   let y = drawHeader(doc, planejamento, "Ficha de Custos");

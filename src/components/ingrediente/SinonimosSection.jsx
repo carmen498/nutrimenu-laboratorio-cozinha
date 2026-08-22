@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, X, Tag, HelpCircle } from "lucide-react";
@@ -21,7 +22,7 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
 
   const sinonimos = isLocal ? (localSinonimos || []).map((s) => ({ id: s, sinonimo: s })) : sinonimosDb;
 
-  const addMut = useMutation({
+  const addMut = useMutationAny({
     mutationFn: async ({ sinonimo }) => {
       const sinTrim = sinonimo.trim();
       // Check uniqueness across ALL synonyms (case-insensitive)
@@ -48,7 +49,7 @@ export default function SinonimosSection({ ingredienteId, localSinonimos, onLoca
     },
   });
 
-  const delMut = useMutation({
+  const delMut = useMutationAny({
     mutationFn: (id) => base44.entities.SinonimosIngredientes.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sinonimos", ingredienteId] });

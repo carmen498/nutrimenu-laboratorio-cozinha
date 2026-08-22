@@ -2,6 +2,7 @@ import { criarInsumoReceita } from '@/lib/secureChildEntities';
 import { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -77,7 +78,7 @@ export default function InsumosSection({ receitaId }) {
     return results;
   }, [busca, insumosReceita, insumosDB]);
 
-  const addMut = useMutation({
+  const addMut = useMutationAny({
     mutationFn: async (insumo) => {
       // Find or create in DB
       let insumoDB = insumosDB.find(i => i.nome?.toLowerCase() === insumo.nome.toLowerCase());
@@ -109,7 +110,7 @@ export default function InsumosSection({ receitaId }) {
     },
   });
 
-  const addCustomMut = useMutation({
+  const addCustomMut = useMutationAny({
     mutationFn: async () => {
       if (!customNome.trim()) return;
       const insumoDB = await base44.entities.Insumo.create({
@@ -137,7 +138,7 @@ export default function InsumosSection({ receitaId }) {
     },
   });
 
-  const updateCustoMut = useMutation({
+  const updateCustoMut = useMutationAny({
     mutationFn: async ({ itemId, custo_unitario }) => {
       const item = insumosReceita.find(i => i.id === itemId);
       const qtd = item?.quantidade || 1;
@@ -163,7 +164,7 @@ export default function InsumosSection({ receitaId }) {
     },
   });
 
-  const updateQtdMut = useMutation({
+  const updateQtdMut = useMutationAny({
     mutationFn: async ({ itemId, quantidade }) => {
       const item = insumosReceita.find(i => i.id === itemId);
       const cu = item?.custo_unitario || 0;
@@ -175,7 +176,7 @@ export default function InsumosSection({ receitaId }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
   });
 
-  const updateNomeMut = useMutation({
+  const updateNomeMut = useMutationAny({
     mutationFn: async ({ itemId, nome }) => {
       await base44.entities.InsumoReceita.update(itemId, { insumo_nome: nome });
       const item = insumosReceita.find(i => i.id === itemId);
@@ -191,7 +192,7 @@ export default function InsumosSection({ receitaId }) {
     },
   });
 
-  const deleteMut = useMutation({
+  const deleteMut = useMutationAny({
     mutationFn: (itemId) => base44.entities.InsumoReceita.delete(itemId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });

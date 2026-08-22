@@ -22,7 +22,7 @@ function slugify(s) {
 export function gerarOrcamentoPDF({ cardapio, num, receitasView, receitaMap, precoPorUnidade, totalVenda, validadeDias }) {
   const orc = montarOrcamento({ cardapio, num, receitasView, receitaMap, precoPorUnidade, totalVenda, validadeDias });
 
-  const doc = new jsPDF();
+  const doc = /** @type {any} */ (new jsPDF());
   const pageWidth = doc.internal.pageSize.getWidth();
   const rightX = pageWidth - MARGIN;
   let y = TOP_START;
