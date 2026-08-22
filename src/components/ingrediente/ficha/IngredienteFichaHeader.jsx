@@ -9,7 +9,7 @@ const isLiquidUnit = (u) => ["ML", "LT"].includes(u?.toUpperCase());
 
 function diasDesde(dataIso) {
   if (!dataIso) return null;
-  return Math.floor((new Date() - new Date(dataIso)) / (1000 * 60 * 60 * 24));
+  return Math.floor((Date.now() - new Date(dataIso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export default function IngredienteFichaHeader({ ingrediente, isAdmin = false, onEditar, onToggleFavorito, favoritando, onFundir }) {
