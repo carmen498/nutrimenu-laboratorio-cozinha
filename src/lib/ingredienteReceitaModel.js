@@ -1,12 +1,13 @@
-// Modelo canônico de IngredienteReceita — Fase 6.
+// Modelo canônico de IngredienteReceita — Fases 6 e 8.
 //
 // Objetivos:
 // - manter `ingrediente_id`, `subreceita_id` e `medida_caseira_id` como referências canônicas;
 // - impedir combinações incoerentes entre tipo=ingrediente, grupo e subreceita;
 // - preservar caches legados somente para compatibilidade de leitura/migração;
-// - marcar novos registros com modelo_versao=2.
+// - Fase 8: subreceita_id é a fonte de verdade; filhos persistidos são cache derivado.
 
 export const INGREDIENTE_RECEITA_MODELO_VERSAO = 2;
+export const SUBRECEITA_CACHE_VERSAO = 2;
 export const TIPOS_INGREDIENTE_RECEITA = new Set(["ingrediente", "grupo", "subreceita"]);
 
 const numeroNaoNegativo = (valor, fallback = 0) => {
@@ -65,6 +66,10 @@ export function normalizarNovoIngredienteReceita(payload = {}, receita = null) {
     dados.ingrediente_id = "";
     dados.fator_correcao_override = 0;
     dados.medida_caseira_id = "";
+    dados.subreceita_cache = false;
+    dados.subreceita_cache_versao = SUBRECEITA_CACHE_VERSAO;
+    dados.subreceita_modo = dados.subreceita_modo || "referencia_cache";
+    dados.subreceita_sincronizacao_status = dados.subreceita_sincronizacao_status || "pendente";
     delete dados.quantidade_medida_caseira;
     delete dados.titulo_grupo;
     return dados;
@@ -99,6 +104,9 @@ export function diagnosticarIngredienteReceita(item = {}) {
   if (tipo === "ingrediente" && item.subreceita_id) problemas.push("ingrediente_com_subreceita_id");
   if (tipo === "subreceita" && item.ingrediente_id) problemas.push("subreceita_com_ingrediente_id");
   if (tipo === "grupo" && (item.ingrediente_id || item.subreceita_id)) problemas.push("grupo_com_referencia");
+
+  if (item.subreceita_cache && !item.subreceita_parent_id) problemas.push("cache_subreceita_sem_parent");
+  if (item.subreceita_parent_id && tipo !== "ingrediente") problemas.push("cache_subreceita_nao_atomico");
 
   const versao = Number(item.modelo_versao) || 1;
   return {
