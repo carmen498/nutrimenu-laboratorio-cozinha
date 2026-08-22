@@ -1,4 +1,5 @@
 import { criarCardapioInsumo, criarCardapioReceita, criarCardapioTag } from '@/lib/secureChildEntities';
+import { criarCardapioSeguro } from '@/lib/secureRootEntities';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -225,7 +226,7 @@ export default function CardapioAberto() {
 
   // Duplicar
   const handleDuplicate = async () => {
-    const novo = await base44.entities.Cardapio.create({
+    const novo = await criarCardapioSeguro({
       nome: `${cardapio.nome} — cópia`,
       tipo: cardapio.tipo,
       data: null,
