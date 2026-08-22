@@ -56,12 +56,14 @@ export default function IngredienteAberto() {
   const ingrediente = useMemo(() => {
     if (!ingredienteRaw) return null;
 
-    const comPreco = isAdmin
+    // Compatibilidade: preço legado primeiro; IngredienteUsuario por último,
+    // pois é a fonte principal dos dados comerciais pessoais na Fase 3.
+    const comPrecoLegado = isAdmin
       ? ingredienteRaw
       : aplicarPrecosPersonalizados([ingredienteRaw], precosPersonalizados)[0];
 
     return aplicarPreferenciasIngredientes(
-      [comPreco],
+      [comPrecoLegado],
       preferenciasIngredientes,
       { usarFavoritoLegado: isAdmin }
     )[0];
@@ -72,9 +74,12 @@ export default function IngredienteAberto() {
     queryFn: () => fetchAllPages(base44.entities.Ingrediente, "-nome"),
   });
 
-  const fornecedorSuggestions = [...new Set(
-    todosIngredientes.map((i) => i.fornecedor?.trim()).filter(Boolean)
-  )].sort();
+  const fornecedorSuggestions = useMemo(() => {
+    const valores = isAdmin
+      ? todosIngredientes.map((i) => i.fornecedor?.trim())
+      : Object.values(preferenciasIngredientes).map((i) => i.fornecedor?.trim());
+    return [...new Set(valores.filter(Boolean))].sort();
+  }, [isAdmin, todosIngredientes, preferenciasIngredientes]);
 
   const favoritarMut = useMutation({
     mutationFn: ({ favorito }) => salvarFavoritoIngrediente({
