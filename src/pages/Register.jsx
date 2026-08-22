@@ -299,7 +299,16 @@ export default function Register() {
             >
               Termos de Uso
             </a>{" "}
-            e a Política de Privacidade do Laboratório de Cozinha
+            e a{" "}
+            <a
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary font-medium hover:underline"
+            >
+              Política de Privacidade
+            </a>{" "}
+            do Laboratório de Cozinha
           </Label>
         </div>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !aceitaTermos}>
