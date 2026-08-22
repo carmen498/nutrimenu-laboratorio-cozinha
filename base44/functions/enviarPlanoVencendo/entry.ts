@@ -6,6 +6,7 @@ import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
+import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Seu plano está perto de vencer";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve.</p>
@@ -32,6 +33,7 @@ export default async function(req: Request): Promise<Response> {
 
     let enviados = 0;
     for (const usuario of usuarios) {
+      if (await notificacaoJaProcessadaHoje(base44, "plano_vencendo", usuario)) continue;
       const nome = usuario.nome_completo || usuario.full_name || "";
 
       if (usuario.email) {
