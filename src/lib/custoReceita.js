@@ -130,7 +130,7 @@ export function calcularCustoReceitaCanonico({
     referenciasAusentes,
     esquecidosCacheLegado,
     problemas,
-    completo: itensSemPreco === 0 && referenciasAusentes === 0,
+    completo: itensSemPreco === 0 && referenciasAusentes === 0 && esquecidosCacheLegado === 0,
   };
 }
 
