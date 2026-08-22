@@ -52,12 +52,21 @@ export function chaveCanonicaMedida(medida) {
   return `${ingredienteId}|${utensilioId}|${estado}`;
 }
 
-export function normalizarPayloadMedidaCaseira(payload = {}) {
+/**
+ * Normaliza payload de criação/edição.
+ * `manterCacheRuntime` mantém apenas referencia_g como cache temporário porque
+ * o módulo legado de conversão ainda existe em alguns consumidores. Nenhum novo
+ * vínculo é gravado em alimento/utensilio/ingrediente_especifico/equivalencia_*.
+ */
+export function normalizarPayloadMedidaCaseira(payload = {}, { manterCacheRuntime = true } = {}) {
   const ingredienteId = getIngredienteIdMedida(payload);
   const utensilioId = getUtensilioIdMedida(payload);
   const quantidadeUtensilio = getQuantidadeUtensilioMedida(payload);
   const pesoPorMedida = getPesoPorMedidaG(payload);
   const volumePorMedida = getVolumePorMedidaMl(payload);
+  const estado = ["cru", "pronto", "não informado"].includes(payload.estado_alimento)
+    ? payload.estado_alimento
+    : "não informado";
 
   const dados = {
     ...payload,
@@ -65,9 +74,7 @@ export function normalizarPayloadMedidaCaseira(payload = {}) {
     ingrediente_id: ingredienteId || "",
     utensilio_id: utensilioId || "",
     quantidade_utensilio: quantidadeUtensilio,
-    estado_alimento: ["cru", "pronto", "não informado"].includes(payload.estado_alimento)
-      ? payload.estado_alimento
-      : "não informado",
+    estado_alimento: estado,
     so_gramas: !!payload.so_gramas,
   };
 
@@ -77,14 +84,17 @@ export function normalizarPayloadMedidaCaseira(payload = {}) {
   if (volumePorMedida) dados.volume_ml = volumePorMedida * quantidadeUtensilio;
   else if (dados.volume_ml == null) dados.volume_ml = null;
 
-  // Fase 7: não gerar novos espelhos legados.
+  dados.chave_canonica = `${dados.ingrediente_id || "*"}|${dados.utensilio_id || "*"}|${estado}`;
+
   delete dados.alimento;
   delete dados.utensilio;
-  delete dados.referencia_g;
   delete dados.equivalencia_g;
   delete dados.equivalencia_ml;
   delete dados.ingrediente_especifico;
   delete dados.medida_pronto_g;
+
+  if (manterCacheRuntime && pesoPorMedida) dados.referencia_g = pesoPorMedida;
+  else delete dados.referencia_g;
 
   return dados;
 }
@@ -99,6 +109,7 @@ export function diagnosticarMedidaCaseira(medida = {}) {
   if (!utensilioId && !medida.so_gramas) problemas.push("sem_utensilio_id");
   if (!ingredienteId && !medida.so_gramas) problemas.push("sem_ingrediente_id");
   if (!medida.so_gramas && !pesoG && !volumeMl) problemas.push("sem_equivalencia_fisica");
+  if (numeroPositivo(medida.medida_pronto_g)) problemas.push("medida_pronto_legada_a_separar");
 
   const versao = Number(medida.modelo_versao) || 1;
   return {
