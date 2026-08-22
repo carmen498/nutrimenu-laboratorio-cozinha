@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ChefHat, User } from "lucide-react";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 const TIPO_MAP = {
   diario: { nome: "Diário", icone: "🏠", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
@@ -37,7 +38,7 @@ export default function MeusCardapios() {
       try {
         const lista = await base44.entities.Cardapio.filter({ usuario_dono_id: user.id }, "-data_personalizacao", 500);
         setCardapios(lista || []);
-      } catch (e) { console.error(e); }
+      } catch (e) { consoleErrorSeguro("Erro ao carregar meus cardápios", e); }
       setLoading(false);
     })();
   }, [user?.id]);
