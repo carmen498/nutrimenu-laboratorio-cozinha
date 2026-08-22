@@ -1,33 +1,47 @@
-// Cálculo de custo/preço de venda do Cardápio — fonte única usada por CardapioAberto
-// e pelo Orçamento, para garantir que ambos derivem exatamente o mesmo valor.
-// Nunca lê os campos cache CardapioReceita.custo_total/quantidade_total_g; sempre deriva
-// de Receita.custo_total + rendimento atual + per_capita_g × convidados atuais (AO VIVO).
+// Fase 10 — custo/preço do Cardápio derivado do Motor de Custos Canônico.
+// CardapioReceita.custo_total e Receita.custo_total permanecem apenas como cache
+// de compatibilidade; quando há contexto comercial, o custo é recalculado pela
+// composição + FC + preço efetivo do usuário.
 import { custoEscalado } from "@/lib/custoReceita";
 
-// Quantidade real (g, ou kg quando buffet) de um prato: sempre per_capita_g × convidados
-// atuais — nunca o campo quantidade_total_g salvo no banco, que pode estar desatualizado.
 export function quantidadeAoVivo(cr, num) {
-  return (Number(cr.per_capita_g) || 0) * (Number(num) || 0);
+  return (Number(cr?.per_capita_g) || 0) * (Number(num) || 0);
 }
 
-export function custoAoVivo(cr, receitaMap, ingredientesPorReceita, num) {
-  const rec = receitaMap[cr.receita_id];
+export function custoAoVivo(cr, receitaMap, ingredientesPorReceita, num, contexto = {}) {
+  const rec = receitaMap?.[cr?.receita_id];
   if (!rec) return 0;
-  const ingr = ingredientesPorReceita[cr.receita_id] || [];
-  return custoEscalado(rec, ingr, quantidadeAoVivo(cr, num));
+  const receitaId = cr.receita_id;
+  const ingredientes = ingredientesPorReceita?.[receitaId] || [];
+  return custoEscalado(rec, ingredientes, quantidadeAoVivo(cr, num), {
+    ingredienteMap: contexto.ingredienteMap || {},
+    insumosReceita: contexto.insumosPorReceita?.[receitaId] || [],
+    esquecidos: contexto.esquecidosPorReceita?.[receitaId] || [],
+  });
 }
 
-export function calcularCustoCardapio({ receitas, receitaMap, ingredientesPorReceita, insumos, num, markup }) {
-  const receitasView = (receitas || []).map(r => ({
+export function calcularCustoCardapio({
+  receitas,
+  receitaMap,
+  ingredientesPorReceita,
+  insumos,
+  num,
+  markup,
+  ingredienteMap = {},
+  insumosPorReceita = {},
+  esquecidosPorReceita = {},
+}) {
+  const contexto = { ingredienteMap, insumosPorReceita, esquecidosPorReceita };
+  const receitasView = (receitas || []).map((r) => ({
     ...r,
     quantidade_total_g: quantidadeAoVivo(r, num),
-    custo_total: custoAoVivo(r, receitaMap, ingredientesPorReceita, num),
+    custo_total: custoAoVivo(r, receitaMap, ingredientesPorReceita, num, contexto),
   }));
   const custoReceitas = receitasView.reduce((s, r) => s + (Number(r.custo_total) || 0), 0);
   const custoInsumos = (insumos || []).reduce((s, i) => s + (Number(i.custo_total) || 0), 0);
   const total = custoReceitas + custoInsumos;
-  const porUnidade = num > 0 ? total / num : 0;
-  const precoVenda = markup > 0 ? porUnidade * (1 + markup / 100) : 0;
+  const porUnidade = Number(num) > 0 ? total / Number(num) : 0;
+  const precoVenda = Number(markup) > 0 ? porUnidade * (1 + Number(markup) / 100) : 0;
   const lucro = precoVenda - porUnidade;
   return { receitasView, custoReceitas, custoInsumos, total, porUnidade, precoVenda, lucro };
 }
