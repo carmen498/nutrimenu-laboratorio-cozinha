@@ -12,7 +12,7 @@ function diasDesde(dataIso) {
   return Math.floor((new Date() - new Date(dataIso)) / (1000 * 60 * 60 * 24));
 }
 
-export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggleFavorito, favoritando, onFundir }) {
+export default function IngredienteFichaHeader({ ingrediente, isAdmin = false, onEditar, onToggleFavorito, favoritando, onFundir }) {
   const navigate = useNavigate();
   const u = ingrediente.unidade_compra?.toUpperCase();
   const pricePerKg = (ingrediente.preco_por_g_rs || 0) * 1000;
@@ -35,7 +35,7 @@ export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggle
             <button
               onClick={onToggleFavorito}
               disabled={favoritando}
-              title={ingrediente.favorito ? "Remover dos favoritos" : "Marcar como favorito"}
+              title={ingrediente.favorito ? "Remover dos meus favoritos" : "Marcar como meu favorito"}
               className="p-1 rounded-full hover:bg-muted shrink-0"
             >
               <Star className={`w-5 h-5 ${ingrediente.favorito ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
@@ -57,23 +57,27 @@ export default function IngredienteFichaHeader({ ingrediente, onEditar, onToggle
         <Button variant="outline" onClick={() => navigate(`/ingrediente/${ingrediente.id}/dossie`)} className="shrink-0">
           <FileText className="w-4 h-4 mr-1" /> Exportar PDF
         </Button>
-        <Button variant="outline" onClick={onFundir} className="shrink-0">
-          <Merge className="w-4 h-4 mr-1" /> Fundir com outro ingrediente
-        </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona fundir ingredientes?">
-              <HelpCircle className="w-4 h-4" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 text-sm" align="end">
-            <p className="text-muted-foreground">
-              Permite unificar dois cadastros de ingredientes que representam o mesmo item. Selecione o ingrediente que vai permanecer ativo e o ingrediente que será substituído — por exemplo, mantendo "Amido de milho" e substituindo "Maisena". Ao confirmar, "Maisena" é excluída do cadastro e automaticamente trocada por "Amido de milho" em todas as receitas onde era usada.
-            </p>
-          </PopoverContent>
-        </Popover>
+        {isAdmin && (
+          <>
+            <Button variant="outline" onClick={onFundir} className="shrink-0">
+              <Merge className="w-4 h-4 mr-1" /> Fundir com outro ingrediente
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground shrink-0" title="Como funciona fundir ingredientes?">
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 text-sm" align="end">
+                <p className="text-muted-foreground">
+                  Permite unificar dois cadastros de ingredientes que representam o mesmo item. Selecione o ingrediente que vai permanecer ativo e o ingrediente que será substituído — por exemplo, mantendo "Amido de milho" e substituindo "Maisena". Ao confirmar, "Maisena" é excluída do cadastro e automaticamente trocada por "Amido de milho" em todas as receitas onde era usada.
+                </p>
+              </PopoverContent>
+            </Popover>
+          </>
+        )}
         <Button onClick={onEditar} className="shrink-0">
-          <Pencil className="w-4 h-4 mr-1" /> Editar
+          <Pencil className="w-4 h-4 mr-1" /> {isAdmin ? "Editar" : "Editar meu preço"}
         </Button>
       </div>
 
