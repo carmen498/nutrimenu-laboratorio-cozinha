@@ -1,29 +1,21 @@
 import { base44 } from "@/api/base44Client";
+import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 
 /**
  * Busca e explode os ingredientes de uma sub-receita com quantidades proporcionais.
- * Fase 4: além da quantidade, preserva os metadados canônicos do item de origem
- * (unidade, FC específico e medida caseira vinculada).
- *
- * @param {object} subreceita - Objeto da receita usada como sub-receita
- * @param {number} qtdPorPorcao - Quantidade por porção da sub-receita na receita pai
- * @returns {Promise<{children: Array, rendimentoEfetivo: number, rendimentoEstimado: boolean}>}
+ * Fase 4: preserva unidade, FC específico e medida caseira vinculada.
+ * Fase 5: escala pela fonte canônica de rendimento/PDP.
  */
 export async function explodeSubreceita(subreceita, qtdPorPorcao) {
   const subItens = await base44.entities.IngredienteReceita.filter(
     { receita_id: subreceita.id }, "ordem", 200
   );
   const subPorcoesBase = subreceita.porcoes_base || 1;
-
-  let rendimentoEfetivo = subreceita.rendimento_total;
-  let rendimentoEstimado = false;
-  if (!rendimentoEfetivo || rendimentoEfetivo <= 0) {
-    rendimentoEfetivo = subItens
-      .filter(i => i.tipo !== "grupo")
-      .reduce((sum, i) => sum + (i.quantidade_por_porcao || 0) * subPorcoesBase, 0);
-    rendimentoEstimado = true;
-  }
-  if (!rendimentoEfetivo || rendimentoEfetivo <= 0) rendimentoEfetivo = 1;
+  const rendimentoInfo = resolverRendimentoReceita(subreceita, subItens);
+  const rendimentoEfetivo = rendimentoInfo.pesoPosPreparoEfetivo > 0
+    ? rendimentoInfo.pesoPosPreparoEfetivo
+    : 1;
+  const rendimentoEstimado = rendimentoInfo.rendimentoEstimado;
 
   const children = [];
   for (const subItem of subItens) {
