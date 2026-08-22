@@ -1,4 +1,5 @@
 import { criarCardapioInsumo, criarCardapioReceita, criarCardapioTag } from '@/lib/secureChildEntities';
+import { criarCardapioSeguro } from '@/lib/secureRootEntities';
 import { base44 } from "@/api/base44Client";
 
 /**
@@ -37,7 +38,7 @@ export async function garantirCardapioEditavel({ cardapio, receitas = [], insumo
   }
 
   const { id: _oldId, created_date, updated_date, created_by_id, created_by, is_base, forked_from_id, cardapio_origem_id, usuario_dono_id, data_personalizacao, ...rest } = cardapio;
-  const novoCardapio = await base44.entities.Cardapio.create({
+  const novoCardapio = await criarCardapioSeguro({
     ...rest,
     is_base: false,
     forked_from_id: cardapio.id,
