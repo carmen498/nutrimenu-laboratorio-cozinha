@@ -9,7 +9,7 @@ import { carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPag
 
 const PARCELAS_OPCOES = Array.from({ length: 12 }, (_, i) => i + 1);
 
-export default function CartaoForm({ plano, email, onClose, onSuccess }) {
+export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTermos = false }) {
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
   const [validade, setValidade] = useState("");
@@ -51,9 +51,14 @@ export default function CartaoForm({ plano, email, onClose, onSuccess }) {
         identificationNumber: cpf,
       });
 
+      if (!aceiteTermos) {
+        throw new Error("Aceite os Termos de Uso e a Política de Privacidade para concluir a contratação.");
+      }
+
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
         forma_pagamento: "cartao",
+        aceite_termos: true,
         token: cardToken.id,
         installments: parseInt(parcelas, 10),
         payment_method_id: paymentMethodId,
@@ -142,7 +147,7 @@ export default function CartaoForm({ plano, email, onClose, onSuccess }) {
         </Select>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full h-11" disabled={loading}>
+      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Pagar
       </Button>
