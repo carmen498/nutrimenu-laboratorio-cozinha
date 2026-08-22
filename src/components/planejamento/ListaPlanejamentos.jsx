@@ -15,6 +15,7 @@ import {
 import NovoPlanejamentoDialog from "./NovoPlanejamentoDialog";
 import RelatoriosPlanejamentoDialog from "./RelatoriosPlanejamentoDialog";
 import { lerRascunhoEvento } from "@/lib/eventoRascunho";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 export default function ListaPlanejamentos() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function ListaPlanejamentos() {
     try {
       const lista = await base44.entities.Planejamento.list("-created_date", 200);
       setPlanejamentos(lista || []);
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em planejamento", e); }
     setLoading(false);
   };
 
@@ -54,7 +55,7 @@ export default function ListaPlanejamentos() {
       await base44.entities.Planejamento.delete(excluirItem.id);
       setExcluirItem(null);
       load();
-    } catch (e) { console.error(e); }
+    } catch (e) { consoleErrorSeguro("Erro em planejamento", e); }
   };
 
   const handleEdit = (p) => {
