@@ -2,91 +2,107 @@
   "name": "MedidaCaseira",
   "type": "object",
   "properties": {
+    "modelo_versao": {
+      "type": "number",
+      "description": "Versão do modelo. Novos registros normalizados usam 2; ausência/1 identifica legado."
+    },
     "nome": {
       "type": "string",
-      "description": "Nome descritivo da medida (ex: Farinha de trigo · xícara)"
+      "description": "Rótulo de exibição da equivalência. Não é identidade; as referências canônicas são ingrediente_id + utensilio_id + estado_alimento."
+    },
+    "chave_canonica": {
+      "type": "string",
+      "description": "Chave derivada ingrediente_id|utensilio_id|estado_alimento para diagnóstico e prevenção de duplicidades."
     },
     "ingrediente_id": {
       "type": "string",
-      "description": "ID canônico do Ingrediente ao qual a medida se aplica"
+      "description": "ID canônico do Ingrediente ao qual a equivalência se aplica."
     },
     "utensilio_id": {
       "type": "string",
-      "description": "ID canônico do UtensilioPadrao"
+      "description": "ID canônico do UtensilioPadrao."
     },
     "quantidade_utensilio": {
       "type": "number",
       "default": 1,
-      "description": "Quantidade do utensílio usada como referência da equivalência (normalmente 1)"
+      "description": "Quantidade do utensílio correspondente a peso_g/volume_ml. Ex.: 2 xícaras = 240 g."
     },
     "peso_g": {
       "type": "number",
-      "description": "Peso em gramas correspondente a quantidade_utensilio no estado informado"
+      "description": "Peso em gramas correspondente a quantidade_utensilio no estado informado."
     },
     "volume_ml": {
       "type": "number",
-      "description": "Volume em ml correspondente a quantidade_utensilio, quando aplicável"
+      "description": "Volume em ml correspondente a quantidade_utensilio, quando aplicável."
     },
     "estado_alimento": {
       "type": "string",
       "enum": ["cru", "pronto", "não informado"],
-      "default": "cru",
-      "description": "Estado do alimento usado para a equivalência"
+      "default": "não informado",
+      "description": "Estado físico da equivalência. Medidas de alimento cru e pronto são registros distintos."
     },
     "fonte": {
       "type": "string",
-      "description": "Fonte da equivalência (medição própria, tabela, fabricante, literatura etc.)"
+      "description": "Fonte da equivalência: medição própria, tabela, fabricante, literatura, importação etc."
     },
     "so_gramas": {
       "type": "boolean",
       "default": false,
-      "description": "Quando true, o conversor nunca exibe medida caseira para este alimento (apenas gramas)"
-    },
-    "ingrediente_especifico": {
-      "type": "string",
-      "description": "LEGADO: nome textual do ingrediente. Novos registros devem usar ingrediente_id."
-    },
-    "equivalencia_g": {
-      "type": "number",
-      "description": "LEGADO: equivalência em gramas. Novos registros devem usar peso_g."
-    },
-    "equivalencia_ml": {
-      "type": "number",
-      "description": "LEGADO: equivalência em ml. Novos registros devem usar volume_ml."
+      "description": "Quando true, o conversor não exibe medida caseira para este alimento e mantém apenas g/ml."
     },
     "descricao": {
       "type": "string",
-      "description": "Descrição livre da medida"
+      "description": "Observação livre sobre a equivalência."
+    },
+    "ingrediente_especifico": {
+      "type": "string",
+      "description": "LEGADO: nome textual do ingrediente. Não usar em novas gravações."
+    },
+    "equivalencia_g": {
+      "type": "number",
+      "description": "LEGADO: equivalência em gramas. Leitura compatível; novas gravações usam peso_g."
+    },
+    "equivalencia_ml": {
+      "type": "number",
+      "description": "LEGADO: equivalência em ml. Leitura compatível; novas gravações usam volume_ml."
     },
     "alimento": {
       "type": "string",
-      "description": "LEGADO: ID do Ingrediente. Mantido durante migração; espelha ingrediente_id."
+      "description": "LEGADO: ID do Ingrediente. Leitura compatível; novas gravações usam ingrediente_id."
     },
     "utensilio": {
       "type": "string",
-      "description": "LEGADO: ID do UtensilioPadrao. Mantido durante migração; espelha utensilio_id."
+      "description": "LEGADO: ID do UtensilioPadrao. Leitura compatível; novas gravações usam utensilio_id."
     },
     "referencia_g": {
       "type": "number",
-      "description": "LEGADO: gramas de 1 medida do alimento cru. Mantido durante migração; espelha peso_g quando quantidade_utensilio=1."
+      "description": "LEGADO/CACHE TEMPORÁRIO: gramas por 1 medida. Mantido enquanto consumidores antigos são retirados; peso_g é a fonte canônica."
     },
     "medida_pronto_g": {
       "type": "number",
-      "description": "LEGADO: gramas de 1 medida do alimento servido/pronto"
+      "description": "LEGADO: equivalência de alimento pronto armazenada no mesmo registro. Deve ser revisada e separada em registro estado_alimento=pronto."
     }
   },
-  "required": [
-    "nome"
-  ],
+  "required": ["nome"],
   "rls": {
+    "create": {},
     "read": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {"created_by_id": "{{user.id}}"},
+        {"user_condition": {"role": "admin"}}
+      ]
     },
     "update": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {"created_by_id": "{{user.id}}"},
+        {"user_condition": {"role": "admin"}}
+      ]
     },
     "delete": {
-      "created_by_id": "{{user.id}}"
+      "$or": [
+        {"created_by_id": "{{user.id}}"},
+        {"user_condition": {"role": "admin"}}
+      ]
     }
   }
 }
