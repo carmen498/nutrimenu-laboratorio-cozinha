@@ -9,11 +9,22 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const acao = body.acao || 'status';
 
-    // Get or create config record
+    // Consultar o status é permitido a usuários autenticados; qualquer alteração
+    // na configuração global de preços é exclusiva de administradores.
+    if (acao !== 'status' && user.role !== 'admin') {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Get or create config record. A criação também é mudança global e, portanto,
+    // só pode acontecer para admin. Para usuários comuns sem configuração ainda,
+    // apenas devolve status inativo.
     const configs = await base44.asServiceRole.entities.AppConfig.filter({ chave: 'auto_update_prices' });
     let config = configs[0];
 
     if (!config) {
+      if (user.role !== 'admin') {
+        return Response.json({ ativa: false });
+      }
       config = await base44.asServiceRole.entities.AppConfig.create({
         chave: 'auto_update_prices',
         valor: 'false'
