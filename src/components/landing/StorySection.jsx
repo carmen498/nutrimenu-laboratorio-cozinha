@@ -15,7 +15,7 @@ export default function StorySection({ image }) {
     <section className="lc-story lc-section">
       <div className="lc-container lc-story-grid">
         <div className="lc-story-media">
-          <img src={image} alt="Carmen Reinstein cozinhando em cozinha rústica profissional" loading="lazy" />
+          <img src={image} alt="Carmen Reinstein em retrato profissional no escritório" loading="lazy" />
         </div>
         <div className="lc-story-text">
           <h2>Comecei aos 5 anos cuidando das panelas. Nunca mais parei.</h2>
