@@ -21,6 +21,7 @@ import { garantirReceitaEditavel } from "@/lib/forkReceita";
 import { calcularPesoPrePreparo, formatarStatusRendimento } from "@/lib/rendimentoReceita";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { uploadImagemSeguro } from "@/lib/securityHardening";
 
 const CAMPO_LABELS = {
   nome: "Nome",
@@ -164,8 +165,8 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
     const file = e.target.files[0];
     if (!file) return;
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setForm({ ...form, foto_url: file_url });
+      const fileUrl = await uploadImagemSeguro(base44, file);
+      setForm({ ...form, foto_url: fileUrl });
     } catch {
       toast.error("Erro ao enviar foto");
     }
