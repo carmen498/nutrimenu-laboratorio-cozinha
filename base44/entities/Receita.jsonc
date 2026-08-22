@@ -11,16 +11,16 @@
       "items": {
         "type": "string",
         "enum": [
-          "Carnes Bovinas e Suínos",
+          "Carnes Bovinas e Su\u00ednos",
           "Aves",
           "Peixes e Frutos do Mar",
           "Ovos",
-          "Massas, Pastelão e Quiches",
+          "Massas, Pastel\u00e3o e Quiches",
           "Arroz e Risotos",
           "Sopas e Caldos",
           "Leguminosas",
           "Salgadinhos",
-          "Pães e Bolos",
+          "P\u00e3es e Bolos",
           "Sobremesas",
           "Molhos",
           "Acompanhamentos",
@@ -31,43 +31,56 @@
         ]
       },
       "default": [],
-      "description": "Categorias da receita (múltiplas)"
+      "description": "Categorias da receita (m\u00faltiplas)"
     },
     "porcoes_base": {
       "type": "number",
-      "description": "Número de porções base"
+      "description": "N\u00famero de por\u00e7\u00f5es base"
     },
     "rendimento_total": {
       "type": "number",
-      "description": "LEGADO/CACHE compatível do peso pós-preparo (PDP). Novas gravações devem manter sincronizado com peso_pos_preparo_total."
+      "description": "LEGADO/CACHE compat\u00edvel do peso p\u00f3s-preparo (PDP). Novas grava\u00e7\u00f5es devem manter sincronizado com peso_pos_preparo_total."
     },
     "peso_pre_preparo_total": {
       "type": "number",
-      "description": "Snapshot do peso/volume líquido total imediatamente antes do preparo/cocção. Não inclui FC de compra."
+      "description": "Snapshot do peso/volume l\u00edquido total imediatamente antes do preparo/coc\u00e7\u00e3o. N\u00e3o inclui FC de compra."
     },
     "peso_pos_preparo_total": {
       "type": "number",
-      "description": "Peso/volume total depois de pronto (PDP), usado como rendimento técnico canônico."
+      "description": "Peso/volume total depois de pronto (PDP), usado como rendimento t\u00e9cnico can\u00f4nico."
     },
     "rendimento_origem": {
       "type": "string",
-      "enum": ["medido", "estimado", "legado", "importado"],
+      "enum": [
+        "medido",
+        "estimado",
+        "legado",
+        "importado"
+      ],
       "description": "Origem do valor de rendimento/PDP."
     },
     "rendimento_status": {
       "type": "string",
-      "enum": ["confirmado", "estimado", "a_validar", "pendente"],
-      "description": "Estado técnico do rendimento. Confirmado = PDP medido; a_validar = existe valor sem validação técnica; pendente = sem PDP medido."
+      "enum": [
+        "confirmado",
+        "estimado",
+        "a_validar",
+        "pendente"
+      ],
+      "description": "Estado t\u00e9cnico do rendimento. Confirmado = PDP medido; a_validar = existe valor sem valida\u00e7\u00e3o t\u00e9cnica; pendente = sem PDP medido."
     },
     "rendimento_medido_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora da última medição confirmada do peso pós-preparo."
+      "description": "Data/hora da \u00faltima medi\u00e7\u00e3o confirmada do peso p\u00f3s-preparo."
     },
     "unidade_base": {
       "type": "string",
-      "enum": ["g", "ml"],
-      "description": "Unidade base da receita: g (sólidos) ou ml (líquidos)"
+      "enum": [
+        "g",
+        "ml"
+      ],
+      "description": "Unidade base da receita: g (s\u00f3lidos) ou ml (l\u00edquidos)"
     },
     "modo_preparo": {
       "type": "string",
@@ -75,7 +88,7 @@
     },
     "descritivo_menu": {
       "type": "string",
-      "description": "Descritivo da receita voltado ao cliente final (para menu/cardápio)"
+      "description": "Descritivo da receita voltado ao cliente final (para menu/card\u00e1pio)"
     },
     "mostrar_fc": {
       "type": "boolean",
@@ -101,11 +114,11 @@
     },
     "custo_por_porcao": {
       "type": "number",
-      "description": "Custo por porção calculado"
+      "description": "Custo por por\u00e7\u00e3o calculado"
     },
     "revisar": {
       "type": "boolean",
-      "description": "Flag: Duplicado — revisar"
+      "description": "Flag: Duplicado \u2014 revisar"
     },
     "favorita": {
       "type": "boolean",
@@ -114,15 +127,15 @@
     },
     "per_capita_g": {
       "type": "number",
-      "description": "Per capita recomendado em gramas (override do usuário)"
+      "description": "Per capita recomendado em gramas (override do usu\u00e1rio)"
     },
     "nota": {
       "type": "string",
-      "description": "Nota/observações livres da receita (ex: ajustes, ingredientes pendentes de importação)"
+      "description": "Nota/observa\u00e7\u00f5es livres da receita (ex: ajustes, ingredientes pendentes de importa\u00e7\u00e3o)"
     },
     "cor_predominante": {
       "type": "string",
-      "description": "Cor predominante do prato para análise visual do cardápio. Formato: `familia__tom` (ex: verde__escuro). Vazio = sem cor."
+      "description": "Cor predominante do prato para an\u00e1lise visual do card\u00e1pio. Formato: `familia__tom` (ex: verde__escuro). Vazio = sem cor."
     },
     "destaque": {
       "type": "boolean",
@@ -131,50 +144,70 @@
     },
     "is_base": {
       "type": "boolean",
-      "default": true,
-      "description": "Escopo canônico: true = catálogo compartilhado; false = receita pessoal. Usuários comuns nunca devem criar is_base=true."
+      "default": false,
+      "description": "Escopo can\u00f4nico: true = cat\u00e1logo compartilhado; false = receita pessoal. Usu\u00e1rios comuns nunca devem criar is_base=true.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     },
     "usuario_dono_id": {
       "type": "string",
-      "description": "Propriedade canônica da receita pessoal. Vazio em receitas do catálogo; em receitas pessoais deve apontar para o usuário dono."
+      "description": "Propriedade can\u00f4nica da receita pessoal. Vazio em receitas do cat\u00e1logo; em receitas pessoais deve apontar para o usu\u00e1rio dono."
     },
     "receita_origem_id": {
       "type": "string",
-      "description": "Origem imediata canônica da receita derivada. Vazio quando a receita é raiz."
+      "description": "Origem imediata can\u00f4nica da receita derivada. Vazio quando a receita \u00e9 raiz."
     },
     "receita_raiz_id": {
       "type": "string",
-      "description": "ID do ancestral raiz da linhagem. Em receitas raiz aponta para o próprio ID; em derivações permanece estável através das gerações."
+      "description": "ID do ancestral raiz da linhagem. Em receitas raiz aponta para o pr\u00f3prio ID; em deriva\u00e7\u00f5es permanece est\u00e1vel atrav\u00e9s das gera\u00e7\u00f5es."
     },
     "linhagem_geracao": {
       "type": "number",
-      "description": "Distância até a receita raiz: 0 para raiz, 1 para derivação direta e assim por diante."
+      "description": "Dist\u00e2ncia at\u00e9 a receita raiz: 0 para raiz, 1 para deriva\u00e7\u00e3o direta e assim por diante."
     },
     "linhagem_tipo": {
       "type": "string",
-      "enum": ["catalogo", "autoral", "personalizacao", "duplicacao", "importacao"],
-      "description": "Natureza da receita na linhagem. catalogo/autoral são raízes; personalizacao/duplicacao/importacao descrevem derivações quando aplicável."
+      "enum": [
+        "catalogo",
+        "autoral",
+        "personalizacao",
+        "duplicacao",
+        "importacao"
+      ],
+      "description": "Natureza da receita na linhagem. catalogo/autoral s\u00e3o ra\u00edzes; personalizacao/duplicacao/importacao descrevem deriva\u00e7\u00f5es quando aplic\u00e1vel."
     },
     "linhagem_versao": {
       "type": "number",
-      "description": "Versão do modelo de propriedade/linhagem. A Fase 9 usa versão 1."
+      "description": "Vers\u00e3o do modelo de propriedade/linhagem. A Fase 9 usa vers\u00e3o 1."
     },
     "linhagem_status": {
       "type": "string",
-      "enum": ["canonica", "a_validar", "origem_ausente", "ciclo"],
-      "description": "Estado da linhagem persistida. Registros históricos inconsistentes são preservados e marcados para revisão."
+      "enum": [
+        "canonica",
+        "a_validar",
+        "origem_ausente",
+        "ciclo"
+      ],
+      "description": "Estado da linhagem persistida. Registros hist\u00f3ricos inconsistentes s\u00e3o preservados e marcados para revis\u00e3o."
     },
     "forked_from_id": {
       "type": "string",
-      "description": "LEGADO/COMPATIBILIDADE do fork-on-edit. Na Fase 9 a origem canônica é receita_origem_id; para personalizações novas este campo é mantido sincronizado temporariamente."
+      "description": "LEGADO/COMPATIBILIDADE do fork-on-edit. Na Fase 9 a origem can\u00f4nica \u00e9 receita_origem_id; para personaliza\u00e7\u00f5es novas este campo \u00e9 mantido sincronizado temporariamente."
     },
     "data_personalizacao": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora de criação de uma receita pessoal/personalização."
+      "description": "Data/hora de cria\u00e7\u00e3o de uma receita pessoal/personaliza\u00e7\u00e3o."
     }
   },
-  "required": ["nome"],
+  "required": [
+    "nome"
+  ],
   "rls": {
     "create": {
       "$or": [
