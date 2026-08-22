@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 import { consoleErrorSeguro } from '@/lib/securityHardening';
+import { termosAtuaisAceitos } from '@/lib/termosVersao';
 
 const AuthContext = createContext();
 
@@ -126,7 +127,9 @@ export const AuthProvider = ({ children }) => {
         Number(currentUser?.ciclo_renovacao || 0) > 0
       );
 
-      if (semHistoricoDePlano) {
+      // Nenhum trial é concedido antes do aceite explícito dos documentos vigentes.
+      // Isso fecha também o caso em que um usuário novo escolhe Google pela tela de login.
+      if (semHistoricoDePlano && termosAtuaisAceitos(currentUser)) {
         try {
           await base44.functions.invoke('inicializarTrialUsuario', {});
           currentUser = await base44.auth.me();
