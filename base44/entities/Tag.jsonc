@@ -2,35 +2,23 @@
   "name": "Tag",
   "type": "object",
   "properties": {
-    "nome": {
-      "type": "string",
-      "description": "Nome da tag"
-    },
+    "nome": { "type": "string", "description": "Nome da tag" },
     "grupo": {
       "type": "string",
-      "enum": [
-        "molho",
-        "ingrediente",
-        "perfil",
-        "restricao",
-        "metodo",
-        "contexto"
-      ],
-      "description": "Grupo da tag para organiza\u00e7\u00e3o"
+      "enum": ["molho", "ingrediente", "perfil", "restricao", "metodo", "contexto"],
+      "description": "Grupo da tag para organização"
     },
     "cor": {
       "type": "string",
-      "enum": [
-        "verde",
-        "vermelho",
-        "cinza",
-        "verde-claro"
-      ],
+      "enum": ["verde", "vermelho", "cinza", "verde-claro"],
       "description": "Cor do badge"
     }
   },
-  "required": [
-    "nome",
-    "grupo"
-  ]
+  "required": ["nome", "grupo"],
+  "rls": {
+    "read": {},
+    "create": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
 }
