@@ -123,12 +123,14 @@ export function diagnosticarLinhagemReceita(receita, receitaMap = {}) {
   const origemA = texto(receita?.receita_origem_id);
   const origemB = texto(receita?.forked_from_id);
   const owner = texto(receita?.usuario_dono_id);
+  const createdBy = texto(receita?.created_by_id);
   const isBase = receita?.is_base !== false;
 
   if (origemA && origemB && origemA !== origemB) problemas.push("origens_conflitantes");
   if (origemA === receita?.id || origemB === receita?.id) problemas.push("auto_referencia");
   if (isBase && owner) problemas.push("base_com_dono");
-  if (!isBase && !owner && !receita?.created_by_id) problemas.push("pessoal_sem_dono");
+  if (!isBase && !owner && !createdBy) problemas.push("pessoal_sem_dono");
+  if (!isBase && !owner && createdBy) problemas.push("dono_apenas_created_by");
   if (!texto(receita?.receita_raiz_id)) problemas.push("raiz_ausente");
   if (numeroInteiro(receita?.linhagem_versao, 0) < RECEITA_LINHAGEM_VERSAO) problemas.push("modelo_legado");
   if (!texto(receita?.linhagem_tipo)) problemas.push("tipo_ausente");
@@ -159,6 +161,6 @@ export function diagnosticarLinhagemReceita(receita, receitaMap = {}) {
     geracaoCalculada: geracaoEsperada,
     cadeiaIds: cadeia.visitados,
     origemId: origemA || origemB,
-    donoId: owner || texto(receita?.created_by_id),
+    donoId: owner || createdBy,
   };
 }
