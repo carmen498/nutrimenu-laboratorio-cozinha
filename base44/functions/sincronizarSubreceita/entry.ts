@@ -29,6 +29,31 @@ const assinatura = (deps: Map<string, string>) => [...deps.entries()]
   .map(([id, data]) => `${id}@${data || 'sem-data'}`)
   .join('|');
 
+const numeroCache = (v: any) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(10) : '0.0000000000';
+};
+
+const chaveCacheAtomico = (item: any) => [
+  txt(item?.subreceita_origem_receita_id),
+  txt(item?.subreceita_origem_item_id),
+  txt(item?.ingrediente_id),
+  numeroCache(item?.quantidade_por_porcao),
+  txt(item?.unidade_quantidade),
+  txt(item?.pre_preparo),
+  item?.proporcional === false ? '0' : '1',
+  numeroCache(item?.fator_correcao_override),
+  txt(item?.medida_caseira_id),
+  numeroCache(item?.quantidade_medida_caseira),
+  txt(item?.medida_caseira),
+  txt(item?.subreceita_linhagem),
+].join('~');
+
+const assinaturaConteudoCache = (lista: any[]) => (lista || [])
+  .map(chaveCacheAtomico)
+  .sort()
+  .join('||');
+
 const rendimentoOperacional = (receita: any, itens: any[]) => {
   const informado = Number(receita?.peso_pos_preparo_total) > 0
     ? Number(receita.peso_pos_preparo_total)
@@ -199,10 +224,22 @@ Deno.serve(async (req) => {
         const cacheV2 = existentes.length > 0 && existentes.every((c: any) => c.subreceita_cache === true && Number(c.subreceita_cache_versao) >= 2 && Number(c.modelo_versao) === 2);
         const sincronizadaMs = marker.subreceita_sincronizada_em ? Date.parse(marker.subreceita_sincronizada_em) : 0;
         const composicaoMudouDepois = calculado.ultimaComposicaoMs > (Number.isFinite(sincronizadaMs) ? sincronizadaMs : 0);
+        const assinaturaConteudoAtual = assinaturaConteudoCache(existentes);
+        const assinaturaConteudoEsperado = assinaturaConteudoCache(calculado.children);
+        const cacheConteudoAtual = assinaturaConteudoAtual === assinaturaConteudoEsperado;
+        const assinaturaMetadadosDivergente = !!assinaturaCache && assinaturaCache !== calculado.assinaturaNova;
         const status = existentes.length === 0
           ? 'pendente'
-          : (!assinaturaCache ? 'a_validar' : (assinaturaCache === calculado.assinaturaNova && cacheV2 && !composicaoMudouDepois ? 'sincronizada' : 'desatualizada'));
-        return { status, existentes, calculado, assinaturaCache, composicaoMudouDepois };
+          : (!cacheV2 ? 'a_validar' : (cacheConteudoAtual ? 'sincronizada' : 'desatualizada'));
+        return {
+          status,
+          existentes,
+          calculado,
+          assinaturaCache,
+          composicaoMudouDepois,
+          cacheConteudoAtual,
+          assinaturaMetadadosDivergente,
+        };
       } catch (error: any) {
         return {
           status: error?.code === 'CICLO' ? 'erro_ciclo' : 'origem_ausente',
