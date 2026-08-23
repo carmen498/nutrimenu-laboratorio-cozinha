@@ -304,7 +304,7 @@ export default function AuditoriaSubreceitas() {
       const res = await base44.functions.invoke("sincronizarSubreceita", { todos_desatualizados: true });
       const dados = res?.data || {};
       await refresh();
-      toast.success(`${dados.processados || 0} relação(ões) processada(s); ${dados.sincronizados_ja_atualizados || 0} já estavam atualizadas.`);
+      toast.success(`${dados.processados || 0} relação(ões) processada(s); ${dados.metadados_atualizados || 0} metadado(s) normalizado(s) sem rebuild; ${dados.sincronizados_ja_atualizados || 0} já estavam atualizadas.`);
     } catch (error) {
       toast.error("Erro na sincronização em lote: " + (error?.message || "erro desconhecido"));
     } finally {
