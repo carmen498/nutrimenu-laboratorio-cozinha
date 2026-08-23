@@ -23,7 +23,7 @@ function fnv1a64(input) {
   return hash.toString(16).padStart(16, "0");
 }
 
-export function serializarDeterminantesCusto({
+export function serializarDeterminantesCusto(/** @type {any} */ {
   receita,
   itens = [],
   insumos = [],
