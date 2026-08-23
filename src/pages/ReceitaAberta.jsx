@@ -59,10 +59,9 @@ import {
   resolverMedidaCaseiraItem,
 } from "@/lib/ingredienteReceitaCalc";
 import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
-import { calcularCustoReceitaCanonico, CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
+import { calcularCustoReceitaCanonico } from "@/lib/custoReceita";
 import { consoleErrorSeguro, uploadImagemSeguro } from "@/lib/securityHardening";
 import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
-import { CUSTO_ASSINATURA_VERSAO, gerarAssinaturaCusto } from "@/lib/custoAssinatura";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -664,49 +663,9 @@ export default function ReceitaAberta() {
   const custoEsquecidos = custoCanonico.custoEsquecidos;
   const custoTotal = custoCanonico.custoTotal;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
-  const assinaturaCustoAtual = useMemo(() => gerarAssinaturaCusto({
-    receita,
-    itens,
-    insumos: insumosReceita,
-    esquecidos,
-    contexto: receita?.is_base === false ? "proprietario" : "global",
-    rendimento: rendimentoInfo.pesoPosPreparoEfetivo || 0,
-    resolverIngrediente: (ingredienteId) => ingMap?.[ingredienteId] || null,
-    resolverPreco: (ingrediente) => Number(ingrediente?.preco_por_g_rs) || 0,
-  }), [receita, itens, insumosReceita, esquecidos, rendimentoInfo.pesoPosPreparoEfetivo, ingMap]);
-
-  // O cache persistido é apenas referência. Nunca grava preços pessoais numa
-  // receita compartilhada; o admin atualiza somente o contexto global/mestre.
-  useEffect(() => {
-    if (isAdmin && receita && receita.is_base !== false && fator === 1) {
-      const newCT = parseFloat(custoTotal.toFixed(4));
-      const newCP = parseFloat(custoPorcao.toFixed(4));
-      const newCI = parseFloat(custoInsumos.toFixed(4));
-      const status = custoCanonico.completo ? "atual" : "incompleto";
-      const patch = {
-        custo_modelo_versao: CUSTO_RECEITA_MODELO_VERSAO,
-        custo_cache_status: status,
-        custo_cache_contexto: "global",
-        custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.insumosSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
-        custo_cache_invalido: false,
-        custo_cache_assinatura: assinaturaCustoAtual,
-        custo_cache_assinatura_versao: CUSTO_ASSINATURA_VERSAO,
-        custo_cache_assinatura_status: "valida",
-      };
-      if (custoCanonico.completo) {
-        patch.custo_total = newCT;
-        patch.custo_por_porcao = newCP;
-        patch.custo_insumos = newCI;
-      }
-      const mudou = Object.entries(patch).some(([campo, valor]) => String(receita[campo] ?? "") !== String(valor ?? ""));
-      if (mudou) {
-        const agora = new Date().toISOString();
-        patch.custo_cache_atualizado_em = agora;
-        patch.custo_cache_assinatura_gerada_em = agora;
-        base44.entities.Receita.update(id, patch);
-      }
-    }
-  }, [custoTotal, custoPorcao, custoInsumos, custoCanonico, receita, fator, id, isAdmin, assinaturaCustoAtual]);
+  // Fase 10.4: a tela calcula custos ao vivo, mas NÃO certifica o cache persistido.
+  // Somente o backend, que enxerga toda a árvore de sub-receitas e o contexto
+  // comercial canônico, pode gravar uma assinatura com status `valida`.
 
   const updatePriceMut = useMutationAny({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
