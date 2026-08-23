@@ -1,0 +1,75 @@
+{
+  "name": "CuradoriaP0P1Detalhe",
+  "type": "object",
+  "properties": {
+    "grupo": {
+      "type": "string"
+    },
+    "subgrupo": {
+      "type": "string"
+    },
+    "criterio": {
+      "type": "string"
+    },
+    "acao": {
+      "type": "string"
+    },
+    "ingrediente_origem_id": {
+      "type": "string"
+    },
+    "ingrediente_destino_id": {
+      "type": "string"
+    },
+    "ingrediente_destino_nome": {
+      "type": "string"
+    },
+    "ocorrencias": {
+      "type": "number"
+    },
+    "receitas": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aplicado",
+        "pendente"
+      ]
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "detalhes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "grupo",
+    "subgrupo",
+    "acao",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
