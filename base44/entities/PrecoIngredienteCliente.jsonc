@@ -4,20 +4,20 @@
   "properties": {
     "ingrediente_id": {
       "type": "string",
-      "description": "LEGADO FASE 3: ID do Ingrediente mestre ao qual este preço personalizado se refere"
+      "description": "LEGADO FASE 3: ID do Ingrediente mestre ao qual este pre\u00e7o personalizado se refere"
     },
     "user_id": {
       "type": "string",
-      "description": "LEGADO FASE 3: ID do usuário dono deste preço personalizado (cache; segurança usa created_by_id)"
+      "description": "LEGADO FASE 3: ID do usu\u00e1rio dono deste pre\u00e7o personalizado (cache; seguran\u00e7a usa created_by_id)"
     },
     "preco_por_g_rs": {
       "type": "number",
-      "description": "LEGADO FASE 3: espelho temporário do preço pessoal. A fonte principal passou a ser IngredienteUsuario."
+      "description": "LEGADO FASE 3: espelho tempor\u00e1rio do pre\u00e7o pessoal. A fonte principal passou a ser IngredienteUsuario."
     },
     "updated_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora da última atualização do espelho legado"
+      "description": "Data/hora da \u00faltima atualiza\u00e7\u00e3o do espelho legado"
     }
   },
   "required": [
@@ -25,6 +25,18 @@
     "user_id"
   ],
   "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
     "read": {
       "$or": [
         {
