@@ -28,6 +28,26 @@
         // any third-party script or application code can observe the full URL.
         try {
           var qp = new URLSearchParams(window.location.search);
+
+          // A Base44 atualmente gera o e-mail de recuperação apontando para o
+          // subdomínio padrão do app. Canonicaliza imediatamente esse link para o
+          // domínio próprio, preservando o token apenas durante este redirect.
+          // No carregamento seguinte (já no domínio próprio), o bloco abaixo guarda
+          // o token em sessionStorage e o remove da barra antes de scripts externos.
+          if (
+            window.location.hostname === 'laborat-rio-de-cozinha.base44.app' &&
+            window.location.pathname === '/reset-password' &&
+            qp.get('token')
+          ) {
+            window.location.replace(
+              'https://laboratoriodecozinha.com.br' +
+              window.location.pathname +
+              window.location.search +
+              window.location.hash
+            );
+            return;
+          }
+
           var accessToken = qp.get('access_token');
           var pendingReturn = qp.get('returnTo') || qp.get('from_url');
           var resetToken = window.location.pathname === '/reset-password' ? qp.get('token') : null;
