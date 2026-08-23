@@ -369,6 +369,8 @@ async function simular(ctx: any, fila: any, grupo: any, args: any) {
   if (destino) snapshotParts.push(`destino:${destino.id}@${txt(destino.updated_date)}`);
   snapshotParts.push(`decisao:${decisao}`);
   snapshotParts.push(`preco:${precoPorG}`);
+  snapshotParts.push(`embalagem:${positivo(args?.preco_embalagem_rs)}@${positivo(args?.peso_embalagem_g)}`);
+  snapshotParts.push(`impacto:${[...new Set(impactoCatalogoIds)].sort().join(',')}`);
   const assinatura = await sha256(`${grupo.grupo_chave}|${snapshotParts.join('|')}`);
 
   return {
