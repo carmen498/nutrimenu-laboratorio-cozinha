@@ -6,6 +6,7 @@
 // a mensagem NUNCA é enviada de fato — apenas registrada em LogWhatsapp (status "simulado")
 // para conferência visual antes de liberar o envio real.
 import { secrets } from "base44:runtime";
+import { registrarLogWhatsapp } from "./governancaLogs.ts";
 
 const DEFAULTS: Record<string, string> = {
   pagamento_aprovado: "Olá {{nome}}! 🎉 Seu pagamento foi aprovado e seu plano no Laboratório de Cozinha já está ativo.",
@@ -20,7 +21,7 @@ type TipoWascript = "pagamento_aprovado" | "pagamento_recusado" | "plano_vencend
 export async function enviarNotificacaoWhatsapp(
   base44: any,
   tipo: TipoWascript,
-  usuario: { telefone_whatsapp?: string; nome_completo?: string; full_name?: string }
+  usuario: { id?: string; telefone_whatsapp?: string; nome_completo?: string; full_name?: string }
 ): Promise<void> {
   const telefone = usuario?.telefone_whatsapp;
   if (!telefone) {
@@ -51,10 +52,11 @@ export async function enviarNotificacaoWhatsapp(
 
   if (modoTeste || !token) {
     console.log(`[MODO TESTE] WhatsApp "${tipo}" simulado.`);
-    await base44.asServiceRole.entities.LogWhatsapp.create({
-      destinatario_telefone: numero,
+    await registrarLogWhatsapp(base44, {
+      usuarioId: usuario.id,
+      telefone: numero,
       tipo,
-      modo_teste: true,
+      modoTeste: true,
       status: "simulado",
     }).catch((e: any) => console.log("Falha ao gravar LogWhatsapp:", e.message));
     return;
@@ -69,10 +71,11 @@ export async function enviarNotificacaoWhatsapp(
     console.log(`Erro ao enviar WhatsApp "${tipo}" (HTTP ${resposta.status}).`);
   }
 
-  await base44.asServiceRole.entities.LogWhatsapp.create({
-    destinatario_telefone: numero,
+  await registrarLogWhatsapp(base44, {
+    usuarioId: usuario.id,
+    telefone: numero,
     tipo,
-    modo_teste: false,
+    modoTeste: false,
     status: resposta.ok ? "enviado" : "falhou",
   }).catch((e: any) => console.log("Falha ao gravar LogWhatsapp:", e.message));
 }
