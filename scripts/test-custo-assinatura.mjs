@@ -24,6 +24,7 @@ const base = {
   rendimento: 1000,
   resolverIngrediente: (id) => ingredientes[id] || null,
   resolverPreco: (ing) => ing?.preco_por_g_rs || 0,
+  resolverAssinaturaSubreceita: (id) => id === 'sub1' ? 'exp-v1-abc' : '',
 };
 
 const sig = gerarFront(base);
