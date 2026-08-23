@@ -182,7 +182,8 @@
       "enum": [
         "valida",
         "divergente",
-        "ausente"
+        "ausente",
+        "a_verificar"
       ],
       "description": "Fase 10.4: compara a assinatura persistida com os determinantes atuais do custo."
     },
