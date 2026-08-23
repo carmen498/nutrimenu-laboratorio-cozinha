@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { avaliarAcessoAssinatura } from "@/lib/acessoAssinatura";
+import { avaliarAcessoAssinatura, hojeSaoPauloISO } from "@/lib/acessoAssinatura";
 import { toast } from "@/components/ui/use-toast";
 import PlanoCard from "@/components/planos/PlanoCard";
 import IncluidoTodosPlanos from "@/components/planos/IncluidoTodosPlanos";
@@ -19,12 +19,13 @@ const formatarData = (dataStr) => {
 };
 
 const diasEntreHoje = (dataStr) => {
-  if (!dataStr) return null;
-  const data = new Date(`${dataStr}T00:00:00`);
-  if (isNaN(data.getTime())) return null;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  return Math.round((data.getTime() - hoje.getTime()) / 86400000);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataStr || "")) return null;
+  const hojeISO = hojeSaoPauloISO();
+  const [anoAlvo, mesAlvo, diaAlvo] = dataStr.split("-").map(Number);
+  const [anoHoje, mesHoje, diaHoje] = hojeISO.split("-").map(Number);
+  const alvoUTC = Date.UTC(anoAlvo, mesAlvo - 1, diaAlvo);
+  const hojeUTC = Date.UTC(anoHoje, mesHoje - 1, diaHoje);
+  return Math.round((alvoUTC - hojeUTC) / 86400000);
 };
 
 const formatarPreco = (plano) => {
