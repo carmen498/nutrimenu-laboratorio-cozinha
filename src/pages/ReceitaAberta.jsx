@@ -718,6 +718,7 @@ export default function ReceitaAberta() {
       if (medida_caseira_id !== undefined) updates.medida_caseira_id = medida_caseira_id || "";
       if (quantidade_medida_caseira !== undefined) updates.quantidade_medida_caseira = quantidade_medida_caseira;
       await base44.entities.IngredienteReceita.update(mapItemId(itemId), updates);
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "quantidade_ou_medida_alterada", origem: "composicao_receita" });
       return receitaId;
     },
     onSuccess: (receitaId) => {
@@ -734,6 +735,7 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.update(mapItemId(itemId), {
         fator_correcao_override: Number.isFinite(valor) && valor > 0 ? valor : 0,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "fc_especifico_alterado", origem: "composicao_receita" });
       return receitaId;
     },
     onSuccess: (receitaId) => {
@@ -752,6 +754,7 @@ export default function ReceitaAberta() {
       }
       const { receitaId, mapItemId } = await ensureEditavel();
       await base44.entities.IngredienteReceita.update(mapItemId(itemId), updates);
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "item_receita_alterado", origem: "composicao_receita" });
       return receitaId;
     },
     onSuccess: (receitaId) => {
@@ -780,6 +783,7 @@ export default function ReceitaAberta() {
         subreceita_id: "",
         subreceita_nome: "",
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [id], motivo: "ingrediente_substituido", origem: "composicao_receita" });
     },
     onSuccess: () => {
       registrarHistorico(id, receita?.nome, ["Ingredientes"]);
@@ -799,6 +803,7 @@ export default function ReceitaAberta() {
         subreceita_id: receitaId,
         subreceita_nome: receitaNome,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [id], motivo: "referencia_subreceita_alterada", origem: "composicao_receita" });
     },
     onSuccess: () => {
       registrarHistorico(id, receita?.nome, ["Ingredientes"]);
@@ -837,6 +842,7 @@ export default function ReceitaAberta() {
         titulo_grupo: titulo,
         ordem: maxOrdem + 10,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [id], motivo: "item_custeavel_convertido_em_grupo", origem: "composicao_receita" });
     },
     onSuccess: () => {
       registrarHistorico(id, receita?.nome, ["Ingredientes"]);
@@ -863,6 +869,7 @@ export default function ReceitaAberta() {
       const { receitaId, mapItemId, forked } = await ensureEditavel();
       if (forked) return receitaId;
       await base44.entities.IngredienteReceita.delete(mapItemId(itemId));
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "item_receita_removido", origem: "composicao_receita" });
       return receitaId;
     },
     onSuccess: (receitaId) => {
@@ -876,6 +883,7 @@ export default function ReceitaAberta() {
     mutationFn: async (itemId) => {
       await base44.entities.IngredienteReceita.deleteMany({ subreceita_parent_id: itemId });
       await base44.entities.IngredienteReceita.delete(itemId);
+      await invalidarCustosDependentesSeguro({ receitaIds: [id], motivo: "subreceita_removida", origem: "composicao_receita" });
     },
     onSuccess: () => {
       registrarHistorico(id, receita?.nome, ["Ingredientes"]);
