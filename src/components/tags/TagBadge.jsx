@@ -69,7 +69,7 @@ const CORES_POR_GRUPO = {
   cinza:        { bg: "#F5F5F5", texto: "#616161" },
 };
 
-export default function TagBadge({ nome, cor, grupo, onClick, className = "" }) {
+export default function TagBadge({ nome, cor, grupo = null, onClick = null, className = "" }) {
   // Prioridade: cor por nome > cor por grupo > fallback verde
   const corPorNome = CORES_POR_NOME[nome];
   const corPorGrupo = CORES_POR_GRUPO[grupo] || CORES_POR_GRUPO[cor];
