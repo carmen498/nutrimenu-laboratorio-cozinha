@@ -25,6 +25,7 @@
     "test:tenant-e2e-temp": "node scripts/test-tenant-isolation-e2e-temp.mjs",
     "go-live:check": "npm run maintenance:check && npm run test:go-live",
     "ci:check": "npm run go-live:check",
+    "release:check": "npm run ci:check && npm run test:production-routes && npm run test:auth-production",
     "preview": "vite preview"
   },
   "dependencies": {
