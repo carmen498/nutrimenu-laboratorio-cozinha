@@ -285,6 +285,34 @@ export default function AuditoriaCustosReceitas() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Itens problemáticos</p><p className="text-xl font-bold">{diagnostico.semPreco}</p></Card>
       </div>
 
+      {assinaturaPreview && (
+        <Card className="p-4 border-primary/30">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <h3 className="font-semibold flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Fase 10.4 — assinaturas canônicas</h3>
+              <p className="text-xs text-muted-foreground mt-1">Comparação semântica dos determinantes atuais com a assinatura persistida; nenhuma data de atualização entra no hash.</p>
+            </div>
+            <Badge variant="outline">v{assinaturaPreview.versao_assinatura || 1}</Badge>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+            <div><p className="text-xs text-muted-foreground">Válidas</p><p className="text-lg font-bold text-primary">{assinaturaPreview.validas || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Divergentes</p><p className="text-lg font-bold text-destructive">{assinaturaPreview.divergentes || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Ausentes</p><p className="text-lg font-bold text-amber-700">{assinaturaPreview.ausentes || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Requer recálculo</p><p className="text-lg font-bold">{assinaturaPreview.requer_recalculo || 0}</p></div>
+          </div>
+          {(assinaturaPreview.amostra || []).length > 0 && (
+            <div className="mt-3 max-h-48 overflow-auto border rounded-md">
+              {assinaturaPreview.amostra.slice(0, 50).map((row) => (
+                <div key={row.id} className="flex items-center justify-between gap-3 px-3 py-2 border-t first:border-t-0 text-xs">
+                  <span className="font-medium truncate">{row.nome}</span>
+                  <Badge variant={row.status === "divergente" ? "destructive" : "outline"} className="text-[10px]">{row.status}</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
       {diagnostico.incompletas > 0 && <CuradoriaCustosPendentes />}
 
       {saneamentoPreview && (
