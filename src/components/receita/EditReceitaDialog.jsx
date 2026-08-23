@@ -22,6 +22,7 @@ import { calcularPesoPrePreparo, formatarStatusRendimento } from "@/lib/rendimen
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { uploadImagemSeguro } from "@/lib/securityHardening";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 const CAMPO_LABELS = {
   nome: "Nome",
@@ -140,6 +141,15 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
       const { rid: receitaId } = await ensureFork();
       const forked = receitaId !== receita.id;
       await base44.entities.Receita.update(receitaId, rest);
+      const camposCusto = ["porcoes_base", "peso_pos_preparo_total", "rendimento_total", "per_capita_g", "unidade_base"];
+      const custoMudou = forked || camposCusto.some((campo) => !valuesEqual(rest[campo], receita?.[campo]));
+      if (custoMudou) {
+        await invalidarCustosDependentesSeguro({
+          receitaIds: [receitaId],
+          motivo: "parametros_receita_alterados",
+          origem: "editar_receita",
+        });
+      }
       const alterados = Object.entries(CAMPO_LABELS)
         .filter(([field]) => !valuesEqual(rest[field], receita[field]))
         .map(([, label]) => label);
