@@ -15,6 +15,7 @@ import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import ImportarLoteReport from "@/components/receita/ImportarLoteReport";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { uploadArquivoSeguro, validarDocumentoReceitaUpload } from "@/lib/securityHardening";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -403,6 +404,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
       existingReceitas.forEach(r => { receitaMap[r.nome?.toLowerCase().trim()] = r; });
 
       let created = 0, updated = 0, skipped = 0, ambiguos = 0;
+      const receitasAlteradas = [];
       const processedNames = new Set();
       const substituicoesCategoria = [];
 
@@ -446,6 +448,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
             await base44.entities.IngredienteReceita.delete(old.id);
           }
           updated++;
+          receitasAlteradas.push(receitaId);
         } else {
           const newReceita = await criarReceitaSegura(payload);
           receitaId = newReceita.id;
@@ -580,6 +583,13 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         }
       }
 
+      if (receitasAlteradas.length > 0) {
+        await invalidarCustosDependentesSeguro({
+          receitaIds: receitasAlteradas,
+          motivo: "receita_reimportada_em_lote",
+          origem: "importacao_receitas",
+        });
+      }
       qc.invalidateQueries({ queryKey: ["receitas"] });
       qc.invalidateQueries({ queryKey: ["receitas-count-total"] });
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
