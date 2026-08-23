@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 // Fase 5 — normalização segura de rendimento.
 //
@@ -79,9 +80,21 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Receita.bulkUpdate(updates.slice(i, i + 500));
     }
 
+    let receitasInvalidadas = 0;
+    if (updates.length > 0) {
+      const invalidacao = await invalidarCustosPorDependencias({
+        entities: base44.asServiceRole.entities,
+        receitaIds: updates.map((u: any) => u.id),
+        motivo: 'normalizacao_rendimento',
+        origem: 'corrigir_rendimento_receitas',
+      });
+      receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
+    }
+
     return Response.json({
       total_processado: receitas.length,
       total_normalizado: updates.length,
+      receitas_invalidadas: receitasInvalidadas,
       total_corrigido: 0,
       observacao: 'Nenhum PDP foi substituído pela soma dos ingredientes.',
     });
