@@ -55,8 +55,10 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         identificationNumber: cpf,
       });
 
+      const tentativaId = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
+        tentativa_id: tentativaId,
         forma_pagamento: "cartao",
         aceite_termos: true,
         token: cardToken.id,
