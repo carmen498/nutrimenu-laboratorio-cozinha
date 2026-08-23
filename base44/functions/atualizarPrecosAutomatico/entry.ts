@@ -257,6 +257,7 @@ Acesse o app para revisar.`;
       total_processado: totalProcessado,
       total_atualizado: totalAtualizado,
       total_mantido: totalMantido,
+      receitas_invalidadas: receitasInvalidadas,
       duracao_segundos: duracao,
       categorias: categoriasArray
     });
