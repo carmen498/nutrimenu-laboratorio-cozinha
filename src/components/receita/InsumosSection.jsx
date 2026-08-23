@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
+  COMPORTAMENTO_CUSTO_LABELS,
   calcularInsumosReceitaEscalados,
   escalarInsumoReceita,
   quantidadeBaseInsumoReceita,
