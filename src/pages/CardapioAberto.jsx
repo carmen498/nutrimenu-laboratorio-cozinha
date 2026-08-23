@@ -32,7 +32,7 @@ import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas
 import { custoEscalado } from "@/lib/custoReceita";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { carregarIngredientesEfetivosCusto, mapearIngredientesPorId } from "@/lib/custoContexto";
-import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { toast } from "sonner";
@@ -457,6 +457,7 @@ export default function CardapioAberto() {
         const fator = rec?.rendimento_total ? (Number(cr.quantidade_total_g) || 0) / Number(rec.rendimento_total) : 1;
         for (const ing of (ingrs || [])) {
           if (ing.tipo === "grupo") continue;
+          if (ing.tipo === "ingrediente" && !itemParticipaCompra(ing)) continue;
           const nome = ing.ingrediente_nome || ing.subreceita_nome || "";
           if (!nome) continue;
           const key = nome.toLowerCase();
