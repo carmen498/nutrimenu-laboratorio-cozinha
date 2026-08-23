@@ -2,9 +2,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 Deno.serve(async (req) => {
   try {
-    if (req.method !== 'POST') return Response.json({ error: 'Method not allowed' }, { status: 405 });
-    const body = await req.json().catch(() => ({}));
-    const mode = body?.mode === 'apply' ? 'apply' : 'dry_run';
+    const url = new URL(req.url);
+    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    const requestedMode = body?.mode || url.searchParams.get('mode');
+    const mode = requestedMode === 'apply' ? 'apply' : 'dry_run';
     const base44 = createClientFromRequest(req);
 
     const chamar = async (name: string, args: Record<string, any>) => {
