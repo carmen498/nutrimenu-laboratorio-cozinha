@@ -62,6 +62,7 @@ import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendime
 import { calcularCustoReceitaCanonico, CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
 import { consoleErrorSeguro, uploadImagemSeguro } from "@/lib/securityHardening";
 import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
+import { CUSTO_ASSINATURA_VERSAO, gerarAssinaturaCusto } from "@/lib/custoAssinatura";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
