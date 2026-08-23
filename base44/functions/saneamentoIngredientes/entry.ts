@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -94,10 +95,20 @@ Deno.serve(async (req) => {
       }
     }
 
+    let receitasInvalidadas = 0;
     if (updates.length > 0) {
       for (let i = 0; i < updates.length; i += 500) {
         await base44.asServiceRole.entities.IngredienteReceita.bulkUpdate(updates.slice(i, i + 500));
       }
+      const itemMap = new Map(allItems.map(item => [item.id, item]));
+      const receitaIds = [...new Set(updates.map(update => itemMap.get(update.id)?.receita_id).filter(Boolean))];
+      const invalidacao = await invalidarCustosPorDependencias({
+        entities: base44.asServiceRole.entities,
+        receitaIds,
+        motivo: 'saneamento_referencia_ingrediente',
+        origem: 'saneamento_ingredientes',
+      });
+      receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
     }
 
     return Response.json({
@@ -105,6 +116,7 @@ Deno.serve(async (req) => {
       broken_lines: broken.length,
       fixed: fixed,
       mismatch_fixed: mismatchFixed,
+      receitas_invalidadas: receitasInvalidadas,
       not_found_count: notFound.length,
       not_found: notFound,
       mismatch_not_found: mismatchNotFound,
