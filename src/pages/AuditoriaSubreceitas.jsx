@@ -117,6 +117,8 @@ export default function AuditoriaSubreceitas() {
       let assinaturaAtual = "";
       let dependencias = 0;
       let erro = "";
+      let composicaoMudouDepois = false;
+      let ultimaComposicaoEm = "";
       if (!source) {
         status = "origem_ausente";
       } else {
@@ -124,9 +126,12 @@ export default function AuditoriaSubreceitas() {
           const atual = calcularAssinatura(source.id, marker.receita_id);
           assinaturaAtual = atual.valor;
           dependencias = atual.dependencias.size;
+          ultimaComposicaoEm = atual.ultimaComposicaoEm || "";
+          const sincronizadaMs = marker.subreceita_sincronizada_em ? Date.parse(marker.subreceita_sincronizada_em) : 0;
+          composicaoMudouDepois = atual.ultimaComposicaoMs > (Number.isFinite(sincronizadaMs) ? sincronizadaMs : 0);
           if (filhos.length === 0) status = cacheAssinatura === assinaturaAtual ? "a_validar" : "pendente";
           else if (!cacheAssinatura || !cacheV2) status = "a_validar";
-          else status = cacheAssinatura === assinaturaAtual ? "sincronizada" : "desatualizada";
+          else status = cacheAssinatura === assinaturaAtual && !composicaoMudouDepois ? "sincronizada" : "desatualizada";
         } catch (e) {
           status = e?.code === "CICLO" ? "erro_ciclo" : "origem_ausente";
           erro = e?.message || "Erro de linhagem";
@@ -156,6 +161,8 @@ export default function AuditoriaSubreceitas() {
         cacheV2,
         dependencias,
         erro,
+        composicaoMudouDepois,
+        ultimaComposicaoEm,
         markerModeloLegado,
         markerSemCache,
         cacheParentReceitaDivergente,
@@ -177,6 +184,7 @@ export default function AuditoriaSubreceitas() {
       filhosCache: filhosCache.length,
       sincronizadas: rows.filter((r) => r.status === "sincronizada").length,
       desatualizadas: rows.filter((r) => r.status === "desatualizada").length,
+      composicaoAlterada: rows.filter((r) => r.composicaoMudouDepois).length,
       revisar: rows.filter((r) => ["a_validar", "pendente"].includes(r.status)).length,
       erros: rows.filter((r) => ["erro_ciclo", "origem_ausente"].includes(r.status)).length,
       markersModeloLegado: rows.filter((r) => r.markerModeloLegado).length,
