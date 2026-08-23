@@ -77,6 +77,7 @@ export default function OrcamentoCardapio() {
       ingredienteMap,
       insumosPorReceita,
       esquecidosPorReceita,
+      contextoCanonicoCarregado: true,
     });
   }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, markup, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
