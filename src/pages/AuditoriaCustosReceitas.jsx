@@ -8,6 +8,7 @@ import { AlertTriangle, CheckCircle2, DollarSign, Eye, Loader2, ShieldCheck, Wre
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
+import CuradoriaCustosPendentes from "@/components/auditoria/CuradoriaCustosPendentes";
 
 const STATUS_LABEL = {
   atual: "Atual",
@@ -221,6 +222,8 @@ export default function AuditoriaCustosReceitas() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Incompletas</p><p className="text-xl font-bold text-destructive">{diagnostico.incompletas}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Itens problemáticos</p><p className="text-xl font-bold">{diagnostico.semPreco}</p></Card>
       </div>
+
+      {diagnostico.incompletas > 0 && <CuradoriaCustosPendentes />}
 
       {saneamentoPreview && (
         <Card className="p-4 border-amber-400/40">
