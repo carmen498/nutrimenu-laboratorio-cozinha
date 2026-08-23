@@ -12,6 +12,7 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -52,8 +53,9 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const paymentStatus = order.transactions?.payments?.[0]?.status;
-    if (paymentStatus !== "refunded") {
-      return Response.json({ error: `Order ainda não está reembolsada no Mercado Pago (status do pagamento: ${paymentStatus})` }, { status: 400 });
+    const statusNormalizado = resolverStatusOrderMercadoPago(order);
+    if (statusNormalizado !== "estornado") {
+      return Response.json({ error: `Order ainda não está reembolsada no Mercado Pago (status: ${order.status || paymentStatus || "desconhecido"})` }, { status: 400 });
     }
 
     await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "estornado" });
