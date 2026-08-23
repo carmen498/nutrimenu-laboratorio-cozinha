@@ -29,7 +29,7 @@ import CardapioInsumosSection from "@/components/cardapio/CardapioInsumosSection
 import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
-import { custoEscalado } from "@/lib/custoReceita";
+import { custoEscalado, rendimentoEfetivo } from "@/lib/custoReceita";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
 import { escalarInsumoCardapio, normalizarComportamentoCusto } from "@/lib/escalonamentoCustos";
 import { carregarIngredientesEfetivosCusto, mapearIngredientesPorId } from "@/lib/custoContexto";
@@ -490,21 +490,19 @@ export default function CardapioAberto() {
       try {
         const ingrs = await base44.entities.IngredienteReceita.filter({ receita_id: cr.receita_id }, "ordem", 200);
         const rec = await base44.entities.Receita.get(cr.receita_id);
-        const fator = rec?.rendimento_total ? (Number(cr.quantidade_total_g) || 0) / Number(rec.rendimento_total) : 1;
+        const rendimentoBase = rendimentoEfetivo(rec, ingrs || []);
+        const fator = rendimentoBase > 0 ? (Number(cr.quantidade_total_g) || 0) / rendimentoBase : 1;
+        const porcoesBase = Number(rec?.porcoes_base) > 0 ? Number(rec.porcoes_base) : 1;
         for (const ing of (ingrs || [])) {
-          if (ing.tipo === "grupo") continue;
-          if (ing.tipo === "ingrediente" && !itemParticipaCompra(ing)) continue;
-          const nome = ing.ingrediente_nome || ing.subreceita_nome || "";
+          if (ing.tipo === "grupo" || ing.tipo === "subreceita") continue;
+          if (!itemParticipaCompra(ing)) continue;
+          const nome = ing.ingrediente_nome || "";
           if (!nome) continue;
           const key = nome.toLowerCase();
-          const qtdLiquida = (Number(ing.quantidade_por_porcao) || 0) * fator;
+          // Mesma base do Motor de Custos: quantidade por porção × porções-base × fator.
+          const qtdLiquida = (Number(ing.quantidade_por_porcao) || 0) * porcoesBase * fator;
           if (!mapa[key]) mapa[key] = { nome, tipo: ing.tipo, quantidade_g: 0, custo: 0, origens: [], categoria: "" };
           if (!mapa[key].origens.includes(cr.receita_nome)) mapa[key].origens.push(cr.receita_nome);
-          if (ing.tipo === "subreceita") {
-            mapa[key].quantidade_g += qtdLiquida;
-            mapa[key].origemSub = cr.receita_nome;
-            continue;
-          }
           if (ing.ingrediente_id) {
             const ingData = ingredienteMap[ing.ingrediente_id];
             if (ingData) {
