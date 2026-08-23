@@ -43,7 +43,9 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const dataInicio = hojeSaoPauloISO();
-    const dataExpiracao = somarDiasISO(dataInicio, 7);
+    // A data_expiracao é inclusiva no motor de acesso. Para 7 dias civis de trial,
+    // o último dia válido é data_inicio + 6 dias.
+    const dataExpiracao = somarDiasISO(dataInicio, 6);
 
     await base44.asServiceRole.entities.User.update(user.id, {
       plano_atual: "trial",
