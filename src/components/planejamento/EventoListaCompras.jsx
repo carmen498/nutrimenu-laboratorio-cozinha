@@ -20,7 +20,7 @@ import {
   buscarPreferenciasIngredientes,
   aplicarPreferenciasIngredientes,
 } from "@/lib/preferenciaIngredienteUsuario";
-import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 const CATEGORIAS_COMPRA = {
@@ -148,6 +148,7 @@ export default function EventoListaCompras() {
   const listaItems = useMemo(() => {
     const totals = {};
     const addIngredient = (ingredienteId, nome, categoria, extra, itemReceita) => {
+      if (!itemParticipaCompra(itemReceita)) return;
       const ing = ingMap[ingredienteId];
       if (!ing) return;
       const calculado = calcularItemIngredienteReceita({
