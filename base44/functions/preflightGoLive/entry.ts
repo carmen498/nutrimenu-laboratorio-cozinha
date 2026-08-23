@@ -55,8 +55,13 @@ export default async function(req: Request): Promise<Response> {
     if (!webhookSecret) bloqueios.push("MERCADOPAGO_WEBHOOK_SECRET ausente.");
     if (!resend) bloqueios.push("RESEND_API_KEY ausente.");
 
-    for (const id of ["mensal", "anual"]) {
-      const plano = mapaPlanos[id];
+    for (const id of ["mensal", "anual", "renovacao"]) {
+      const encontrados = (planos || []).filter((p: any) => p.plano_id === id);
+      if (encontrados.length > 1) {
+        bloqueios.push(`Há ${encontrados.length} configurações para o plano ${id}; deve existir exatamente uma.`);
+        continue;
+      }
+      const plano = encontrados[0];
       if (!plano) {
         bloqueios.push(`Configuração do plano ${id} ausente.`);
         continue;
@@ -73,9 +78,6 @@ export default async function(req: Request): Promise<Response> {
       }
     }
 
-    if (mapaPlanos.renovacao) {
-      avisos.push("Plano Renovação existe na configuração, mas o checkout pago atual aceita apenas mensal e anual.");
-    }
     if (!wascriptToken || wascriptModoTeste) {
       avisos.push("WhatsApp está sem token ou em modo de teste; não bloqueia o checkout, mas mensagens reais podem não ser enviadas.");
     }
