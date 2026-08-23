@@ -62,6 +62,7 @@ export default function AuditoriaCustosReceitas() {
       if (versao < CUSTO_RECEITA_MODELO_VERSAO) problemas.push("modelo_legado");
       if (statusPersistido === "incompleto") problemas.push("cache_incompleto");
       if (statusPersistido === "a_recalcular") problemas.push("cache_a_recalcular");
+      if (receita.custo_cache_invalido === true) problemas.push("cache_invalidado");
       if (!receita.custo_cache_atualizado_em && versao >= CUSTO_RECEITA_MODELO_VERSAO) problemas.push("sem_data_normalizacao");
       if (Number(receita.custo_cache_itens_sem_preco) > 0) problemas.push("itens_sem_preco");
       return { receita, versao, status: statusPersistido, problemas };
@@ -74,8 +75,9 @@ export default function AuditoriaCustosReceitas() {
       incompletas: rows.filter((r) => r.status === "incompleto").length,
       legado: rows.filter((r) => r.versao < CUSTO_RECEITA_MODELO_VERSAO).length,
       aRecalcular: rows.filter((r) => r.status === "a_recalcular").length,
+      invalidadas: rows.filter((r) => r.receita.custo_cache_invalido === true).length,
       semPreco: rows.reduce((s, r) => s + (Number(r.receita.custo_cache_itens_sem_preco) || 0), 0),
-      pendentes: rows.filter((r) => !(r.versao >= CUSTO_RECEITA_MODELO_VERSAO && r.status === "atual")),
+      pendentes: rows.filter((r) => r.receita.custo_cache_invalido === true || !(r.versao >= CUSTO_RECEITA_MODELO_VERSAO && r.status === "atual")),
     };
   }, [receitas]);
 
