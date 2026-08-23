@@ -258,7 +258,7 @@ export default function AuditoriaSubreceitas() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Marcadores</p><p className="text-xl font-bold">{diagnostico.total}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Filhos de cache</p><p className="text-xl font-bold">{diagnostico.filhosCache}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Sincronizadas</p><p className="text-xl font-bold text-primary">{diagnostico.sincronizadas}</p></Card>
-        <Card className="p-3"><p className="text-xs text-muted-foreground">Desatualizadas</p><p className="text-xl font-bold text-amber-700">{diagnostico.desatualizadas}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Desatualizadas</p><p className="text-xl font-bold text-amber-700">{diagnostico.desatualizadas}</p><p className="text-[10px] text-muted-foreground">composição: {diagnostico.composicaoAlterada}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Marcador legado</p><p className="text-xl font-bold text-amber-600">{diagnostico.markersModeloLegado}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Sem cache</p><p className="text-xl font-bold text-amber-600">{diagnostico.markersSemCache}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Estrutural</p><p className="text-xl font-bold text-destructive">{diagnostico.relacoesComProblemaEstrutural}</p></Card>
@@ -299,6 +299,7 @@ export default function AuditoriaSubreceitas() {
               <div className="min-w-0">
                 <p className="font-medium truncate" title={row.source?.nome || row.marker.subreceita_id}>{row.source?.nome || row.marker.subreceita_nome || "Origem ausente"}</p>
                 {row.erro && <p className="text-[10px] text-destructive truncate" title={row.erro}>{row.erro}</p>}
+                {row.composicaoMudouDepois && <p className="text-[10px] text-amber-700 truncate" title={row.ultimaComposicaoEm}>Composição alterada após a última sincronização</p>}
                 {row.problemasEstruturais.length > 0 && <p className="text-[10px] text-amber-700 truncate" title={row.problemasEstruturais.join(" · ")}>{row.problemasEstruturais.join(" · ")}</p>}
               </div>
               <div><Badge variant={row.status === "sincronizada" ? "outline" : "secondary"} className="text-[10px]">{STATUS_LABEL[row.status] || row.status}</Badge></div>
