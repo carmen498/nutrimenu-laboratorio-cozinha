@@ -1,0 +1,29 @@
+=== DNS ===
+root_v4=216.24.57.1     STREAM laboratoriodecozinha.com.br
+www_v4=216.24.57.7     STREAM gcp-us-west1-1.origin.onrender.com.cdn.cloudflare.net
+=== HTTP ROOT ===
+status=301
+redirect=https://laboratoriodecozinha.com.br/
+effective=http://laboratoriodecozinha.com.br/
+=== HTTPS ROOT ===
+status=200
+redirect=
+effective=https://laboratoriodecozinha.com.br/
+HTTP/2 200 
+server: cloudflare
+strict-transport-security: max-age=31536000
+=== HTTP WWW ===
+status=301
+redirect=https://www.laboratoriodecozinha.com.br/
+effective=http://www.laboratoriodecozinha.com.br/
+=== HTTPS WWW ===
+status=301
+redirect=https://laboratoriodecozinha.com.br/
+effective=https://www.laboratoriodecozinha.com.br/
+=== CERT ROOT ===
+subject=CN = laboratoriodecozinha.com.br
+issuer=C = US, O = Google Trust Services, CN = WE1
+notBefore=Aug 18 14:58:13 2026 GMT
+notAfter=Nov 16 15:58:10 2026 GMT
+X509v3 Subject Alternative Name: 
+    DNS:laboratoriodecozinha.com.br
