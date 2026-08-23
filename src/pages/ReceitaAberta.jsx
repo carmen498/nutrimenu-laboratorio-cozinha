@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -684,7 +685,7 @@ export default function ReceitaAberta() {
     }
   }, [custoTotal, custoPorcao, custoInsumos, custoCanonico, receita, fator, id, isAdmin]);
 
-  const updatePriceMut = useMutation({
+  const updatePriceMut = useMutationAny({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
       const preco_por_g_rs = peso_embalagem_g > 0 ? preco_embalagem_rs / peso_embalagem_g : 0;
       if (!isAdmin) {
@@ -702,7 +703,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const updateQtdMut = useMutation({
+  const updateQtdMut = useMutationAny({
     mutationFn: async ({ itemId, quantidade_por_porcao, medida_caseira_id, quantidade_medida_caseira }) => {
       const { receitaId, mapItemId } = await ensureEditavel();
       const updates = { quantidade_por_porcao };
@@ -718,7 +719,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const updateFCMut = useMutation({
+  const updateFCMut = useMutationAny({
     mutationFn: async ({ itemId, fator_correcao_override }) => {
       const { receitaId, mapItemId } = await ensureEditavel();
       const valor = Number(fator_correcao_override);
@@ -734,7 +735,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const updateItemMut = useMutation({
+  const updateItemMut = useMutationAny({
     mutationFn: async ({ itemId, quantidade_por_porcao, pre_preparo, ingrediente_id, ingrediente_nome }) => {
       const updates = { quantidade_por_porcao, pre_preparo };
       if (ingrediente_id) {
@@ -753,7 +754,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const updateOrdemMut = useMutation({
+  const updateOrdemMut = useMutationAny({
     mutationFn: async ({ itemId, ordem }) => {
       await base44.entities.IngredienteReceita.update(itemId, { ordem });
     },
@@ -762,7 +763,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const replaceIngMut = useMutation({
+  const replaceIngMut = useMutationAny({
     mutationFn: async ({ itemId, newIngredienteId, newIngredienteNome }) => {
       await base44.entities.IngredienteReceita.update(itemId, {
         tipo: "ingrediente",
@@ -781,7 +782,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const replaceWithSubreceitaMut = useMutation({
+  const replaceWithSubreceitaMut = useMutationAny({
     mutationFn: async ({ itemId, receitaId, receitaNome }) => {
       await base44.entities.IngredienteReceita.update(itemId, {
         tipo: "subreceita",
@@ -800,7 +801,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const addGrupoMut = useMutation({
+  const addGrupoMut = useMutationAny({
     mutationFn: async (titulo) => {
       const maxOrdem = itens.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
       await criarIngredienteReceita({
@@ -818,7 +819,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const convertToGrupoMut = useMutation({
+  const convertToGrupoMut = useMutationAny({
     mutationFn: async ({ itemId, titulo }) => {
       const maxOrdem = itens.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
       await base44.entities.IngredienteReceita.delete(itemId);
@@ -838,7 +839,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const updateGrupoMut = useMutation({
+  const updateGrupoMut = useMutationAny({
     mutationFn: async ({ itemId, titulo }) => {
       await base44.entities.IngredienteReceita.update(itemId, { titulo_grupo: titulo });
     },
@@ -849,7 +850,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const deleteItemOrGrupoMut = useMutation({
+  const deleteItemOrGrupoMut = useMutationAny({
     mutationFn: async (itemId) => {
       const { receitaId, mapItemId, forked } = await ensureEditavel();
       if (forked) return receitaId;
@@ -863,7 +864,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const deleteSubreceitaMut = useMutation({
+  const deleteSubreceitaMut = useMutationAny({
     mutationFn: async (itemId) => {
       await base44.entities.IngredienteReceita.deleteMany({ subreceita_parent_id: itemId });
       await base44.entities.IngredienteReceita.delete(itemId);
@@ -875,7 +876,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const duplicarReceitaMut = useMutation({
+  const duplicarReceitaMut = useMutationAny({
     mutationFn: async () => {
       const { id: _id, created_date, updated_date, created_by_id, ...rest } = receita;
       const nova = await criarReceitaSegura({ ...rest, nome: `${receita.nome} (cópia)` });
@@ -891,7 +892,7 @@ export default function ReceitaAberta() {
     },
   });
 
-  const deleteReceitaMut = useMutation({
+  const deleteReceitaMut = useMutationAny({
     mutationFn: async () => {
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: id });
       for (const ing of ings) await base44.entities.IngredienteReceita.delete(ing.id);
