@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
+import { COMPORTAMENTO_CUSTO_LABELS, normalizarComportamentoCusto } from "@/lib/escalonamentoCustos";
 
 export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd, onUpdate, onRemove, onReloadGlobais }) {
   const [busca, setBusca] = useState("");
@@ -48,6 +49,7 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
         categoria: customCat,
         unidade: customUnidade,
         preco_unitario: 0,
+        comportamento_custo_padrao: "por_lote",
       });
       onAdd(novo);
       onReloadGlobais?.();
@@ -69,7 +71,7 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
     setEditingNomeId(null);
   };
 
-  const custoTotalInsumos = insumos.reduce((s, i) => s + (i.custo_total || 0), 0);
+  const custoTotalInsumos = insumos.reduce((s, i) => s + (Number(i.custo_escalado ?? i.custo_total) || 0), 0);
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "R$ 0,00";
   const temPreco = (item) => (item.custo_unitario || 0) > 0;
 
@@ -95,6 +97,12 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
               <p className="text-muted-foreground mb-3">
                 São itens que não fazem parte da receita como alimento, mas têm custo de produção e devem ser considerados no preço final — embalagens, materiais de higiene e itens de acabamento para venda ou serviço.
               </p>
+              <p className="text-foreground font-medium mb-1">Como o custo escala</p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground mb-3">
+                <li><strong>Por lote:</strong> permanece fixo no cardápio.</li>
+                <li><strong>Proporcional:</strong> acompanha a mudança do número de pessoas/unidades/kg.</li>
+                <li><strong>Por unidade:</strong> quantidade cadastrada para cada pessoa/marmita/kg final.</li>
+              </ul>
               <p className="text-foreground font-medium mb-1">Embalagens</p>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground mb-3">
                 <li>Papel manteiga</li>
@@ -203,7 +211,7 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
           {insumos.map((item) => (
             <Card key={item.id} className="p-2.5">
               <div className="grid grid-cols-12 gap-2 items-center text-sm">
-                <div className="col-span-5 min-w-0">
+                <div className="col-span-4 min-w-0">
                   {editingNomeId === item.id ? (
                     <div className="flex items-center gap-1">
                       <Input
@@ -237,19 +245,32 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
                   )}
                 </div>
                 <div className="col-span-2 text-center">
+                  <Select
+                    value={normalizarComportamentoCusto(item.comportamento_custo)}
+                    onValueChange={(v) => onUpdate(item.id, "comportamento_custo", v)}
+                  >
+                    <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(COMPORTAMENTO_CUSTO_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2 text-center">
                   <div className="flex items-center gap-1 justify-center">
                     <Input
                       type="number"
                       className="h-7 w-14 text-xs text-center"
                       min={0}
                       step={1}
-                      value={item.quantidade || 1}
-                      onChange={(e) => onUpdate(item.id, "quantidade", Math.max(0, parseFloat(e.target.value) || 0))}
+                      value={item.quantidade_escalada ?? item.quantidade ?? 0}
+                      onChange={(e) => onUpdate(item.id, "quantidade_atual", Math.max(0, parseFloat(e.target.value) || 0))}
                     />
                     <span className="text-[10px] text-muted-foreground shrink-0">{item.unidade || "un"}</span>
                   </div>
                 </div>
-                <div className="col-span-3 text-center">
+                <div className="col-span-2 text-center">
                   <span className="block text-[10px] text-muted-foreground mb-0.5">Custo unit.</span>
                   {editingId === item.id ? (
                     <div className="flex items-center gap-1 justify-center">
@@ -279,7 +300,7 @@ export default function CardapioInsumosSection({ insumos, insumosGlobais, onAdd,
                 <div className="col-span-2 text-right">
                   <div className="flex items-center justify-end gap-0.5">
                     <span className={`text-xs font-semibold ${temPreco(item) ? "text-primary" : "text-muted-foreground"}`}>
-                      {temPreco(item) ? formatCurrency(item.custo_total || 0) : "—"}
+                      {temPreco(item) ? formatCurrency(Number(item.custo_escalado ?? item.custo_total) || 0) : "—"}
                     </span>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive no-print" onClick={() => onRemove(item.id)}>
                       <Trash2 className="w-3 h-3" />
