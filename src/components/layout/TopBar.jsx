@@ -77,8 +77,8 @@ export default function TopBar({ onMenuClick }) {
             <DropdownMenuItem onClick={() => navigate("/suporte")}>
               <LifeBuoy className="w-4 h-4" /> Suporte
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/sobre")}>
-              <Info className="w-4 h-4" /> Sobre
+            <DropdownMenuItem onClick={() => navigate("/sobre-carmen")}>
+              <Info className="w-4 h-4" /> Sobre a Carmen
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => logout('/')}>
