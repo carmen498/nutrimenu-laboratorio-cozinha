@@ -9,14 +9,15 @@ import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
+import { avaliarElegibilidadeRenovacao } from "../../shared/regraRenovacao.ts";
+import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
 
-// Checkout pago atualmente disponível na UI. "trial" é ativado por fluxo próprio
-// e "renovacao" ainda está marcado como "Em breve" na tela de Planos.
-const PLANOS_VALIDOS = ["mensal", "anual"];
+const PLANOS_VALIDOS = ["mensal", "anual", "renovacao"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
 const NOME_PLANOS: Record<string, string> = {
   mensal: "Plano 30 dias — Laboratório de Cozinha",
   anual: "Plano Anual — Laboratório de Cozinha",
+  renovacao: "Renovação Anual — Laboratório de Cozinha",
 };
 
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
@@ -57,6 +58,17 @@ export default async function(req: Request): Promise<Response> {
     if (!PLANOS_VALIDOS.includes(plano)) {
       return Response.json({ error: "Plano inválido" }, { status: 400 });
     }
+    if (plano === "renovacao") {
+      const elegibilidade = avaliarElegibilidadeRenovacao(user);
+      if (!elegibilidade.elegivel) {
+        return Response.json({
+          error: "Renovação indisponível para esta assinatura neste momento",
+          code: "renovacao_indisponivel",
+          motivo: elegibilidade.motivo,
+          dias_para_expiracao: elegibilidade.diasParaExpiracao ?? null,
+        }, { status: 409 });
+      }
+    }
     if (!FORMAS_VALIDAS.includes(forma_pagamento)) {
       return Response.json({ error: "Forma de pagamento inválida" }, { status: 400 });
     }
@@ -78,9 +90,20 @@ export default async function(req: Request): Promise<Response> {
     if (!configPlano || configPlano.valor_cobranca == null) {
       return Response.json({ error: `Preço não configurado para o plano ${plano}` }, { status: 500 });
     }
-    const valor = configPlano.valor_cobranca;
+    const valor = Number(configPlano.valor_cobranca);
+    if (!(valor > 0)) {
+      return Response.json({ error: `Preço inválido para o plano ${plano}` }, { status: 500 });
+    }
     const valorFormatado = valor.toFixed(2);
     const parcelas = forma_pagamento === "cartao" ? (parseInt(installments, 10) || 1) : 1;
+    const parcelamento = validarParcelamentoPlano(plano, parcelas);
+    if (!parcelamento.valido) {
+      return Response.json({
+        error: `Parcelamento inválido para o plano ${plano}. Máximo permitido: ${parcelamento.maximo}x`,
+        code: "parcelamento_invalido",
+        max_parcelas: parcelamento.maximo,
+      }, { status: 400 });
+    }
 
     // A prova da contratação é gerada no servidor no instante da tentativa.
     // O frontend informa apenas que houve ação explícita; versão e timestamp
