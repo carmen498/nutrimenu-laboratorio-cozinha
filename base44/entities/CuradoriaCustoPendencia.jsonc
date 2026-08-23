@@ -1,0 +1,31 @@
+{
+  "name": "CuradoriaCustoPendencia",
+  "type": "object",
+  "properties": {
+    "grupo_chave": { "type": "string", "description": "Identidade deterministica do grupo de pendencia no momento da decisao." },
+    "tipo_pendencia": { "type": "string", "enum": ["ingrediente_sem_preco", "referencia_ingrediente", "outro"] },
+    "nome_pendencia": { "type": "string" },
+    "decisao": { "type": "string", "enum": ["definir_preco_mestre", "reapontar_ingrediente", "reaproveitamento_processo", "manter_pendente"] },
+    "ingrediente_origem_id": { "type": "string" },
+    "ingrediente_destino_id": { "type": "string" },
+    "preco_por_g_rs": { "type": "number" },
+    "preco_embalagem_rs": { "type": "number" },
+    "peso_embalagem_g": { "type": "number" },
+    "impacto_ocorrencias": { "type": "number" },
+    "impacto_receitas": { "type": "number" },
+    "impacto_total_catalogo": { "type": "number" },
+    "assinatura_simulacao": { "type": "string" },
+    "status": { "type": "string", "enum": ["aplicada", "mantida_pendente", "erro"] },
+    "observacao": { "type": "string" },
+    "executado_por_id": { "type": "string" },
+    "executado_em": { "type": "string", "format": "date-time" },
+    "detalhes": { "type": "string", "description": "Snapshot JSON compacto da decisao e do impacto." }
+  },
+  "required": ["grupo_chave", "tipo_pendencia", "decisao", "status"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": { "user_condition": { "role": "admin" } },
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}
