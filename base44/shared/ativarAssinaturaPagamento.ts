@@ -12,6 +12,7 @@ import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 import { hojeSaoPauloISO } from "./acessoAssinatura.ts";
+import { registrarLogEmail } from "./governancaLogs.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
 const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual" };
@@ -54,12 +55,11 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { plano: s
 
     if (ativo) {
       const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-      await base44.asServiceRole.entities.LogEmail.create({
-        destinatario_email: usuario.email,
+      await registrarLogEmail(base44, {
+        usuarioId: usuario.id,
+        email: usuario.email,
         tipo: "pagamento_aprovado",
-        enviado_em: new Date().toISOString(),
-        status: resultado.ok ? "enviado" : "falhou",
-        detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
+        resultado,
       });
     } else {
       console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
