@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { CUSTO_ASSINATURA_VERSAO, gerarAssinaturaCusto } from '../../shared/custoAssinatura.ts';
 
 // Fase 10.1 — saneamento/migração segura do cache de custos.
 // dry_run=true calcula e diagnostica sem gravar Receita nem criar log.
@@ -245,10 +246,8 @@ Deno.serve(async (req) => {
 
       for (const insumo of insumosDaReceita) {
         const quantidade = positivo(insumo.quantidade);
-        const cache = positivo(insumo.custo_total);
         const unitario = positivo(insumo.custo_unitario);
-        custoInsumos += cache > 0 ? cache : quantidade * unitario;
-        if (quantidade > 0 && cache <= 0 && unitario <= 0) {
+        if (quantidade > 0 && unitario <= 0) {
           semPreco++;
           problemas.push({ item_id: insumo.id, insumo_id: txt(insumo.insumo_id), tipo: 'insumo_sem_preco' });
         }
@@ -300,16 +299,40 @@ Deno.serve(async (req) => {
         problemas.push({ tipo: 'receita_sem_composicao_custeavel' });
       }
 
-      const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
       const rendimento = rendimentoEfetivo(receita, componentes);
       const perCapita = positivo(receita.per_capita_g);
       const porcoesEfetivas = perCapita > 0 && rendimento > 0
         ? rendimento / perCapita
         : porcoesBase;
+
+      // Fase 11.1 — custo_total de InsumoReceita é cache, não fonte. Na escala
+      // base (fator=1), por_lote/proporcional usam a quantidade-base e
+      // por_unidade multiplica pela quantidade efetiva de unidades/porções.
+      custoInsumos = insumosDaReceita.reduce((sum: number, insumo: any) => {
+        const quantidade = positivo(insumo.quantidade);
+        const unitario = positivo(insumo.custo_unitario);
+        const comportamento = txt(insumo.comportamento_custo) || 'por_lote';
+        const quantidadeEscalada = comportamento === 'por_unidade'
+          ? quantidade * porcoesEfetivas
+          : quantidade;
+        return sum + quantidadeEscalada * unitario;
+      }, 0);
+
+      const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
       const custoPorPorcao = porcoesEfetivas > 0 ? custoTotal / porcoesEfetivas : 0;
       const incompleta = semPreco > 0 || refAusente > 0 || fallbackEsquecido > 0;
       const status = incompleta ? 'incompleto' : 'atual';
       const contexto = receita.is_base === false ? 'proprietario' : 'global';
+      const assinaturaCusto = gerarAssinaturaCusto({
+        receita,
+        itens: componentes,
+        insumos: insumosDaReceita,
+        esquecidos: esquecidosDaReceita,
+        contexto,
+        rendimento,
+        resolverIngrediente: (id: string) => ingredienteMap.get(id) || null,
+        resolverPreco: (ingrediente: any) => precoEfetivo({ ingrediente, ownerId, prefMap, legacyMap }),
+      });
 
       totalSemPreco += semPreco;
       totalRefAusente += refAusente;
@@ -323,6 +346,10 @@ Deno.serve(async (req) => {
         custo_cache_itens_sem_preco: semPreco + refAusente + fallbackEsquecido,
         custo_cache_atualizado_em: agora,
         custo_cache_invalido: false,
+        custo_cache_assinatura: assinaturaCusto,
+        custo_cache_assinatura_versao: CUSTO_ASSINATURA_VERSAO,
+        custo_cache_assinatura_status: 'valida',
+        custo_cache_assinatura_gerada_em: agora,
       };
 
       // Nunca substitui valores monetários por cálculo parcial/ambíguo.
