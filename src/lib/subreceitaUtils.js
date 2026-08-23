@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 
 const MAX_PROFUNDIDADE = 12;
 
@@ -52,8 +53,11 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao, options = {}) 
 
   const carregarItens = async (receitaId) => {
     if (!itensCache.has(receitaId)) {
-      const itens = await base44.entities.IngredienteReceita.filter(
-        { receita_id: receitaId }, "ordem", 500
+      const itens = await fetchAllFilteredPages(
+        base44.entities.IngredienteReceita,
+        { receita_id: receitaId },
+        "ordem",
+        500
       );
       itensCache.set(receitaId, itens || []);
     }
