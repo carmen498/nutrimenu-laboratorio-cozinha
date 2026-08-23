@@ -7,6 +7,7 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
+import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Seu plano está perto de vencer";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano {{plano}} vence em {{dias_restantes}} dias, no dia {{data_expiracao}}.</p>
@@ -60,12 +61,11 @@ export default async function(req: Request): Promise<Response> {
 
         if (ativo) {
           const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-          await base44.asServiceRole.entities.LogEmail.create({
-            destinatario_email: usuario.email,
+          await registrarLogEmail(base44, {
+            usuarioId: usuario.id,
+            email: usuario.email,
             tipo: "plano_vencendo",
-            enviado_em: new Date().toISOString(),
-            status: resultado.ok ? "enviado" : "falhou",
-            detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
+            resultado,
           });
           if (resultado.ok) enviados++;
         } else {
