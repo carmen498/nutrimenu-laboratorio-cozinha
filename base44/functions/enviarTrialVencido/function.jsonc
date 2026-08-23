@@ -1,0 +1,17 @@
+{
+  "name": "enviarTrialVencido",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "daily_trial_vencido",
+      "description": "Avisos de trial vencido diariamente às 08:00 em America/Sao_Paulo (11:00 UTC).",
+      "is_active": true,
+      "schedule_mode": "recurring",
+      "schedule_type": "simple",
+      "repeat_unit": "days",
+      "repeat_interval": 1,
+      "start_time": "11:00"
+    }
+  ]
+}
