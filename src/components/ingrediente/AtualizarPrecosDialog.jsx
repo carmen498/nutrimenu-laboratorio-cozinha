@@ -288,6 +288,7 @@ export default function AtualizarPrecosDialog({
     );
 
     let atualizados = 0;
+    const idsAtualizados = [];
     const falhas = [];
     setApplyProgress({ atual: 0, total: toUpdate.length });
 
@@ -330,6 +331,7 @@ export default function AtualizarPrecosDialog({
           res.nome
         );
         atualizados++;
+        idsAtualizados.push(res.id);
       } catch (err) {
         falhas.push({ nome: res.nome, motivo: err?.message || "erro ao salvar" });
       }
@@ -342,7 +344,7 @@ export default function AtualizarPrecosDialog({
     let receitasInvalidadas = 0;
     if (atualizados > 0) {
       const invalidacao = await invalidarCustosDependentesSeguro({
-        ingredienteIds: toUpdate.slice(0, atualizados).map((r) => r.id),
+        ingredienteIds: idsAtualizados,
         motivo: "atualizacao_preco_mestre_em_lote",
         origem: "atualizar_precos",
       });
