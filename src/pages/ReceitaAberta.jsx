@@ -689,6 +689,9 @@ export default function ReceitaAberta() {
         custo_cache_contexto: "global",
         custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.insumosSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
         custo_cache_invalido: false,
+        custo_cache_assinatura: assinaturaCustoAtual,
+        custo_cache_assinatura_versao: CUSTO_ASSINATURA_VERSAO,
+        custo_cache_assinatura_status: "valida",
       };
       if (custoCanonico.completo) {
         patch.custo_total = newCT;
