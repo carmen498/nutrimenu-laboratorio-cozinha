@@ -1,0 +1,101 @@
+{
+  "name": "CuradoriaDivergenciaIngrediente",
+  "type": "object",
+  "properties": {
+    "grupo_chave": {
+      "type": "string",
+      "description": "Identidade determin\u00edstica do grupo vivo da Fase 10.4.2."
+    },
+    "nome_cache": {
+      "type": "string"
+    },
+    "ingrediente_origem_id": {
+      "type": "string"
+    },
+    "ingrediente_origem_nome": {
+      "type": "string"
+    },
+    "tipo_conflito": {
+      "type": "string"
+    },
+    "workflow_status": {
+      "type": "string",
+      "enum": [
+        "nao_analisado",
+        "em_analise",
+        "decisao_pendente",
+        "mantido_pendente",
+        "resolvido"
+      ],
+      "default": "nao_analisado"
+    },
+    "prioridade": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baixa"
+      ],
+      "default": "media"
+    },
+    "ocorrencias": {
+      "type": "number"
+    },
+    "receitas": {
+      "type": "number"
+    },
+    "decisao": {
+      "type": "string"
+    },
+    "ingrediente_destino_id": {
+      "type": "string"
+    },
+    "ingrediente_destino_nome": {
+      "type": "string"
+    },
+    "assinatura": {
+      "type": "string"
+    },
+    "observacao": {
+      "type": "string"
+    },
+    "executado_por_id": {
+      "type": "string"
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "detalhes": {
+      "type": "string",
+      "description": "Snapshot JSON compacto do grupo e do workflow."
+    }
+  },
+  "required": [
+    "grupo_chave",
+    "nome_cache",
+    "workflow_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
