@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 import {
   COMPORTAMENTO_CUSTO_LABELS,
   ESCALONAMENTO_CUSTO_MODELO_VERSAO,
@@ -111,6 +112,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         comportamento_custo: normalizarComportamentoCusto(insumoDB.comportamento_custo_padrao),
         modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "insumo_receita_adicionado", origem: "insumo_receita" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });
@@ -143,6 +145,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         comportamento_custo: "por_lote",
         modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "insumo_receita_adicionado", origem: "insumo_receita" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });
@@ -164,6 +167,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
       if (item?.insumo_id) {
         await base44.entities.Insumo.update(item.insumo_id, { preco_unitario: custo_unitario });
       }
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "custo_insumo_receita_alterado", origem: "insumo_receita" });
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });
@@ -188,6 +192,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         custo_total: parseFloat((cu * quantidade).toFixed(4)),
         modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "quantidade_insumo_receita_alterada", origem: "insumo_receita" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
   });
@@ -205,6 +210,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         custo_total: parseFloat((quantidade * (Number(item.custo_unitario) || 0)).toFixed(4)),
         modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "comportamento_insumo_receita_alterado", origem: "insumo_receita" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
   });
@@ -226,7 +232,10 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
   });
 
   const deleteMut = useMutationAny({
-    mutationFn: (itemId) => base44.entities.InsumoReceita.delete(itemId),
+    mutationFn: async (itemId) => {
+      await base44.entities.InsumoReceita.delete(itemId);
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "insumo_receita_removido", origem: "insumo_receita" });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] });
       toast.success("Insumo removido");
