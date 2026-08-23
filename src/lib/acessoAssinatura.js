@@ -4,10 +4,17 @@
 
 const STATUS_COM_ACESSO = new Set(["ativo", "trial"]);
 
-export function hojeLocalISO(agora = new Date()) {
-  const ano = agora.getFullYear();
-  const mes = String(agora.getMonth() + 1).padStart(2, "0");
-  const dia = String(agora.getDate()).padStart(2, "0");
+export function hojeSaoPauloISO(agora = new Date()) {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(agora);
+
+  const ano = partes.find((p) => p.type === "year")?.value;
+  const mes = partes.find((p) => p.type === "month")?.value;
+  const dia = partes.find((p) => p.type === "day")?.value;
   return `${ano}-${mes}-${dia}`;
 }
 
@@ -32,7 +39,7 @@ export function avaliarAcessoAssinatura(user, agora = new Date()) {
     return { temAcesso: false, motivo: "sem_data_expiracao" };
   }
 
-  const hoje = hojeLocalISO(agora);
+  const hoje = hojeSaoPauloISO(agora);
   if (dataExpiracao < hoje) {
     return { temAcesso: false, motivo: "expirado" };
   }
