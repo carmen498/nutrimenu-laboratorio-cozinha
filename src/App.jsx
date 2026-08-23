@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { lazy, Suspense, useEffect } from "react"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -9,58 +9,63 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminRoute from '@/components/AdminRoute';
+import RouteFallback from '@/components/RouteFallback';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import AppLayout from '@/components/layout/AppLayout';
-import Home from '@/pages/Home';
-import Receitas from '@/pages/Receitas';
-import MinhasReceitas from '@/pages/MinhasReceitas';
-import ReceitaAberta from '@/pages/ReceitaAberta';
-import Cardapios from '@/pages/Cardapios';
-import MeusCardapios from '@/pages/MeusCardapios';
-import CardapioAberto from '@/pages/CardapioAberto';
-import FichaCardapio from '@/pages/FichaCardapio';
-import OrcamentoCardapio from '@/pages/OrcamentoCardapio';
-import Ingredientes from '@/pages/Ingredientes';
-import IngredienteAberto from '@/pages/IngredienteAberto';
-import DossieIngrediente from '@/pages/DossieIngrediente';
-import ListaCompras from '@/pages/ListaCompras';
-import ExportarReceita from '@/pages/ExportarReceita';
-import ReceitaListaCompras from '@/pages/ReceitaListaCompras';
-import FichaTecnicaReceita from '@/pages/FichaTecnicaReceita';
-import FichaCustosReceita from '@/pages/FichaCustosReceita';
-import PerCapita from '@/pages/PerCapita';
-import RelatorioCategorias from '@/pages/RelatorioCategorias';
-import MedidasCaseiras from '@/pages/MedidasCaseiras';
-import AuditoriaRendimento from '@/pages/AuditoriaRendimento';
-import AuditoriaReceitas from '@/pages/AuditoriaReceitas';
-import Auditorias from '@/pages/Auditorias';
-import PrePreparosPlanejamento from '@/pages/PrePreparosPlanejamento';
-import DossieEvento from '@/pages/DossieEvento';
-import OrcamentoEvento from '@/pages/OrcamentoEvento';
-import PrePreparosCardapio from '@/pages/PrePreparosCardapio';
-import FichaCustosCardapio from '@/pages/FichaCustosCardapio';
-import ReceitasCardapio from '@/pages/ReceitasCardapio';
-import InsumosEmbalagens from '@/pages/InsumosEmbalagens';
-import Configuracoes from '@/pages/Configuracoes';
-import Historico from '@/pages/Historico';
-import RelatorioReceitasPDF from '@/pages/RelatorioReceitasPDF';
-import Suporte from '@/pages/Suporte';
-import Sobre from '@/pages/Sobre';
-import Conta from '@/pages/Conta';
-import AdminComunicacao from '@/pages/AdminComunicacao';
-import Planos from '@/pages/Planos';
-import DicasCarmen from '@/pages/DicasCarmen';
-import DicaCarmenDetalhe from '@/pages/DicaCarmenDetalhe';
-import NovaDicaCarmen from '@/pages/NovaDicaCarmen';
 import Termos from '@/pages/Termos';
 import Privacidade from '@/pages/Privacidade';
 import AceitarTermos from '@/pages/AceitarTermos';
 import SobrePublico from '@/pages/SobrePublico';
 import Contato from '@/pages/Contato';
 import LandingOrRedirect from '@/components/LandingOrRedirect';
+
+// Rotas protegidas carregadas sob demanda: a rota pública "/" não pode pagar
+// pelo bundle do app inteiro (jspdf, html2canvas, recharts etc.). Eager ficam
+// apenas Landing (via LandingOrRedirect), autenticação e páginas legais acima.
+const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
+const Home = lazy(() => import('@/pages/Home'));
+const Receitas = lazy(() => import('@/pages/Receitas'));
+const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
+const ReceitaAberta = lazy(() => import('@/pages/ReceitaAberta'));
+const Cardapios = lazy(() => import('@/pages/Cardapios'));
+const MeusCardapios = lazy(() => import('@/pages/MeusCardapios'));
+const CardapioAberto = lazy(() => import('@/pages/CardapioAberto'));
+const FichaCardapio = lazy(() => import('@/pages/FichaCardapio'));
+const OrcamentoCardapio = lazy(() => import('@/pages/OrcamentoCardapio'));
+const Ingredientes = lazy(() => import('@/pages/Ingredientes'));
+const IngredienteAberto = lazy(() => import('@/pages/IngredienteAberto'));
+const DossieIngrediente = lazy(() => import('@/pages/DossieIngrediente'));
+const ListaCompras = lazy(() => import('@/pages/ListaCompras'));
+const ExportarReceita = lazy(() => import('@/pages/ExportarReceita'));
+const ReceitaListaCompras = lazy(() => import('@/pages/ReceitaListaCompras'));
+const FichaTecnicaReceita = lazy(() => import('@/pages/FichaTecnicaReceita'));
+const FichaCustosReceita = lazy(() => import('@/pages/FichaCustosReceita'));
+const PerCapita = lazy(() => import('@/pages/PerCapita'));
+const RelatorioCategorias = lazy(() => import('@/pages/RelatorioCategorias'));
+const MedidasCaseiras = lazy(() => import('@/pages/MedidasCaseiras'));
+const AuditoriaRendimento = lazy(() => import('@/pages/AuditoriaRendimento'));
+const AuditoriaReceitas = lazy(() => import('@/pages/AuditoriaReceitas'));
+const Auditorias = lazy(() => import('@/pages/Auditorias'));
+const PrePreparosPlanejamento = lazy(() => import('@/pages/PrePreparosPlanejamento'));
+const DossieEvento = lazy(() => import('@/pages/DossieEvento'));
+const OrcamentoEvento = lazy(() => import('@/pages/OrcamentoEvento'));
+const PrePreparosCardapio = lazy(() => import('@/pages/PrePreparosCardapio'));
+const FichaCustosCardapio = lazy(() => import('@/pages/FichaCustosCardapio'));
+const ReceitasCardapio = lazy(() => import('@/pages/ReceitasCardapio'));
+const InsumosEmbalagens = lazy(() => import('@/pages/InsumosEmbalagens'));
+const Configuracoes = lazy(() => import('@/pages/Configuracoes'));
+const Historico = lazy(() => import('@/pages/Historico'));
+const RelatorioReceitasPDF = lazy(() => import('@/pages/RelatorioReceitasPDF'));
+const Suporte = lazy(() => import('@/pages/Suporte'));
+const Sobre = lazy(() => import('@/pages/Sobre'));
+const Conta = lazy(() => import('@/pages/Conta'));
+const AdminComunicacao = lazy(() => import('@/pages/AdminComunicacao'));
+const Planos = lazy(() => import('@/pages/Planos'));
+const DicasCarmen = lazy(() => import('@/pages/DicasCarmen'));
+const DicaCarmenDetalhe = lazy(() => import('@/pages/DicaCarmenDetalhe'));
+const NovaDicaCarmen = lazy(() => import('@/pages/NovaDicaCarmen'));
 
 // Routes reachable without a valid session — these must keep rendering even
 // when the app-level check reports 'auth_required', otherwise a genuinely
@@ -99,68 +104,70 @@ const AuthenticatedApp = () => {
   }
 
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/termos" element={<Termos />} />
-      <Route path="/privacidade" element={<Privacidade />} />
-      <Route path="/aceitar-termos" element={<AceitarTermos />} />
-      <Route path="/sobre" element={<SobrePublico />} />
-      <Route path="/contato" element={<Contato />} />
-      <Route path="/" element={<LandingOrRedirect />} />
-      <Route path="/landing" element={<Navigate to="/" replace />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route element={<AppLayout />}>
-          <Route path="/app" element={<Home />} />
-          <Route path="/receitas" element={<Receitas />} />
-          <Route path="/minhas-receitas" element={<MinhasReceitas />} />
-          <Route path="/receita/:id" element={<ReceitaAberta />} />
-          <Route path="/cardapios" element={<Cardapios />} />
-          <Route path="/meus-cardapios" element={<MeusCardapios />} />
-          <Route path="/cardapio/:id" element={<CardapioAberto />} />
-          <Route path="/cardapio/:id/ficha" element={<FichaCardapio />} />
-          <Route path="/cardapio/:id/orcamento" element={<OrcamentoCardapio />} />
-          <Route path="/cardapio/:id/pre-preparos" element={<PrePreparosCardapio />} />
-          <Route path="/cardapio/:id/ficha-custos" element={<FichaCustosCardapio />} />
-          <Route path="/cardapio/:id/receitas" element={<ReceitasCardapio />} />
-          <Route path="/ingredientes" element={<Ingredientes />} />
-          <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
-          <Route path="/ingrediente/:id/dossie" element={<DossieIngrediente />} />
-          <Route path="/lista-compras" element={<ListaCompras />} />
-          <Route path="/receita/:id/lista-compras" element={<ReceitaListaCompras />} />
-          <Route path="/exportar/:id" element={<ExportarReceita />} />
-          <Route path="/ficha-tecnica/:id" element={<FichaTecnicaReceita />} />
-          <Route path="/ficha-custos-receita/:id" element={<FichaCustosReceita />} />
-          <Route path="/percapita" element={<PerCapita />} />
-          <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
-          <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
-          <Route path="/insumos-embalagens" element={<InsumosEmbalagens />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/historico" element={<Historico />} />
-          <Route path="/suporte" element={<Suporte />} />
-          <Route path="/sobre" element={<Sobre />} />
-          <Route path="/conta" element={<Conta />} />
-          <Route path="/planos" element={<Planos />} />
-          <Route path="/dicas-carmen" element={<DicasCarmen />} />
-          <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
-          <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
-          <Route element={<AdminRoute />}>
-            <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
-            <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
-            <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
-            <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
-            <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
-            <Route path="/auditorias" element={<Auditorias />} />
+    <Suspense fallback={<RouteFallback fullScreen />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/termos" element={<Termos />} />
+        <Route path="/privacidade" element={<Privacidade />} />
+        <Route path="/aceitar-termos" element={<AceitarTermos />} />
+        <Route path="/sobre" element={<SobrePublico />} />
+        <Route path="/contato" element={<Contato />} />
+        <Route path="/" element={<LandingOrRedirect />} />
+        <Route path="/landing" element={<Navigate to="/" replace />} />
+        <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+          <Route element={<AppLayout />}>
+            <Route path="/app" element={<Home />} />
+            <Route path="/receitas" element={<Receitas />} />
+            <Route path="/minhas-receitas" element={<MinhasReceitas />} />
+            <Route path="/receita/:id" element={<ReceitaAberta />} />
+            <Route path="/cardapios" element={<Cardapios />} />
+            <Route path="/meus-cardapios" element={<MeusCardapios />} />
+            <Route path="/cardapio/:id" element={<CardapioAberto />} />
+            <Route path="/cardapio/:id/ficha" element={<FichaCardapio />} />
+            <Route path="/cardapio/:id/orcamento" element={<OrcamentoCardapio />} />
+            <Route path="/cardapio/:id/pre-preparos" element={<PrePreparosCardapio />} />
+            <Route path="/cardapio/:id/ficha-custos" element={<FichaCustosCardapio />} />
+            <Route path="/cardapio/:id/receitas" element={<ReceitasCardapio />} />
+            <Route path="/ingredientes" element={<Ingredientes />} />
+            <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
+            <Route path="/ingrediente/:id/dossie" element={<DossieIngrediente />} />
+            <Route path="/lista-compras" element={<ListaCompras />} />
+            <Route path="/receita/:id/lista-compras" element={<ReceitaListaCompras />} />
+            <Route path="/exportar/:id" element={<ExportarReceita />} />
+            <Route path="/ficha-tecnica/:id" element={<FichaTecnicaReceita />} />
+            <Route path="/ficha-custos-receita/:id" element={<FichaCustosReceita />} />
+            <Route path="/percapita" element={<PerCapita />} />
+            <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
+            <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
+            <Route path="/insumos-embalagens" element={<InsumosEmbalagens />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
+            <Route path="/historico" element={<Historico />} />
+            <Route path="/suporte" element={<Suporte />} />
+            <Route path="/sobre" element={<Sobre />} />
+            <Route path="/conta" element={<Conta />} />
+            <Route path="/planos" element={<Planos />} />
+            <Route path="/dicas-carmen" element={<DicasCarmen />} />
+            <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
+            <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
+            <Route element={<AdminRoute />}>
+              <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
+              <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
+              <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
+              <Route path="/auditoria-rendimento" element={<AuditoriaRendimento />} />
+              <Route path="/auditoria-receitas" element={<AuditoriaReceitas />} />
+              <Route path="/auditorias" element={<Auditorias />} />
+            </Route>
+            <Route path="/planejamento/:id/pre-preparos" element={<PrePreparosPlanejamento />} />
+            <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
+            <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
           </Route>
-          <Route path="/planejamento/:id/pre-preparos" element={<PrePreparosPlanejamento />} />
-          <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
-          <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
         </Route>
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 

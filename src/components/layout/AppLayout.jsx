@@ -1,8 +1,9 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import TopBar from "@/components/layout/TopBar";
 import Sidebar from "@/components/layout/Sidebar";
 import HelpPanel from "@/components/HelpPanel";
+import RouteFallback from "@/components/RouteFallback";
 import { getScreenName } from "@/lib/getScreenName";
 
 export default function AppLayout() {
@@ -24,7 +25,10 @@ export default function AppLayout() {
 
       <main className="pt-16 md:pl-64">
         <div className="max-w-5xl mx-auto px-4 py-6">
-          <Outlet />
+          {/* Boundary interno: o chunk da página carrega sem apagar TopBar/Sidebar */}
+          <Suspense fallback={<RouteFallback />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
 
