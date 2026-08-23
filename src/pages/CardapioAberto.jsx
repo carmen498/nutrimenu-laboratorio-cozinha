@@ -31,6 +31,7 @@ import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import CardapioTabelaReceitas from "@/components/cardapio/CardapioTabelaReceitas";
 import { custoEscalado } from "@/lib/custoReceita";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
+import { escalarInsumoCardapio, normalizarComportamentoCusto } from "@/lib/escalonamentoCustos";
 import { carregarIngredientesEfetivosCusto, mapearIngredientesPorId } from "@/lib/custoContexto";
 import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
@@ -280,6 +281,9 @@ export default function CardapioAberto() {
         cardapio_id: novo.id, insumo_id: i.insumo_id, nome: i.nome,
         quantidade: i.quantidade, unidade: i.unidade,
         custo_unitario: i.custo_unitario, custo_total: i.custo_total,
+        comportamento_custo: i.comportamento_custo,
+        escala_base_unidades: i.escala_base_unidades,
+        modelo_custo_versao: i.modelo_custo_versao,
       });
     }
     navigate(`/cardapio/${novo.id}`);
@@ -410,6 +414,9 @@ export default function CardapioAberto() {
       unidade: insumo.unidade || "un",
       custo_unitario: Number(insumo.preco_unitario) || 0,
       custo_total: qtd * (Number(insumo.preco_unitario) || 0),
+      comportamento_custo: normalizarComportamentoCusto(insumo.comportamento_custo_padrao),
+      escala_base_unidades: normalizarComportamentoCusto(insumo.comportamento_custo_padrao) === "proporcional" ? num : null,
+      modelo_custo_versao: 1,
     };
     const criado = await criarCardapioInsumo(novo);
     setInsumos(prev => [...prev, criado]);
@@ -418,13 +425,41 @@ export default function CardapioAberto() {
   const updateInsumo = async (insId, field, value) => {
     const { insumosAtual, mapInsumoId } = await ensureEditavel();
     const newId = mapInsumoId(insId);
-    const upd = { [field]: value };
     const ins = insumosAtual.find(i => i.id === newId);
-    if (field === "quantidade" || field === "custo_unitario") {
-      const q = field === "quantidade" ? Number(value) : Number(ins?.quantidade || 0);
-      const cu = field === "custo_unitario" ? Number(value) : Number(ins?.custo_unitario || 0);
-      upd.custo_total = q * cu;
+    if (!ins) return;
+
+    const comportamentoAtual = normalizarComportamentoCusto(ins.comportamento_custo);
+    const cuAtual = Number(ins.custo_unitario) || 0;
+    const upd = { modelo_custo_versao: 1 };
+
+    if (field === "quantidade_atual") {
+      const quantidadeAtual = Math.max(0, Number(value) || 0);
+      if (comportamentoAtual === "por_unidade") {
+        upd.quantidade = quantidadeAtual / Math.max(1, Number(num) || 1);
+      } else {
+        upd.quantidade = quantidadeAtual;
+        if (comportamentoAtual === "proporcional") upd.escala_base_unidades = Math.max(1, Number(num) || 1);
+      }
+      upd.custo_total = upd.quantidade * cuAtual;
+    } else if (field === "comportamento_custo") {
+      const novoComportamento = normalizarComportamentoCusto(value);
+      const quantidadeAtual = escalarInsumoCardapio(ins, { unidadesFinais: num }).quantidadeEscalada;
+      upd.comportamento_custo = novoComportamento;
+      if (novoComportamento === "por_unidade") {
+        upd.quantidade = quantidadeAtual / Math.max(1, Number(num) || 1);
+        upd.escala_base_unidades = null;
+      } else {
+        upd.quantidade = quantidadeAtual;
+        upd.escala_base_unidades = novoComportamento === "proporcional" ? Math.max(1, Number(num) || 1) : null;
+      }
+      upd.custo_total = upd.quantidade * cuAtual;
+    } else if (field === "custo_unitario") {
+      upd.custo_unitario = Number(value) || 0;
+      upd.custo_total = (Number(ins.quantidade) || 0) * upd.custo_unitario;
+    } else {
+      upd[field] = value;
     }
+
     setInsumos(prev => prev.map(i => i.id === newId ? { ...i, ...upd } : i));
     try { await base44.entities.CardapioInsumo.update(newId, upd); }
     catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
@@ -735,7 +770,7 @@ export default function CardapioAberto() {
       {/* BLOCO 3 — Insumos */}
       <div className="bg-card rounded-xl border border-border shadow-sm p-5 mb-4 print:shadow-none print:border-0">
         <CardapioInsumosSection
-          insumos={insumos}
+          insumos={calcs.insumosView}
           insumosGlobais={insumosGlobais}
           onAdd={addInsumo}
           onUpdate={updateInsumo}
