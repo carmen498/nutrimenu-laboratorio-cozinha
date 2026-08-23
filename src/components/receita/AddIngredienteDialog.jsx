@@ -86,6 +86,9 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
 
       if (selectedType === "subreceita") {
         const qtdPorPorcao = qty / (porcoes || 1);
+        // Valida ciclo/origem e calcula o cache ANTES de persistir o marcador.
+        // Assim uma falha de expansão não deixa uma relação órfã/pendente no banco.
+        const { children, rendimentoEfetivo, rendimentoEstimado, diagnostico } = await explodeSubreceita(selected, qtdPorPorcao, { pilhaInicial: [receitaId] });
         const markerItem = await criarIngredienteReceita({
           receita_id: receitaId,
           tipo: "subreceita",
@@ -95,8 +98,6 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
           unidade_quantidade: unidadeCanonica,
           ordem: maxOrdem + 10,
         });
-
-        const { children, rendimentoEfetivo, rendimentoEstimado, diagnostico } = await explodeSubreceita(selected, qtdPorPorcao, { pilhaInicial: [receitaId] });
         let nextOrdem = maxOrdem + 11;
         for (const child of children) {
           await criarIngredienteReceita({
