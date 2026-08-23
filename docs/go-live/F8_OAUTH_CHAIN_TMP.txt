@@ -1,0 +1,1 @@
+{"step1":{"status":307,"host":"app.base44.com","path":"/api/apps/auth/login","redirect_uri":"","state_present":false},"step2":{"status":302,"host":"accounts.google.com","path":"/o/oauth2/v2/auth","redirect_uri":"https://app.base44.com/api/apps/auth/callback","state_present":true}}
