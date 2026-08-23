@@ -13,24 +13,18 @@ import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 import { hojeSaoPauloISO } from "./acessoAssinatura.ts";
+import { calcularExpiracaoInclusiva } from "./datasAssinatura.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
 const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual" };
-
-function somarDiasISO(dataISO: string, dias: number): string {
-  const [ano, mes, dia] = dataISO.split("-").map(Number);
-  const data = new Date(Date.UTC(ano, mes - 1, dia));
-  data.setUTCDate(data.getUTCDate() + dias);
-  return data.toISOString().split("T")[0];
-}
 
 export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string }): Promise<void> {
   const dias = DIAS_PLANO[pagamento.plano] ?? 30;
   const dataInicio = hojeSaoPauloISO();
   // data_expiracao é inclusiva no motor de acesso. Portanto, um plano de 30 dias
   // iniciado hoje deve expirar em hoje + 29 dias (e não +30, que daria 31 dias civis).
-  const dataExpiracaoFormatada = somarDiasISO(dataInicio, Math.max(dias - 1, 0));
+  const dataExpiracaoFormatada = calcularExpiracaoInclusiva(dataInicio, dias);
 
   await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
     status_assinatura: "ativo",
