@@ -251,7 +251,6 @@ try {
   assert.ok(report.token_reuse_rejected, "Token de reset pôde ser reutilizado");
 
   console.log("OK: E2E real de recuperação de senha concluído com caixa temporária descartável.");
-  console.log(JSON.stringify(report, null, 2));
 } finally {
   if (mailToken && mailAccountId) {
     try {
@@ -266,4 +265,5 @@ try {
       console.error("WARN: falha ao remover caixa temporária:", error?.message || String(error));
     }
   }
+  console.log(JSON.stringify(report, null, 2));
 }
