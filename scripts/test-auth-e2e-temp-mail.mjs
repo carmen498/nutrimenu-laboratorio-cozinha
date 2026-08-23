@@ -97,6 +97,11 @@ function extractResetLink(message) {
       return u.pathname.includes("reset-password") && (u.searchParams.has("token") || u.searchParams.has("reset_token"));
     } catch { return false; }
   });
+  if (!candidate) {
+    console.error("DEBUG reset-mail subject:", message?.subject || "(sem assunto)");
+    console.error("DEBUG reset-mail excerpt:", content.slice(0, 5000));
+    console.error("DEBUG links encontrados:", links.slice(0, 20));
+  }
   assert.ok(candidate, "Link de redefinição com token não encontrado no e-mail");
   return candidate;
 }
