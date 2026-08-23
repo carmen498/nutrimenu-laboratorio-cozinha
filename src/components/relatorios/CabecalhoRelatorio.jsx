@@ -1,7 +1,7 @@
 // Cabeçalho unificado de relatório — reutilizado por todos os relatórios do
 // planejamento (Cardápio aberto e Evento). Timbrado padrão do app + título do
 // relatório + data de emissão + identificação do cardápio/evento.
-export default function CabecalhoRelatorio({ titulo, nome, data, tipoLabel, numPessoas }) {
+export default function CabecalhoRelatorio({ titulo, nome, data, tipoLabel = null, numPessoas = null }) {
   const dataEmissao = new Date().toLocaleDateString("pt-BR");
   return (
     <div className="bg-white border border-border rounded-xl overflow-hidden mb-3 print:border-0 print:rounded-none">
