@@ -18,16 +18,24 @@
   ],
   "rls": {
     "create": {
-      "data.usuario_dono_id": "{{user.id}}"
+      "user_condition": {
+        "role": "__disabled__"
+      }
     },
     "read": {
-      "data.usuario_dono_id": "{{user.id}}"
+      "user_condition": {
+        "role": "__disabled__"
+      }
     },
     "update": {
-      "data.usuario_dono_id": "{{user.id}}"
+      "user_condition": {
+        "role": "__disabled__"
+      }
     },
     "delete": {
-      "data.usuario_dono_id": "{{user.id}}"
+      "user_condition": {
+        "role": "__disabled__"
+      }
     }
   },
   "name": "RlsIsolationProbe"
