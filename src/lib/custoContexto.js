@@ -1,5 +1,5 @@
 import { base44 } from "@/api/base44Client";
-import { fetchAllPages } from "@/lib/fetchAllPages";
+import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
 import {
   buscarPrecosPersonalizados,
   aplicarPrecosPersonalizados,
@@ -41,4 +41,54 @@ export function mapearIngredientesPorId(ingredientes = []) {
     if (ingrediente?.id) map[ingrediente.id] = ingrediente;
   }
   return map;
+}
+
+/**
+ * Fase 11.1 — carrega, de uma só vez, todo o contexto necessário para o
+ * escalonamento canônico das receitas de um cardápio/relatório.
+ *
+ * Evita que telas diferentes chamem o mesmo motor com subconjuntos distintos
+ * de dados (ex.: sem InsumoReceita ou sem preço pessoal) e produzam custos
+ * divergentes para a mesma produção.
+ */
+export async function carregarContextoCustosReceitas({ receitaIds = [], userId, isAdmin = false } = {}) {
+  const ids = [...new Set((receitaIds || []).filter(Boolean))];
+  const [ingredientesEfetivos, composicoes, insumos, esquecidos] = await Promise.all([
+    carregarIngredientesEfetivosCusto({ userId, isAdmin }),
+    Promise.all(ids.map((receitaId) => fetchAllFilteredPages(
+      base44.entities.IngredienteReceita,
+      { receita_id: receitaId },
+      "ordem",
+      500
+    ))),
+    Promise.all(ids.map((receitaId) => fetchAllFilteredPages(
+      base44.entities.InsumoReceita,
+      { receita_id: receitaId },
+      "created_date",
+      500
+    ))),
+    Promise.all(ids.map((receitaId) => fetchAllFilteredPages(
+      base44.entities.IngredienteEsquecidoReceita,
+      { receita_id: receitaId },
+      "created_date",
+      500
+    ))),
+  ]);
+
+  const ingredientesPorReceita = {};
+  const insumosPorReceita = {};
+  const esquecidosPorReceita = {};
+  ids.forEach((receitaId, index) => {
+    ingredientesPorReceita[receitaId] = composicoes[index] || [];
+    insumosPorReceita[receitaId] = insumos[index] || [];
+    esquecidosPorReceita[receitaId] = esquecidos[index] || [];
+  });
+
+  return {
+    ingredientesEfetivos: ingredientesEfetivos || [],
+    ingredienteMap: mapearIngredientesPorId(ingredientesEfetivos || []),
+    ingredientesPorReceita,
+    insumosPorReceita,
+    esquecidosPorReceita,
+  };
 }
