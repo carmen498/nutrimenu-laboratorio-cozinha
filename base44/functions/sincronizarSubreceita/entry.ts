@@ -298,6 +298,10 @@ Deno.serve(async (req) => {
       const statusFinal = novosPayloads.length > 0 ? 'sincronizada' : 'a_validar';
       await base44.asServiceRole.entities.IngredienteReceita.update(marker.id, {
         modelo_versao: 2,
+        tipo: 'subreceita',
+        ingrediente_id: null,
+        ingrediente_nome: null,
+        subreceita_cache: false,
         subreceita_modo: 'referencia_cache',
         subreceita_cache_versao: 2,
         subreceita_sincronizacao_status: statusFinal,
