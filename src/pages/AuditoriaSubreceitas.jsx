@@ -93,11 +93,13 @@ export default function AuditoriaSubreceitas() {
       }
     }
 
-    const calcularAssinatura = (sourceId, parentId) => {
+    const calcularEstadoEsperado = (sourceId, parentId, quantidadeSaida) => {
       const deps = new Map();
+      const esperados = [];
       let ultimaComposicaoMs = 0;
       let ultimaComposicaoEm = "";
-      const visitar = (id, pilha) => {
+
+      const visitar = (id, quantidade, pilha) => {
         if (pilha.includes(id)) {
           const nomes = [...pilha, id].map((rid) => receitaMap[rid]?.nome || rid);
           const err = /** @type {Error & {code?: string}} */ (new Error(`Ciclo: ${nomes.join(" → ")}`));
@@ -110,8 +112,13 @@ export default function AuditoriaSubreceitas() {
           err.code = "ORIGEM";
           throw err;
         }
+
         deps.set(id, atualizadoEm(receita));
         const sourceItens = itensPorReceita.get(id) || [];
+        const rendimento = rendimentoOperacional(receita, sourceItens);
+        const porcoes = Number(receita?.porcoes_base) > 0 ? Number(receita.porcoes_base) : 1;
+        const escala = quantidade / rendimento;
+
         for (const item of sourceItens) {
           if (item.tipo === "grupo" || item.subreceita_parent_id) continue;
           const data = atualizadoEm(item);
@@ -120,12 +127,47 @@ export default function AuditoriaSubreceitas() {
             ultimaComposicaoMs = ms;
             ultimaComposicaoEm = data;
           }
-          if (item.tipo !== "subreceita" || !item.subreceita_id) continue;
-          visitar(item.subreceita_id, [...pilha, id]);
+
+          const qtdLote = (Number(item.quantidade_por_porcao) || 0) * porcoes;
+          const qtdEscalada = qtdLote * escala;
+          if (!(qtdEscalada > 0)) continue;
+
+          if (item.tipo === "subreceita") {
+            if (!item.subreceita_id) {
+              const err = /** @type {Error & {code?: string}} */ (new Error(`Sub-receita sem referência em ${receita.nome || receita.id}`));
+              err.code = "ORIGEM";
+              throw err;
+            }
+            visitar(item.subreceita_id, qtdEscalada, [...pilha, id]);
+            continue;
+          }
+          if (!item.ingrediente_id) continue;
+
+          esperados.push({
+            ingrediente_id: item.ingrediente_id,
+            quantidade_por_porcao: qtdEscalada,
+            unidade_quantidade: item.unidade_quantidade || (receita.unidade_base === "ml" ? "ml" : "g"),
+            pre_preparo: item.pre_preparo || "",
+            proporcional: item.proporcional !== false,
+            fator_correcao_override: Number(item.fator_correcao_override) > 0 ? Number(item.fator_correcao_override) : 0,
+            medida_caseira_id: item.medida_caseira_id || "",
+            quantidade_medida_caseira: item.quantidade_medida_caseira,
+            medida_caseira: item.medida_caseira || "",
+            subreceita_origem_receita_id: receita.id,
+            subreceita_origem_item_id: item.id || "",
+            subreceita_linhagem: [...pilha, id].join(">"),
+          });
         }
       };
-      visitar(sourceId, parentId ? [parentId] : []);
-      return { valor: assinatura(deps), dependencias: deps, ultimaComposicaoMs, ultimaComposicaoEm };
+
+      visitar(sourceId, Number(quantidadeSaida) || 0, parentId ? [parentId] : []);
+      return {
+        valor: assinatura(deps),
+        dependencias: deps,
+        ultimaComposicaoMs,
+        ultimaComposicaoEm,
+        assinaturaConteudoEsperado: assinaturaConteudoCache(esperados),
+      };
     };
 
     const rows = [...markerMap.values()].map((marker) => {
