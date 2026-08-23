@@ -57,7 +57,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "estornado" });
-    await revogarAcessoEstorno(base44, pagamento.usuario_id);
+    const revogacao = await revogarAcessoEstorno(base44, pagamento);
 
     const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
 
@@ -99,6 +99,8 @@ export default async function(req: Request): Promise<Response> {
       pagamentoId: pagamento.id,
       status_pagamento_mp: paymentStatus,
       novo_status_pagamento: "estornado",
+      acesso_revogado: revogacao.revogado,
+      acesso_revogacao_motivo: revogacao.motivo,
       email_disparado: emailDisparado,
       email_motivo_nao_disparo: emailMotivoNaoDisparo,
     });
