@@ -4,7 +4,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const url = new URL(req.url);
-    const apply = url.searchParams.get('mode') === 'apply';
+    const mode = url.searchParams.get('mode') || 'dry_run';
+    const apply = mode === 'apply';
+    if (mode === 'recalc') {
+      const rec = await base44.asServiceRole.functions.invoke('normalizarCustosReceitas', { dry_run: false, somente_incompletas: true });
+      return Response.json({ mode: 'recalc', recalculo: rec?.data ?? rec });
+    }
     const san = await base44.asServiceRole.functions.invoke('sanearCustosPendentes', { dry_run: !apply });
     const sanData = san?.data ?? san;
     let syncData: any = null;
