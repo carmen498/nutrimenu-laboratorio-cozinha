@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
-import { CUSTO_ASSINATURA_VERSAO, gerarAssinaturaCusto } from '../../shared/custoAssinatura.ts';
+import { CUSTO_ASSINATURA_VERSAO } from '../../shared/custoAssinatura.ts';
+import { criarGeradorAssinaturaCustoReceita } from '../../shared/custoAssinaturaReceitas.ts';
 import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 const txt = (v: any) => v == null ? '' : String(v).trim();
@@ -84,6 +85,7 @@ Deno.serve(async (req) => {
       listarTudo(sr.InsumoReceita), listarTudo(sr.IngredienteEsquecidoReceita),
       listarTudo(sr.IngredienteUsuario, '-updated_date'), listarTudo(sr.PrecoIngredienteCliente, '-updated_date'),
     ]);
+    const receitaMap = new Map(receitas.map((r: any) => [r.id, r]));
     const ingredienteMap = new Map(ingredientes.map((i: any) => [i.id, i]));
     const itensMap = agrupar(itens);
     const insumosMap = agrupar(insumos);
@@ -99,21 +101,24 @@ Deno.serve(async (req) => {
       if (txt(p.user_id) && txt(p.ingrediente_id) && !legacyMap.has(key)) legacyMap.set(key, p);
     }
 
+    const gerarAssinaturaReceita = criarGeradorAssinaturaCustoReceita({
+      receitaMap,
+      itensMap,
+      insumosMap,
+      esquecidosMap,
+      ingredienteMap,
+      resolverPrecoPorReceita: (receitaAtual: any, ingrediente: any) => {
+        const ownerAtual = receitaAtual?.is_base === false
+          ? (txt(receitaAtual?.usuario_dono_id) || txt(receitaAtual?.created_by_id))
+          : '';
+        return precoEfetivo(ingrediente, ownerAtual, prefMap, legacyMap);
+      },
+    });
+
     const rows: any[] = [];
     for (const receita of receitas) {
-      const componentes = itensMap.get(receita.id) || [];
       const contexto = receita.is_base === false ? 'proprietario' : 'global';
-      const ownerId = contexto === 'proprietario' ? (txt(receita.usuario_dono_id) || txt(receita.created_by_id)) : '';
-      const assinaturaAtual = gerarAssinaturaCusto({
-        receita,
-        itens: componentes,
-        insumos: insumosMap.get(receita.id) || [],
-        esquecidos: esquecidosMap.get(receita.id) || [],
-        contexto,
-        rendimento: rendimentoEfetivo(receita, componentes),
-        resolverIngrediente: (id: string) => ingredienteMap.get(id) || null,
-        resolverPreco: (ingrediente: any) => precoEfetivo(ingrediente, ownerId, prefMap, legacyMap),
-      });
+      const assinaturaAtual = gerarAssinaturaReceita(receita);
       const persistida = txt(receita.custo_cache_assinatura);
       const versao = num(receita.custo_cache_assinatura_versao);
       const status = !persistida || versao < CUSTO_ASSINATURA_VERSAO
