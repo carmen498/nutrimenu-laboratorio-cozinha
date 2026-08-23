@@ -61,6 +61,8 @@ export default function AuditoriaSubreceitas() {
 
     const calcularAssinatura = (sourceId, parentId) => {
       const deps = new Map();
+      let ultimaComposicaoMs = 0;
+      let ultimaComposicaoEm = "";
       const visitar = (id, pilha) => {
         if (pilha.includes(id)) {
           const nomes = [...pilha, id].map((rid) => receitaMap[rid]?.nome || rid);
