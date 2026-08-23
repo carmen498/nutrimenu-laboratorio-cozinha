@@ -229,6 +229,9 @@ Deno.serve(async (req) => {
         }
         const pl = num(item.quantidade_por_porcao) * porcoesBase;
         if (pl > 0) itensComQuantidadePositiva++;
+        // Reaproveitamento de processo permanece na composição/nutrição, mas não
+        // representa nova compra nem custo incremental do lote.
+        if (item.custo_comportamento === 'reaproveitamento_processo') continue;
         const pb = pl * fcEfetivo(item, ingrediente);
         const preco = precoEfetivo({ ingrediente, ownerId, prefMap, legacyMap });
         custoIngredientes += pb * preco;
