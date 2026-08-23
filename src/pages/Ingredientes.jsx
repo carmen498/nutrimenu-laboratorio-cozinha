@@ -511,7 +511,11 @@ export default function Ingredientes() {
             onImported={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
           />
 
-          <ImportarSinonimosDialog open={showImportSinonimos} onClose={() => setShowImportSinonimos(false)} />
+          <ImportarSinonimosDialog
+            open={showImportSinonimos}
+            onClose={() => setShowImportSinonimos(false)}
+            onImported={() => qc.invalidateQueries({ queryKey: ["sinonimos"] })}
+          />
 
           <AtualizarPrecosDialog
             open={showAtualizarPrecos}
