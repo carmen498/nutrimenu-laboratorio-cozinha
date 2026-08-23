@@ -1,0 +1,18 @@
+{
+  "name": "atualizarPrecosAutomatico",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "weekly_precos_segunda_3h",
+      "description": "Atualização automática de preços toda segunda-feira às 03:00 em America/Sao_Paulo (06:00 UTC).",
+      "is_active": true,
+      "schedule_mode": "recurring",
+      "schedule_type": "simple",
+      "repeat_unit": "weeks",
+      "repeat_interval": 1,
+      "start_time": "06:00",
+      "repeat_on_days": [1]
+    }
+  ]
+}
