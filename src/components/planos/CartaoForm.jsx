@@ -6,10 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
-
-const PARCELAS_OPCOES = Array.from({ length: 12 }, (_, i) => i + 1);
+import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
 
 export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTermos = false }) {
+  const parcelasOpcoes = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => i + 1);
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
   const [validade, setValidade] = useState("");
@@ -143,7 +143,7 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {PARCELAS_OPCOES.map((n) => (
+            {parcelasOpcoes.map((n) => (
               <SelectItem key={n} value={String(n)}>
                 {n}x
               </SelectItem>
