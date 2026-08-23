@@ -8,6 +8,7 @@ import {
   resolverUnidadeQuantidade,
 } from "@/lib/ingredienteReceitaCalc";
 import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
+import { calcularCustoReceitaCanonico } from "@/lib/custoReceita";
 
 export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita = [], esquecidos = [] }) {
   const porcoesBase = receita?.porcoes_base || 1;
@@ -110,17 +111,30 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
   const pesoPrePreparo = rendimento.pesoPrePreparo;
   const rendimentoTotal = rendimento.pesoPosPreparoEfetivo;
 
-  const custoIngredientes = itensFicha.reduce((sum, i) => sum + i.custo, 0);
-  const custoInsumos = insumosReceita.reduce((sum, i) => sum + (i.custo_total || 0), 0);
-  const custoEsquecidos = esquecidos.reduce((sum, i) => sum + (i.custo_total || 0), 0);
-  const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
-
   const cat = (receita?.categorias || []).length > 0 ? receita.categorias[0] : (receita?.categoria || "");
   const pcRecomendado = receita?.per_capita_g || sugerirPerCapita(receita?.nome, cat) || 0;
   const nPorcoes = pcRecomendado > 0 && rendimentoTotal > 0
     ? +(rendimentoTotal / pcRecomendado).toFixed(1)
     : porcoesBase;
-  const custoPorPorcao = custoTotal / (nPorcoes || 1);
+
+  // Fase 11.1: a ficha usa o MESMO motor da tela de receita/cardápio.
+  // Em especial, custo_total persistido em InsumoReceita é apenas cache da
+  // quantidade-base e não pode ser somado diretamente para itens por_unidade.
+  const custoCanonico = calcularCustoReceitaCanonico({
+    receita,
+    ingredientesReceita: itens,
+    ingredienteMap: ingMap,
+    insumosReceita,
+    esquecidos,
+    fator: 1,
+    unidadesFinais: nPorcoes,
+    numeroLotes: 1,
+  });
+  const custoIngredientes = custoCanonico.custoIngredientes;
+  const custoInsumos = custoCanonico.custoInsumos;
+  const custoEsquecidos = custoCanonico.custoEsquecidos;
+  const custoTotal = custoCanonico.custoTotal;
+  const custoPorPorcao = nPorcoes > 0 ? custoTotal / nPorcoes : 0;
 
   const perda = rendimento.variacaoPercentual == null
     ? null
