@@ -1,0 +1,89 @@
+{
+  "name": "CuradoriaDivergenciaIngredienteLog",
+  "type": "object",
+  "properties": {
+    "grupo_chave": {
+      "type": "string"
+    },
+    "nome_cache": {
+      "type": "string"
+    },
+    "ingrediente_origem_id": {
+      "type": "string"
+    },
+    "ingrediente_origem_nome": {
+      "type": "string"
+    },
+    "tipo_conflito": {
+      "type": "string"
+    },
+    "decisao": {
+      "type": "string"
+    },
+    "ingrediente_destino_id": {
+      "type": "string"
+    },
+    "ingrediente_destino_nome": {
+      "type": "string"
+    },
+    "impacto_ocorrencias": {
+      "type": "number"
+    },
+    "impacto_fontes": {
+      "type": "number"
+    },
+    "impacto_receitas": {
+      "type": "number"
+    },
+    "assinatura": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aplicada",
+        "mantida_pendente"
+      ]
+    },
+    "observacao": {
+      "type": "string"
+    },
+    "executado_por_id": {
+      "type": "string"
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "detalhes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "grupo_chave",
+    "decisao",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
