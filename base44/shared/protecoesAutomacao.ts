@@ -34,11 +34,20 @@ const TIPOS_COM_WHATSAPP = new Set([
 export async function notificacaoJaProcessadaHoje(
   base44: any,
   tipo: string,
-  usuario: { email?: string; telefone_whatsapp?: string },
+  usuario: { id?: string; email?: string; telefone_whatsapp?: string },
 ): Promise<boolean> {
   const hoje = hojeSaoPauloISO();
 
-  if (usuario?.email) {
+  if (usuario?.id) {
+    const logsEmail = await base44.asServiceRole.entities.LogEmail.filter({
+      usuario_id: usuario.id,
+      tipo,
+    });
+    if ((logsEmail || []).some((log: any) =>
+      dataSaoPauloISO(log.enviado_em || log.created_date) === hoje
+    )) return true;
+  } else if (usuario?.email) {
+    // Compatibilidade temporária com registros legados anteriores à minimização.
     const logsEmail = await base44.asServiceRole.entities.LogEmail.filter({
       destinatario_email: usuario.email,
       tipo,
@@ -49,14 +58,24 @@ export async function notificacaoJaProcessadaHoje(
   }
 
   if (usuario?.telefone_whatsapp && TIPOS_COM_WHATSAPP.has(tipo)) {
-    const numero = normalizarTelefoneBrasil(usuario.telefone_whatsapp);
-    const logsWhatsapp = await base44.asServiceRole.entities.LogWhatsapp.filter({
-      destinatario_telefone: numero,
-      tipo,
-    });
-    if ((logsWhatsapp || []).some((log: any) =>
-      dataSaoPauloISO(log.created_date) === hoje
-    )) return true;
+    if (usuario?.id) {
+      const logsWhatsapp = await base44.asServiceRole.entities.LogWhatsapp.filter({
+        usuario_id: usuario.id,
+        tipo,
+      });
+      if ((logsWhatsapp || []).some((log: any) =>
+        dataSaoPauloISO(log.created_date) === hoje
+      )) return true;
+    } else {
+      const numero = normalizarTelefoneBrasil(usuario.telefone_whatsapp);
+      const logsWhatsapp = await base44.asServiceRole.entities.LogWhatsapp.filter({
+        destinatario_telefone: numero,
+        tipo,
+      });
+      if ((logsWhatsapp || []).some((log: any) =>
+        dataSaoPauloISO(log.created_date) === hoje
+      )) return true;
+    }
   }
 
   return false;
