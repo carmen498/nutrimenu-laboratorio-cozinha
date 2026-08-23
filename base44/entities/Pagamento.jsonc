@@ -11,7 +11,8 @@
       "enum": [
         "diario",
         "mensal",
-        "anual"
+        "anual",
+        "renovacao"
       ],
       "description": "Plano contratado nesta tentativa de pagamento"
     },
