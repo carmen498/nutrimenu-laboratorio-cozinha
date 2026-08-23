@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { avaliarAcessoAssinatura, hojeSaoPauloISO } from "@/lib/acessoAssinatura";
+import { avaliarElegibilidadeRenovacao } from "@/lib/regraRenovacao";
 import { toast } from "@/components/ui/use-toast";
 import PlanoCard from "@/components/planos/PlanoCard";
 import IncluidoTodosPlanos from "@/components/planos/IncluidoTodosPlanos";
@@ -48,7 +49,7 @@ export default function Planos() {
 
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
-  const cicloRenovacao = user?.ciclo_renovacao || 0;
+  const elegibilidadeRenovacao = avaliarElegibilidadeRenovacao(user);
   const jaPossuiHistoricoPlano = user?.role !== "admin" && Boolean(
     user?.plano_atual ||
     user?.status_assinatura ||
@@ -90,13 +91,6 @@ export default function Planos() {
 
   const handleAssinar = (planoId, planoNome) => {
     setCheckoutPlano({ id: planoId, nome: planoNome });
-  };
-
-  const handleEmBreve = () => {
-    toast({
-      title: "Em breve",
-      description: "O pagamento via Mercado Pago será integrado em breve.",
-    });
   };
 
   return (
@@ -190,12 +184,18 @@ export default function Planos() {
               beneficios={configPorId.renovacao.beneficios}
               botaoLabel="Renovar"
               destaque={configPorId.renovacao.mais_popular}
-              onClick={handleEmBreve}
-              isCurrentPlan={planoAtual === "renovacao"}
+              onClick={() => handleAssinar("renovacao", configPorId.renovacao.nome)}
+              isCurrentPlan={false}
               validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
-              bloqueado={planoAtual !== "renovacao" && cicloRenovacao < 1}
-              mensagemBloqueio="Disponível a partir do 2º ano"
+              bloqueado={!elegibilidadeRenovacao.elegivel}
+              mensagemBloqueio={
+                elegibilidadeRenovacao.motivo === "ciclo_insuficiente"
+                  ? "Disponível a partir do 2º ano"
+                  : elegibilidadeRenovacao.motivo === "fora_janela"
+                    ? "Disponível nos 30 dias anteriores ao vencimento"
+                    : "Renovação indisponível neste momento"
+              }
             />
           )}
         </div>
