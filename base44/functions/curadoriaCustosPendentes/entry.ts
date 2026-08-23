@@ -356,6 +356,9 @@ async function simular(ctx: any, fila: any, grupo: any, args: any) {
   if (decisao === 'reaproveitamento_processo') {
     if (grupo.tipo_pendencia !== 'ingrediente_sem_preco') throw new Error('Reaproveitamento de processo só pode ser classificado em grupo de ingrediente sem preço.');
     if (!sourceIds.length) throw new Error('Nenhum item fonte editável foi encontrado neste grupo.');
+    if (txt(args?.observacao).length < 8) {
+      throw new Error('Informe uma justificativa técnica para classificar o item como reaproveitamento de processo.');
+    }
   }
 
   const snapshotParts = sourceIds.sort().map((id) => {
