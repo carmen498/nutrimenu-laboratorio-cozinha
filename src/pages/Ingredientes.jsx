@@ -23,6 +23,7 @@ import ImportarIngredientesDialog from "@/components/ingrediente/ImportarIngredi
 import RelatorioLotePrecosDialog from "@/components/ingrediente/RelatorioLotePrecosDialog";
 import AutoUpdateToggle from "@/components/ingrediente/AutoUpdateToggle";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
+import MeusIngredientesCard from "@/components/ingrediente/MeusIngredientesCard";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { useAuth } from "@/lib/AuthContext";
@@ -278,6 +279,10 @@ export default function Ingredientes() {
   };
 
   const totalIngredientes = ingredientes.length;
+  const meusIngredientesCount = useMemo(
+    () => ingredientes.filter((i) => i._dados_comerciais_pessoais === true).length,
+    [ingredientes]
+  );
   const nenhumFiltroAtivo = !accordionAberto && !showDesatualizados && !showRevisar && !showFavoritos;
 
   return (
@@ -433,6 +438,7 @@ export default function Ingredientes() {
           </button>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
+            {!isAdmin && <MeusIngredientesCard count={meusIngredientesCount} />}
             {GRUPOS_INGREDIENTES.map((g) => {
               const count = ingredientes.filter(i => getGrupoFromCategoria(i.categoria) === g.nome).length;
               if (count === 0) return null;
