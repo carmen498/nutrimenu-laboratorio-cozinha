@@ -181,6 +181,26 @@ export default function AuditoriaCustosReceitas() {
     }
   };
 
+  const auditarAssinaturas = async (aplicar = false) => {
+    setProcessando(true);
+    try {
+      const res = await base44.functions.invoke("auditarAssinaturasCustos", { aplicar });
+      const dados = res?.data || {};
+      setAssinaturaPreview(dados);
+      if (aplicar) {
+        await Promise.all([
+          qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas"] }),
+          qc.invalidateQueries({ queryKey: ["receitas"] }),
+        ]);
+      }
+      toast.success(`Assinaturas: ${dados.validas || 0} válidas, ${dados.divergentes || 0} divergentes e ${dados.ausentes || 0} ausentes.`);
+    } catch (error) {
+      toast.error("Erro ao auditar assinaturas: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
   const aplicarMigracao = async () => {
     if (!preview) {
       toast.error("Execute a análise antes de aplicar a migração.");
