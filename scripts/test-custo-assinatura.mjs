@@ -44,8 +44,9 @@ assert.notEqual(sig, assinar({ itens: fc }), 'FC deve alterar assinatura');
 assert.notEqual(sig, assinar({ rendimento: 950 }), 'rendimento deve alterar assinatura');
 const ins = clone(base.insumos); ins[0].custo_unitario = 0.6;
 assert.notEqual(sig, assinar({ insumos: ins }), 'custo de insumo deve alterar assinatura');
-const sub = clone(base.itens); sub.find((i) => i.tipo === 'subreceita').subreceita_dependencias_assinatura = 'sub@2';
-assert.notEqual(sig, assinar({ itens: sub }), 'assinatura da sub-receita deve alterar assinatura');
+const subMeta = clone(base.itens); subMeta.find((i) => i.tipo === 'subreceita').subreceita_dependencias_assinatura = 'sub@2099';
+assert.equal(sig, assinar({ itens: subMeta }), 'timestamp/assinatura operacional da Fase 8 não pode alterar a assinatura de custo');
+assert.notEqual(sig, gerarFront({ ...base, resolverAssinaturaSubreceita: () => 'exp-v1-def' }), 'mudança semântica da origem da sub-receita deve alterar assinatura');
 
 const ingredientesPreco = { ...ingredientes, ing1: { ...ingredientes.ing1, preco_por_g_rs: 0.02 } };
 assert.notEqual(sig, gerarFront({ ...base, resolverIngrediente: (id) => ingredientesPreco[id] || null, resolverPreco: (ing) => ing?.preco_por_g_rs || 0 }), 'preço efetivo deve alterar assinatura');
