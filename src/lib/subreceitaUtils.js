@@ -37,6 +37,8 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao, options = {}) 
   const alertas = [];
   let rendimentoRaiz = 1;
   let rendimentoRaizEstimado = false;
+  let ultimaComposicaoMs = 0;
+  let ultimaComposicaoEm = "";
 
   const carregarReceita = async (id) => {
     if (!id) throw new Error("Sub-receita sem referência canônica (subreceita_id).");
@@ -75,6 +77,15 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao, options = {}) 
 
     const itens = await carregarItens(receitaAtual.id);
     dependencias.set(receitaAtual.id, atualizadoEm(receitaAtual));
+    for (const item of itens) {
+      if (item.tipo === "grupo" || item.subreceita_parent_id) continue;
+      const data = atualizadoEm(item);
+      const ms = data ? Date.parse(data) : 0;
+      if (Number.isFinite(ms) && ms > ultimaComposicaoMs) {
+        ultimaComposicaoMs = ms;
+        ultimaComposicaoEm = data;
+      }
+    }
 
     const rendimento = rendimentoOperacional(receitaAtual, itens);
     const porcoesBase = Number(receitaAtual.porcoes_base) > 0 ? Number(receitaAtual.porcoes_base) : 1;
@@ -137,6 +148,7 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao, options = {}) 
   await expandir(subreceita, Number(qtdPorPorcao) || 0, options.pilhaInicial || []);
   const assinatura = assinaturaDependencias(dependencias);
   const raizAtualizadaEm = atualizadoEm(subreceita);
+  const geradoEm = new Date().toISOString();
 
   for (const child of children) {
     child.subreceita_dependencias_assinatura = assinatura;
@@ -151,6 +163,8 @@ export async function explodeSubreceita(subreceita, qtdPorPorcao, options = {}) 
       assinaturaDependencias: assinatura,
       dependencias: Object.fromEntries(dependencias),
       raizAtualizadaEm,
+      ultimaComposicaoEm,
+      geradoEm,
       alertas,
       totalAtomicos: children.length,
     },
