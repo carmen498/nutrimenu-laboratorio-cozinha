@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { fetchCsvSeguro } from '../../shared/fetchCsvSeguro.ts';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -104,10 +105,22 @@ Deno.serve(async (req) => {
       atualizados += batch.length;
     }
 
+    let receitasInvalidadas = 0;
+    if (toUpdate.length > 0) {
+      const invalidacao = await invalidarCustosPorDependencias({
+        entities: base44.asServiceRole.entities,
+        ingredienteIds: toUpdate.map((row) => row.id),
+        motivo: 'ingrediente_mestre_atualizado_por_csv',
+        origem: 'importar_ingredientes_csv',
+      });
+      receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
+    }
+
     return Response.json({
       total_linhas: dataRows.length,
       criados,
       atualizados,
+      receitas_invalidadas: receitasInvalidadas,
       rejeitados,
     });
   } catch (error) {
