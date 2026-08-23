@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
+import { invalidarCustosPorDependencias } from "../../shared/invalidacaoCusto.ts";
 
 const CATS_VOLATEIS = [
   "Carnes e Ovos", "LATICÍNIOS", "Frutas",
@@ -62,6 +63,7 @@ Deno.serve(async (req) => {
   let totalMantido = 0;
   const variacoes = []; // { nome, variacao }
   const categoriasSet = new Set();
+  const idsAtualizados = [];
 
   try {
     const base44 = createClientFromRequest(req);
@@ -161,10 +163,24 @@ Deno.serve(async (req) => {
           historico_precos: historico
         });
         totalAtualizado++;
+        idsAtualizados.push(ing.id);
         await new Promise(r => setTimeout(r, 250));
       } catch (e) {
         // Skip on individual update error
       }
+    }
+
+    // Fase 10.3 — nenhuma atualização automática de preço pode deixar cache
+    // persistido aparentando estar atual.
+    let receitasInvalidadas = 0;
+    if (idsAtualizados.length > 0) {
+      const invalidacao = await invalidarCustosPorDependencias({
+        entities: base44.asServiceRole.entities,
+        ingredienteIds: idsAtualizados,
+        motivo: 'atualizacao_automatica_preco_mestre',
+        origem: 'atualizar_precos_automatico',
+      });
+      receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
     }
 
     // Top 5 altas e baixas
