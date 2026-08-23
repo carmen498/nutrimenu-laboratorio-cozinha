@@ -40,7 +40,7 @@ export default function HeroSection({ heroImage }) {
             alt="Casal maduro preparando uma refeição em uma cozinha residencial organizada"
             width="900"
             height="900"
-            fetchpriority="high"
+            fetchPriority="high"
           />
         </figure>
       </div>
