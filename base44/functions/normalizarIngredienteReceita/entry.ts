@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 // Fase 6 — normalização não destrutiva de IngredienteReceita.
 //
@@ -114,9 +115,23 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.IngredienteReceita.bulkUpdate(updates.slice(i, i + 500));
     }
 
+    let receitasInvalidadas = 0;
+    if (updates.length > 0) {
+      const itemMap = new Map((itens || []).map((item: any) => [item.id, item]));
+      const receitaIds = [...new Set(updates.map((u: any) => itemMap.get(u.id)?.receita_id).filter(Boolean))];
+      const invalidacao = await invalidarCustosPorDependencias({
+        entities: base44.asServiceRole.entities,
+        receitaIds,
+        motivo: 'normalizacao_composicao_receita',
+        origem: 'normalizar_ingrediente_receita',
+      });
+      receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
+    }
+
     return Response.json({
       total_processado: (itens || []).length,
       total_normalizado: updates.length,
+      receitas_invalidadas: receitasInvalidadas,
       total_a_revisar: aRevisar.length,
       normalizaveis_por_tipo: contagem,
       a_revisar: aRevisar.slice(0, 500),
