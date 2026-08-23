@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
 import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
-import { fetchAllPages } from "@/lib/fetchAllPages";
+import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
 import { registrarHistorico } from "@/lib/registrarHistorico";
 import { getMedidaIngredienteId, getMedidaPesoG } from "@/lib/ingredienteReceitaCalc";
 
@@ -81,7 +81,12 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
 
     setSaving(true);
     try {
-      const existingItems = await base44.entities.IngredienteReceita.filter({ receita_id: receitaId });
+      const existingItems = await fetchAllFilteredPages(
+        base44.entities.IngredienteReceita,
+        { receita_id: receitaId },
+        "ordem",
+        500
+      );
       const maxOrdem = existingItems.reduce((max, i) => Math.max(max, i.ordem || 0), 0);
 
       if (selectedType === "subreceita") {
