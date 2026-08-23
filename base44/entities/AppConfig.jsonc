@@ -15,6 +15,20 @@
     "chave"
   ],
   "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
     "read": {
       "created_by_id": "{{user.id}}"
     },
