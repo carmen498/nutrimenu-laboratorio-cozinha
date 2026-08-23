@@ -169,6 +169,28 @@
       "type": "number",
       "description": "Fase 10.3: dist\u00e2ncia da altera\u00e7\u00e3o raiz na cadeia reversa de sub-receitas; 0 = receita diretamente afetada."
     },
+    "custo_cache_assinatura": {
+      "type": "string",
+      "description": "Fase 10.4: assinatura sem\u00e2ntica dos determinantes de custo usados na \u00faltima normaliza\u00e7\u00e3o do cache."
+    },
+    "custo_cache_assinatura_versao": {
+      "type": "number",
+      "description": "Vers\u00e3o do algoritmo da assinatura can\u00f4nica de custos."
+    },
+    "custo_cache_assinatura_status": {
+      "type": "string",
+      "enum": [
+        "valida",
+        "divergente",
+        "ausente"
+      ],
+      "description": "Fase 10.4: compara a assinatura persistida com os determinantes atuais do custo."
+    },
+    "custo_cache_assinatura_gerada_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que a assinatura persistida foi gerada."
+    },
     "revisar": {
       "type": "boolean",
       "description": "Flag: Duplicado \u2014 revisar"
