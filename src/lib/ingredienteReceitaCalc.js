@@ -32,17 +32,23 @@ export function resolverFatorCorrecao(item, ingrediente) {
   };
 }
 
+export function itemParticipaCompra(item) {
+  return item?.custo_comportamento !== "reaproveitamento_processo";
+}
+
 export function calcularItemIngredienteReceita({ item, ingrediente, quantidadeLiquida }) {
   const pl = Math.max(0, Number(quantidadeLiquida) || 0);
   const fcInfo = resolverFatorCorrecao(item, ingrediente);
   const pb = pl * fcInfo.valor;
   const precoPorG = Math.max(0, Number(ingrediente?.preco_por_g_rs) || 0);
+  const custoIgnorado = !itemParticipaCompra(item);
 
   return {
     pesoLiquido: pl,
     pesoBruto: pb,
-    custo: pb * precoPorG,
+    custo: custoIgnorado ? 0 : pb * precoPorG,
     precoPorG,
+    custoIgnorado,
     fc: fcInfo.valor,
     fcOrigem: fcInfo.origem,
     fcOverride: fcInfo.temOverride,
