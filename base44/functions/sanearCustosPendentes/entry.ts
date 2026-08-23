@@ -21,6 +21,41 @@ const norm = (v: any) => txt(v)
   .trim()
   .replace(/\s+/g, ' ');
 
+// Fase 10.2 — equivalências semânticas de alta confiança.
+// Esta lista NÃO é fuzzy matching. Só entram grafias, sinônimos culinários
+// inequívocos ou nomes genéricos cujo destino canônico preserva exatamente
+// a mesma identidade do alimento. Variedade/estado/corte continuam manuais.
+const ALIASES_SEGUROS = new Map<string, string>([
+  [norm('Presunto'), norm('Embutido, presunto')],
+  [norm('Cogumelo em conserva'), norm('Cogumelos em conserva')],
+  [norm('Arroz arbório'), norm('Arroz arbóreo')],
+  [norm('Abóbora'), norm('Abóbora, qualquer tipo')],
+  [norm('Ovos'), norm('Ovos, unidade')],
+  [norm('Peru'), norm('Peru, ave inteira')],
+  [norm('Camarão médio'), norm('Camarão m')],
+  [norm('Lombinho de suíno'), norm('Suíno, lombo')],
+  [norm('Língua'), norm('Miúdos do boi, língua')],
+  [norm('Mangericão'), norm('Manjericão')],
+  [norm('Damascos'), norm('Damasco')],
+  [norm('Gotas de chocolate'), norm('Chocolate em gotas')],
+  [norm('Salsão'), norm('Aipo')],
+  [norm('Mandioca'), norm('Aipim (mandioca/macaxeira)')],
+  [norm('Bicarbonato'), norm('Bicarbonato de sódio')],
+  [norm('Cerejas'), norm('Cereja')],
+  [norm('Clara de ovo'), norm('Ovos, claras')],
+  [norm('Claras de ovo'), norm('Ovos, claras')],
+  [norm('Maracujás'), norm('Maracujá')],
+  [norm('Morangos'), norm('Morango')],
+  [norm('Sementes de chia'), norm('Chia')],
+]);
+
+function candidatoAliasSeguro(nome: any, ingredienteNomeMap: Map<string, any[]>) {
+  const alvo = ALIASES_SEGUROS.get(norm(nome));
+  if (!alvo) return null;
+  const candidatos = ingredienteNomeMap.get(alvo) || [];
+  return candidatos.length === 1 ? candidatos[0] : null;
+}
+
 async function listarTudo(entity: any, sort = 'created_date', pageSize = 500) {
   const out: any[] = [];
   let skip = 0;
@@ -214,7 +249,9 @@ Deno.serve(async (req) => {
         // preservado no item identifica outro ingrediente. Isso ocorreu no legado
         // com IDs reaproveitados para nomes diferentes.
         if (!ingrediente || nomeDivergente) {
-          const candidatos = nomeCache ? (ingredienteNomeMap.get(norm(nomeCache)) || []) : [];
+          const candidatosExatos = nomeCache ? (ingredienteNomeMap.get(norm(nomeCache)) || []) : [];
+          const alias = nomeCache ? candidatoAliasSeguro(nomeCache, ingredienteNomeMap) : null;
+          const candidatos = candidatosExatos.length === 1 ? candidatosExatos : (alias ? [alias] : candidatosExatos);
           const direto = !txt(item.subreceita_parent_id);
           const unico = candidatos.length === 1 ? candidatos[0] : null;
           const jaApontaCorreto = Boolean(unico && ingrediente?.id === unico.id);
@@ -230,7 +267,9 @@ Deno.serve(async (req) => {
             ingrediente_nome_cache: nomeCache,
             candidatos_exatos: candidatos.map((c: any) => ({ id: c.id, nome: c.nome })),
             automatico: fixavel,
-            resolucao: fixavel ? 'reapontar_nome_exato_unico' : (txt(item.subreceita_parent_id) ? 'sincronizar_subreceita' : 'revisao_manual'),
+            resolucao: fixavel
+              ? (candidatosExatos.length === 1 ? 'reapontar_nome_exato_unico' : 'reapontar_alias_seguro')
+              : (txt(item.subreceita_parent_id) ? 'sincronizar_subreceita' : 'revisao_manual'),
           }, receita, item.id);
 
           if (fixavel) {
@@ -242,7 +281,34 @@ Deno.serve(async (req) => {
         }
 
         if (qtd <= 0 || !ingrediente) continue;
-        const efetivo = precoEfetivo(ingrediente, ownerId, prefMap, legacyMap);
+        let efetivo = precoEfetivo(ingrediente, ownerId, prefMap, legacyMap);
+        if (efetivo > 0) continue;
+
+        // Se o ID atual é válido, mas aponta para um cadastro legado sem preço
+        // que possui alias semântico inequívoco para um mestre canônico, corrige
+        // o vínculo do item em vez de copiar preço para o cadastro duplicado.
+        if (!txt(item.subreceita_parent_id)) {
+          const alias = candidatoAliasSeguro(nomeCache || ingrediente.nome, ingredienteNomeMap);
+          if (alias && alias.id !== ingrediente.id) {
+            const precoAlias = precoEfetivo(alias, ownerId, prefMap, legacyMap);
+            if (precoAlias > 0) {
+              registrarIssue(receita.id, true);
+              const refKey = `alias|${ingrediente.id}|${alias.id}`;
+              addGrupo(gruposReferencia, refKey, {
+                tipo: 'referencia_alias_legado',
+                ingrediente_id_antigo: ingrediente.id,
+                ingrediente_nome_mestre_atual: ingrediente.nome,
+                ingrediente_nome_cache: nomeCache || ingrediente.nome,
+                candidatos_exatos: [{ id: alias.id, nome: alias.nome }],
+                automatico: true,
+                resolucao: 'reapontar_alias_seguro',
+              }, receita, item.id);
+              updItem.set(item.id, { id: item.id, ingrediente_id: alias.id, ingrediente_nome: alias.nome, modelo_versao: 2 });
+              ingrediente = alias;
+              efetivo = precoAlias;
+            }
+          }
+        }
         if (efetivo > 0) continue;
 
         const prefKey = ownerId ? `${ownerId}|${ingrediente.id}` : '';
