@@ -10,6 +10,10 @@ Deno.serve(async (req) => {
       const rec = await base44.asServiceRole.functions.invoke('normalizarCustosReceitas', { dry_run: false, somente_incompletas: true });
       return Response.json({ mode: 'recalc', recalculo: rec?.data ?? rec });
     }
+    if (mode === 'san') {
+      const sanOnly = await base44.asServiceRole.functions.invoke('sanearCustosPendentes', { dry_run: true });
+      return Response.json({ mode: 'san', saneamento: sanOnly?.data ?? sanOnly });
+    }
     const san = await base44.asServiceRole.functions.invoke('sanearCustosPendentes', { dry_run: !apply });
     const sanData = san?.data ?? san;
     let syncData: any = null;
