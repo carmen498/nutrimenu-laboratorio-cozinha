@@ -13,7 +13,7 @@ import { salvarDadosComerciaisIngrediente } from "@/lib/preferenciaIngredienteUs
 export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } = {}) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (rawData) => {
+    mutationFn: async (/** @type {any} */ rawData) => {
       const { _novos_sinonimos, ...data } = rawData;
       const preco_por_g = data.peso_embalagem_g > 0
         ? data.preco_embalagem_rs / data.peso_embalagem_g
