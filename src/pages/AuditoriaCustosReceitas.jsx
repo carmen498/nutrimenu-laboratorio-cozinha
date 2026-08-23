@@ -35,6 +35,7 @@ export default function AuditoriaCustosReceitas() {
   const [processando, setProcessando] = useState(false);
   const [preview, setPreview] = useState(null);
   const [saneamentoPreview, setSaneamentoPreview] = useState(null);
+  const [assinaturaPreview, setAssinaturaPreview] = useState(null);
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["auditoria-custos-receitas"],
@@ -63,6 +64,8 @@ export default function AuditoriaCustosReceitas() {
       if (statusPersistido === "incompleto") problemas.push("cache_incompleto");
       if (statusPersistido === "a_recalcular") problemas.push("cache_a_recalcular");
       if (receita.custo_cache_invalido === true) problemas.push("cache_invalidado");
+      if (!receita.custo_cache_assinatura) problemas.push("assinatura_ausente");
+      else if (receita.custo_cache_assinatura_status && receita.custo_cache_assinatura_status !== "valida") problemas.push(`assinatura_${receita.custo_cache_assinatura_status}`);
       if (!receita.custo_cache_atualizado_em && versao >= CUSTO_RECEITA_MODELO_VERSAO) problemas.push("sem_data_normalizacao");
       if (Number(receita.custo_cache_itens_sem_preco) > 0) problemas.push("itens_sem_preco");
       return { receita, versao, status: statusPersistido, problemas };
@@ -76,6 +79,7 @@ export default function AuditoriaCustosReceitas() {
       legado: rows.filter((r) => r.versao < CUSTO_RECEITA_MODELO_VERSAO).length,
       aRecalcular: rows.filter((r) => r.status === "a_recalcular").length,
       invalidadas: rows.filter((r) => r.receita.custo_cache_invalido === true).length,
+      assinaturasPendentes: rows.filter((r) => !r.receita.custo_cache_assinatura || r.receita.custo_cache_assinatura_status !== "valida").length,
       semPreco: rows.reduce((s, r) => s + (Number(r.receita.custo_cache_itens_sem_preco) || 0), 0),
       pendentes: rows.filter((r) => r.receita.custo_cache_invalido === true || !(r.versao >= CUSTO_RECEITA_MODELO_VERSAO && r.status === "atual")),
     };
