@@ -10,11 +10,12 @@ import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/vers
 import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 
-const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
+// Checkout pago atualmente disponível na UI. "trial" é ativado por fluxo próprio
+// e "renovacao" ainda está marcado como "Em breve" na tela de Planos.
+const PLANOS_VALIDOS = ["mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
 const NOME_PLANOS: Record<string, string> = {
-  diario: "Plano Diário — Laboratório de Cozinha",
-  mensal: "Plano Mensal — Laboratório de Cozinha",
+  mensal: "Plano 30 dias — Laboratório de Cozinha",
   anual: "Plano Anual — Laboratório de Cozinha",
 };
 
