@@ -320,6 +320,7 @@ Deno.serve(async (req) => {
         custo_cache_contexto: contexto,
         custo_cache_itens_sem_preco: semPreco + refAusente + fallbackEsquecido,
         custo_cache_atualizado_em: agora,
+        custo_cache_invalido: false,
       };
 
       // Nunca substitui valores monetários por cálculo parcial/ambíguo.
