@@ -78,13 +78,19 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
         return;
       }
       try {
-        const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selectedIng, qtd);
+        const { children, rendimentoEfetivo, rendimentoEstimado, diagnostico } = await explodeSubreceita(selectedIng, qtd);
         const marker = {
           tipo: "subreceita",
           subreceita_id: selectedIng.id,
           subreceita_nome: selectedIng.nome,
           quantidade_por_porcao: qtd,
           ordem: addedIngs.length,
+          subreceita_modo: "referencia_cache",
+          subreceita_cache_versao: 2,
+          subreceita_sincronizacao_status: children.length > 0 ? "sincronizada" : "a_validar",
+          subreceita_dependencias_assinatura: diagnostico?.assinaturaDependencias || "",
+          subreceita_origem_updated_at: diagnostico?.raizAtualizadaEm || "",
+          subreceita_sincronizada_em: diagnostico?.geradoEm || new Date().toISOString(),
           _isMarker: true,
         };
         const childItems = children.map((c, i) => ({
