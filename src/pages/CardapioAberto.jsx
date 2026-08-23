@@ -153,6 +153,7 @@ export default function CardapioAberto() {
       ingredienteMap,
       insumosPorReceita,
       esquecidosPorReceita,
+      contextoCanonicoCarregado: true,
     }),
     [receitas, receitaMap, ingredientesPorReceita, insumos, num, markup, ingredienteMap, insumosPorReceita, esquecidosPorReceita]
   );
