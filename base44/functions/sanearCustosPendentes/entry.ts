@@ -91,6 +91,22 @@ function agruparPorReceita(rows: any[]) {
   return map;
 }
 
+// Retorna o item atômico de origem que pode ser editado. Em caches de
+// sub-receita, nunca alteramos o filho derivado diretamente: seguimos a
+// linhagem até o item fonte e depois a Fase 8 reconstrói os caches.
+function itemFonteEditavel(item: any, itemMap: Map<string, any>) {
+  let atual = item;
+  const vistos = new Set<string>();
+  for (let depth = 0; depth < 12 && atual?.subreceita_parent_id; depth++) {
+    const sourceId = txt(atual?.subreceita_origem_item_id);
+    if (!sourceId || vistos.has(sourceId)) return null;
+    vistos.add(sourceId);
+    atual = itemMap.get(sourceId);
+    if (!atual) return null;
+  }
+  return atual?.tipo === 'ingrediente' ? atual : null;
+}
+
 function contextoReceita(receita: any) {
   const ownerId = receita?.is_base === false
     ? (txt(receita?.usuario_dono_id) || txt(receita?.created_by_id))
@@ -180,6 +196,7 @@ Deno.serve(async (req) => {
     const receitaMap = new Map(receitas.map((r: any) => [r.id, r]));
     const ingredienteMap = new Map(ingredientes.map((i: any) => [i.id, i]));
     const ingredienteNomeMap = porNome(ingredientes, 'nome');
+    const itemMap = new Map(itens.map((i: any) => [i.id, i]));
     const insumoMap = new Map(insumosMaster.map((i: any) => [i.id, i]));
     const insumoNomeMap = porNome(insumosMaster, 'nome');
     const itensPorReceita = agruparPorReceita(itens.filter((i: any) => receitaMap.has(txt(i.receita_id))));
@@ -254,8 +271,10 @@ Deno.serve(async (req) => {
           const candidatos = candidatosExatos.length === 1 ? candidatosExatos : (alias ? [alias] : candidatosExatos);
           const direto = !txt(item.subreceita_parent_id);
           const unico = candidatos.length === 1 ? candidatos[0] : null;
+          const fonte = itemFonteEditavel(item, itemMap);
+          const fonteJaCorreta = Boolean(unico && fonte?.ingrediente_id === unico.id && norm(fonte?.ingrediente_nome || unico.nome) === norm(unico.nome));
           const jaApontaCorreto = Boolean(unico && ingrediente?.id === unico.id);
-          const fixavel = Boolean(direto && unico && !jaApontaCorreto);
+          const fixavel = Boolean(unico && fonte && (direto ? !jaApontaCorreto : true));
           registrarIssue(receita.id, fixavel);
           const refKey = `${txt(item.ingrediente_id) || '*'}|${norm(nomeCache) || '*'}`;
           addGrupo(gruposReferencia, refKey, {
@@ -268,12 +287,18 @@ Deno.serve(async (req) => {
             candidatos_exatos: candidatos.map((c: any) => ({ id: c.id, nome: c.nome })),
             automatico: fixavel,
             resolucao: fixavel
-              ? (candidatosExatos.length === 1 ? 'reapontar_nome_exato_unico' : 'reapontar_alias_seguro')
-              : (txt(item.subreceita_parent_id) ? 'sincronizar_subreceita' : 'revisao_manual'),
+              ? (direto
+                ? (candidatosExatos.length === 1 ? 'reapontar_nome_exato_unico' : 'reapontar_alias_seguro')
+                : (fonteJaCorreta ? 'sincronizar_subreceita_fonte_correta' : (candidatosExatos.length === 1 ? 'reapontar_fonte_subreceita_exata' : 'reapontar_fonte_subreceita_alias')))
+              : (txt(item.subreceita_parent_id) ? 'revisao_fonte_subreceita' : 'revisao_manual'),
           }, receita, item.id);
 
           if (fixavel) {
-            updItem.set(item.id, { id: item.id, ingrediente_id: unico.id, ingrediente_nome: unico.nome, modelo_versao: 2 });
+            if (!fonteJaCorreta && fonte) {
+              const patchFonte = { id: fonte.id, ingrediente_id: unico.id, ingrediente_nome: unico.nome, modelo_versao: 2 };
+              updItem.set(fonte.id, patchFonte);
+              Object.assign(fonte, patchFonte);
+            }
             ingrediente = unico;
           } else if (!jaApontaCorreto) {
             continue;
@@ -287,12 +312,14 @@ Deno.serve(async (req) => {
         // Se o ID atual é válido, mas aponta para um cadastro legado sem preço
         // que possui alias semântico inequívoco para um mestre canônico, corrige
         // o vínculo do item em vez de copiar preço para o cadastro duplicado.
-        if (!txt(item.subreceita_parent_id)) {
+        {
           const alias = candidatoAliasSeguro(nomeCache || ingrediente.nome, ingredienteNomeMap);
-          if (alias && alias.id !== ingrediente.id) {
+          const fonte = itemFonteEditavel(item, itemMap);
+          if (alias && alias.id !== ingrediente.id && fonte) {
             const precoAlias = precoEfetivo(alias, ownerId, prefMap, legacyMap);
             if (precoAlias > 0) {
               registrarIssue(receita.id, true);
+              const fonteJaCorreta = fonte.ingrediente_id === alias.id && norm(fonte.ingrediente_nome || alias.nome) === norm(alias.nome);
               const refKey = `alias|${ingrediente.id}|${alias.id}`;
               addGrupo(gruposReferencia, refKey, {
                 tipo: 'referencia_alias_legado',
@@ -301,9 +328,15 @@ Deno.serve(async (req) => {
                 ingrediente_nome_cache: nomeCache || ingrediente.nome,
                 candidatos_exatos: [{ id: alias.id, nome: alias.nome }],
                 automatico: true,
-                resolucao: 'reapontar_alias_seguro',
+                resolucao: txt(item.subreceita_parent_id)
+                  ? (fonteJaCorreta ? 'sincronizar_subreceita_fonte_correta' : 'reapontar_fonte_subreceita_alias')
+                  : 'reapontar_alias_seguro',
               }, receita, item.id);
-              updItem.set(item.id, { id: item.id, ingrediente_id: alias.id, ingrediente_nome: alias.nome, modelo_versao: 2 });
+              if (!fonteJaCorreta) {
+                const patchFonte = { id: fonte.id, ingrediente_id: alias.id, ingrediente_nome: alias.nome, modelo_versao: 2 };
+                updItem.set(fonte.id, patchFonte);
+                Object.assign(fonte, patchFonte);
+              }
               ingrediente = alias;
               efetivo = precoAlias;
             }
