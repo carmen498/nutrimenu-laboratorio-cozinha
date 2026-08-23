@@ -12,6 +12,13 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: true
+
 jobs:
   quality:
     runs-on: ubuntu-latest
@@ -24,11 +31,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
+      - name: Verify lockfile
+        run: test -f package-lock.json
+
+      - name: Install dependencies reproducibly
         run: npm ci
 
-      - name: Quality, security and go-live contracts
-        run: npm run go-live:check
+      - name: CI quality, security and go-live gate
+        run: npm run ci:check
