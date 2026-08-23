@@ -6,7 +6,7 @@ export function getScreenName(pathname, search = "") {
   if (p === "/receitas") return "Receitas";
   if (p.startsWith("/cardapio/")) return "Cardápio";
   if (p === "/cardapios") return "Cardápios";
-  if (p === "/ingredientes") return "Ingredientes";
+  if (p === "/ingredientes" || p === "/meus-ingredientes") return "Ingredientes";
   if (p === "/lista-compras") return search.includes("planejamento") ? "Lista de Compras" : "Carrinho";
   if (p === "/percapita") return "Per Capita";
   if (p === "/medidas-caseiras") return "Medidas Caseiras";
