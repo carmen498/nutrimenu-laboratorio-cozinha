@@ -34,7 +34,7 @@ export function agruparPagamentosPorUsuario(pagamentos) {
     mapa.get(p.usuario_id).push(p);
   }
   for (const lista of mapa.values()) {
-    lista.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    lista.sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime());
   }
   return mapa;
 }

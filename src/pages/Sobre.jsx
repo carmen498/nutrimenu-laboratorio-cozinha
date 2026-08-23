@@ -43,7 +43,7 @@ export default function Sobre() {
   });
 
   const uploadFotoMut = useMutation({
-    mutationFn: async (file) => {
+    mutationFn: async (/** @type {File} */ file) => {
       const fileUrl = await uploadImagemSeguro(base44, file);
       if (config) {
         await base44.entities.ConfiguracaoCarmen.update(config.id, { foto_sobre_url: fileUrl });

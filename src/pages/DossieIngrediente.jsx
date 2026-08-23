@@ -18,7 +18,7 @@ const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
 
 function diasDesde(dataIso) {
   if (!dataIso) return null;
-  return Math.floor((new Date() - new Date(dataIso)) / (1000 * 60 * 60 * 24));
+  return Math.floor((Date.now() - new Date(dataIso).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export default function DossieIngrediente() {
@@ -74,7 +74,7 @@ export default function DossieIngrediente() {
 
   const historico = (ingrediente.historico_precos || [])
     .slice()
-    .sort((a, b) => new Date(b.data) - new Date(a.data));
+    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
 
   const dias = diasDesde(ingrediente.preco_atualizado_em);
   const precoDesatualizado = dias === null || dias > 90;

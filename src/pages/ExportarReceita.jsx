@@ -132,7 +132,7 @@ export default function ExportarReceita() {
       const mc = medidaByIngrediente[item.ing.id];
       if (mc) {
         const ute = uteMap[mc.utensilio];
-        const result = converterGramasParaMedida(item.qtd, mc, ute, "cru");
+        const result = converterGramasParaMedida(item.qtd, mc, ute);
         if (result?.texto) medidaDisplayMap[item.id] = result.texto;
       }
     }

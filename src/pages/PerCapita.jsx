@@ -55,7 +55,7 @@ export default function PerCapita() {
   const itensFiltrados = useMemo(() => {
     let currentGrupo = "";
     let grupoJaAdicionado = false;
-    const results = [];
+    const results = /** @type {any[]} */ ([]);
 
     for (const item of percapitaData) {
       if (item.tipo === "grupo") {

@@ -35,7 +35,7 @@ export function resolverDonoReceitaId(receita) {
   return texto(receita?.usuario_dono_id) || texto(receita?.created_by_id);
 }
 
-export function construirLinhagemRaiz({ isBase, tipo } = {}) {
+export function construirLinhagemRaiz(/** @type {{isBase?: boolean, tipo?: string}} */ { isBase, tipo } = {}) {
   return {
     receita_origem_id: "",
     forked_from_id: "",
@@ -149,7 +149,7 @@ export function diagnosticarLinhagemReceita(receita, receitaMap = {}) {
     && numeroInteiro(receita?.linhagem_geracao, -1) !== geracaoEsperada
   ) problemas.push("geracao_incorreta");
 
-  let status = STATUS_LINHAGEM_RECEITA.CANONICA;
+  let status = /** @type {string} */ (STATUS_LINHAGEM_RECEITA.CANONICA);
   if (problemas.includes("ciclo")) status = STATUS_LINHAGEM_RECEITA.CICLO;
   else if (problemas.includes("origem_ausente")) status = STATUS_LINHAGEM_RECEITA.ORIGEM_AUSENTE;
   else if (problemas.length > 0) status = STATUS_LINHAGEM_RECEITA.A_VALIDAR;

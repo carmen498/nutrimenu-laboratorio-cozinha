@@ -63,12 +63,12 @@ export default function AuditoriaRendimento() {
       };
     })
     .sort((a, b) => {
-      const pesoStatus = { pendente: 0, a_validar: 1, estimado: 2, confirmado: 3 };
+      const pesoStatus = /** @type {Record<string, number>} */ ({ pendente: 0, a_validar: 1, estimado: 2, confirmado: 3 });
       return (pesoStatus[a.rendimentoStatus] ?? 9) - (pesoStatus[b.rendimentoStatus] ?? 9)
         || (a.nome || "").localeCompare(b.nome || "");
     }), [receitas, itensPorReceita]);
 
-  const contagens = useMemo(() => auditoria.reduce((acc, r) => {
+  const contagens = useMemo(() => auditoria.reduce((/** @type {Record<string, number>} */ acc, r) => {
     acc[r.rendimentoStatus] = (acc[r.rendimentoStatus] || 0) + 1;
     return acc;
   }, {}), [auditoria]);

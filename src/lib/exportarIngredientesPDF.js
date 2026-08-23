@@ -36,7 +36,7 @@ function getUltimaAtualizacao(ing) {
   let data = null;
   if (Array.isArray(ing.historico_precos) && ing.historico_precos.length > 0) {
     const datas = ing.historico_precos.map((h) => h.data).filter(Boolean).map((d) => new Date(d)).filter((d) => !isNaN(d));
-    if (datas.length > 0) data = new Date(Math.max(...datas));
+    if (datas.length > 0) data = new Date(Math.max(...datas.map((d) => d.getTime())));
   }
   if (!data && ing.preco_atualizado_em) {
     const d = new Date(ing.preco_atualizado_em);
@@ -47,7 +47,7 @@ function getUltimaAtualizacao(ing) {
 
 function isAlerta(data) {
   if (!data) return true;
-  const dias = Math.floor((new Date() - data) / (1000 * 60 * 60 * 24));
+  const dias = Math.floor((Date.now() - data.getTime()) / (1000 * 60 * 60 * 24));
   return dias > 90;
 }
 

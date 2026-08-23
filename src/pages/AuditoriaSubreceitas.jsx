@@ -64,13 +64,13 @@ export default function AuditoriaSubreceitas() {
       const visitar = (id, pilha) => {
         if (pilha.includes(id)) {
           const nomes = [...pilha, id].map((rid) => receitaMap[rid]?.nome || rid);
-          const err = new Error(`Ciclo: ${nomes.join(" → ")}`);
+          const err = /** @type {Error & {code?: string}} */ (new Error(`Ciclo: ${nomes.join(" → ")}`));
           err.code = "CICLO";
           throw err;
         }
         const receita = receitaMap[id];
         if (!receita) {
-          const err = new Error(`Origem não encontrada: ${id}`);
+          const err = /** @type {Error & {code?: string}} */ (new Error(`Origem não encontrada: ${id}`));
           err.code = "ORIGEM";
           throw err;
         }

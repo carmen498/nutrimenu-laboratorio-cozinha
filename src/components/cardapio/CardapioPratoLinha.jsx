@@ -11,7 +11,7 @@ function fmtPct(v) { return (v || 0).toFixed(1).replace(".", ",") + "%"; }
 export default function CardapioPratoLinha({
   rec, descritivo = "", pcSuffix, kg, pct, selected, onSelect,
   onUpdatePC, onRemove, onMoveUp, onMoveDown, canMoveUp, canMoveDown,
-  temDias, diasOptions = [], refeicoesOptions = [], onUpdateField = () => {}, semCusto = false, showTrashInRow = false,
+  temDias, diasOptions = [], refeicoesOptions = [], onUpdateField = (_campo, _valor) => {}, semCusto = false, showTrashInRow = false,
   contexto = null,
 }) {
   const linkTo = contexto && contexto.nome
