@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -158,7 +159,7 @@ export default function Receitas() {
     setVisibleCount(100);
   }, [busca, categoriaSelecionada, showRevisar, showFavoritas, tagFilterIds]);
 
-  const duplicarMut = useMutation({
+  const duplicarMut = useMutationAny({
     mutationFn: async (receita) => {
       const { id, created_date, updated_date, created_by_id, ...rest } = receita;
       const nova = await criarReceitaSegura({ ...rest, nome: `${receita.nome} — cópia` });
@@ -175,7 +176,7 @@ export default function Receitas() {
     },
   });
 
-  const favoritarMut = useMutation({
+  const favoritarMut = useMutationAny({
     mutationFn: async ({ id, favorita }) => {
       await base44.entities.Receita.update(id, { favorita });
     },
@@ -184,7 +185,7 @@ export default function Receitas() {
     },
   });
 
-  const toggleRevisarMut = useMutation({
+  const toggleRevisarMut = useMutationAny({
     mutationFn: async ({ id, revisar }) => {
       await base44.entities.Receita.update(id, { revisar });
     },
@@ -193,7 +194,7 @@ export default function Receitas() {
     },
   });
 
-  const deleteMut = useMutation({
+  const deleteMut = useMutationAny({
     mutationFn: async (id) => {
       const ings = await base44.entities.IngredienteReceita.filter({ receita_id: id });
       for (const ing of ings) await base44.entities.IngredienteReceita.delete(ing.id);
