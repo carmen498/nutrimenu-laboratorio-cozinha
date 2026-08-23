@@ -7,6 +7,7 @@ import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Podemos ajudar com seu pagamento?";
 const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado.</p>
@@ -15,6 +16,12 @@ const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento no Laboratóri
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    const gate = await protegerExecucaoAgendada(base44, req, {
+      chave: "enviarLembretePendencia",
+      cooldownHoras: 20,
+      janela: { inicioMinuto: 7 * 60 + 30, fimMinuto: 9 * 60 + 30 },
+    });
+    if (gate.response) return gate.response;
 
     const limite = new Date();
     limite.setDate(limite.getDate() - 3);
