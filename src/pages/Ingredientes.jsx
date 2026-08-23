@@ -438,7 +438,7 @@ export default function Ingredientes() {
           </button>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
-            {!isAdmin && <MeusIngredientesCard count={meusIngredientesCount} />}
+            <MeusIngredientesCard count={meusIngredientesCount} />
             {GRUPOS_INGREDIENTES.map((g) => {
               const count = ingredientes.filter(i => getGrupoFromCategoria(i.categoria) === g.nome).length;
               if (count === 0) return null;
