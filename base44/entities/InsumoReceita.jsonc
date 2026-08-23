@@ -50,7 +50,7 @@
     },
     "modelo_custo_versao": {
       "type": "number",
-      "default": 1,
+      "default": 2,
       "description": "Vers\u00e3o da sem\u00e2ntica can\u00f4nica de escalonamento do insumo"
     },
     "is_base": {
