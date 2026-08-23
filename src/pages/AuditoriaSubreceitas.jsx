@@ -93,7 +93,17 @@ export default function AuditoriaSubreceitas() {
       const cacheAssinatura = marker.subreceita_dependencias_assinatura
         || filhos.find((f) => f.subreceita_dependencias_assinatura)?.subreceita_dependencias_assinatura
         || "";
-      const cacheV2 = filhos.length > 0 && filhos.every((f) => f.subreceita_cache === true && Number(f.subreceita_cache_versao) >= 2);
+      const cacheV2 = filhos.length > 0 && filhos.every((f) => f.subreceita_cache === true && Number(f.subreceita_cache_versao) >= 2 && Number(f.modelo_versao) === 2);
+      const markerModeloLegado = Number(marker.modelo_versao) !== 2;
+      const markerSemCache = filhos.length === 0;
+      const cacheParentReceitaDivergente = filhos.filter((f) => f.receita_id !== marker.receita_id);
+      const cacheVersaoLegada = filhos.filter((f) => f.subreceita_cache !== true || Number(f.subreceita_cache_versao) < 2 || Number(f.modelo_versao) !== 2);
+      const cacheLinhagemIncompleta = filhos.filter((f) => !f.subreceita_linhagem);
+      const cacheOrigemIncompleta = filhos.filter((f) => !f.subreceita_origem_receita_id || !f.subreceita_origem_item_id);
+      const cacheAssinaturaIncompleta = filhos.filter((f) => !f.subreceita_dependencias_assinatura);
+      const assinaturasFilhos = new Set(filhos.map((f) => f.subreceita_dependencias_assinatura).filter(Boolean));
+      const cacheAssinaturaDivergente = assinaturasFilhos.size > 1
+        || (!!marker.subreceita_dependencias_assinatura && [...assinaturasFilhos].some((a) => a !== marker.subreceita_dependencias_assinatura));
 
       let status = "pendente";
       let assinaturaAtual = "";
@@ -115,6 +125,18 @@ export default function AuditoriaSubreceitas() {
         }
       }
 
+      const problemasEstruturais = [
+        markerModeloLegado && "marcador legado",
+        markerSemCache && "sem cache",
+        !parent && "receita-pai ausente",
+        cacheParentReceitaDivergente.length > 0 && "filho em receita divergente",
+        cacheVersaoLegada.length > 0 && "cache legado",
+        cacheLinhagemIncompleta.length > 0 && "linhagem incompleta",
+        cacheOrigemIncompleta.length > 0 && "origem do filho incompleta",
+        cacheAssinaturaIncompleta.length > 0 && "assinatura do filho ausente",
+        cacheAssinaturaDivergente && "assinaturas de cache divergentes",
+      ].filter(Boolean);
+
       return {
         marker,
         parent,
@@ -126,19 +148,38 @@ export default function AuditoriaSubreceitas() {
         cacheV2,
         dependencias,
         erro,
+        markerModeloLegado,
+        markerSemCache,
+        cacheParentReceitaDivergente,
+        cacheVersaoLegada,
+        cacheLinhagemIncompleta,
+        cacheOrigemIncompleta,
+        cacheAssinaturaIncompleta,
+        cacheAssinaturaDivergente,
+        problemasEstruturais,
       };
     });
 
     const orfaos = itens.filter((item) => item.subreceita_parent_id && !markerMap.has(item.subreceita_parent_id));
+    const filhosCache = itens.filter((item) => item.subreceita_cache === true);
     return {
       rows,
       orfaos,
       total: rows.length,
+      filhosCache: filhosCache.length,
       sincronizadas: rows.filter((r) => r.status === "sincronizada").length,
       desatualizadas: rows.filter((r) => r.status === "desatualizada").length,
       revisar: rows.filter((r) => ["a_validar", "pendente"].includes(r.status)).length,
       erros: rows.filter((r) => ["erro_ciclo", "origem_ausente"].includes(r.status)).length,
-      legado: rows.filter((r) => r.filhos.length > 0 && !r.cacheV2).length,
+      markersModeloLegado: rows.filter((r) => r.markerModeloLegado).length,
+      markersSemCache: rows.filter((r) => r.markerSemCache).length,
+      relacoesComProblemaEstrutural: rows.filter((r) => r.problemasEstruturais.length > 0).length,
+      cacheVersaoLegada: rows.reduce((n, r) => n + r.cacheVersaoLegada.length, 0),
+      cacheLinhagemIncompleta: rows.reduce((n, r) => n + r.cacheLinhagemIncompleta.length, 0),
+      cacheOrigemIncompleta: rows.reduce((n, r) => n + r.cacheOrigemIncompleta.length, 0),
+      cacheAssinaturaIncompleta: rows.reduce((n, r) => n + r.cacheAssinaturaIncompleta.length, 0),
+      cacheParentReceitaDivergente: rows.reduce((n, r) => n + r.cacheParentReceitaDivergente.length, 0),
+      cacheAssinaturaDivergente: rows.filter((r) => r.cacheAssinaturaDivergente).length,
     };
   }, [itens, receitaMap]);
 
