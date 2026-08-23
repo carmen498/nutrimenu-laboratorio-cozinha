@@ -248,14 +248,7 @@
           }
         },
         {
-          "$and": [
-            {
-              "data.is_base": false
-            },
-            {
-              "data.usuario_dono_id": "{{user.id}}"
-            }
-          ]
+          "data.usuario_dono_id": "{{user.id}}"
         }
       ]
     },
