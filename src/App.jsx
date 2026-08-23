@@ -35,6 +35,7 @@ const CardapioAberto = lazy(() => import('@/pages/CardapioAberto'));
 const FichaCardapio = lazy(() => import('@/pages/FichaCardapio'));
 const OrcamentoCardapio = lazy(() => import('@/pages/OrcamentoCardapio'));
 const Ingredientes = lazy(() => import('@/pages/Ingredientes'));
+const MeusIngredientes = lazy(() => import('@/pages/MeusIngredientes'));
 const IngredienteAberto = lazy(() => import('@/pages/IngredienteAberto'));
 const DossieIngrediente = lazy(() => import('@/pages/DossieIngrediente'));
 const ListaCompras = lazy(() => import('@/pages/ListaCompras'));
@@ -132,6 +133,7 @@ const AuthenticatedApp = () => {
             <Route path="/cardapio/:id/ficha-custos" element={<FichaCustosCardapio />} />
             <Route path="/cardapio/:id/receitas" element={<ReceitasCardapio />} />
             <Route path="/ingredientes" element={<Ingredientes />} />
+            <Route path="/meus-ingredientes" element={<MeusIngredientes />} />
             <Route path="/ingrediente/:id" element={<IngredienteAberto />} />
             <Route path="/ingrediente/:id/dossie" element={<DossieIngrediente />} />
             <Route path="/lista-compras" element={<ListaCompras />} />
