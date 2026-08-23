@@ -8,6 +8,7 @@ import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Seu plano está perto de vencer";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano {{plano}} vence em {{dias_restantes}} dias, no dia {{data_expiracao}}.</p>
@@ -29,6 +30,12 @@ function somarDiasISO(dataISO: string, dias: number): string {
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    const gate = await protegerExecucaoAgendada(base44, req, {
+      chave: "enviarPlanoVencendo",
+      cooldownHoras: 20,
+      janela: { inicioMinuto: 7 * 60 + 30, fimMinuto: 9 * 60 + 30 },
+    });
+    if (gate.response) return gate.response;
 
     const hoje = hojeSaoPauloISO();
     const dataAlvo = somarDiasISO(hoje, 5);
