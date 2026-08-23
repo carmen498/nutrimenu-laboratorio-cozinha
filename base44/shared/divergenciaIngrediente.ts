@@ -140,12 +140,23 @@ export function classificarDivergenciaIngrediente({
         },
       };
     }
+    // Sinônimo persistido sozinho é evidência suficiente para dizer que o cache
+    // textual pode representar o ID atual, mas NÃO para trocar identidade entre
+    // mestres. Reapontamento automático exige nome canônico exato ou alias seguro
+    // previamente aprovado; isso evita generalizações como "Aspargos"→"frescos".
+    if (!canonicos.has(destinoId) && !aliasesSeguros.has(destinoId)) {
+      return {
+        divergente: true,
+        acao: 'manual',
+        motivo: 'sinonimo_exato_outro_id_requer_curadoria',
+        id_atual: idAtual,
+        candidatos: [{ id: destinoId, nome: destino?.nome || '' }],
+      };
+    }
     return {
       divergente: true,
       acao: 'reapontar_id_exato',
-      motivo: canonicos.has(destinoId)
-        ? 'nome_canonico_exato_outro_id'
-        : (sinonimos.has(destinoId) ? 'sinonimo_exato_outro_id' : 'alias_seguro_outro_id'),
+      motivo: canonicos.has(destinoId) ? 'nome_canonico_exato_outro_id' : 'alias_seguro_outro_id',
       id_atual: idAtual,
       destino_id: destinoId,
       destino_nome: destino?.nome || '',
