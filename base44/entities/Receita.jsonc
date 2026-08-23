@@ -147,6 +147,28 @@
       "type": "number",
       "description": "Quantidade de itens que impedem o cache de ser considerado completo."
     },
+    "custo_cache_invalido": {
+      "type": "boolean",
+      "default": false,
+      "description": "Fase 10.3: indica que alguma depend\u00eancia de custo mudou desde a \u00faltima normaliza\u00e7\u00e3o do cache."
+    },
+    "custo_cache_invalidado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fase 10.3: data/hora da \u00faltima invalida\u00e7\u00e3o autom\u00e1tica do cache."
+    },
+    "custo_cache_invalidacao_motivo": {
+      "type": "string",
+      "description": "Fase 10.3: motivo t\u00e9cnico da \u00faltima invalida\u00e7\u00e3o autom\u00e1tica."
+    },
+    "custo_cache_invalidacao_origem": {
+      "type": "string",
+      "description": "Fase 10.3: fluxo que originou a invalida\u00e7\u00e3o (receita, ingrediente, sub-receita, insumo etc.)."
+    },
+    "custo_cache_invalidacao_profundidade": {
+      "type": "number",
+      "description": "Fase 10.3: dist\u00e2ncia da altera\u00e7\u00e3o raiz na cadeia reversa de sub-receitas; 0 = receita diretamente afetada."
+    },
     "revisar": {
       "type": "boolean",
       "description": "Flag: Duplicado \u2014 revisar"
