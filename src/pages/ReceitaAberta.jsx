@@ -700,11 +700,13 @@ export default function ReceitaAberta() {
       }
       const mudou = Object.entries(patch).some(([campo, valor]) => String(receita[campo] ?? "") !== String(valor ?? ""));
       if (mudou) {
-        patch.custo_cache_atualizado_em = new Date().toISOString();
+        const agora = new Date().toISOString();
+        patch.custo_cache_atualizado_em = agora;
+        patch.custo_cache_assinatura_gerada_em = agora;
         base44.entities.Receita.update(id, patch);
       }
     }
-  }, [custoTotal, custoPorcao, custoInsumos, custoCanonico, receita, fator, id, isAdmin]);
+  }, [custoTotal, custoPorcao, custoInsumos, custoCanonico, receita, fator, id, isAdmin, assinaturaCustoAtual]);
 
   const updatePriceMut = useMutationAny({
     mutationFn: async ({ ingId, preco_embalagem_rs, peso_embalagem_g }) => {
