@@ -1,6 +1,6 @@
 import { useSearchParams, Navigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus, DatabaseZap, Scale, GitBranch, User, DollarSign } from "lucide-react";
+import { AlertTriangle, ClipboardCheck, PieChart, Copy, Sparkles, ListMinus, DatabaseZap, Scale, GitBranch, User, DollarSign, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import AuditoriaRendimento from "./AuditoriaRendimento";
 import AuditoriaReceitas from "./AuditoriaReceitas";
@@ -14,8 +14,9 @@ import RelatorioCategorias from "./RelatorioCategorias";
 import RelatorioDuplicados from "./RelatorioDuplicados";
 import RelatorioFaxinaCategorias from "./RelatorioFaxinaCategorias";
 import RelatorioPoucosIngredientes from "./RelatorioPoucosIngredientes";
+import RetencaoLogsAdmin from "@/components/auditoria/RetencaoLogsAdmin";
 
-const TABS = ["rendimento", "composicao", "subreceitas", "linhagem", "custos", "medidas", "receitas", "categorias", "duplicados", "faxina", "poucos"]; 
+const TABS = ["rendimento", "composicao", "subreceitas", "linhagem", "custos", "medidas", "receitas", "categorias", "duplicados", "faxina", "poucos", "retencao"]; 
 
 export default function Auditorias() {
   const { user } = useAuth();
@@ -42,6 +43,7 @@ export default function Auditorias() {
           <TabsTrigger value="duplicados" className="gap-1.5"><Copy className="w-4 h-4" /> Duplicados</TabsTrigger>
           <TabsTrigger value="faxina" className="gap-1.5"><Sparkles className="w-4 h-4" /> Faxina Categorias</TabsTrigger>
           <TabsTrigger value="poucos" className="gap-1.5"><ListMinus className="w-4 h-4" /> Poucos Ingredientes</TabsTrigger>
+          <TabsTrigger value="retencao" className="gap-1.5"><ShieldCheck className="w-4 h-4" /> Logs e Retenção</TabsTrigger>
         </TabsList>
         <TabsContent value="rendimento" className="mt-4"><AuditoriaRendimento /></TabsContent>
         <TabsContent value="composicao" className="mt-4"><AuditoriaComposicaoReceita /></TabsContent>
@@ -57,6 +59,7 @@ export default function Auditorias() {
         <TabsContent value="duplicados" className="mt-4"><RelatorioDuplicados /></TabsContent>
         <TabsContent value="faxina" className="mt-4"><RelatorioFaxinaCategorias /></TabsContent>
         <TabsContent value="poucos" className="mt-4"><RelatorioPoucosIngredientes /></TabsContent>
+        <TabsContent value="retencao" className="mt-4"><RetencaoLogsAdmin /></TabsContent>
       </Tabs>
     </div>
   );
