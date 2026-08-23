@@ -652,7 +652,8 @@ export default function ReceitaAberta() {
     insumosReceita,
     esquecidos,
     fator,
-  }), [receita, itens, ingMap, insumosReceita, esquecidos, fator]);
+    unidadesFinais: porcoes || receita?.porcoes_base || 1,
+  }), [receita, itens, ingMap, insumosReceita, esquecidos, fator, porcoes]);
   const custoIngredientes = custoCanonico.custoIngredientes;
   const custoInsumos = custoCanonico.custoInsumos;
   const custoEsquecidos = custoCanonico.custoEsquecidos;
@@ -671,7 +672,7 @@ export default function ReceitaAberta() {
         custo_modelo_versao: CUSTO_RECEITA_MODELO_VERSAO,
         custo_cache_status: status,
         custo_cache_contexto: "global",
-        custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
+        custo_cache_itens_sem_preco: custoCanonico.itensSemPreco + custoCanonico.insumosSemPreco + custoCanonico.referenciasAusentes + custoCanonico.esquecidosCacheLegado,
       };
       if (custoCanonico.completo) {
         patch.custo_total = newCT;
@@ -1540,7 +1541,7 @@ REGRAS:
         </div>
       ) : null}
 
-      <InsumosSection receitaId={id} />
+      <InsumosSection receitaId={id} escala={custoCanonico.escala} />
 
       <Card className="p-4">
         <h3 className="font-display text-sm font-bold mb-3">Custos</h3>
