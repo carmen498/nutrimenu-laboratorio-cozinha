@@ -7,6 +7,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
+import { carregarContextoCustosReceitas } from "@/lib/custoContexto";
+import { useAuth } from "@/lib/AuthContext";
 import { montarFichaCustos } from "@/lib/fichaCustosCalc";
 import { gerarFichaCustosPDF } from "@/lib/fichaCustosPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
@@ -17,6 +19,8 @@ import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 export default function FichaCustosCardapio() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [abrirIngredientes, setAbrirIngredientes] = useState(false);
 
   const { data: cardapio } = useQuery({
@@ -48,40 +52,33 @@ export default function FichaCustosCardapio() {
     enabled: receitaIds.length > 0,
   });
 
-  const { data: ingredientesPorReceita = {} } = useQuery({
-    queryKey: ["ficha-custos-ingredientes", receitaIds],
-    queryFn: async () => {
-      const arrays = await Promise.all(receitaIds.map((rid) => base44.entities.IngredienteReceita.filter({ receita_id: rid }, "ordem", 200)));
-      const map = {};
-      receitaIds.forEach((rid, i) => { map[rid] = arrays[i] || []; });
-      return map;
-    },
-    enabled: receitaIds.length > 0,
+  const { data: contextoCustos = null } = useQuery({
+    queryKey: ["ficha-custos-contexto-canonico", receitaIds, user?.id, isAdmin],
+    queryFn: () => carregarContextoCustosReceitas({ receitaIds, userId: user?.id, isAdmin }),
+    enabled: receitaIds.length > 0 && (isAdmin || !!user?.id),
   });
 
-  const ingredienteIds = useMemo(() => {
-    const set = new Set();
-    Object.values(ingredientesPorReceita).forEach((arr) => (arr || []).forEach((i) => { if (i.tipo === "ingrediente" && i.ingrediente_id) set.add(i.ingrediente_id); }));
-    return [...set];
-  }, [ingredientesPorReceita]);
-
-  const { data: ingredienteMap = {} } = useQuery({
-    queryKey: ["ficha-custos-ingrediente-map", ingredienteIds],
-    queryFn: async () => {
-      const ings = await Promise.all(ingredienteIds.map((iid) => base44.entities.Ingrediente.get(iid)));
-      const map = {};
-      ings.forEach((i) => { if (i) map[i.id] = i; });
-      return map;
-    },
-    enabled: ingredienteIds.length > 0,
-  });
+  const ingredientesPorReceita = contextoCustos?.ingredientesPorReceita || {};
+  const ingredienteMap = contextoCustos?.ingredienteMap || {};
+  const insumosPorReceita = contextoCustos?.insumosPorReceita || {};
+  const esquecidosPorReceita = contextoCustos?.esquecidosPorReceita || {};
 
   const num = cardapio ? Number(cardapio.num_unidades) || 1 : 1;
 
   const calcs = useMemo(() => {
     if (!cardapio) return null;
-    return calcularCustoCardapio({ receitas, receitaMap, ingredientesPorReceita, insumos, num, markup: 0 });
-  }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num]);
+    return calcularCustoCardapio({
+      receitas,
+      receitaMap,
+      ingredientesPorReceita,
+      insumos,
+      num,
+      markup: 0,
+      ingredienteMap,
+      insumosPorReceita,
+      esquecidosPorReceita,
+    });
+  }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
   const relatorio = useMemo(() => {
     if (!cardapio || !calcs) return null;
