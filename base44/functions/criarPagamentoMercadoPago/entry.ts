@@ -1,13 +1,14 @@
 // Cria um pagamento (cartão ou PIX) via Orders API do Mercado Pago para um dos
-// planos de assinatura. O preço nunca vem do frontend — é sempre lido do AppConfig.
-// A X-Idempotency-Key é gerada aqui no servidor, no início da execução, e salva
-// junto ao registro Pagamento (status "pending") antes de chamar o Mercado Pago.
+// planos de assinatura. O preço nunca vem do frontend — é sempre lido de ConfiguracaoPlano.
+// A X-Idempotency-Key é derivada no servidor a partir de uma tentativa UUID gerada
+// no navegador. Repetições automáticas da MESMA tentativa reutilizam a mesma chave.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
+import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 
 const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
@@ -20,7 +21,16 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v9-2026-08-22-aceite-juridico";
+const VERSAO_CODIGO = "v10-2026-08-23-homologacao-prod";
+
+async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
+  const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
+    ? tentativaId.toLowerCase()
+    : crypto.randomUUID();
+  const bytes = new TextEncoder().encode(`${usuarioId}:${tentativa}`);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -29,7 +39,7 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { plano, forma_pagamento, token, installments, payer, aceite_termos } = body;
+    const { plano, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id } = body;
 
     if (aceite_termos !== true) {
       return Response.json({
@@ -76,8 +86,24 @@ export default async function(req: Request): Promise<Response> {
     // nunca são aceitos do cliente.
     const aceiteContratacaoEm = new Date().toISOString();
 
-    // Chave de idempotência gerada no servidor, por tentativa.
-    const idempotencyKey = crypto.randomUUID();
+    // A tentativa é criada no frontend uma única vez por clique. Se a chamada HTTP
+    // for repetida automaticamente, o mesmo tentativa_id gera a mesma chave no MP.
+    const idempotencyKey = await derivarIdempotencyKey(user.id, tentativa_id);
+
+    // Se a MESMA tentativa já chegou ao backend anteriormente, reutiliza o registro
+    // interno e não chama a API do Mercado Pago de novo.
+    const pagamentosExistentes = await base44.asServiceRole.entities.Pagamento.filter({ idempotency_key: idempotencyKey });
+    const pagamentoExistente = (pagamentosExistentes || []).find((p: any) => p.usuario_id === user.id);
+    if (pagamentoExistente) {
+      return Response.json({
+        pagamentoId: pagamentoExistente.id,
+        orderId: pagamentoExistente.mercadopago_order_id || null,
+        status: pagamentoExistente.status,
+        qrCode: pagamentoExistente.qr_code || null,
+        qrCodeBase64: pagamentoExistente.qr_code_base64 || null,
+        idempotent: true,
+      });
+    }
 
     const pagamento = await base44.asServiceRole.entities.Pagamento.create({
       usuario_id: user.id,
@@ -210,7 +236,7 @@ export default async function(req: Request): Promise<Response> {
       || mpData?.point_of_interaction?.transaction_data?.qr_code_base64
       || null;
 
-    const statusOrder = mpData?.status === "processed" ? "approved" : "pending";
+    const statusOrder = resolverStatusOrderMercadoPago(mpData);
 
     await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
       mercadopago_order_id: mpData?.id,
@@ -226,6 +252,13 @@ export default async function(req: Request): Promise<Response> {
     // já "approved" e pular a reativação (idempotência tratada no webhook).
     if (statusOrder === "approved") {
       await ativarPlanoEEnviarEmail(base44, pagamento);
+    } else if (["rejected", "cancelled", "estornado"].includes(statusOrder)) {
+      return Response.json({
+        error: statusOrder === "rejected" ? "Pagamento recusado" : "Pagamento não concluído",
+        pagamentoId: pagamento.id,
+        orderId: mpData?.id,
+        status: statusOrder,
+      }, { status: 400 });
     }
 
     return Response.json({
