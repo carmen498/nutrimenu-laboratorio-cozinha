@@ -10,6 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  COMPORTAMENTO_CUSTO_LABELS,
+  calcularInsumosReceitaEscalados,
+  escalarInsumoReceita,
+  quantidadeBaseInsumoReceita,
+  normalizarComportamentoCusto,
+} from "@/lib/escalonamentoCustos";
 
 const INSUMOS_PREDEFINIDOS = [
   // Materiais
@@ -28,7 +35,7 @@ const INSUMOS_PREDEFINIDOS = [
   { nome: "Marmita descartável", categoria: "embalagem", unidade: "unidade" },
 ];
 
-export default function InsumosSection({ receitaId }) {
+export default function InsumosSection({ receitaId, escala = { fator: 1, unidadesFinais: 1, numeroLotes: 1 } }) {
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -64,7 +71,7 @@ export default function InsumosSection({ receitaId }) {
     // Search DB insumos first
     insumosDB.forEach(i => {
       if (matchSearch(i.nome) && !existingNames.has(i.nome.toLowerCase()) && !seenNames.has(i.nome.toLowerCase())) {
-        results.push({ nome: i.nome, categoria: i.categoria, unidade: i.unidade });
+        results.push({ nome: i.nome, categoria: i.categoria, unidade: i.unidade, comportamento_custo_padrao: i.comportamento_custo_padrao });
         seenNames.add(i.nome.toLowerCase());
       }
     });
@@ -88,6 +95,7 @@ export default function InsumosSection({ receitaId }) {
           categoria: insumo.categoria,
           unidade: insumo.unidade,
           preco_unitario: 0,
+          comportamento_custo_padrao: "por_lote",
         });
       }
       await criarInsumoReceita({
@@ -99,6 +107,8 @@ export default function InsumosSection({ receitaId }) {
         unidade: insumoDB.unidade,
         custo_unitario: insumoDB.preco_unitario || 0,
         custo_total: insumoDB.preco_unitario || 0,
+        comportamento_custo: normalizarComportamentoCusto(insumoDB.comportamento_custo_padrao),
+        modelo_custo_versao: 1,
       });
     },
     onSuccess: () => {
@@ -118,6 +128,7 @@ export default function InsumosSection({ receitaId }) {
         categoria: customCat,
         unidade: customUnidade,
         preco_unitario: 0,
+        comportamento_custo_padrao: "por_lote",
       });
       await criarInsumoReceita({
         receita_id: receitaId,
@@ -128,6 +139,8 @@ export default function InsumosSection({ receitaId }) {
         unidade: insumoDB.unidade,
         custo_unitario: 0,
         custo_total: 0,
+        comportamento_custo: "por_lote",
+        modelo_custo_versao: 1,
       });
     },
     onSuccess: () => {
