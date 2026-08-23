@@ -178,12 +178,31 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
   });
 
   const updateQtdMut = useMutationAny({
-    mutationFn: async ({ itemId, quantidade }) => {
+    mutationFn: async ({ itemId, quantidadeAtual }) => {
       const item = insumosReceita.find(i => i.id === itemId);
       const cu = item?.custo_unitario || 0;
+      const quantidade = quantidadeBaseInsumoReceita(item, quantidadeAtual, escala);
       await base44.entities.InsumoReceita.update(itemId, {
         quantidade,
-        custo_total: parseFloat((cu * quantidade).toFixed(2)),
+        custo_total: parseFloat((cu * quantidade).toFixed(4)),
+        modelo_custo_versao: 1,
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
+  });
+
+  const updateComportamentoMut = useMutationAny({
+    mutationFn: async ({ itemId, comportamento }) => {
+      const item = insumosReceita.find(i => i.id === itemId);
+      if (!item) return;
+      const quantidadeAtual = escalarInsumoReceita(item, escala).quantidadeEscalada;
+      const itemNovo = { ...item, comportamento_custo: comportamento };
+      const quantidade = quantidadeBaseInsumoReceita(itemNovo, quantidadeAtual, escala);
+      await base44.entities.InsumoReceita.update(itemId, {
+        comportamento_custo: comportamento,
+        quantidade,
+        custo_total: parseFloat((quantidade * (Number(item.custo_unitario) || 0)).toFixed(4)),
+        modelo_custo_versao: 1,
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
@@ -222,7 +241,16 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
     }
   };
 
-  const custoTotalInsumos = insumosReceita.reduce((s, i) => s + (i.custo_total || 0), 0);
+  const insumosCalculados = useMemo(
+    () => calcularInsumosReceitaEscalados(insumosReceita, escala),
+    [insumosReceita, escala]
+  );
+  const insumoEscaladoPorId = useMemo(() => {
+    const map = {};
+    insumosCalculados.itens.forEach((item) => { map[item.id] = item; });
+    return map;
+  }, [insumosCalculados]);
+  const custoTotalInsumos = insumosCalculados.custoTotal;
 
   const formatCurrency = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "R$ 0,00";
   const temPreco = (item) => (item.custo_unitario || 0) > 0;
