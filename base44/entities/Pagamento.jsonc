@@ -25,7 +25,7 @@
     },
     "valor": {
       "type": "number",
-      "description": "Valor cobrado em R$ (bruto), definido pelo servidor a partir do AppConfig"
+      "description": "Valor cobrado em R$ (bruto), definido pelo servidor a partir de ConfiguracaoPlano"
     },
     "valor_liquido": {
       "type": "number",
@@ -54,7 +54,7 @@
     },
     "idempotency_key": {
       "type": "string",
-      "description": "Chave de idempot\u00eancia gerada pelo servidor no in\u00edcio da tentativa"
+      "description": "Chave de idempot\u00eancia derivada no servidor para identificar de forma est\u00e1vel uma tentativa de checkout"
     },
     "termos_aceitos_em": {
       "type": "string",
