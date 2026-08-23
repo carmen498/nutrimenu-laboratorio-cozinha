@@ -261,7 +261,7 @@ export default function AuditoriaSubreceitas() {
       filhosCache: filhosCache.length,
       sincronizadas: rows.filter((r) => r.status === "sincronizada").length,
       desatualizadas: rows.filter((r) => r.status === "desatualizada").length,
-      composicaoAlterada: rows.filter((r) => r.composicaoMudouDepois).length,
+      composicaoAlterada: rows.filter((r) => r.status === "desatualizada" && r.composicaoMudouDepois).length,
       revisar: rows.filter((r) => ["a_validar", "pendente"].includes(r.status)).length,
       erros: rows.filter((r) => ["erro_ciclo", "origem_ausente"].includes(r.status)).length,
       markersModeloLegado: rows.filter((r) => r.markerModeloLegado).length,
@@ -376,7 +376,7 @@ export default function AuditoriaSubreceitas() {
               <div className="min-w-0">
                 <p className="font-medium truncate" title={row.source?.nome || row.marker.subreceita_id}>{row.source?.nome || row.marker.subreceita_nome || "Origem ausente"}</p>
                 {row.erro && <p className="text-[10px] text-destructive truncate" title={row.erro}>{row.erro}</p>}
-                {row.composicaoMudouDepois && <p className="text-[10px] text-amber-700 truncate" title={row.ultimaComposicaoEm}>Composição alterada após a última sincronização</p>}
+                {row.status === "desatualizada" && row.composicaoMudouDepois && <p className="text-[10px] text-amber-700 truncate" title={row.ultimaComposicaoEm}>Composição alterada após a última sincronização</p>}
                 {row.problemasEstruturais.length > 0 && <p className="text-[10px] text-amber-700 truncate" title={row.problemasEstruturais.join(" · ")}>{row.problemasEstruturais.join(" · ")}</p>}
               </div>
               <div><Badge variant={row.status === "sincronizada" ? "outline" : "secondary"} className="text-[10px]">{STATUS_LABEL[row.status] || row.status}</Badge></div>
