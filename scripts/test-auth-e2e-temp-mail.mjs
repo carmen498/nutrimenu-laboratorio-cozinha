@@ -72,9 +72,19 @@ function mailText(message) {
 
 function extractOtp(message) {
   const content = mailText(message);
+  const contextualPatterns = [
+    /(?:c[oó]digo|code|verification|verifica[cç][aã]o|otp)[^0-9]{0,80}(\d{6})/i,
+    /(\d{6})[^a-z0-9]{0,80}(?:c[oó]digo|code|verification|verifica[cç][aã]o|otp)/i,
+  ];
+  for (const pattern of contextualPatterns) {
+    const match = content.match(pattern);
+    if (match?.[1]) return match[1];
+  }
   const matches = [...content.matchAll(/(?:^|\D)(\d{6})(?:\D|$)/g)].map((m) => m[1]);
   assert.ok(matches.length > 0, "OTP de 6 dígitos não encontrado no e-mail");
-  return matches[0];
+  // Se houver mais de um número de 6 dígitos, prefira o último: timestamps/IDs
+  // de template costumam aparecer antes do corpo principal do e-mail.
+  return matches.at(-1);
 }
 
 function extractResetLink(message) {
