@@ -1,0 +1,100 @@
+{
+  "name": "CuradoriaCustoGrupo",
+  "type": "object",
+  "properties": {
+    "grupo_chave": {
+      "type": "string",
+      "description": "Identidade determin\u00edstica do grupo vivo de curadoria."
+    },
+    "tipo_pendencia": {
+      "type": "string",
+      "enum": [
+        "ingrediente_sem_preco",
+        "referencia_ingrediente",
+        "outro"
+      ]
+    },
+    "nome": {
+      "type": "string"
+    },
+    "ingrediente_origem_id": {
+      "type": "string"
+    },
+    "contexto": {
+      "type": "string"
+    },
+    "workflow_status": {
+      "type": "string",
+      "enum": [
+        "nao_analisado",
+        "em_analise",
+        "decisao_pendente",
+        "mantido_pendente",
+        "resolvido"
+      ],
+      "default": "nao_analisado"
+    },
+    "prioridade": {
+      "type": "string",
+      "enum": [
+        "alta",
+        "media",
+        "baixa"
+      ],
+      "default": "media"
+    },
+    "impacto_receitas": {
+      "type": "number"
+    },
+    "impacto_ocorrencias": {
+      "type": "number"
+    },
+    "ultima_decisao": {
+      "type": "string"
+    },
+    "observacao": {
+      "type": "string"
+    },
+    "assinatura_fila": {
+      "type": "string"
+    },
+    "visto_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolvido_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "atualizado_por_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "grupo_chave",
+    "tipo_pendencia",
+    "workflow_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
