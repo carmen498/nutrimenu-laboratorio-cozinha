@@ -18,10 +18,11 @@ import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from "../../shared/statusMercadoPago.ts";
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v3-2026-08-22-minimizacao-dados";
+const VERSAO_CODIGO = "webhook-v4-2026-08-23-homologacao-prod";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -120,33 +121,11 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ received: true });
     }
 
-    let novoStatus: string | null = null;
-    if (recursoTipo === "order") {
-      // Fluxo de cartão (Orders API) — lógica inalterada.
-      const paymentStatus = recurso.transactions?.payments?.[0]?.status;
-      if (recurso.status === "processed") {
-        novoStatus = "approved";
-      } else if (paymentStatus === "refunded") {
-        novoStatus = "estornado";
-      } else if (recurso.status === "canceled" || paymentStatus === "cancelled") {
-        novoStatus = "cancelled";
-      } else if (paymentStatus === "rejected") {
-        novoStatus = "rejected";
-      }
-    } else {
-      // Fluxo de payment direto (ex: PIX) — status já vem direto no recurso.
-      if (recurso.status === "approved") {
-        novoStatus = "approved";
-      } else if (recurso.status === "rejected") {
-        novoStatus = "rejected";
-      } else if (recurso.status === "refunded") {
-        novoStatus = "estornado";
-      } else if (recurso.status === "cancelled") {
-        novoStatus = "cancelled";
-      }
-    }
+    const novoStatus = recursoTipo === "order"
+      ? resolverStatusOrderMercadoPago(recurso)
+      : resolverStatusPaymentMercadoPago(recurso);
 
-    if (!novoStatus) {
+    if (novoStatus === "pending") {
       console.log(`Status do ${recursoTipo} ainda não é final:`, recurso.status);
       await registrarLog({ assinatura_valida: true, resultado: "status_nao_final", pagamento_id: pagamentoId });
       return Response.json({ received: true });
@@ -170,7 +149,12 @@ export default async function(req: Request): Promise<Response> {
       // Estorno reverte um acesso que já havia sido concedido — revoga o plano do
       // usuário. "rejected"/"cancelled" são tentativas que nunca ativaram nada.
       if (novoStatus === "estornado") {
-        await revogarAcessoEstorno(base44, pagamento.usuario_id);
+        const revogacao = await revogarAcessoEstorno(base44, pagamento);
+        console.log("Resultado da revogação por estorno", {
+          pagamento_id: pagamento.id,
+          revogado: revogacao.revogado,
+          motivo: revogacao.motivo,
+        });
       }
 
       // Dispara o e-mail transacional de pagamento recusado/estornado, apenas se o
