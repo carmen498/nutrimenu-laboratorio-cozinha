@@ -96,7 +96,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
           ordem: maxOrdem + 10,
         });
 
-        const { children, rendimentoEfetivo, rendimentoEstimado, diagnostico } = await explodeSubreceita(selected, qtdPorPorcao);
+        const { children, rendimentoEfetivo, rendimentoEstimado, diagnostico } = await explodeSubreceita(selected, qtdPorPorcao, { pilhaInicial: [receitaId] });
         let nextOrdem = maxOrdem + 11;
         for (const child of children) {
           await criarIngredienteReceita({
