@@ -5,7 +5,7 @@
 // e rendimentoEfetivo (custoReceita.js) — garante paridade total com o resto do app.
 // Documento de USO INTERNO: nunca inclui markup ou preço de venda.
 import { rendimentoEfetivo } from "@/lib/custoReceita";
-import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 
 function fmtKg(v) {
   return (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -27,7 +27,7 @@ function fmtPeso(g) {
 function montarDetalheIngredientes(cr, receitaMap, ingredientesPorReceita, ingredienteMap) {
   const receita = receitaMap[cr.receita_id];
   if (!receita) return null;
-  const ingrs = (ingredientesPorReceita[cr.receita_id] || []).filter((i) => i.tipo === "ingrediente");
+  const ingrs = (ingredientesPorReceita[cr.receita_id] || []).filter((i) => i.tipo === "ingrediente" && itemParticipaCompra(i));
   if (ingrs.length === 0) return null;
 
   const rend = rendimentoEfetivo(receita, ingredientesPorReceita[cr.receita_id] || []);
