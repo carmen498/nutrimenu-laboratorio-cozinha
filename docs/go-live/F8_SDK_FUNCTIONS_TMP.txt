@@ -1,0 +1,6 @@
+node_modules/@base44/sdk/dist/modules/functions.types.d.ts:36: * This module allows you to invoke the custom backend functions defined in the app.
+node_modules/@base44/sdk/dist/modules/functions.types.d.ts:42: * - **Anonymous or User authentication** (`base44.functions`): Functions are invoked with the current user's permissions. Anonymous users invoke functions without authentication, while authenticated users invoke functions with their authentication context.
+node_modules/@base44/sdk/dist/modules/entities.types.d.ts:21: * Callback function invoked when a realtime event occurs.
+node_modules/@base44/sdk/dist/modules/functions.js:7: * @returns Functions module with methods to invoke custom backend functions
+node_modules/@base44/sdk/dist/modules/functions.js:64:            return axios.post(`/apps/${appId}/functions/${functionName}`, formData || data, { headers: { "Content-Type": contentType } });
+node_modules/@base44/sdk/dist/modules/functions.d.ts:9: * @returns Functions module with methods to invoke custom backend functions
