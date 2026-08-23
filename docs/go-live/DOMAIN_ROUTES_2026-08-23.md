@@ -83,10 +83,15 @@ O domínio próprio expõe o endpoint Base44 usado pelo fluxo de recuperação. 
 
 As páginas `/forgot-password` e `/reset-password` respondem 200 como deep links.
 
-Pendente para Fase 9: E2E humano com e-mail realmente recebido, abertura do link, troca de senha, rejeição da senha antiga, reutilização e expiração do token.
+A Fase 9 executou E2E real com caixa temporária descartável: OTP entregue, login, pedido de reset, e-mail recebido, link real aberto, senha trocada, senha antiga rejeitada, senha nova aceita e reutilização do token rejeitada.
+
+O ensaio revelou que o e-mail nativo da Base44 aponta para o subdomínio padrão `laborat-rio-de-cozinha.base44.app/reset-password`. O source atual agora canonicaliza esse acesso imediatamente para `https://laboratoriodecozinha.com.br/reset-password`, preservando o token até o bootstrap seguro no domínio próprio.
+
+Pendente literal da Fase 9: publicação dessa correção, OAuth Google humano e teste de um token após ultrapassar sua validade real de 1 hora.
 
 Status estrutural: VERDE.
-Status E2E real: PENDENTE FASE 9.
+Status E2E de reset: VERDE.
+Status de canonicalização em produção: PENDENTE PUBLICAÇÃO.
 
 ## 6. Google OAuth
 
