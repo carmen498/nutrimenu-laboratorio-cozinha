@@ -170,11 +170,6 @@ Deno.serve(async (req) => {
     const receitasSlice = receitas.slice(pular, pular + 15);
     log.push(`📋 Processando ${receitasSlice.length} receitas (pular=${pular}, total=${receitas.length})`);
 
-    // Load all ingredients for price lookup
-    const todosIngredientes = await base44.asServiceRole.entities.Ingrediente.list("-nome", 1000);
-    const ingMap = {};
-    for (const ing of todosIngredientes) ingMap[ing.id] = ing;
-
     let totalConvertidas = 0;
     let totalItens = 0;
     let processadas = 0;
