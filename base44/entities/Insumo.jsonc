@@ -29,6 +29,16 @@
     "preco_unitario": {
       "type": "number",
       "description": "Pre\u00e7o por unidade de medida em R$ \u2014 calculado automaticamente (preco_embalagem / quantidade_embalagem), mas pode ser ajustado manualmente"
+    },
+    "comportamento_custo_padrao": {
+      "type": "string",
+      "enum": [
+        "por_lote",
+        "proporcional",
+        "por_unidade"
+      ],
+      "default": "por_lote",
+      "description": "Comportamento de custo sugerido ao vincular o insumo a uma receita ou card\u00e1pio"
     }
   },
   "required": [
