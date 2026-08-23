@@ -199,15 +199,16 @@ export default function AuditoriaSubreceitas() {
         status = "origem_ausente";
       } else {
         try {
-          const atual = calcularAssinatura(source.id, marker.receita_id);
+          const atual = calcularEstadoEsperado(source.id, marker.receita_id, marker.quantidade_por_porcao);
           assinaturaAtual = atual.valor;
           dependencias = atual.dependencias.size;
           ultimaComposicaoEm = atual.ultimaComposicaoEm || "";
           const sincronizadaMs = marker.subreceita_sincronizada_em ? Date.parse(marker.subreceita_sincronizada_em) : 0;
           composicaoMudouDepois = atual.ultimaComposicaoMs > (Number.isFinite(sincronizadaMs) ? sincronizadaMs : 0);
-          if (filhos.length === 0) status = cacheAssinatura === assinaturaAtual ? "a_validar" : "pendente";
-          else if (!cacheAssinatura || !cacheV2) status = "a_validar";
-          else status = cacheAssinatura === assinaturaAtual && !composicaoMudouDepois ? "sincronizada" : "desatualizada";
+          const cacheConteudoAtual = assinaturaConteudoCache(filhos) === atual.assinaturaConteudoEsperado;
+          if (filhos.length === 0) status = "pendente";
+          else if (!cacheV2) status = "a_validar";
+          else status = cacheConteudoAtual ? "sincronizada" : "desatualizada";
         } catch (e) {
           status = e?.code === "CICLO" ? "erro_ciclo" : "origem_ausente";
           erro = e?.message || "Erro de linhagem";
