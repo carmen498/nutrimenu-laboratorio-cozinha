@@ -14,6 +14,40 @@ const assinatura = (deps) => [...deps.entries()]
   .map(([id, data]) => `${id}@${data || "sem-data"}`)
   .join("|");
 
+const rendimentoOperacional = (receita, itens) => {
+  const informado = Number(receita?.peso_pos_preparo_total) > 0
+    ? Number(receita.peso_pos_preparo_total)
+    : (Number(receita?.rendimento_total) > 0 ? Number(receita.rendimento_total) : 0);
+  if (informado > 0) return informado;
+  const porcoes = Number(receita?.porcoes_base) > 0 ? Number(receita.porcoes_base) : 1;
+  const total = (itens || [])
+    .filter((item) => item.tipo !== "grupo" && !item.subreceita_parent_id)
+    .reduce((soma, item) => soma + (Number(item.quantidade_por_porcao) || 0) * porcoes, 0);
+  return total > 0 ? total : 1;
+};
+
+const numeroCache = (v) => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n.toFixed(10) : "0.0000000000";
+};
+
+const chaveCacheAtomico = (item) => [
+  String(item?.subreceita_origem_receita_id || "").trim(),
+  String(item?.subreceita_origem_item_id || "").trim(),
+  String(item?.ingrediente_id || "").trim(),
+  numeroCache(item?.quantidade_por_porcao),
+  String(item?.unidade_quantidade || "").trim(),
+  String(item?.pre_preparo || "").trim(),
+  item?.proporcional === false ? "0" : "1",
+  numeroCache(item?.fator_correcao_override),
+  String(item?.medida_caseira_id || "").trim(),
+  numeroCache(item?.quantidade_medida_caseira),
+  String(item?.medida_caseira || "").trim(),
+  String(item?.subreceita_linhagem || "").trim(),
+].join("~");
+
+const assinaturaConteudoCache = (lista) => (lista || []).map(chaveCacheAtomico).sort().join("||");
+
 const STATUS_LABEL = {
   sincronizada: "Sincronizada",
   desatualizada: "Desatualizada",
