@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { calcularCustoCardapio } from "@/lib/custoCardapio";
+import { carregarContextoCustosReceitas } from "@/lib/custoContexto";
+import { useAuth } from "@/lib/AuthContext";
 import { montarOrcamento } from "@/lib/orcamentoCalc";
 import { gerarOrcamentoPDF } from "@/lib/orcamentoPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
@@ -17,12 +19,17 @@ import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 export default function OrcamentoCardapio() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const [cardapio, setCardapio] = useState(null);
   const [receitas, setReceitas] = useState([]);
   const [insumos, setInsumos] = useState([]);
   const [receitaMap, setReceitaMap] = useState({});
   const [ingredientesPorReceita, setIngredientesPorReceita] = useState({});
+  const [ingredienteMap, setIngredienteMap] = useState({});
+  const [insumosPorReceita, setInsumosPorReceita] = useState({});
+  const [esquecidosPorReceita, setEsquecidosPorReceita] = useState({});
   const [loading, setLoading] = useState(true);
   const [obsComercial, setObsComercial] = useState("");
   const [validadeDias, setValidadeDias] = useState(10);
@@ -45,14 +52,13 @@ export default function OrcamentoCardapio() {
     setReceitaMap(rMap);
 
     const receitaIds = [...new Set((recs || []).map((r) => r.receita_id).filter(Boolean))];
-    const ingredientesArrays = await Promise.all(
-      receitaIds.map((rid) => base44.entities.IngredienteReceita.filter({ receita_id: rid }, "ordem", 200))
-    );
-    const ingredientesMap = {};
-    receitaIds.forEach((rid, i) => { ingredientesMap[rid] = ingredientesArrays[i] || []; });
-    setIngredientesPorReceita(ingredientesMap);
+    const contexto = await carregarContextoCustosReceitas({ receitaIds, userId: user?.id, isAdmin });
+    setIngredientesPorReceita(contexto.ingredientesPorReceita);
+    setIngredienteMap(contexto.ingredienteMap);
+    setInsumosPorReceita(contexto.insumosPorReceita);
+    setEsquecidosPorReceita(contexto.esquecidosPorReceita);
     setLoading(false);
-  }, [id]);
+  }, [id, user?.id, isAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -61,8 +67,18 @@ export default function OrcamentoCardapio() {
 
   const calcs = useMemo(() => {
     if (!cardapio) return null;
-    return calcularCustoCardapio({ receitas, receitaMap, ingredientesPorReceita, insumos, num, markup });
-  }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, markup]);
+    return calcularCustoCardapio({
+      receitas,
+      receitaMap,
+      ingredientesPorReceita,
+      insumos,
+      num,
+      markup,
+      ingredienteMap,
+      insumosPorReceita,
+      esquecidosPorReceita,
+    });
+  }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, markup, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
   const orc = useMemo(() => {
     if (!cardapio || !calcs) return null;
