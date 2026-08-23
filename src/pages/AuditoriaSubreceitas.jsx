@@ -195,6 +195,7 @@ export default function AuditoriaSubreceitas() {
       let erro = "";
       let composicaoMudouDepois = false;
       let ultimaComposicaoEm = "";
+      let assinaturaMetadadosDesatualizada = false;
       if (!source) {
         status = "origem_ausente";
       } else {
@@ -202,6 +203,7 @@ export default function AuditoriaSubreceitas() {
           const atual = calcularEstadoEsperado(source.id, marker.receita_id, marker.quantidade_por_porcao);
           assinaturaAtual = atual.valor;
           dependencias = atual.dependencias.size;
+          assinaturaMetadadosDesatualizada = !!cacheAssinatura && cacheAssinatura !== assinaturaAtual;
           ultimaComposicaoEm = atual.ultimaComposicaoEm || "";
           const sincronizadaMs = marker.subreceita_sincronizada_em ? Date.parse(marker.subreceita_sincronizada_em) : 0;
           composicaoMudouDepois = atual.ultimaComposicaoMs > (Number.isFinite(sincronizadaMs) ? sincronizadaMs : 0);
@@ -240,6 +242,7 @@ export default function AuditoriaSubreceitas() {
         erro,
         composicaoMudouDepois,
         ultimaComposicaoEm,
+        assinaturaMetadadosDesatualizada,
         markerModeloLegado,
         markerSemCache,
         cacheParentReceitaDivergente,
@@ -262,6 +265,7 @@ export default function AuditoriaSubreceitas() {
       sincronizadas: rows.filter((r) => r.status === "sincronizada").length,
       desatualizadas: rows.filter((r) => r.status === "desatualizada").length,
       composicaoAlterada: rows.filter((r) => r.status === "desatualizada" && r.composicaoMudouDepois).length,
+      metadadosDesatualizados: rows.filter((r) => r.status === "sincronizada" && r.assinaturaMetadadosDesatualizada).length,
       revisar: rows.filter((r) => ["a_validar", "pendente"].includes(r.status)).length,
       erros: rows.filter((r) => ["erro_ciclo", "origem_ausente"].includes(r.status)).length,
       markersModeloLegado: rows.filter((r) => r.markerModeloLegado).length,
@@ -334,7 +338,7 @@ export default function AuditoriaSubreceitas() {
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
         <Card className="p-3"><p className="text-xs text-muted-foreground">Marcadores</p><p className="text-xl font-bold">{diagnostico.total}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Filhos de cache</p><p className="text-xl font-bold">{diagnostico.filhosCache}</p></Card>
-        <Card className="p-3"><p className="text-xs text-muted-foreground">Sincronizadas</p><p className="text-xl font-bold text-primary">{diagnostico.sincronizadas}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Sincronizadas</p><p className="text-xl font-bold text-primary">{diagnostico.sincronizadas}</p><p className="text-[10px] text-muted-foreground">metadados a atualizar: {diagnostico.metadadosDesatualizados}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Desatualizadas</p><p className="text-xl font-bold text-amber-700">{diagnostico.desatualizadas}</p><p className="text-[10px] text-muted-foreground">composição: {diagnostico.composicaoAlterada}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Marcador legado</p><p className="text-xl font-bold text-amber-600">{diagnostico.markersModeloLegado}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Sem cache</p><p className="text-xl font-bold text-amber-600">{diagnostico.markersSemCache}</p></Card>
@@ -377,6 +381,7 @@ export default function AuditoriaSubreceitas() {
                 <p className="font-medium truncate" title={row.source?.nome || row.marker.subreceita_id}>{row.source?.nome || row.marker.subreceita_nome || "Origem ausente"}</p>
                 {row.erro && <p className="text-[10px] text-destructive truncate" title={row.erro}>{row.erro}</p>}
                 {row.status === "desatualizada" && row.composicaoMudouDepois && <p className="text-[10px] text-amber-700 truncate" title={row.ultimaComposicaoEm}>Composição alterada após a última sincronização</p>}
+                {row.status === "sincronizada" && row.assinaturaMetadadosDesatualizada && <p className="text-[10px] text-muted-foreground truncate">Assinatura será normalizada sem rebuild</p>}
                 {row.problemasEstruturais.length > 0 && <p className="text-[10px] text-amber-700 truncate" title={row.problemasEstruturais.join(" · ")}>{row.problemasEstruturais.join(" · ")}</p>}
               </div>
               <div><Badge variant={row.status === "sincronizada" ? "outline" : "secondary"} className="text-[10px]">{STATUS_LABEL[row.status] || row.status}</Badge></div>
