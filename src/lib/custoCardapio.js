@@ -9,13 +9,22 @@ export function quantidadeAoVivo(cr, num) {
   return (Number(cr?.per_capita_g) || 0) * (Number(num) || 0);
 }
 
-export function custoAoVivo(cr, receitaMap, ingredientesPorReceita, num, contexto = {}) {
+export function custoAoVivo(cr, receitaMap, ingredientesPorReceita, num, contexto = null) {
   const rec = receitaMap?.[cr?.receita_id];
   if (!rec) return 0;
   const receitaId = cr.receita_id;
   const ingredientes = ingredientesPorReceita?.[receitaId] || [];
-  return custoEscalado(rec, ingredientes, quantidadeAoVivo(cr, num), {
-    ingredienteMap: contexto.ingredienteMap || {},
+  const quantidade = quantidadeAoVivo(cr, num);
+
+  // Sem contexto canônico explicitamente carregado, preservar o fallback de
+  // compatibilidade pelo cache da Receita em vez de recalcular com mapas vazios
+  // e transformar um custo existente em zero.
+  if (!contexto?.ingredienteMap) {
+    return custoEscalado(rec, ingredientes, quantidade, null);
+  }
+
+  return custoEscalado(rec, ingredientes, quantidade, {
+    ingredienteMap: contexto.ingredienteMap,
     insumosReceita: contexto.insumosPorReceita?.[receitaId] || [],
     esquecidos: contexto.esquecidosPorReceita?.[receitaId] || [],
     unidadesFinais: Number(num) || 1,
@@ -32,8 +41,11 @@ export function calcularCustoCardapio({
   ingredienteMap = {},
   insumosPorReceita = {},
   esquecidosPorReceita = {},
+  contextoCanonicoCarregado = false,
 }) {
-  const contexto = { ingredienteMap, insumosPorReceita, esquecidosPorReceita };
+  const contexto = contextoCanonicoCarregado
+    ? { ingredienteMap, insumosPorReceita, esquecidosPorReceita }
+    : null;
   const receitasView = (receitas || []).map((r) => ({
     ...r,
     quantidade_total_g: quantidadeAoVivo(r, num),
