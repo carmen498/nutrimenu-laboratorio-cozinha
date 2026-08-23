@@ -77,6 +77,7 @@ export default function FichaCustosCardapio() {
       ingredienteMap,
       insumosPorReceita,
       esquecidosPorReceita,
+      contextoCanonicoCarregado: true,
     });
   }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
@@ -88,7 +89,7 @@ export default function FichaCustosCardapio() {
     });
   }, [cardapio, num, calcs, receitaMap, ingredientesPorReceita, ingredienteMap, abrirIngredientes]);
 
-  if (!cardapio || !relatorio) {
+  if (!cardapio || (receitaIds.length > 0 && !contextoCustos) || !relatorio) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-primary/20 border-t-primary rounded-full animate-spin" /></div>;
   }
 
