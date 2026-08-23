@@ -2,18 +2,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { hojeSaoPauloISO } from "../../shared/acessoAssinatura.ts";
+import { calcularExpiracaoInclusiva } from "../../shared/datasAssinatura.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Bem-vindo(a) ao Laboratório de Cozinha";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
 <p>Seu período de teste gratuito já começou. Explore receitas, cardápios e a gestão de custos da sua cozinha.</p>`;
-
-function somarDiasISO(dataISO: string, dias: number): string {
-  const [ano, mes, dia] = dataISO.split("-").map(Number);
-  const data = new Date(Date.UTC(ano, mes - 1, dia));
-  data.setUTCDate(data.getUTCDate() + dias);
-  return data.toISOString().split("T")[0];
-}
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -43,9 +37,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const dataInicio = hojeSaoPauloISO();
-    // A data_expiracao é inclusiva no motor de acesso. Para 7 dias civis de trial,
-    // o último dia válido é data_inicio + 6 dias.
-    const dataExpiracao = somarDiasISO(dataInicio, 6);
+    const dataExpiracao = calcularExpiracaoInclusiva(dataInicio, 7);
 
     await base44.asServiceRole.entities.User.update(user.id, {
       plano_atual: "trial",
