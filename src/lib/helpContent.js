@@ -109,7 +109,7 @@ export const helpContent = {
     { q: "Como importo ingredientes em lote?", a: "Via CSV, no formato padrão: categoria, nome, unidade de compra, peso da embalagem, preço, Fator de Correção." },
     { q: "O que significa 'nunca atualizado' ou uma data em laranja/vermelho?", a: "Indica que o preço não é atualizado há mais de 90 dias — vale revisar." },
     { q: "As categorias de ingredientes são fixas?", a: "Sim — categorias fixas, mantendo a organização consistente em todo o app." },
-    { q: "Como excluo ou edito um ingrediente?", a: "Usuários comuns podem editar apenas seus dados pessoais de compra, preço e fornecedor. Alterações estruturais, exclusão e fusão de Ingredientes mestres ficam restritas à administração do Laboratório." }
+    { q: "Como excluo ou edito um ingrediente?", a: "Usuários comuns podem editar apenas seus dados pessoais de compra, preço e fornecedor. Alterações estruturais, exclusão e fusão de Ingredientes mestres ficam restritas à administração do Laboratório." },
     { q: "Como favorito um ingrediente?", a: "Clique na estrela ☆ ao lado do ingrediente na lista. Favorito é apenas um marcador de acesso rápido e é separado de 'Meus Ingredientes'." },
     { q: "O que é 'Meus Ingredientes'?", a: "É a sua lista de ingredientes do catálogo do Laboratório que já possuem dados pessoais seus, como preço, embalagem ou fornecedor. O Ingrediente mestre continua intacto; a tela combina a base técnica com as suas informações particulares." },
     { q: "Marcar como favorito faz o ingrediente entrar em 'Meus Ingredientes'?", a: "Não. Favoritos e Meus Ingredientes são conceitos diferentes. O ingrediente só aparece em Meus Ingredientes quando possui dados pessoais de compra, preço ou fornecedor salvos por você." },
