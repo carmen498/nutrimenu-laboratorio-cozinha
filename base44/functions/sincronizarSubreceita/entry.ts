@@ -542,14 +542,17 @@ Deno.serve(async (req) => {
     const markers = (itens || []).filter((i: any) => i.tipo === 'subreceita' && i.subreceita_id);
     const resultados: any[] = [];
     let ignoradosSincronizados = 0;
+    let metadadosAtualizados = 0;
     for (const marker of markers) {
       const analise = analisarMarker(marker);
-      if (analise.status === 'sincronizada') {
+      if (analise.status === 'sincronizada' && !metadadosPrecisamAtualizar(marker, analise)) {
         ignoradosSincronizados++;
         continue;
       }
       try {
-        resultados.push(await sincronizar(marker));
+        const resultado = await sincronizar(marker);
+        if (resultado?.metadados_atualizados) metadadosAtualizados++;
+        resultados.push(resultado);
       } catch (error: any) {
         resultados.push({ marker_id: marker.id, status: 'erro', error: error.message });
       }
@@ -558,6 +561,7 @@ Deno.serve(async (req) => {
     return Response.json({
       total_markers: markers.length,
       sincronizados_ja_atualizados: ignoradosSincronizados,
+      metadados_atualizados: metadadosAtualizados,
       processados: resultados.length,
       resultados,
     });
