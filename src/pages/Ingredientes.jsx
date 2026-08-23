@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -157,7 +158,7 @@ export default function Ingredientes() {
     return [...set].sort();
   }, [ingredientes]);
 
-  const favoritarMut = useMutation({
+  const favoritarMut = useMutationAny({
     mutationFn: ({ id, favorito }) => salvarFavoritoIngrediente({
       ingredienteId: id,
       userId: user?.id,
@@ -214,9 +215,8 @@ export default function Ingredientes() {
   // Helpers for price freshness
   const diasDesdeAtualizacao = (ing) => {
     if (!ing.preco_atualizado_em) return null;
-    const atualizado = new Date(ing.preco_atualizado_em);
-    const agora = new Date();
-    return Math.floor((agora - atualizado) / (1000 * 60 * 60 * 24));
+    const atualizado = new Date(ing.preco_atualizado_em).getTime();
+    return Math.floor((Date.now() - atualizado) / (1000 * 60 * 60 * 24));
   };
 
   const isDesatualizado = (ing) => {
