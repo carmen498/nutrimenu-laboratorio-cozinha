@@ -96,26 +96,49 @@ export const helpContent = {
     { q: "Existe limite de quantos cardápios posso personalizar?", a: "Não, você pode ter quantas cópias pessoais quiser." }
   ]
 },
-   "Ingredientes": {
-  context: "Cada ingrediente aqui carrega um preço vivo — a base sobre a qual todo o app calcula custo. Não é uma lista de compras: é a fonte da verdade que sustenta o custo de cada receita, cardápio e orçamento. Manter os preços em dia aqui é o que garante que tudo o mais no app esteja certo.",
+ "Ingredientes": {
+  context: "Cada ingrediente parte de um cadastro técnico do Laboratório, compartilhado por todos os usuários. Sobre essa base, cada usuário pode registrar seus próprios dados de compra — como preço, embalagem e fornecedor — sem alterar o ingrediente original. Esses dados pessoais alimentam os cálculos de custo das suas receitas, cardápios, listas de compras e orçamentos. Por isso, manter Meus Ingredientes atualizados é o que aproxima os custos do app da sua realidade de compra.",
+
   faqs: [
-    { q: "Como cadastro um ingrediente novo?", a: "O catálogo mestre de Ingredientes é administrado pelo Laboratório. O usuário personaliza os ingredientes existentes com seus próprios dados de compra, preço e fornecedor, sem alterar a base compartilhada." },
-    { q: "Como edito o preço de um ingrediente?", a: "Clique no ingrediente e informe seu preço, embalagem ou fornecedor. Para usuários comuns, esses dados ficam salvos apenas no seu cadastro pessoal e não alteram o Ingrediente mestre do Laboratório." },
-    { q: "O que é o Fator de Correção (FC)?", a: "É a relação entre o peso bruto comprado e o peso líquido utilizável — por exemplo, 1 kg comprado para 800 g limpos corresponde a FC 1,25. O FC faz parte do cadastro técnico mestre do ingrediente e não é alterado pelo usuário comum." },
-    { q: "O que são Sinônimos de um ingrediente?", a: "Termos alternativos (ex.: 'espaguete' e 'talharin') que ajudam o app a reconhecer o ingrediente em buscas e em textos colados para criar receitas." },
-    { q: "Como fundir dois ingredientes duplicados?", a: "Esta funcionalidade ajuda a substituir ingredientes 'ditos semelhantes' em lote — todas as receitas que usam o ingrediente a ser eliminado são sinalizadas na tela antes da confirmação, para você conferir com segurança. Abra a Ficha do ingrediente a eliminar, clique em 'Fundir com outro ingrediente', escolha o destino e confirme. O sistema substitui automaticamente em todas as receitas, mantendo as quantidades originais, e exclui o duplicado do cadastro. Funciona mesmo com ingredientes usados em centenas de receitas." },
-    { q: "Como atualizo o preço de vários ingredientes de uma vez (manual)?", a: "Em 'Mais', clique em 'Atualizar preços', escolha uma categoria, revise os preços sugeridos (fonte e variação %) e clique em 'Aceitar selecionados' ou 'Aceitar todos'. Atenção: esse recurso busca preços via IA web e consome créditos do app a cada execução — use com critério." },
-    { q: "O que é a Atualização Automática de Preços?", a: "Busca preços de mercado via IA web, uma vez por semana. Fica DESLIGADA por padrão e consome créditos — ative só com critério." },
-    { q: "Como importo ingredientes em lote?", a: "Via CSV, no formato padrão: categoria, nome, unidade de compra, peso da embalagem, preço, Fator de Correção." },
-    { q: "O que significa 'nunca atualizado' ou uma data em laranja/vermelho?", a: "Indica que o preço não é atualizado há mais de 90 dias — vale revisar." },
-    { q: "As categorias de ingredientes são fixas?", a: "Sim — categorias fixas, mantendo a organização consistente em todo o app." },
-    { q: "Como excluo ou edito um ingrediente?", a: "Usuários comuns podem editar apenas seus dados pessoais de compra, preço e fornecedor. Alterações estruturais, exclusão e fusão de Ingredientes mestres ficam restritas à administração do Laboratório." },
-    { q: "Como favorito um ingrediente?", a: "Clique na estrela ☆ ao lado do ingrediente na lista. Favorito é apenas um marcador de acesso rápido e é separado de 'Meus Ingredientes'." },
-    { q: "O que é 'Meus Ingredientes'?", a: "É a sua lista de ingredientes do catálogo do Laboratório que já possuem dados pessoais seus, como preço, embalagem ou fornecedor. O Ingrediente mestre continua intacto; a tela combina a base técnica com as suas informações particulares." },
-    { q: "Marcar como favorito faz o ingrediente entrar em 'Meus Ingredientes'?", a: "Não. Favoritos e Meus Ingredientes são conceitos diferentes. O ingrediente só aparece em Meus Ingredientes quando possui dados pessoais de compra, preço ou fornecedor salvos por você." },
-    { q: "Como vejo em quais receitas um ingrediente é usado?", a: "Abra a Ficha do ingrediente — a seção 'Usado em X receitas' lista cada receita, com a quantidade, o custo e o % que aquele ingrediente representa no custo total dela." },
-    { q: "Como gero um relatório PDF de ingredientes?", a: "Menu 'Mais' → 'PDF de ingredientes' → 'Todos' ou 'Categoria atual'." },
-    { q: "Como uso o Carrinho a partir daqui?", a: "Clique no ícone de carrinho ao lado do ingrediente para adicionar 1 embalagem à lista de reposição." }
+    { q: "Como cadastro um ingrediente novo?", a: "O catálogo de ingredientes é uma base técnica compartilhada do Laboratório. Por isso, a criação de novos ingredientes no cadastro-mãe é feita pela administração. O usuário trabalha com os ingredientes existentes e pode personalizar seus próprios dados de compra, preço, embalagem e fornecedor." },
+
+    { q: "Como edito o preço de um ingrediente?", a: "Abra o ingrediente e informe o preço da embalagem, peso ou volume comprado e, se desejar, o fornecedor. Esses dados ficam vinculados somente à sua conta. O sistema calcula automaticamente o preço proporcional por g ou mL e passa a utilizar seu valor pessoal nos cálculos de custo." },
+
+    { q: "O que é o Fator de Correção (FC)?", a: "O Fator de Correção relaciona o peso bruto comprado ao peso líquido realmente utilizável. Exemplo: se 1 kg de um alimento comprado resulta em 800 g após limpeza, o FC é 1,25. Como é uma característica técnica do ingrediente, o FC pertence ao cadastro-mãe do Laboratório e não é alterado individualmente pelo usuário." },
+
+    { q: "O que são Sinônimos de um ingrediente?", a: "São nomes alternativos usados para facilitar buscas e reconhecimento de ingredientes. Por exemplo, um mesmo alimento pode ser conhecido por diferentes nomes ou grafias. Os sinônimos ajudam o sistema a localizar corretamente o ingrediente sem criar cadastros duplicados." },
+
+    { q: "Como fundir dois ingredientes duplicados?", a: "A fusão é uma operação administrativa sobre o catálogo-mãe. Ela permite substituir um ingrediente duplicado pelo cadastro correto, preservando os vínculos com receitas. Como a alteração afeta toda a base compartilhada, essa função é restrita à administração." },
+
+    { q: "Como atualizo o preço de vários ingredientes de uma vez?", a: "A atualização em lote do catálogo é uma função administrativa. Para o usuário, os preços pessoais são atualizados diretamente na ficha de cada ingrediente, permitindo registrar os valores efetivamente pagos por você, sem modificar os preços de outros usuários." },
+
+    { q: "O que é a Atualização Automática de Preços?", a: "É um recurso administrativo utilizado para pesquisar e atualizar referências de mercado do catálogo. Ele não substitui o preço pessoal do usuário. O valor utilizado na sua realidade de compra continua sendo aquele registrado por você em Meus Ingredientes, quando houver." },
+
+    { q: "Como importo ingredientes em lote?", a: "A importação em lote altera o catálogo técnico compartilhado e, por isso, é uma função administrativa. O usuário comum não precisa importar ingredientes para personalizar preços ou fornecedores: basta utilizar os ingredientes existentes no catálogo." },
+
+    { q: "O que significa 'nunca atualizado' ou uma data em laranja/vermelho?", a: "É um alerta de atualização de preço. Ele indica que aquele valor ainda não possui uma data de atualização registrada ou que já está há muito tempo sem revisão. Serve como lembrete para conferir se o preço ainda corresponde à realidade de compra." },
+
+    { q: "As categorias de ingredientes são fixas?", a: "Sim. As categorias pertencem à organização do catálogo-mãe e são padronizadas para manter a mesma estrutura em todo o Laboratório. O usuário pode personalizar seus dados comerciais, mas não altera a classificação técnica do ingrediente." },
+
+    { q: "Como excluo ou edito um ingrediente?", a: "Há dois tipos de alteração. O usuário pode editar seus próprios dados de compra, como preço, embalagem e fornecedor. Já alterações estruturais — nome, categoria, FC, exclusão ou fusão — pertencem ao cadastro-mãe e ficam restritas à administração." },
+
+    { q: "Como favorito um ingrediente?", a: "Clique na estrela ☆ ao lado do ingrediente. O favorito é apenas um atalho pessoal de consulta. Ele permite encontrar rapidamente os ingredientes que você usa ou consulta com mais frequência, sem alterar nenhum dado do ingrediente." },
+
+    { q: "O que é 'Meus Ingredientes'?", a: "É a área que reúne os ingredientes do catálogo para os quais você já possui dados pessoais de compra. Um ingrediente passa a aparecer em Meus Ingredientes quando você registra informações como preço, embalagem, fornecedor ou outros dados comerciais próprios. O cadastro técnico original continua intacto." },
+
+    { q: "Marcar como favorito faz o ingrediente entrar em 'Meus Ingredientes'?", a: "Não. Favoritos e Meus Ingredientes são independentes. Favoritar significa apenas marcar um ingrediente para acesso rápido. Para aparecer em Meus Ingredientes, ele precisa possuir dados pessoais de compra registrados por você." },
+
+    { q: "Um ingrediente pode estar em Favoritos e em Meus Ingredientes ao mesmo tempo?", a: "Sim. Você pode ter, por exemplo, a farinha de trigo com seu preço e fornecedor cadastrados em Meus Ingredientes e também marcá-la como Favorita por utilizá-la com frequência." },
+
+    { q: "Se eu alterar o preço de um ingrediente, isso muda para outros usuários?", a: "Não. Seu preço, embalagem e fornecedor são dados pessoais. Eles ficam associados somente à sua conta. O ingrediente-mãe e os dados dos demais usuários permanecem inalterados." },
+
+    { q: "Se o Laboratório atualizar o ingrediente-mãe, eu perco meus dados pessoais?", a: "Não. A base técnica e seus dados comerciais são camadas diferentes. O Laboratório pode corrigir ou aperfeiçoar informações técnicas do ingrediente sem apagar seu preço, embalagem ou fornecedor pessoal." },
+
+    { q: "Como vejo em quais receitas um ingrediente é usado?", a: "Abra a ficha do ingrediente. A seção de utilização mostra as receitas em que ele aparece, permitindo entender onde aquele ingrediente participa dos cálculos e quais preparações dependem dele." },
+
+    { q: "Como gero um relatório PDF de ingredientes?", a: "Na tela Ingredientes, abra 'Mais' → 'PDF de ingredientes'. Você pode gerar o relatório de todos os ingredientes ou da categoria selecionada. Os dados apresentados respeitam a visão disponível para a sua conta." },
+
+    { q: "Como uso o Carrinho a partir daqui?", a: "Clique no ícone de carrinho ao lado do ingrediente para adicioná-lo à sua lista de reposição. O Carrinho é independente de Favoritos e Meus Ingredientes: ele representa o que você pretende comprar, enquanto Meus Ingredientes guarda seus dados comerciais e Favoritos funciona como atalho de consulta." }
   ]
 },
 "Medidas": {
