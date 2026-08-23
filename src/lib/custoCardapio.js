@@ -3,6 +3,7 @@
 // de compatibilidade; quando há contexto comercial, o custo é recalculado pela
 // composição + FC + preço efetivo do usuário.
 import { custoEscalado } from "@/lib/custoReceita";
+import { calcularInsumosCardapioEscalados } from "@/lib/escalonamentoCustos";
 
 export function quantidadeAoVivo(cr, num) {
   return (Number(cr?.per_capita_g) || 0) * (Number(num) || 0);
@@ -17,6 +18,7 @@ export function custoAoVivo(cr, receitaMap, ingredientesPorReceita, num, context
     ingredienteMap: contexto.ingredienteMap || {},
     insumosReceita: contexto.insumosPorReceita?.[receitaId] || [],
     esquecidos: contexto.esquecidosPorReceita?.[receitaId] || [],
+    unidadesFinais: Number(num) || 1,
   });
 }
 
@@ -38,10 +40,16 @@ export function calcularCustoCardapio({
     custo_total: custoAoVivo(r, receitaMap, ingredientesPorReceita, num, contexto),
   }));
   const custoReceitas = receitasView.reduce((s, r) => s + (Number(r.custo_total) || 0), 0);
-  const custoInsumos = (insumos || []).reduce((s, i) => s + (Number(i.custo_total) || 0), 0);
+  const insumosCalculados = calcularInsumosCardapioEscalados(insumos, num);
+  const insumosView = insumosCalculados.itens.map((item) => ({
+    ...item,
+    quantidade_escalada: item.quantidadeEscalada,
+    custo_escalado: item.custoEscalado,
+  }));
+  const custoInsumos = insumosCalculados.custoTotal;
   const total = custoReceitas + custoInsumos;
   const porUnidade = Number(num) > 0 ? total / Number(num) : 0;
   const precoVenda = Number(markup) > 0 ? porUnidade * (1 + Number(markup) / 100) : 0;
   const lucro = precoVenda - porUnidade;
-  return { receitasView, custoReceitas, custoInsumos, total, porUnidade, precoVenda, lucro };
+  return { receitasView, insumosView, custoReceitas, custoInsumos, total, porUnidade, precoVenda, lucro, insumosSemPreco: insumosCalculados.itensSemPreco };
 }
