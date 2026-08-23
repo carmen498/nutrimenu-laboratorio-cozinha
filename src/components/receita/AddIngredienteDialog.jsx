@@ -96,7 +96,7 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
           ordem: maxOrdem + 10,
         });
 
-        const { children, rendimentoEfetivo, rendimentoEstimado } = await explodeSubreceita(selected, qtdPorPorcao);
+        const { children, rendimentoEfetivo, rendimentoEstimado, diagnostico } = await explodeSubreceita(selected, qtdPorPorcao);
         let nextOrdem = maxOrdem + 11;
         for (const child of children) {
           await criarIngredienteReceita({
@@ -106,6 +106,15 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
             subreceita_parent_id: markerItem.id,
           });
         }
+        await base44.entities.IngredienteReceita.update(markerItem.id, {
+          modelo_versao: 2,
+          subreceita_modo: "referencia_cache",
+          subreceita_cache_versao: 2,
+          subreceita_sincronizacao_status: children.length > 0 ? "sincronizada" : "a_validar",
+          subreceita_dependencias_assinatura: diagnostico?.assinaturaDependencias || "",
+          subreceita_origem_updated_at: diagnostico?.raizAtualizadaEm || "",
+          subreceita_sincronizada_em: diagnostico?.geradoEm || new Date().toISOString(),
+        });
         const pulledCount = children.length;
         const rendMsg = rendimentoEstimado
           ? ` — Rendimento não cadastrado, usando soma dos ingredientes: ${rendimentoEfetivo}g. Ajuste na ficha da receita se necessário.`
