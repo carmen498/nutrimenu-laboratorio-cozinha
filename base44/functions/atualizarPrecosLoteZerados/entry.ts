@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 // Lista fixa de ingredientes a atualizar (nome exato -> preço da embalagem cadastrada em R$)
 const LISTA_PRECOS = [
@@ -161,12 +162,24 @@ Deno.serve(async (req) => {
       });
 
       atualizados.push({
+        id: ing.id,
         nome: ing.nome,
         preco_embalagem_antes: precoEmbalagemAtual,
         preco_embalagem_depois: item.preco,
         preco_por_g_antes: precoPorGAtual,
         preco_por_g_depois: novoPrecoPorG,
       });
+    }
+
+    let receitasInvalidadas = 0;
+    if (atualizados.length > 0) {
+      const invalidacao = await invalidarCustosPorDependencias({
+        entities: base44.asServiceRole.entities,
+        ingredienteIds: atualizados.map((row) => row.id),
+        motivo: 'preco_mestre_zerado_preenchido',
+        origem: 'atualizar_precos_lote_zerados',
+      });
+      receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
     }
 
     const log = await base44.asServiceRole.entities.AtualizacaoLotePrecosLog.create({
@@ -179,7 +192,7 @@ Deno.serve(async (req) => {
       nao_localizados,
     });
 
-    return Response.json({ log_id: log.id, total_atualizado: atualizados.length, total_pulado: pulados.length, total_nao_localizado: nao_localizados.length, atualizados, pulados, nao_localizados });
+    return Response.json({ log_id: log.id, total_atualizado: atualizados.length, receitas_invalidadas: receitasInvalidadas, total_pulado: pulados.length, total_nao_localizado: nao_localizados.length, atualizados, pulados, nao_localizados });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
