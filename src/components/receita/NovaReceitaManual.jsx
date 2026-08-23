@@ -295,7 +295,9 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             subreceita_cache_versao: isChild ? 2 : ing.subreceita_cache_versao,
             subreceita_origem_receita_id: isChild ? ing.subreceita_origem_receita_id : undefined,
             subreceita_origem_item_id: isChild ? ing.subreceita_origem_item_id : undefined,
-            subreceita_linhagem: isChild ? ing.subreceita_linhagem : undefined,
+            subreceita_linhagem: isChild
+              ? [receita.id, ing.subreceita_linhagem].filter(Boolean).join(">")
+              : undefined,
             subreceita_dependencias_assinatura: isChild ? ing.subreceita_dependencias_assinatura : undefined,
             subreceita_origem_updated_at: isChild ? ing.subreceita_origem_updated_at : undefined,
           });
