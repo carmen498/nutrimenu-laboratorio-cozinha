@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, AlertTriangle, Check, Pause, Play, Clock, Zap, History, Power } from "lucide-react";
 import { toast } from "sonner";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 // Categorias com badge ⚡ (oscilam frequentemente)
 const CATS_OSCILANTES = ["Carnes e Ovos", "Peixes e Frutos do Mar", "Laticínios", "Verduras e Hortaliças", "Frutas", "Óleos e Gorduras"];
@@ -335,80 +336,17 @@ export default function AtualizarPrecosDialog({
       setApplyProgress({ atual: idx + 1, total: toUpdate.length });
     }
 
-    // Recalcula custo das receitas afetadas — em lote, para não travar com muitas receitas
-    let receitasRecalculadas = 0;
+    // Fase 10.3 — preço mestre alterado invalida todas as receitas que usam os
+    // ingredientes e toda a cadeia reversa de sub-receitas. Não recalcular aqui:
+    // o recálculo deve passar exclusivamente pelo Motor de Custos Canônico.
+    let receitasInvalidadas = 0;
     if (atualizados > 0) {
-      try {
-        const idsSet = new Set(idsToUpdate);
-        const allItens = [];
-        let skip = 0;
-        while (true) {
-          const batch = await base44.entities.IngredienteReceita.list("-created_date", 200, skip);
-          if (!batch.length) break;
-          allItens.push(...batch);
-          skip += 200;
-        }
-
-        const receitasAfetadas = new Set();
-        allItens.forEach((item) => {
-          if (idsSet.has(item.ingrediente_id)) receitasAfetadas.add(item.receita_id);
-        });
-
-        const allIngs = await base44.entities.Ingrediente.list("-nome", 500);
-        const ingMap = {};
-        allIngs.forEach((i) => (ingMap[i.id] = i));
-
-        const itensPorReceita = {};
-        allItens.forEach((item) => {
-          if (!receitasAfetadas.has(item.receita_id)) return;
-          if (!itensPorReceita[item.receita_id]) itensPorReceita[item.receita_id] = [];
-          itensPorReceita[item.receita_id].push(item);
-        });
-
-        const allReceitas = [];
-        let rSkip = 0;
-        while (true) {
-          const batch = await base44.entities.Receita.list("-created_date", 200, rSkip);
-          if (!batch.length) break;
-          allReceitas.push(...batch);
-          rSkip += 200;
-        }
-        const receitaMap = {};
-        allReceitas.forEach((r) => (receitaMap[r.id] = r));
-
-        const updates = [];
-        for (const recId of receitasAfetadas) {
-          try {
-            const receita = receitaMap[recId];
-            if (!receita) continue;
-            const recItens = itensPorReceita[recId] || [];
-
-            let custoIng = 0;
-            for (const item of recItens) {
-              if (item.tipo !== "ingrediente" || !item.ingrediente_id) continue;
-              const ing = ingMap[item.ingrediente_id];
-              const qtd = (item.quantidade_por_porcao || 0) * (receita.porcoes_base || 1);
-              custoIng += qtd * (ing?.preco_por_g_rs || 0);
-            }
-            const custoInsumos = receita.custo_insumos || 0;
-            const custoTotal = custoIng + custoInsumos;
-            const custoPorcao = receita.porcoes_base > 0 ? custoTotal / receita.porcoes_base : 0;
-
-            updates.push({
-              id: recId,
-              custo_total: parseFloat(custoTotal.toFixed(2)),
-              custo_por_porcao: parseFloat(custoPorcao.toFixed(2)),
-            });
-          } catch {}
-        }
-
-        if (updates.length > 0) {
-          await base44.entities.Receita.bulkUpdate(updates);
-          receitasRecalculadas = updates.length;
-        }
-      } catch {
-        // Recalculo de receitas é best-effort — nunca deve derrubar o resumo de preços já salvos.
-      }
+      const invalidacao = await invalidarCustosDependentesSeguro({
+        ingredienteIds: toUpdate.slice(0, atualizados).map((r) => r.id),
+        motivo: "atualizacao_preco_mestre_em_lote",
+        origem: "atualizar_precos",
+      });
+      receitasInvalidadas = Number(invalidacao?.receitas_invalidadas) || 0;
     }
 
     qc.invalidateQueries({ queryKey: ["ingredientes"] });
@@ -416,7 +354,7 @@ export default function AtualizarPrecosDialog({
       total: toUpdate.length,
       atualizados,
       falhas,
-      receitasRecalculadas,
+      receitasInvalidadas,
     });
     setStep("summary");
   };
@@ -692,7 +630,7 @@ export default function AtualizarPrecosDialog({
               )}
               <p className={`text-sm ${applySummary.falhas.length > 0 ? "text-amber-800" : "text-green-800"}`}>
                 {applySummary.atualizados} de {applySummary.total} preços atualizados com sucesso
-                {applySummary.receitasRecalculadas > 0 && ` · ${applySummary.receitasRecalculadas} receitas recalculadas`}
+                {applySummary.receitasInvalidadas > 0 && ` · ${applySummary.receitasInvalidadas} caches invalidados`}
                 .
               </p>
             </div>
