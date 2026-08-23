@@ -95,6 +95,8 @@ Deno.serve(async (req) => {
       const deps = new Map<string, string>();
       const alertas: string[] = [];
       const children: any[] = [];
+      let ultimaComposicaoMs = 0;
+      let ultimaComposicaoEm = '';
 
       const expandir = (receitaAtual: any, quantidadeSaidaPorPorcaoPai: number, pilha: string[]) => {
         if (pilha.length >= MAX_PROFUNDIDADE) {
@@ -113,6 +115,15 @@ Deno.serve(async (req) => {
 
         const sourceItens = itensPorReceita.get(receitaAtual.id) || [];
         deps.set(receitaAtual.id, atualizadoEm(receitaAtual));
+        for (const sourceItem of sourceItens) {
+          if (sourceItem.tipo === 'grupo' || sourceItem.subreceita_parent_id) continue;
+          const data = atualizadoEm(sourceItem);
+          const ms = data ? Date.parse(data) : 0;
+          if (Number.isFinite(ms) && ms > ultimaComposicaoMs) {
+            ultimaComposicaoMs = ms;
+            ultimaComposicaoEm = data;
+          }
+        }
         const rendimento = rendimentoOperacional(receitaAtual, sourceItens);
         const porcoes = Number(receitaAtual.porcoes_base) > 0 ? Number(receitaAtual.porcoes_base) : 1;
         const escala = quantidadeSaidaPorPorcaoPai / rendimento.valor;
@@ -167,7 +178,15 @@ Deno.serve(async (req) => {
         child.subreceita_dependencias_assinatura = assinaturaNova;
         child.subreceita_origem_updated_at = atualizadoEm(source);
       }
-      return { source, children, assinaturaNova, dependencias: Object.fromEntries(deps), alertas };
+      return {
+        source,
+        children,
+        assinaturaNova,
+        dependencias: Object.fromEntries(deps),
+        alertas,
+        ultimaComposicaoMs,
+        ultimaComposicaoEm,
+      };
     };
 
     const analisarMarker = (marker: any) => {
@@ -177,11 +196,13 @@ Deno.serve(async (req) => {
         const assinaturaCache = marker.subreceita_dependencias_assinatura
           || existentes.find((c: any) => c.subreceita_dependencias_assinatura)?.subreceita_dependencias_assinatura
           || '';
-        const cacheV2 = existentes.length > 0 && existentes.every((c: any) => c.subreceita_cache === true && Number(c.subreceita_cache_versao) >= 2);
+        const cacheV2 = existentes.length > 0 && existentes.every((c: any) => c.subreceita_cache === true && Number(c.subreceita_cache_versao) >= 2 && Number(c.modelo_versao) === 2);
+        const sincronizadaMs = marker.subreceita_sincronizada_em ? Date.parse(marker.subreceita_sincronizada_em) : 0;
+        const composicaoMudouDepois = calculado.ultimaComposicaoMs > (Number.isFinite(sincronizadaMs) ? sincronizadaMs : 0);
         const status = existentes.length === 0
           ? 'pendente'
-          : (!assinaturaCache ? 'a_validar' : (assinaturaCache === calculado.assinaturaNova && cacheV2 ? 'sincronizada' : 'desatualizada'));
-        return { status, existentes, calculado, assinaturaCache };
+          : (!assinaturaCache ? 'a_validar' : (assinaturaCache === calculado.assinaturaNova && cacheV2 && !composicaoMudouDepois ? 'sincronizada' : 'desatualizada'));
+        return { status, existentes, calculado, assinaturaCache, composicaoMudouDepois };
       } catch (error: any) {
         return {
           status: error?.code === 'CICLO' ? 'erro_ciclo' : 'origem_ausente',
