@@ -6,7 +6,8 @@
 //
 // IMPORTANTE — idempotência: o chamador é responsável por só invocar esta função uma
 // única vez por transação, checando ANTES de chamar que o Pagamento ainda não estava
-// "approved". Esta função não faz essa checagem — apenas executa a ativação.
+// "approved". O ID do pagamento aprovado é salvo no User para impedir que um estorno
+// antigo derrube uma assinatura mais nova.
 
 import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
@@ -24,16 +25,19 @@ function somarDiasISO(dataISO: string, dias: number): string {
   return data.toISOString().split("T")[0];
 }
 
-export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { plano: string; usuario_id: string }): Promise<void> {
+export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string }): Promise<void> {
   const dias = DIAS_PLANO[pagamento.plano] ?? 30;
   const dataInicio = hojeSaoPauloISO();
-  const dataExpiracaoFormatada = somarDiasISO(dataInicio, dias);
+  // data_expiracao é inclusiva no motor de acesso. Portanto, um plano de 30 dias
+  // iniciado hoje deve expirar em hoje + 29 dias (e não +30, que daria 31 dias civis).
+  const dataExpiracaoFormatada = somarDiasISO(dataInicio, Math.max(dias - 1, 0));
 
   await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
     status_assinatura: "ativo",
     plano_atual: pagamento.plano,
     data_inicio: dataInicio,
     data_expiracao: dataExpiracaoFormatada,
+    ...(pagamento.id ? { pagamento_ativo_id: pagamento.id } : {}),
   });
 
   const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
