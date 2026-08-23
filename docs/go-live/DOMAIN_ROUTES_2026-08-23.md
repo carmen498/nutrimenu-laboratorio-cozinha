@@ -105,42 +105,54 @@ Pendente para Fase 9: login Google completo com conta real e retorno final ao do
 Status estrutural: VERDE.
 Status E2E real: PENDENTE FASE 9.
 
-## 7. Build publicada — BLOQUEADOR
+## 7. Build publicada — PUBLICAÇÃO PENDENTE
 
-A produção ainda está servindo uma build frontend anterior ao source homologado.
+O source atual foi corrigido e validado, mas o domínio público ainda está servindo uma build frontend anterior.
 
-Evidências observadas no HTML ao vivo:
+Correções implantadas no source nesta fase:
 
-- produção ainda contém `<script src="https://sdk.mercadopago.com/js/v2">` global;
-- produção ainda contém referências a `logUserAgentDiagnostico` e ao diagnóstico temporário de User-Agent;
-- o source atual não contém nenhum desses dois resíduos;
-- `npm run test:production-routes` falha deliberadamente ao detectar o fingerprint legado.
+- `fetchpriority` corrigido para `fetchPriority` no Hero React;
+- tipagem Vite adicionada ao `jsconfig.json`, permitindo imports `.jpg` da landing no typecheck;
+- colisão `/sobre` removida com a rota autenticada `/sobre-carmen`;
+- diagnóstico temporário `logUserAgentDiagnostico` já não existe no source atual;
+- SDK Mercado Pago global já não existe no `index.html` atual e permanece carregado sob demanda no checkout.
 
-Isso significa que DNS, TLS e fallback de rotas estão corretos, porém a aplicação React efetivamente executada pelo usuário ainda não é a revisão atual das Fases 5–8.
+Validações do source após as correções:
 
-Não foi executado deploy via CLI porque `npx base44 whoami` não confirmou autenticação da sessão. Pela política operacional da CLI Base44, não deve ser forçado deploy sem autenticação confirmada.
+- `npm run typecheck`: PASS;
+- `npm run lint`: PASS;
+- `npm run build`: PASS;
+- `npm run test:security`: PASS;
+- `npm run test:go-live`: PASS;
+- `npm run audit:security`: PASS — 0 vulnerabilidades.
 
-Status: AMARELO / BLOQUEADOR DE HOMOLOGAÇÃO FINAL.
+O teste do domínio continua falhando deliberadamente porque o HTML publicado ainda contém os fingerprints da build antiga:
+
+- `<script src="https://sdk.mercadopago.com/js/v2">` global;
+- referências a `logUserAgentDiagnostico`.
+
+No fluxo remoto Base44, as alterações foram commitadas no projeto, porém o frontend do domínio é atualizado somente quando o app é publicado. O conector remoto desta sessão não expõe uma ação de `Publish`, portanto essa etapa não pode ser acionada daqui sem inventar um mecanismo inexistente.
+
+Status do source: VERDE.
+Status do frontend no domínio: AMARELO — publicação pendente.
 
 Critério para fechar este item:
 
-1. publicar a build corrente;
-2. confirmar que os fingerprints legados desapareceram do HTML de produção;
-3. rodar `npm run test:production-routes` novamente;
-4. exigir PASS completo.
+1. publicar a revisão corrente no Base44;
+2. rodar `npm run test:production-routes` novamente;
+3. exigir PASS completo e ausência dos fingerprints legados.
 
 ## 8. E-mail do domínio
 
-O domínio possui resposta MX observável, mas isso não comprova recebimento de uma caixa postal específica.
+A consulta DNS retornou um Null MX para `laboratoriodecozinha.com.br`, isto é, o domínio declara que não recebe e-mail diretamente.
 
-Foi observada inconsistência de identidade de contato:
+A página pública de Contato foi corrigida para usar o endereço operacional já adotado pelos documentos legais e pelos e-mails transacionais:
 
-- página pública de Contato: `contato@laboratoriodecozinha.com.br`;
-- documentos legais/configuração transacional: `contato@nutrimenu.com.br`.
+- `contato@nutrimenu.com.br`.
 
-Nenhuma alteração foi feita automaticamente porque a existência de MX não prova que `contato@laboratoriodecozinha.com.br` recebe mensagens. A padronização deve ocorrer somente após confirmação operacional da caixa.
+Assim, a interface não oferece mais `contato@laboratoriodecozinha.com.br`, que não possui entrega de e-mail configurada.
 
-Status: AMARELO administrativo, não bloqueia DNS/HTTPS.
+Status: VERDE.
 
 ## 9. Mercado Pago
 
@@ -161,8 +173,9 @@ Status financeiro E2E da versão atual: PENDENTE FASE 6B.
 - colisão `/sobre`: CORRIGIDA NO SOURCE
 - reset de senha — infraestrutura: VERDE
 - OAuth Google — infraestrutura: VERDE
-- build frontend atual publicada: AMARELO/BLOQUEADOR
+- source frontend atual: VERDE (typecheck/lint/build/testes PASS)
+- build frontend atual publicada no domínio: AMARELO — publicação pendente
 - OAuth/recuperação completos com usuário real: PENDENTES FASE 9
 - MP financeiro `v10/v4`: PENDENTE FASE 6B
 
-**Status global da Fase 8: AMARELO até publicação da build corrente e repetição do teste de produção.**
+**Status global da Fase 8: AMARELO somente pela publicação pendente do frontend. O código e os testes locais estão VERDES.**
