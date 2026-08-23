@@ -4,9 +4,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
-import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
+import { notificacaoJaProcessadaHoje, protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
-import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Seu teste gratuito terminou";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu período de teste no Laboratório de Cozinha terminou hoje.</p>
