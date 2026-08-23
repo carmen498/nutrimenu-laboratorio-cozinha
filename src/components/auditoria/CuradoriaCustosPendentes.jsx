@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Loader2, Search, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, RefreshCw, Search, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 const DECISAO_LABEL = {
@@ -16,6 +16,16 @@ const DECISAO_LABEL = {
   reaproveitamento_processo: "Reaproveitamento de processo",
   manter_pendente: "Manter pendente",
 };
+
+const WORKFLOW_LABEL = {
+  nao_analisado: "Não analisado",
+  em_analise: "Em análise",
+  decisao_pendente: "Decisão pendente",
+  mantido_pendente: "Mantido pendente",
+  resolvido: "Resolvido",
+};
+
+const PRIORIDADE_LABEL = { alta: "Alta", media: "Média", baixa: "Baixa" };
 
 const norm = (v) => String(v || "")
   .normalize("NFD")
@@ -42,6 +52,8 @@ function GrupoCard({ grupo, onCurar }) {
             <Badge variant="outline" className="text-[10px]">{grupo.tipo_pendencia === "ingrediente_sem_preco" ? "sem preço" : grupo.tipo_pendencia === "referencia_ingrediente" ? "referência" : grupo.motivo || "outro"}</Badge>
             {grupo.categoria && <Badge variant="secondary" className="text-[10px]">{grupo.categoria}</Badge>}
             {grupo.contexto && <Badge variant="outline" className="text-[10px]">{grupo.contexto}</Badge>}
+            <Badge variant={grupo.prioridade === "alta" ? "destructive" : "secondary"} className="text-[10px]">Prioridade {PRIORIDADE_LABEL[grupo.prioridade] || grupo.prioridade}</Badge>
+            <Badge variant="outline" className="text-[10px]">{WORKFLOW_LABEL[grupo.workflow_status] || grupo.workflow_status}</Badge>
           </div>
         </div>
         <Button size="sm" onClick={() => onCurar(grupo)} className="gap-1.5">
@@ -63,6 +75,8 @@ export default function CuradoriaCustosPendentes() {
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("todos");
+  const [workflow, setWorkflow] = useState("todos");
+  const [prioridade, setPrioridade] = useState("todas");
   const [grupo, setGrupo] = useState(null);
   const [decisao, setDecisao] = useState("");
   const [destinoId, setDestinoId] = useState("");
@@ -97,10 +111,12 @@ export default function CuradoriaCustosPendentes() {
     const q = norm(busca).trim();
     return all.filter((g) => {
       if (tipo !== "todos" && g.tipo_pendencia !== tipo) return false;
+      if (workflow !== "todos" && g.workflow_status !== workflow) return false;
+      if (prioridade !== "todas" && g.prioridade !== prioridade) return false;
       if (!q) return true;
       return norm(g.nome).includes(q) || norm(g.categoria).includes(q) || (g.exemplos || []).some((e) => norm(e).includes(q));
     });
-  }, [fila, busca, tipo]);
+  }, [fila, busca, tipo, workflow, prioridade]);
 
   const candidatosDestino = useMemo(() => {
     if (!grupo || decisao !== "reapontar_ingrediente") return [];
@@ -124,6 +140,36 @@ export default function CuradoriaCustosPendentes() {
     }
     return rows;
   }, [grupo, decisao, buscaDestino, ingredientes]);
+
+  const sincronizarFila = async () => {
+    setProcessando(true);
+    try {
+      const res = await base44.functions.invoke("curadoriaCustosPendentes", { acao: "sincronizar_fila" });
+      const dados = res?.data?.sincronizacao || {};
+      await refetch();
+      toast.success(`Fila sincronizada: ${dados.grupos_vivos || 0} grupo(s) ativo(s), ${dados.criados || 0} novo(s), ${dados.resolvidos || 0} encerrado(s).`);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || "Erro ao sincronizar fila de curadoria.");
+    } finally { setProcessando(false); }
+  };
+
+  const atualizarWorkflow = async (status) => {
+    if (!grupo?.grupo_chave) return;
+    setProcessando(true);
+    try {
+      await base44.functions.invoke("curadoriaCustosPendentes", {
+        acao: "atualizar_workflow",
+        grupo_chave: grupo.grupo_chave,
+        workflow_status: status,
+        observacao: observacao || undefined,
+      });
+      setGrupo((atual) => atual ? { ...atual, workflow_status: status } : atual);
+      await refetch();
+      toast.success(`Status atualizado para ${WORKFLOW_LABEL[status] || status}.`);
+    } catch (error) {
+      toast.error(error?.response?.data?.error || error?.message || "Erro ao atualizar o status da curadoria.");
+    } finally { setProcessando(false); }
+  };
 
   const abrirGrupo = (g) => {
     setGrupo(g);
@@ -189,17 +235,25 @@ export default function CuradoriaCustosPendentes() {
             <h3 className="font-semibold flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Fase 10.2.1 — Curadoria assistida</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-3xl">Sugestões são apoio à decisão e nunca são aplicadas automaticamente. Toda alteração exige simulação de impacto, confirmação explícita e registro no histórico.</p>
           </div>
-          <div className="flex gap-2 text-center">
-            <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Incompletas</p><p className="font-bold">{fila?.total_incompletas || 0}</p></div>
-            <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Grupos</p><p className="font-bold">{fila?.total_grupos || 0}</p></div>
-            <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Prontas p/ recálculo</p><p className="font-bold">{fila?.receitas_prontas_recalculo || 0}</p></div>
+          <div className="flex flex-wrap gap-2 items-center justify-end">
+            <div className="flex gap-2 text-center">
+              <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Incompletas</p><p className="font-bold">{fila?.total_incompletas || 0}</p></div>
+              <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Grupos</p><p className="font-bold">{fila?.total_grupos || 0}</p></div>
+              <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Prioridade alta</p><p className="font-bold">{fila?.prioridades?.alta || 0}</p></div>
+              <div className="px-3 py-1.5 rounded border"><p className="text-[10px] text-muted-foreground">Não analisados</p><p className="font-bold">{fila?.workflow?.nao_analisado || 0}</p></div>
+            </div>
+            <Button variant="outline" size="sm" onClick={sincronizarFila} disabled={processando} className="gap-1.5">
+              {processando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Sincronizar fila
+            </Button>
           </div>
         </div>
       </Card>
 
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[220px]"><Search className="absolute left-2.5 top-2.5 w-4 h-4 text-muted-foreground" /><Input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar ingrediente ou receita..." className="pl-8" /></div>
-        <Select value={tipo} onValueChange={setTipo}><SelectTrigger className="w-[210px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos os grupos</SelectItem><SelectItem value="ingrediente_sem_preco">Sem preço</SelectItem><SelectItem value="referencia_ingrediente">Referências</SelectItem><SelectItem value="outro">Outros</SelectItem></SelectContent></Select>
+        <Select value={tipo} onValueChange={setTipo}><SelectTrigger className="w-[190px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos os grupos</SelectItem><SelectItem value="ingrediente_sem_preco">Sem preço</SelectItem><SelectItem value="referencia_ingrediente">Referências</SelectItem><SelectItem value="outro">Outros</SelectItem></SelectContent></Select>
+        <Select value={workflow} onValueChange={setWorkflow}><SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todos">Todos os status</SelectItem>{Object.entries(WORKFLOW_LABEL).filter(([k]) => k !== "resolvido").map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select>
+        <Select value={prioridade} onValueChange={setPrioridade}><SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="todas">Todas prioridades</SelectItem><SelectItem value="alta">Alta · 20+</SelectItem><SelectItem value="media">Média · 5–19</SelectItem><SelectItem value="baixa">Baixa · 1–4</SelectItem></SelectContent></Select>
       </div>
 
       <div className="grid xl:grid-cols-2 gap-3">{grupos.map((g) => <GrupoCard key={g.grupo_chave} grupo={g} onCurar={abrirGrupo} />)}</div>
@@ -211,7 +265,8 @@ export default function CuradoriaCustosPendentes() {
             <div><p className="font-semibold">Curar: {grupo.nome}</p><p className="text-xs text-muted-foreground">{grupo.receitas} receita(s) · {grupo.ocorrencias} ocorrência(s)</p></div>
             <Button variant="ghost" size="sm" onClick={() => { setGrupo(null); setSimulacao(null); }} disabled={processando}>Fechar</Button>
           </div>
-          <div className="grid md:grid-cols-2 gap-3">
+          <div className="grid md:grid-cols-3 gap-3">
+            <div><label className="text-xs font-medium">Status da curadoria</label><Select value={grupo.workflow_status || "nao_analisado"} onValueChange={atualizarWorkflow} disabled={processando}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="nao_analisado">Não analisado</SelectItem><SelectItem value="em_analise">Em análise</SelectItem><SelectItem value="decisao_pendente">Decisão pendente</SelectItem><SelectItem value="mantido_pendente">Mantido pendente</SelectItem></SelectContent></Select></div>
             <div><label className="text-xs font-medium">Decisão</label><Select value={decisao} onValueChange={(v) => { setDecisao(v); setSimulacao(null); }}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent>{opcoesDecisao(grupo).map((d) => <SelectItem key={d} value={d}>{DECISAO_LABEL[d]}</SelectItem>)}</SelectContent></Select></div>
             {decisao === "definir_preco_mestre" && <div className="grid grid-cols-3 gap-2"><div><label className="text-xs font-medium">R$/kg ou L</label><Input type="number" min="0" step="0.01" value={precoKg} onChange={(e) => { setPrecoKg(e.target.value); setSimulacao(null); }} className="mt-1" placeholder="0,00" /></div><div><label className="text-xs font-medium">R$ embalagem</label><Input type="number" min="0" step="0.01" value={precoEmb} onChange={(e) => { setPrecoEmb(e.target.value); setSimulacao(null); }} className="mt-1" placeholder="opcional" /></div><div><label className="text-xs font-medium">g/ml embalagem</label><Input type="number" min="0" step="1" value={pesoEmb} onChange={(e) => { setPesoEmb(e.target.value); setSimulacao(null); }} className="mt-1" placeholder="opcional" /></div></div>}
           </div>
