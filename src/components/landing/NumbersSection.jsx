@@ -4,7 +4,7 @@ const NUMBERS = [
   { figure: "+2.200", label: "Receitas" },
   { figure: "+630", label: "Ingredientes" },
   { figure: "+50", label: "Cardápios" },
-  { figure: "18", label: "Categorias de receitas" },
+  { figure: "17", label: "Categorias de receitas" },
 ];
 
 export default function NumbersSection() {

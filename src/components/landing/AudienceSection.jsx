@@ -9,7 +9,7 @@ const AUDIENCE = [
   {
     kicker: "Iniciante",
     title: "Para quem quer organizar a cozinha antes da correria",
-    text: "Famílias, casais e pessoas aprendendo a cozinhar que querem decidir o cardápio, comprar na medida certa e aproveitar melhor o que já têm em casa.",
+    text: "Famílias, casais e pessoas aprendendo a cozinhar que querem decidir o cardápio, comprar na medida certa e cozinhar com o que já têm em casa — buscando receitas pelo ingrediente que sobrou e marcando o que não precisa comprar de novo.",
   },
   {
     kicker: "Independente",

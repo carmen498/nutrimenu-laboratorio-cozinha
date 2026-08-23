@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/AuthContext";
 const PLANS = [
   { name: "Teste Grátis", price: "R$ 0", period: "", detail: "7 dias de acesso completo · sem cartão", featured: false, cta: "Começar teste" },
   { name: "30 dias", price: "R$ 29,90", period: "/30 dias", detail: "Sem fidelidade · pague de novo só se quiser continuar", featured: false, cta: "Assinar 30 dias" },
-  { name: "Anual", price: "R$ 198", period: "/ano", detail: "Parcela única · equivale a R$ 16,50/mês", featured: true, cta: "Assinar anual" },
+  { name: "Anual", price: "R$ 198", period: "/ano", detail: "Cobrança única, com opção de parcelar no cartão · equivale a R$ 16,50/mês", featured: true, cta: "Assinar anual" },
 ];
 
 export default function PlansSection() {
@@ -35,7 +35,7 @@ export default function PlansSection() {
           ))}
         </div>
         <p className="lc-plans-note">
-          A partir do 2º ano, a renovação do plano anual custa R$ 99,00 à vista (ou em até 6x de R$ 16,50) — benefício de fidelidade.
+          Quem renova o plano anual a partir do 2º ano tem condição de fidelidade: R$ 99,00 à vista (ou em até 6x de R$ 16,50) — compromisso já registrado nos nossos Termos de Uso.
         </p>
       </div>
     </section>
