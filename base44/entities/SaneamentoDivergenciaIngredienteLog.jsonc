@@ -1,0 +1,68 @@
+{
+  "name": "SaneamentoDivergenciaIngredienteLog",
+  "type": "object",
+  "properties": {
+    "executado_por_id": {
+      "type": "string"
+    },
+    "executado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "modo": {
+      "type": "string",
+      "enum": [
+        "analise",
+        "aplicar"
+      ]
+    },
+    "divergencias_detectadas": {
+      "type": "number"
+    },
+    "fontes_unicas": {
+      "type": "number"
+    },
+    "nomes_cache_normalizados": {
+      "type": "number"
+    },
+    "ids_reapontados": {
+      "type": "number"
+    },
+    "derivados_para_sincronizar": {
+      "type": "number"
+    },
+    "manuais": {
+      "type": "number"
+    },
+    "receitas_afetadas": {
+      "type": "number"
+    },
+    "detalhes": {
+      "type": "string",
+      "description": "Resumo JSON compacto da Fase 10.4.1."
+    }
+  },
+  "required": [],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
