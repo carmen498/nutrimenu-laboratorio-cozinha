@@ -238,14 +238,30 @@ export default function AuditoriaSubreceitas() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Card className="p-3"><p className="text-xs text-muted-foreground">Relações</p><p className="text-xl font-bold">{diagnostico.total}</p></Card>
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Marcadores</p><p className="text-xl font-bold">{diagnostico.total}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Filhos de cache</p><p className="text-xl font-bold">{diagnostico.filhosCache}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Sincronizadas</p><p className="text-xl font-bold text-primary">{diagnostico.sincronizadas}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Desatualizadas</p><p className="text-xl font-bold text-amber-700">{diagnostico.desatualizadas}</p></Card>
-        <Card className="p-3"><p className="text-xs text-muted-foreground">A revisar</p><p className="text-xl font-bold text-amber-600">{diagnostico.revisar}</p></Card>
-        <Card className="p-3"><p className="text-xs text-muted-foreground">Erros</p><p className="text-xl font-bold text-destructive">{diagnostico.erros}</p></Card>
-        <Card className="p-3"><p className="text-xs text-muted-foreground">Snapshots legados</p><p className="text-xl font-bold">{diagnostico.legado}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Marcador legado</p><p className="text-xl font-bold text-amber-600">{diagnostico.markersModeloLegado}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Sem cache</p><p className="text-xl font-bold text-amber-600">{diagnostico.markersSemCache}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Estrutural</p><p className="text-xl font-bold text-destructive">{diagnostico.relacoesComProblemaEstrutural}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Órfãos</p><p className="text-xl font-bold text-destructive">{diagnostico.orfaos.length}</p></Card>
       </div>
+
+      {(diagnostico.cacheVersaoLegada > 0 || diagnostico.cacheLinhagemIncompleta > 0 || diagnostico.cacheOrigemIncompleta > 0 || diagnostico.cacheAssinaturaIncompleta > 0 || diagnostico.cacheParentReceitaDivergente > 0 || diagnostico.cacheAssinaturaDivergente > 0) && (
+        <Card className="p-4 border-amber-500/40 bg-amber-500/5">
+          <p className="font-semibold flex items-center gap-2"><AlertTriangle className="w-4 h-4" /> Integridade estrutural do cache</p>
+          <div className="flex flex-wrap gap-2 mt-2 text-xs">
+            <Badge variant="outline">versão legada: {diagnostico.cacheVersaoLegada}</Badge>
+            <Badge variant="outline">linhagem incompleta: {diagnostico.cacheLinhagemIncompleta}</Badge>
+            <Badge variant="outline">origem incompleta: {diagnostico.cacheOrigemIncompleta}</Badge>
+            <Badge variant="outline">assinatura ausente: {diagnostico.cacheAssinaturaIncompleta}</Badge>
+            <Badge variant="outline">receita divergente: {diagnostico.cacheParentReceitaDivergente}</Badge>
+            <Badge variant="outline">assinaturas divergentes: {diagnostico.cacheAssinaturaDivergente}</Badge>
+          </div>
+        </Card>
+      )}
 
       {diagnostico.orfaos.length > 0 && (
         <Card className="p-4 border-destructive/40 bg-destructive/5">
@@ -267,6 +283,7 @@ export default function AuditoriaSubreceitas() {
               <div className="min-w-0">
                 <p className="font-medium truncate" title={row.source?.nome || row.marker.subreceita_id}>{row.source?.nome || row.marker.subreceita_nome || "Origem ausente"}</p>
                 {row.erro && <p className="text-[10px] text-destructive truncate" title={row.erro}>{row.erro}</p>}
+                {row.problemasEstruturais.length > 0 && <p className="text-[10px] text-amber-700 truncate" title={row.problemasEstruturais.join(" · ")}>{row.problemasEstruturais.join(" · ")}</p>}
               </div>
               <div><Badge variant={row.status === "sincronizada" ? "outline" : "secondary"} className="text-[10px]">{STATUS_LABEL[row.status] || row.status}</Badge></div>
               <div className="text-xs">{row.filhos.length} item(ns)</div>
