@@ -5,11 +5,10 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const mode = url.searchParams.get('mode') === 'apply' ? 'apply' : 'dry_run';
     const base44 = createClientFromRequest(req);
-    const r = await base44.asServiceRole.functions.invoke('normalizarCustosReceitas', {
+    const s = await base44.asServiceRole.functions.invoke('sanearCustosPendentes', {
       dry_run: mode !== 'apply',
-      somente_incompletas: true,
     });
-    return Response.json({ mode, recalculo: r?.data ?? r });
+    return Response.json({ mode, saneamento: s?.data ?? s });
   } catch (e) {
     return Response.json({ error: String(e?.message || e) }, { status: 500 });
   }
