@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 // Fusão de ingredientes — suporta qualquer volume de receitas afetadas.
 // A ação "confirmar" original (validada para volumes pequenos) foi dividida em
@@ -81,6 +82,7 @@ export default async function(req) {
       destinoLinhasBatch.forEach((l) => { destinoPorReceita[l.receita_id] = l; });
 
       const novasFalhas = [];
+      const receitasProcessadas = new Set();
       let processedCount = 0;
 
       for (const linha of batch) {
@@ -101,15 +103,28 @@ export default async function(req) {
             destinoPorReceita[linha.receita_id] = { id: linha.id, quantidade_por_porcao: linha.quantidade_por_porcao || 0 };
           }
           processedCount++;
+          receitasProcessadas.add(linha.receita_id);
           await sleep(80);
         } catch (err) {
           novasFalhas.push({ linha_id: linha.id, receita_id: linha.receita_id, erro: err.message });
         }
       }
 
+      let receitasInvalidadas = 0;
+      if (receitasProcessadas.size > 0) {
+        const invalidacao = await invalidarCustosPorDependencias({
+          entities: base44.asServiceRole.entities,
+          receitaIds: [...receitasProcessadas],
+          motivo: 'fusao_ingredientes',
+          origem: 'fundir_ingredientes',
+        });
+        receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
+      }
+
       const pendentesRestantes = pendentes.length - batch.length;
       return Response.json({
         processedCount,
+        receitasInvalidadas,
         novasFalhas,
         pendentesRestantes,
         done: pendentesRestantes === 0,
