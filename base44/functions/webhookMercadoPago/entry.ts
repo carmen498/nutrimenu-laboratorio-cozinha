@@ -17,6 +17,7 @@ import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.
 import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
+import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
@@ -199,12 +200,11 @@ export default async function(req: Request): Promise<Response> {
 
           if (ativo) {
             const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-            await base44.asServiceRole.entities.LogEmail.create({
-              destinatario_email: usuario.email,
+            await registrarLogEmail(base44, {
+              usuarioId: usuario.id,
+              email: usuario.email,
               tipo: tipoEmail,
-              enviado_em: new Date().toISOString(),
-              status: resultado.ok ? "enviado" : "falhou",
-              detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
+              resultado,
             });
           } else {
             console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
