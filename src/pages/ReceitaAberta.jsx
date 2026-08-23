@@ -53,6 +53,7 @@ import { salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
 import { carregarIngredientesEfetivosCusto } from "@/lib/custoContexto";
 import {
   calcularItemIngredienteReceita,
+  itemParticipaCompra,
   getMedidaIngredienteId,
   getMedidaUtensilioId,
   resolverMedidaCaseiraItem,
@@ -543,7 +544,7 @@ export default function ReceitaAberta() {
           ing,
           qtdOriginal,
           qtdNova: calculado.pesoLiquido,
-          qtdComprar: calculado.pesoBruto,
+          qtdComprar: itemParticipaCompra(item) ? calculado.pesoBruto : 0,
           custo: calculado.custo,
           fcEfetivo: calculado.fc,
           fcOrigem: calculado.fcOrigem,
