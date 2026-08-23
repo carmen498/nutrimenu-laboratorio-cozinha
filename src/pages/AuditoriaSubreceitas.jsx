@@ -79,13 +79,19 @@ export default function AuditoriaSubreceitas() {
         deps.set(id, atualizadoEm(receita));
         const sourceItens = itensPorReceita.get(id) || [];
         for (const item of sourceItens) {
-          if (item.tipo !== "subreceita" || item.subreceita_parent_id) continue;
-          if (!item.subreceita_id) continue;
+          if (item.tipo === "grupo" || item.subreceita_parent_id) continue;
+          const data = atualizadoEm(item);
+          const ms = data ? Date.parse(data) : 0;
+          if (Number.isFinite(ms) && ms > ultimaComposicaoMs) {
+            ultimaComposicaoMs = ms;
+            ultimaComposicaoEm = data;
+          }
+          if (item.tipo !== "subreceita" || !item.subreceita_id) continue;
           visitar(item.subreceita_id, [...pilha, id]);
         }
       };
       visitar(sourceId, parentId ? [parentId] : []);
-      return { valor: assinatura(deps), dependencias: deps };
+      return { valor: assinatura(deps), dependencias: deps, ultimaComposicaoMs, ultimaComposicaoEm };
     };
 
     const rows = [...markerMap.values()].map((marker) => {
