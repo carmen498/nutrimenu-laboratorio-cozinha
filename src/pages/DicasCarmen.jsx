@@ -35,7 +35,7 @@ export default function DicasCarmen() {
   const dicasFiltradas = temaAtivo === "Todas" ? dicasVisiveis : dicasVisiveis.filter((d) => d.tema === temaAtivo);
 
   const toggleDestaqueMut = useMutation({
-    mutationFn: ({ id, destaque }) => base44.entities.DicaCarmen.update(id, { destaque }),
+    mutationFn: (/** @type {any} */ { id, destaque }) => base44.entities.DicaCarmen.update(id, { destaque }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["dicas-carmen"] }),
   });
 
