@@ -1,0 +1,17 @@
+{
+  "name": "enviarTrialExpirando",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "daily_trial_expirando",
+      "description": "Avisos de trial expirando diariamente às 08:10 em America/Sao_Paulo (11:10 UTC).",
+      "is_active": true,
+      "schedule_mode": "recurring",
+      "schedule_type": "simple",
+      "repeat_unit": "days",
+      "repeat_interval": 1,
+      "start_time": "11:10"
+    }
+  ]
+}
