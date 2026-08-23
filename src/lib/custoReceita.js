@@ -116,7 +116,7 @@ export function calcularCustoReceitaCanonico(/** @type {any} */ {
     const quantidadeLiquida = numero(item.quantidade_por_porcao) * porcoesBase * fatorSeguro;
     const calculado = calcularItemIngredienteReceita({ item, ingrediente, quantidadeLiquida });
     custoIngredientes += calculado.custo;
-    if (calculado.precoPorG <= 0 && calculado.pesoBruto > 0) {
+    if (!calculado.custoIgnorado && calculado.precoPorG <= 0 && calculado.pesoBruto > 0) {
       itensSemPreco++;
       problemas.push({
         item_id: item.id || "",
