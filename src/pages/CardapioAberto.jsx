@@ -110,7 +110,7 @@ export default function CardapioAberto() {
   const [markup, setMarkup] = useState(30);
 
   const [showLista, setShowLista] = useState(false);
-  const [listaCompras, setListaCompras] = useState([]);
+  const [listaCompras, setListaCompras] = useState({});
   const [gerandoLista, setGerandoLista] = useState(false);
   const [showRelatorios, setShowRelatorios] = useState(false);
   const [showEditar, setShowEditar] = useState(false);
