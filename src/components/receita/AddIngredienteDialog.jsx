@@ -16,6 +16,7 @@ import { explodeSubreceita } from "@/lib/subreceitaUtils";
 import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
 import { registrarHistorico } from "@/lib/registrarHistorico";
 import { getMedidaIngredienteId, getMedidaPesoG } from "@/lib/ingredienteReceitaCalc";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 export default function AddIngredienteDialog({ open, onClose, receitaId, receitaNome, porcoes, unidadeBase }) {
   const unidadeCanonica = unidadeBase === "ml" ? "ml" : "g";
@@ -147,6 +148,11 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
         registrarHistorico(receitaId, receitaNome, ["Ingredientes"]);
       }
 
+      await invalidarCustosDependentesSeguro({
+        receitaIds: [receitaId],
+        motivo: selectedType === "subreceita" ? "subreceita_adicionada" : "ingrediente_adicionado",
+        origem: "composicao_receita",
+      });
       qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
       setSelected(null);
       setSelectedType(null);
