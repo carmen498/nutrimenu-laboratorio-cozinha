@@ -251,6 +251,85 @@ Deno.serve(async (req) => {
       }
     };
 
+    const metadadosPrecisamAtualizar = (marker: any, analise: any) => {
+      if (!analise?.calculado || analise.status !== 'sincronizada') return false;
+      const origemAtualizadaEm = atualizadoEm(analise.calculado.source);
+      const markerDivergente = Number(marker.modelo_versao) !== 2
+        || marker.tipo !== 'subreceita'
+        || !!marker.ingrediente_id
+        || marker.subreceita_cache === true
+        || marker.subreceita_modo !== 'referencia_cache'
+        || Number(marker.subreceita_cache_versao) < 2
+        || marker.subreceita_sincronizacao_status !== 'sincronizada'
+        || txt(marker.subreceita_dependencias_assinatura) !== analise.calculado.assinaturaNova
+        || txt(marker.subreceita_origem_updated_at) !== origemAtualizadaEm;
+      const filhosDivergentes = analise.existentes.some((child: any) =>
+        Number(child.modelo_versao) !== 2
+        || child.subreceita_cache !== true
+        || Number(child.subreceita_cache_versao) < 2
+        || txt(child.subreceita_dependencias_assinatura) !== analise.calculado.assinaturaNova
+        || txt(child.subreceita_origem_updated_at) !== origemAtualizadaEm
+      );
+      return markerDivergente || filhosDivergentes;
+    };
+
+    const atualizarMetadadosSemRebuild = async (marker: any, analise: any) => {
+      const origemAtualizadaEm = atualizadoEm(analise.calculado.source);
+      for (const child of analise.existentes) {
+        if (
+          Number(child.modelo_versao) === 2
+          && child.subreceita_cache === true
+          && Number(child.subreceita_cache_versao) >= 2
+          && txt(child.subreceita_dependencias_assinatura) === analise.calculado.assinaturaNova
+          && txt(child.subreceita_origem_updated_at) === origemAtualizadaEm
+        ) continue;
+        await base44.asServiceRole.entities.IngredienteReceita.update(child.id, {
+          modelo_versao: 2,
+          subreceita_cache: true,
+          subreceita_cache_versao: 2,
+          subreceita_dependencias_assinatura: analise.calculado.assinaturaNova,
+          subreceita_origem_updated_at: origemAtualizadaEm,
+        });
+      }
+
+      await base44.asServiceRole.entities.IngredienteReceita.update(marker.id, {
+        modelo_versao: 2,
+        tipo: 'subreceita',
+        ingrediente_id: null,
+        ingrediente_nome: null,
+        subreceita_cache: false,
+        subreceita_modo: 'referencia_cache',
+        subreceita_cache_versao: 2,
+        subreceita_sincronizacao_status: 'sincronizada',
+        subreceita_dependencias_assinatura: analise.calculado.assinaturaNova,
+        subreceita_origem_updated_at: origemAtualizadaEm,
+      });
+
+      await registrarLog({
+        marker_id: marker.id,
+        receita_pai_id: marker.receita_id,
+        subreceita_id: marker.subreceita_id,
+        acao: 'normalizar_status',
+        filhos_anteriores: analise.existentes.length,
+        filhos_novos: analise.existentes.length,
+        assinatura_anterior: analise.assinaturaCache || '',
+        assinatura_nova: analise.calculado.assinaturaNova,
+        detalhes: JSON.stringify({
+          motivo: 'cache_semanticamente_equivalente; metadados atualizados sem reconstrução',
+          dependencias: analise.calculado.dependencias,
+        }),
+      });
+
+      return {
+        marker_id: marker.id,
+        status: 'sincronizada',
+        metadados_atualizados: true,
+        filhos_anteriores: analise.existentes.length,
+        filhos_novos: analise.existentes.length,
+        assinatura: analise.calculado.assinaturaNova,
+      };
+    };
+
     const sincronizar = async (marker: any) => {
       const analise = analisarMarker(marker);
       if (!analise.calculado) {
@@ -275,6 +354,20 @@ Deno.serve(async (req) => {
 
       const parent = receitaMap.get(marker.receita_id);
       if (!parent) return { marker_id: marker.id, status: 'erro', error: 'Receita-pai não encontrada.' };
+
+      if (analise.status === 'sincronizada') {
+        if (metadadosPrecisamAtualizar(marker, analise)) {
+          return atualizarMetadadosSemRebuild(marker, analise);
+        }
+        return {
+          marker_id: marker.id,
+          status: 'sincronizada',
+          ignorado: true,
+          filhos_anteriores: analise.existentes.length,
+          filhos_novos: analise.existentes.length,
+          assinatura: analise.calculado.assinaturaNova,
+        };
+      }
 
       const agora = new Date().toISOString();
       const novosPayloads = analise.calculado.children.map((child: any, idx: number) => ({
