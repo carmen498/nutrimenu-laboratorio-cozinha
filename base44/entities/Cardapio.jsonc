@@ -112,6 +112,9 @@
           "data.is_base": true
         },
         {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
           "created_by_id": "{{user.id}}"
         },
         {
@@ -124,6 +127,9 @@
     "update": {
       "$or": [
         {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
           "created_by_id": "{{user.id}}"
         },
         {
@@ -135,6 +141,9 @@
     },
     "delete": {
       "$or": [
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
         {
           "created_by_id": "{{user.id}}"
         },
