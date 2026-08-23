@@ -240,7 +240,7 @@ export default function AuditoriaCustosReceitas() {
         <div>
           <h2 className="font-display text-xl font-bold">Receitas · Custos</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-            Fases 10.1–10.2: custos canônicos, saneamento por causa-raiz e correções determinísticas. Registros ambíguos ou sem fonte confiável permanecem bloqueados para revisão manual.
+            Fases 10.1–10.4: custos canônicos, curadoria, invalidação automática e assinatura semântica do cache. Registros ambíguos continuam bloqueados para revisão manual.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -256,6 +256,14 @@ export default function AuditoriaCustosReceitas() {
             {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
             Recalcular invalidadas
           </Button>
+          <Button variant="outline" onClick={() => auditarAssinaturas(false)} disabled={processando} className="gap-2">
+            {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+            Auditar assinaturas
+          </Button>
+          <Button variant="outline" onClick={() => auditarAssinaturas(true)} disabled={processando || !assinaturaPreview || ((assinaturaPreview.divergentes || 0) + (assinaturaPreview.ausentes || 0) === 0)} className="gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Marcar divergências
+          </Button>
           <Button variant="outline" onClick={analisarMigracao} disabled={processando} className="gap-2">
             {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
             Analisar migração
@@ -267,10 +275,11 @@ export default function AuditoriaCustosReceitas() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
         <Card className="p-3"><p className="text-xs text-muted-foreground">Receitas</p><p className="text-xl font-bold">{diagnostico.total}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Atuais</p><p className="text-xl font-bold text-primary">{diagnostico.atuais}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Invalidadas</p><p className="text-xl font-bold text-amber-700">{diagnostico.invalidadas}</p></Card>
+        <Card className="p-3"><p className="text-xs text-muted-foreground">Assinatura pendente</p><p className="text-xl font-bold text-amber-700">{diagnostico.assinaturasPendentes}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Legado</p><p className="text-xl font-bold text-amber-600">{diagnostico.legado}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Incompletas</p><p className="text-xl font-bold text-destructive">{diagnostico.incompletas}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Itens problemáticos</p><p className="text-xl font-bold">{diagnostico.semPreco}</p></Card>
