@@ -8,93 +8,110 @@
     },
     "modelo_versao": {
       "type": "number",
-      "description": "Versão do modelo de composição. Novos registros normalizados usam 2; ausência/1 identifica registros legados a migrar."
+      "description": "Vers\u00e3o do modelo de composi\u00e7\u00e3o. Novos registros normalizados usam 2; aus\u00eancia/1 identifica registros legados a migrar."
     },
     "ingrediente_id": {
       "type": "string",
-      "description": "Referência canônica ao Ingrediente quando tipo=ingrediente. Vazio nos demais tipos."
+      "description": "Refer\u00eancia can\u00f4nica ao Ingrediente quando tipo=ingrediente. Vazio nos demais tipos."
     },
     "ingrediente_nome": {
       "type": "string",
-      "description": "LEGADO/CACHE de exibição. Não usar como identidade; o nome canônico deve ser resolvido por ingrediente_id."
+      "description": "LEGADO/CACHE de exibi\u00e7\u00e3o. N\u00e3o usar como identidade; o nome can\u00f4nico deve ser resolvido por ingrediente_id."
     },
     "pre_preparo": {
       "type": "string",
-      "description": "Pré-preparo específico deste ingrediente nesta receita (picado, em cubos, desfiado...)"
+      "description": "Pr\u00e9-preparo espec\u00edfico deste ingrediente nesta receita (picado, em cubos, desfiado...)"
     },
     "quantidade_por_porcao": {
       "type": "number",
-      "description": "Quantidade líquida por porção. A unidade é definida em unidade_quantidade; legado assume g/ml conforme a receita."
+      "description": "Quantidade l\u00edquida por por\u00e7\u00e3o. A unidade \u00e9 definida em unidade_quantidade; legado assume g/ml conforme a receita."
     },
     "unidade_quantidade": {
       "type": "string",
-      "enum": ["g", "ml"],
-      "description": "Unidade canônica da quantidade deste item. Quando ausente, usa receita.unidade_base como compatibilidade."
+      "enum": [
+        "g",
+        "ml"
+      ],
+      "description": "Unidade can\u00f4nica da quantidade deste item. Quando ausente, usa receita.unidade_base como compatibilidade."
     },
     "fator_correcao_override": {
       "type": "number",
-      "description": "FC específico deste ingrediente nesta receita. Valor > 0 prevalece sobre Ingrediente.fator_correcao; 0/ausente significa usar o padrão do ingrediente."
+      "description": "FC espec\u00edfico deste ingrediente nesta receita. Valor > 0 prevalece sobre Ingrediente.fator_correcao; 0/ausente significa usar o padr\u00e3o do ingrediente."
     },
     "medida_caseira_id": {
       "type": "string",
-      "description": "Referência canônica à MedidaCaseira escolhida para este item. Quando ausente, o app pode usar a medida padrão do ingrediente."
+      "description": "Refer\u00eancia can\u00f4nica \u00e0 MedidaCaseira escolhida para este item. Quando ausente, o app pode usar a medida padr\u00e3o do ingrediente."
     },
     "quantidade_medida_caseira": {
       "type": "number",
-      "description": "Quantidade de medidas informada pelo usuário. É metadado de entrada; g/ml permanecem como base de cálculo."
+      "description": "Quantidade de medidas informada pelo usu\u00e1rio. \u00c9 metadado de entrada; g/ml permanecem como base de c\u00e1lculo."
     },
     "medida_caseira": {
       "type": "string",
-      "description": "LEGADO/CACHE de texto livre. Novas relações devem usar medida_caseira_id + quantidade_medida_caseira."
+      "description": "LEGADO/CACHE de texto livre. Novas rela\u00e7\u00f5es devem usar medida_caseira_id + quantidade_medida_caseira."
     },
     "ordem": {
       "type": "number",
-      "description": "Ordem de exibição"
+      "description": "Ordem de exibi\u00e7\u00e3o"
     },
     "tipo": {
       "type": "string",
-      "enum": ["ingrediente", "grupo", "subreceita"],
+      "enum": [
+        "ingrediente",
+        "grupo",
+        "subreceita"
+      ],
       "default": "ingrediente",
-      "description": "Discriminador canônico do item. Define quais referências e campos são válidos."
+      "description": "Discriminador can\u00f4nico do item. Define quais refer\u00eancias e campos s\u00e3o v\u00e1lidos."
     },
     "titulo_grupo": {
       "type": "string",
-      "description": "Título do grupo, usado somente quando tipo=grupo"
+      "description": "T\u00edtulo do grupo, usado somente quando tipo=grupo"
     },
     "subreceita_id": {
       "type": "string",
-      "description": "Referência canônica à Receita usada como sub-receita quando tipo=subreceita. Na Fase 8 esta referência é a fonte de verdade da composição."
+      "description": "Refer\u00eancia can\u00f4nica \u00e0 Receita usada como sub-receita quando tipo=subreceita. Na Fase 8 esta refer\u00eancia \u00e9 a fonte de verdade da composi\u00e7\u00e3o."
     },
     "subreceita_nome": {
       "type": "string",
-      "description": "LEGADO/CACHE de exibição. Não usar como identidade; o nome canônico deve ser resolvido por subreceita_id."
+      "description": "LEGADO/CACHE de exibi\u00e7\u00e3o. N\u00e3o usar como identidade; o nome can\u00f4nico deve ser resolvido por subreceita_id."
     },
     "subreceita_parent_id": {
       "type": "string",
-      "description": "ID do marcador de sub-receita pai. Quando preenchido, o registro é um filho derivado/cache e não uma fonte de composição independente."
+      "description": "ID do marcador de sub-receita pai. Quando preenchido, o registro \u00e9 um filho derivado/cache e n\u00e3o uma fonte de composi\u00e7\u00e3o independente."
     },
     "subreceita_modo": {
       "type": "string",
-      "enum": ["referencia_cache", "snapshot_legado"],
-      "description": "Modo da sub-receita. referencia_cache usa subreceita_id como fonte de verdade; snapshot_legado identifica estruturas históricas ainda não migradas."
+      "enum": [
+        "referencia_cache",
+        "snapshot_legado"
+      ],
+      "description": "Modo da sub-receita. referencia_cache usa subreceita_id como fonte de verdade; snapshot_legado identifica estruturas hist\u00f3ricas ainda n\u00e3o migradas."
     },
     "subreceita_sincronizacao_status": {
       "type": "string",
-      "enum": ["sincronizada", "desatualizada", "a_validar", "pendente", "erro_ciclo", "origem_ausente"],
-      "description": "Estado do cache derivado em relação à receita referenciada."
+      "enum": [
+        "sincronizada",
+        "desatualizada",
+        "a_validar",
+        "pendente",
+        "erro_ciclo",
+        "origem_ausente"
+      ],
+      "description": "Estado do cache derivado em rela\u00e7\u00e3o \u00e0 receita referenciada."
     },
     "subreceita_cache": {
       "type": "boolean",
       "default": false,
-      "description": "True quando o item é ingrediente atômico derivado de uma sub-receita. Esses itens são cache operacional, não fonte de verdade."
+      "description": "True quando o item \u00e9 ingrediente at\u00f4mico derivado de uma sub-receita. Esses itens s\u00e3o cache operacional, n\u00e3o fonte de verdade."
     },
     "subreceita_cache_versao": {
       "type": "number",
-      "description": "Versão do algoritmo que gerou o cache da sub-receita. Fase 8 usa versão 2."
+      "description": "Vers\u00e3o do algoritmo que gerou o cache da sub-receita. Fase 8 usa vers\u00e3o 2."
     },
     "subreceita_origem_receita_id": {
       "type": "string",
-      "description": "Receita de origem imediata do ingrediente atômico dentro da árvore de sub-receitas."
+      "description": "Receita de origem imediata do ingrediente at\u00f4mico dentro da \u00e1rvore de sub-receitas."
     },
     "subreceita_origem_item_id": {
       "type": "string",
@@ -106,58 +123,99 @@
     },
     "subreceita_dependencias_assinatura": {
       "type": "string",
-      "description": "Assinatura determinística receita@updated_date das dependências da árvore. Permite detectar alteração inclusive em sub-receitas aninhadas."
+      "description": "Assinatura determin\u00edstica receita@updated_date das depend\u00eancias da \u00e1rvore. Permite detectar altera\u00e7\u00e3o inclusive em sub-receitas aninhadas."
     },
     "subreceita_origem_updated_at": {
       "type": "string",
-      "description": "Data de atualização da sub-receita raiz quando o cache foi gerado."
+      "description": "Data de atualiza\u00e7\u00e3o da sub-receita raiz quando o cache foi gerado."
     },
     "subreceita_sincronizada_em": {
       "type": "string",
-      "description": "Data/hora em que o cache derivado foi reconstruído com sucesso."
+      "description": "Data/hora em que o cache derivado foi reconstru\u00eddo com sucesso."
     },
     "proporcional": {
       "type": "boolean",
       "default": true,
-      "description": "Indica se o item escala proporcionalmente com a receita (true) ou mantém quantidade fixa (false)."
+      "description": "Indica se o item escala proporcionalmente com a receita (true) ou mant\u00e9m quantidade fixa (false)."
+    },
+    "custo_comportamento": {
+      "type": "string",
+      "enum": [
+        "comprado",
+        "reaproveitamento_processo"
+      ],
+      "default": "comprado",
+      "description": "Sem\u00e2ntica can\u00f4nica de custo do item. comprado exige pre\u00e7o de aquisi\u00e7\u00e3o; reaproveitamento_processo representa material gerado e reutilizado dentro do pr\u00f3prio preparo, sem compra/custo incremental e fora da lista de compras."
     },
     "is_base": {
       "type": "boolean",
-      "description": "Espelha se a receita-pai pertence ao catálogo-base compartilhado"
+      "description": "Espelha se a receita-pai pertence ao cat\u00e1logo-base compartilhado"
     },
     "usuario_dono_id": {
       "type": "string",
-      "description": "ID do usuário dono quando a receita-pai é uma cópia pessoal"
+      "description": "ID do usu\u00e1rio dono quando a receita-pai \u00e9 uma c\u00f3pia pessoal"
     }
   },
-  "required": ["receita_id"],
+  "required": [
+    "receita_id"
+  ],
   "rls": {
     "create": {
       "$or": [
-        {"user_condition": {"role": "admin"}},
-        {"$and": [
-          {"data.is_base": false},
-          {"data.usuario_dono_id": "{{user.id}}"}
-        ]}
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "$and": [
+            {
+              "data.is_base": false
+            },
+            {
+              "data.usuario_dono_id": "{{user.id}}"
+            }
+          ]
+        }
       ]
     },
     "read": {
       "$or": [
-        {"data.is_base": true},
-        {"data.usuario_dono_id": "{{user.id}}"},
-        {"user_condition": {"role": "admin"}}
+        {
+          "data.is_base": true
+        },
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     },
     "update": {
       "$or": [
-        {"data.usuario_dono_id": "{{user.id}}"},
-        {"user_condition": {"role": "admin"}}
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     },
     "delete": {
       "$or": [
-        {"data.usuario_dono_id": "{{user.id}}"},
-        {"user_condition": {"role": "admin"}}
+        {
+          "data.usuario_dono_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     }
   }
