@@ -367,7 +367,7 @@ async function sincronizarFila(ctx: any, fila: any, userId: string) {
         workflow_status: reabriu ? 'decisao_pendente' : (existente.workflow_status || 'nao_analisado'),
         prioridade: prioridadePorImpacto(grupo.receitas || 0),
         assinatura_fila: assinaturaFila,
-        ...(reabriu ? { resolvido_em: null, observacao: 'Grupo reapareceu na fila após ter sido resolvido.' } : {}),
+        ...(reabriu ? { observacao: 'Grupo reapareceu na fila após ter sido resolvido.' } : {}),
       });
       atualizados++;
     }
@@ -526,6 +526,7 @@ Deno.serve(async (req) => {
         receitas_prontas_recalculo: fila.receitas_sem_issue_live.length,
         workflow,
         prioridades,
+        resolvidos_historico: (ctx.estadosCuradoria || []).filter((e: any) => e.workflow_status === 'resolvido').length,
         grupos: fila.grupos,
       });
     }
@@ -538,7 +539,7 @@ Deno.serve(async (req) => {
     if (acao === 'atualizar_workflow') {
       if (!grupo) return Response.json({ error: 'Grupo não encontrado ou já resolvido.' }, { status: 404 });
       const status = txt(args?.workflow_status);
-      const permitidos = new Set(['nao_analisado', 'em_analise', 'decisao_pendente', 'mantido_pendente']);
+      const permitidos = new Set(['nao_analisado', 'em_analise', 'decisao_pendente']);
       if (!permitidos.has(status)) return Response.json({ error: 'Status de workflow inválido.' }, { status: 400 });
       await salvarEstadoGrupo(ctx, grupo, user.id, {
         workflow_status: status,
