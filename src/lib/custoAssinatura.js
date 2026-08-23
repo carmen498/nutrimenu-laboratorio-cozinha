@@ -1,5 +1,5 @@
 // Fase 10.4 — espelho frontend da assinatura semântica do custo.
-export const CUSTO_ASSINATURA_VERSAO = 1;
+export const CUSTO_ASSINATURA_VERSAO = 2;
 
 const txt = (v) => v == null ? "" : String(v).trim();
 const num = (v) => Number.isFinite(Number(v)) ? Number(v) : 0;
@@ -32,6 +32,7 @@ export function serializarDeterminantesCusto(/** @type {any} */ {
   rendimento = 0,
   resolverIngrediente = (_id) => null,
   resolverPreco = (_ingrediente) => 0,
+  resolverAssinaturaSubreceita = (_subreceitaId) => "",
 } = {}) {
   const linhas = [
     `V|${CUSTO_ASSINATURA_VERSAO}`,
@@ -48,8 +49,7 @@ export function serializarDeterminantesCusto(/** @type {any} */ {
         txt(item.subreceita_id),
         n(item.quantidade_por_porcao),
         txt(item.unidade_quantidade),
-        txt(item.subreceita_dependencias_assinatura),
-        txt(item.subreceita_sincronizacao_status),
+        txt(resolverAssinaturaSubreceita(txt(item.subreceita_id))),
       ].join("|"));
       continue;
     }
