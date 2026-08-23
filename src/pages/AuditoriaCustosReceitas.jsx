@@ -74,14 +74,25 @@ export default function AuditoriaCustosReceitas() {
     return {
       rows,
       total: rows.length,
-      atuais: rows.filter((r) => r.versao >= CUSTO_RECEITA_MODELO_VERSAO && r.status === "atual").length,
+      atuais: rows.filter((r) =>
+        r.versao >= CUSTO_RECEITA_MODELO_VERSAO
+        && r.status === "atual"
+        && r.receita.custo_cache_invalido !== true
+        && !!r.receita.custo_cache_assinatura
+        && r.receita.custo_cache_assinatura_status === "valida"
+      ).length,
       incompletas: rows.filter((r) => r.status === "incompleto").length,
       legado: rows.filter((r) => r.versao < CUSTO_RECEITA_MODELO_VERSAO).length,
       aRecalcular: rows.filter((r) => r.status === "a_recalcular").length,
       invalidadas: rows.filter((r) => r.receita.custo_cache_invalido === true).length,
       assinaturasPendentes: rows.filter((r) => !r.receita.custo_cache_assinatura || r.receita.custo_cache_assinatura_status !== "valida").length,
       semPreco: rows.reduce((s, r) => s + (Number(r.receita.custo_cache_itens_sem_preco) || 0), 0),
-      pendentes: rows.filter((r) => r.receita.custo_cache_invalido === true || !(r.versao >= CUSTO_RECEITA_MODELO_VERSAO && r.status === "atual")),
+      pendentes: rows.filter((r) =>
+        r.receita.custo_cache_invalido === true
+        || !r.receita.custo_cache_assinatura
+        || r.receita.custo_cache_assinatura_status !== "valida"
+        || !(r.versao >= CUSTO_RECEITA_MODELO_VERSAO && r.status === "atual")
+      ),
     };
   }, [receitas]);
 
