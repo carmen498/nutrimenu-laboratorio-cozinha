@@ -3,7 +3,7 @@
 // Cada ingrediente é resolvido pelo ingrediente_id gravado em IngredienteReceita.
 // O FC efetivo respeita o override da receita antes do FC padrão do ingrediente.
 import { sugerirPerCapita } from "@/lib/perCapitaData";
-import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 
 export function montarListaComprasReceita({ receita, itens, ingMap, porcoesDesejadas }) {
   const porcoesBase = receita?.porcoes_base || 1;
@@ -24,7 +24,7 @@ export function montarListaComprasReceita({ receita, itens, ingMap, porcoesDesej
   // Apenas linhas de ingrediente real são compráveis. Ingredientes explodidos de
   // sub-receita já chegam como tipo="ingrediente" e preservam seus overrides.
   const itensLista = ordenados
-    .filter((item) => item.tipo === "ingrediente")
+    .filter((item) => item.tipo === "ingrediente" && itemParticipaCompra(item))
     .map((item) => {
       const ing = ingMap[item.ingrediente_id];
       const qtdBase = (item.quantidade_por_porcao || 0) * porcoesBase;
