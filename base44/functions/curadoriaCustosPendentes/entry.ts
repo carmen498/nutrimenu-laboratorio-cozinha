@@ -616,6 +616,7 @@ Deno.serve(async (req) => {
           id,
           custo_cache_status: statusAtual === 'atual' ? 'a_recalcular' : (statusAtual || 'a_recalcular'),
           custo_cache_invalido: true,
+          custo_cache_assinatura_status: 'a_verificar',
           custo_cache_invalidado_em: agora,
           custo_cache_invalidacao_motivo: 'decisao_curadoria_custo',
           custo_cache_invalidacao_origem: 'curadoria_10_2_1',
