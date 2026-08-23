@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Plus, Trash2, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 const SUGESTOES_PROCESSO = [
   { nome: "Farinha para enfarinhar/espichar massa", busca: ["farinha de trigo", "farinha"] },
@@ -79,6 +80,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
         custo_unitario: ing?.preco_por_g_rs || 0,
         custo_total: parseFloat(((30) * (ing?.preco_por_g_rs || 0)).toFixed(4)),
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "ingrediente_esquecido_adicionado", origem: "ingrediente_esquecido" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });
@@ -100,6 +102,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
         custo_unitario: match?.preco_por_g_rs || 0,
         custo_total: parseFloat((qtd * (match?.preco_por_g_rs || 0)).toFixed(4)),
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "ingrediente_esquecido_adicionado", origem: "ingrediente_esquecido" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });
@@ -117,6 +120,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
         quantidade_g,
         custo_total: parseFloat((quantidade_g * cu).toFixed(4)),
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "quantidade_ingrediente_esquecido_alterada", origem: "ingrediente_esquecido" });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] }),
   });
@@ -129,6 +133,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
         custo_unitario,
         custo_total: parseFloat((custo_unitario * qtd).toFixed(4)),
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "custo_ingrediente_esquecido_alterado", origem: "ingrediente_esquecido" });
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });
@@ -143,7 +148,10 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   });
 
   const deleteMut = useMutationAny({
-    mutationFn: (itemId) => base44.entities.IngredienteEsquecidoReceita.delete(itemId),
+    mutationFn: async (itemId) => {
+      await base44.entities.IngredienteEsquecidoReceita.delete(itemId);
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "ingrediente_esquecido_removido", origem: "ingrediente_esquecido" });
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["esquecidos-receita", receitaId] });
       toast.success("Removido");
