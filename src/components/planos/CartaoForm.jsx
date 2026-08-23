@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,7 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
   const [parcelas, setParcelas] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const tentativaPagamentoRef = useRef(null);
 
   useEffect(() => {
     // Pré-carrega somente quando o formulário de cartão é realmente aberto.
@@ -55,10 +56,10 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         identificationNumber: cpf,
       });
 
-      const tentativaId = crypto.randomUUID();
+      if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
-        tentativa_id: tentativaId,
+        tentativa_id: tentativaPagamentoRef.current,
         forma_pagamento: "cartao",
         aceite_termos: true,
         token: cardToken.id,
@@ -69,6 +70,8 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
 
       onSuccess(res.data);
     } catch (err) {
+      const status = err?.response?.data?.status;
+      if (["rejected", "cancelled", "estornado"].includes(status)) tentativaPagamentoRef.current = null;
       setError(err?.response?.data?.error || err.message || "Erro ao processar o pagamento.");
     } finally {
       setLoading(false);
