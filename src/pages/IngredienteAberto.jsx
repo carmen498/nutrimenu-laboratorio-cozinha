@@ -82,7 +82,7 @@ export default function IngredienteAberto() {
   }, [isAdmin, todosIngredientes, preferenciasIngredientes]);
 
   const favoritarMut = useMutation({
-    mutationFn: ({ favorito }) => salvarFavoritoIngrediente({
+    mutationFn: (/** @type {any} */ { favorito }) => salvarFavoritoIngrediente({
       ingredienteId: id,
       userId: user?.id,
       favorito,
