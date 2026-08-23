@@ -20,6 +20,7 @@ const mpConfig = read("src/lib/mercadoPagoConfig.js");
 const criarPagamento = read("base44/functions/criarPagamentoMercadoPago/entry.ts");
 const webhook = read("base44/functions/webhookMercadoPago/entry.ts");
 const ativar = read("base44/shared/ativarAssinaturaPagamento.ts");
+const datasAssinatura = read("base44/shared/datasAssinatura.ts");
 const revogar = read("base44/shared/revogarAcessoEstorno.ts");
 const pagamentoSchema = read("base44/entities/Pagamento.jsonc");
 const userSchema = read("base44/entities/User.jsonc");
@@ -58,7 +59,8 @@ assert(webhook.includes("pagamento.status === novoStatus"), "webhook sem idempot
 assert(webhook.includes("resolverStatusOrderMercadoPago") && webhook.includes("resolverStatusPaymentMercadoPago"), "normalização de status incompleta");
 
 assert(ativar.includes("pagamento_ativo_id"), "ativação não registra pagamento vigente");
-assert(ativar.includes("Math.max(dias - 1, 0)"), "validade inclusiva do plano não está protegida");
+assert(ativar.includes("calcularExpiracaoInclusiva(dataInicio, dias)"), "ativação não usa a fonte única de validade inclusiva");
+assert(datasAssinatura.includes("dias - 1"), "validade inclusiva do plano não está protegida na fonte única");
 assert(revogar.includes("usuario.pagamento_ativo_id !== pagamento.id"), "estorno antigo pode revogar assinatura nova");
 
 assert(pagamentoSchema.includes('"data.usuario_id": "{{user.id}}"'), "Pagamento não restringe leitura ao titular");
