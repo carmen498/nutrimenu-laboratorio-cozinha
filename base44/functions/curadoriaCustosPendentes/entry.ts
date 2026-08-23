@@ -347,42 +347,56 @@ async function salvarEstadoGrupo(ctx: any, grupo: any, userId: string, patch: an
 async function sincronizarFila(ctx: any, fila: any, userId: string) {
   const vivos = todosGrupos(fila);
   const chavesVivas = new Set(vivos.map((g: any) => g.grupo_chave));
-  let criados = 0;
-  let atualizados = 0;
-  let resolvidos = 0;
+  const agora = new Date().toISOString();
+  const novos: any[] = [];
+  const patchesVivos: any[] = [];
 
   for (const grupo of vivos) {
     const existente = ctx.estadoMap.get(grupo.grupo_chave);
     const assinaturaFila = await sha256(`${grupo.grupo_chave}|${[...(grupo.item_ids || [])].sort().join(',')}|${[...(grupo.receita_ids || [])].sort().join(',')}`);
+    const base = {
+      grupo_chave: grupo.grupo_chave,
+      tipo_pendencia: grupo.tipo_pendencia,
+      nome: grupo.nome,
+      ingrediente_origem_id: grupo.ingrediente_origem_id || null,
+      contexto: grupo.contexto || null,
+      prioridade: prioridadePorImpacto(grupo.receitas || 0),
+      impacto_receitas: grupo.receitas || 0,
+      impacto_ocorrencias: grupo.ocorrencias || 0,
+      assinatura_fila: assinaturaFila,
+      visto_em: agora,
+      atualizado_por_id: userId,
+    };
     if (!existente) {
-      await salvarEstadoGrupo(ctx, grupo, userId, {
-        workflow_status: 'nao_analisado',
-        prioridade: prioridadePorImpacto(grupo.receitas || 0),
-        assinatura_fila: assinaturaFila,
-      });
-      criados++;
+      novos.push({ ...base, workflow_status: 'nao_analisado' });
     } else {
       const reabriu = existente.workflow_status === 'resolvido';
-      await salvarEstadoGrupo(ctx, grupo, userId, {
+      patchesVivos.push({
+        id: existente.id,
+        ...base,
         workflow_status: reabriu ? 'decisao_pendente' : (existente.workflow_status || 'nao_analisado'),
-        prioridade: prioridadePorImpacto(grupo.receitas || 0),
-        assinatura_fila: assinaturaFila,
         ...(reabriu ? { observacao: 'Grupo reapareceu na fila após ter sido resolvido.' } : {}),
       });
-      atualizados++;
     }
   }
 
-  const agora = new Date().toISOString();
+  for (let i = 0; i < novos.length; i += 200) {
+    await ctx.sr.CuradoriaCustoGrupo.bulkCreate(novos.slice(i, i + 200));
+  }
+  if (patchesVivos.length) await bulk(ctx.sr.CuradoriaCustoGrupo, patchesVivos);
+
   const patchesResolvidos = (ctx.estadosCuradoria || [])
     .filter((e: any) => txt(e.grupo_chave) && !chavesVivas.has(txt(e.grupo_chave)) && e.workflow_status !== 'resolvido')
     .map((e: any) => ({ id: e.id, workflow_status: 'resolvido', resolvido_em: agora, visto_em: agora, atualizado_por_id: userId }));
-  if (patchesResolvidos.length) {
-    await bulk(ctx.sr.CuradoriaCustoGrupo, patchesResolvidos);
-    resolvidos = patchesResolvidos.length;
-  }
+  if (patchesResolvidos.length) await bulk(ctx.sr.CuradoriaCustoGrupo, patchesResolvidos);
 
-  return { criados, atualizados, resolvidos, grupos_vivos: vivos.length, receitas_incompletas: fila.incompletas.length };
+  return {
+    criados: novos.length,
+    atualizados: patchesVivos.length,
+    resolvidos: patchesResolvidos.length,
+    grupos_vivos: vivos.length,
+    receitas_incompletas: fila.incompletas.length,
+  };
 }
 
 function receitaIdsCatalogoParaIngrediente(ctx: any, ingredienteId: string) {
