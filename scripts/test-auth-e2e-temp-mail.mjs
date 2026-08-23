@@ -87,23 +87,30 @@ function extractOtp(message) {
   return matches.at(-1);
 }
 
-function extractResetLink(message) {
+function extractResetEntryLink(message) {
   const content = mailText(message);
-  const rawLinks = content.match(/https?:\/\/[^\s"'<>]+/g) || [];
+  const rawLinks = content.match(/https?:\/\/[^\s"'<>\]]+/g) || [];
   const links = rawLinks.map((x) => x.replace(/[)>.,;]+$/, ""));
-  const candidate = links.find((link) => {
+
+  // Preferir o link final sem tracking quando estiver disponível.
+  const direct = links.find((link) => {
     try {
       const u = new URL(link);
       return u.pathname.includes("reset-password") && (u.searchParams.has("token") || u.searchParams.has("reset_token"));
     } catch { return false; }
   });
-  if (!candidate) {
-    console.error("DEBUG reset-mail subject:", message?.subject || "(sem assunto)");
-    console.error("DEBUG reset-mail excerpt:", content.slice(0, 5000));
-    console.error("DEBUG links encontrados:", links.slice(0, 20));
-  }
-  assert.ok(candidate, "Link de redefinição com token não encontrado no e-mail");
-  return candidate;
+  if (direct) return direct;
+
+  // Os e-mails transacionais da Base44 podem aplicar click tracking do SendGrid.
+  // Nesse caso o usuário clica em /ls/click e é redirecionado ao reset real.
+  const tracked = links.find((link) => {
+    try {
+      const u = new URL(link);
+      return u.hostname.endsWith("ct.sendgrid.net") && u.pathname.includes("/ls/click");
+    } catch { return false; }
+  });
+  assert.ok(tracked, "Link de redefinição não encontrado no e-mail");
+  return tracked;
 }
 
 function extractResetToken(link) {
@@ -208,7 +215,13 @@ try {
 
   const resetMail = await waitForMail(mailToken, { excludeIds: new Set([otpId]) });
   report.reset_mail_received = true;
-  const resetLink = extractResetLink(resetMail);
+  const resetEntryLink = extractResetEntryLink(resetMail);
+
+  // Segue exatamente a cadeia que um clique humano seguiria (inclusive tracking).
+  const resetPage = await fetch(resetEntryLink, { redirect: "follow" });
+  report.reset_page_status = resetPage.status;
+  assert.equal(resetPage.status, 200, `Link real de reset não abre a SPA: HTTP ${resetPage.status}`);
+  const resetLink = resetPage.url;
   const resetUrl = new URL(resetLink);
   report.reset_link_host = resetUrl.host;
   report.reset_link_path = resetUrl.pathname;
@@ -219,10 +232,6 @@ try {
     report.token_has_exp_claim = true;
     report.token_ttl_seconds_at_receipt = Math.max(0, exp - Math.floor(Date.now() / 1000));
   }
-
-  const resetPage = await fetch(resetLink, { redirect: "manual" });
-  report.reset_page_status = resetPage.status;
-  assert.equal(resetPage.status, 200, `Link real de reset não abre a SPA: HTTP ${resetPage.status}`);
 
   const reset = await appPost("/auth/reset-password", { reset_token: resetToken, new_password: newPassword });
   report.reset_status = reset.response.status;
