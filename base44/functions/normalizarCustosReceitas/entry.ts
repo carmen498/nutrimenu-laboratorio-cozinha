@@ -344,12 +344,10 @@ Deno.serve(async (req) => {
         custo_cache_status: status,
         custo_cache_contexto: contexto,
         custo_cache_itens_sem_preco: semPreco + refAusente + fallbackEsquecido,
-        custo_cache_atualizado_em: agora,
         custo_cache_invalido: false,
         custo_cache_assinatura: assinaturaCusto,
         custo_cache_assinatura_versao: CUSTO_ASSINATURA_VERSAO,
         custo_cache_assinatura_status: 'valida',
-        custo_cache_assinatura_gerada_em: agora,
       };
 
       // Nunca substitui valores monetários por cálculo parcial/ambíguo.
@@ -379,8 +377,11 @@ Deno.serve(async (req) => {
       }
 
       const mudou = Object.entries(patch).some(([k, v]) => String(receita[k] ?? '') !== String(v ?? ''));
-      if (mudou) atualizacoes.push({ id: receitaId, ...patch });
-      else if (!incompleta) jaAtuais++;
+      if (mudou) {
+        patch.custo_cache_atualizado_em = agora;
+        patch.custo_cache_assinatura_gerada_em = agora;
+        atualizacoes.push({ id: receitaId, ...patch });
+      } else if (!incompleta) jaAtuais++;
     }
 
     if (!dryRun) {
