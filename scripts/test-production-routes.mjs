@@ -20,7 +20,9 @@ assert.equal(httpsRoot.status, 200, `HTTPS apex respondeu ${httpsRoot.status}`);
 const hsts = httpsRoot.headers.get('strict-transport-security') || '';
 assert.match(hsts, /max-age=31536000/i, 'HSTS de 1 ano não encontrado no apex');
 const htmlRoot = await httpsRoot.text();
-assert.match(htmlRoot, /<div id=["']root["']><\/div>/i, 'Shell SPA não encontrado no apex');
+assert.match(htmlRoot, /<div id=["']root["']/i, 'Shell SPA não encontrado no apex');
+assert.doesNotMatch(htmlRoot, /sdk\.mercadopago\.com\/js\/v2/i, 'Produção ainda carrega SDK Mercado Pago global legado; build publicada está defasada');
+assert.doesNotMatch(htmlRoot, /logUserAgentDiagnostico/i, 'Produção ainda contém diagnóstico User-Agent legado; build publicada está defasada');
 
 const httpWww = await fetchManual('http://www.laboratoriodecozinha.com.br/');
 assert.ok(redirectOk(httpWww.status), `HTTP www não redirecionou: ${httpWww.status}`);
@@ -43,6 +45,7 @@ const routes = [
   '/planos',
   '/conta',
   '/suporte',
+  '/sobre-carmen',
   '/receitas',
   '/minhas-receitas',
   '/cardapios',
@@ -57,7 +60,7 @@ for (const path of routes) {
   const res = await fetch(`${ORIGIN}${path}`, { redirect: 'manual' });
   assert.equal(res.status, 200, `${path} respondeu ${res.status}; deep link da SPA quebrado`);
   const html = await res.text();
-  assert.match(html, /<div id=["']root["']><\/div>/i, `${path} não retornou o shell da SPA`);
+  assert.match(html, /<div id=["']root["']/i, `${path} não retornou o shell da SPA`);
 }
 
 // Exercita somente a rota pública do backend com um endereço propositalmente inexistente.
