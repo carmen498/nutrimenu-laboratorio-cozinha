@@ -264,6 +264,12 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             subreceita_nome: ing.subreceita_nome,
             quantidade_por_porcao: ing.quantidade_por_porcao,
             ordem: i * 10,
+            subreceita_modo: ing.subreceita_modo || "referencia_cache",
+            subreceita_cache_versao: 2,
+            subreceita_sincronizacao_status: ing.subreceita_sincronizacao_status || "pendente",
+            subreceita_dependencias_assinatura: ing.subreceita_dependencias_assinatura || "",
+            subreceita_origem_updated_at: ing.subreceita_origem_updated_at || "",
+            subreceita_sincronizada_em: ing.subreceita_sincronizada_em || "",
           });
           currentParentId = marker.id;
         } else {
@@ -277,8 +283,21 @@ export default function NovaReceitaManual({ open, onClose, onCreated, receitasEx
             subreceita_nome: ing.subreceita_nome || "",
             pre_preparo: ing.pre_preparo || "",
             quantidade_por_porcao: ing.quantidade_por_porcao,
+            unidade_quantidade: ing.unidade_quantidade,
+            proporcional: ing.proporcional,
+            fator_correcao_override: ing.fator_correcao_override,
+            medida_caseira_id: ing.medida_caseira_id,
+            quantidade_medida_caseira: ing.quantidade_medida_caseira,
+            medida_caseira: ing.medida_caseira,
             ordem: i * 10,
             subreceita_parent_id: isChild ? currentParentId : "",
+            subreceita_cache: isChild ? true : ing.subreceita_cache,
+            subreceita_cache_versao: isChild ? 2 : ing.subreceita_cache_versao,
+            subreceita_origem_receita_id: isChild ? ing.subreceita_origem_receita_id : undefined,
+            subreceita_origem_item_id: isChild ? ing.subreceita_origem_item_id : undefined,
+            subreceita_linhagem: isChild ? ing.subreceita_linhagem : undefined,
+            subreceita_dependencias_assinatura: isChild ? ing.subreceita_dependencias_assinatura : undefined,
+            subreceita_origem_updated_at: isChild ? ing.subreceita_origem_updated_at : undefined,
           });
           if (!isChild) currentParentId = "";
         }
