@@ -125,6 +125,7 @@ Deno.serve(async (req) => {
     const dryRun = args?.dry_run === true;
     const somenteLegado = args?.somente_legado === true;
     const somenteIncompletas = args?.somente_incompletas === true;
+    const somenteInvalidadas = args?.somente_invalidadas === true;
     const receitaIds = Array.isArray(args?.receita_ids)
       ? new Set(args.receita_ids.map((id: any) => txt(id)).filter(Boolean))
       : null;
@@ -144,6 +145,7 @@ Deno.serve(async (req) => {
       if (receitaIds && !receitaIds.has(txt(r.id))) return false;
       if (somenteLegado && num(r.custo_modelo_versao) >= VERSAO) return false;
       if (somenteIncompletas && r?.custo_cache_status !== 'incompleto') return false;
+      if (somenteInvalidadas && r?.custo_cache_invalido !== true) return false;
       return true;
     });
 
