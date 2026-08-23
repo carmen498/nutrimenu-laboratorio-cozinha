@@ -16,9 +16,9 @@ export default function PlanoCard({
   isCurrentPlan = false,
   validadeLabel,
   validadeData,
-  diasRestantes,
+  diasRestantes = null,
   bloqueado = false,
-  mensagemBloqueio,
+  mensagemBloqueio = "",
 }) {
   return (
     <div
