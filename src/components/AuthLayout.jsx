@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+export default function AuthLayout({ icon: Icon, title, subtitle = null, footer = null, children = null }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="w-full py-6 bg-brand flex items-center justify-center px-4">
