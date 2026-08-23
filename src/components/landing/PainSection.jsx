@@ -18,7 +18,7 @@ export default function PainSection({ image }) {
         <div className="lc-section-head lc-container--narrow">
           <p className="lc-eyebrow">A dor</p>
           <h2 className="lc-title">
-            Livro de receitas é coisa do passado. Você ainda usa caderno, papel e calculadora para planejar sua cozinha?
+            Você ainda planeja sua cozinha com caderno, papel e calculadora?
           </h2>
         </div>
         <div className="lc-pain-grid">
@@ -33,7 +33,7 @@ export default function PainSection({ image }) {
             </p>
           </div>
           <div className="lc-pain-media">
-            <img src={image} alt="Mesa de madeira rústica em vista de cima com caderno de receitas, potes etiquetados e plano de produção" loading="lazy" />
+            <img src={image} alt="Mesa de madeira rústica em vista de cima com caderno de receitas, potes etiquetados e plano de produção" width="800" height="800" loading="lazy" />
           </div>
         </div>
       </div>

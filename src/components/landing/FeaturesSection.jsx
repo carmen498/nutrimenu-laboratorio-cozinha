@@ -1,4 +1,5 @@
 import React from "react";
+import { useAuth } from "@/lib/AuthContext";
 
 const FEATURES = [
   { index: "01", title: "Receitas que escalam com você", text: "Ajuste porções e rendimentos sem refazer contas. Os ingredientes acompanham a nova escala automaticamente." },
@@ -10,8 +11,9 @@ const FEATURES = [
 ];
 
 export default function FeaturesSection() {
+  const { isAuthenticated } = useAuth();
   return (
-    <section className="lc-section lc-features" aria-labelledby="features-title">
+    <section className="lc-section" aria-labelledby="features-title">
       <div className="lc-container">
         <div className="lc-section-head lc-container--narrow">
           <p className="lc-eyebrow">O método dentro do app</p>
@@ -43,6 +45,9 @@ export default function FeaturesSection() {
             <span>Compra planejada</span>
             <span>Produção organizada</span>
           </div>
+          <a className="lc-btn lc-btn--primary" href={isAuthenticated ? "/app" : "/register"}>
+            {isAuthenticated ? "Entrar no app" : "Experimentar 7 dias grátis"}
+          </a>
         </div>
       </div>
     </section>

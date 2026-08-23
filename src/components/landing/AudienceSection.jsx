@@ -2,17 +2,17 @@ import React from "react";
 
 const AUDIENCE = [
   {
-    kicker: "Profissional 🍳",
+    kicker: "Profissional",
     title: "Para quem precisa transformar receita em operação",
     text: "Cozinheiras artesanais, buffets, marmitas, confeiteiras e nutricionistas que precisam controlar quantidade, custo e compra sem depender de planilhas paralelas.",
   },
   {
-    kicker: "Iniciante 💍",
+    kicker: "Iniciante",
     title: "Para quem quer organizar a cozinha antes da correria",
     text: "Famílias, casais e pessoas aprendendo a cozinhar que querem decidir o cardápio, comprar na medida certa e aproveitar melhor o que já têm em casa.",
   },
   {
-    kicker: "Independente 👨",
+    kicker: "Independente",
     title: "Para quem passou a cozinhar para si mesmo",
     text: "Quem mora sozinho ou mudou de rotina e quer planejar refeições simples, evitar excesso de compras e depender menos de delivery no dia a dia.",
   },
@@ -53,10 +53,10 @@ export default function AudienceSection({ imageBaking, imageCouple }) {
 
           <div className="lc-audience-photos">
             <figure className="lc-audience-photo lc-audience-photo--large">
-              <img src={imageBaking} alt="Pessoa preparando um bolo em uma bancada organizada" loading="lazy" />
+              <img src={imageBaking} alt="Pessoa preparando um bolo em uma bancada organizada" width="800" height="800" loading="lazy" />
             </figure>
             <figure className="lc-audience-photo lc-audience-photo--small">
-              <img src={imageCouple} alt="Casal cozinhando junto em uma cozinha residencial" loading="lazy" />
+              <img src={imageCouple} alt="Casal cozinhando junto em uma cozinha residencial" width="700" height="700" loading="lazy" />
             </figure>
           </div>
         </div>

@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700&family=Great+Vibes&display=swap');
-
+/* As fontes (Plus Jakarta Sans, Playfair Display, Great Vibes) são carregadas
+   via <link> no index.html, com preconnect — sem cadeia de @import bloqueante. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

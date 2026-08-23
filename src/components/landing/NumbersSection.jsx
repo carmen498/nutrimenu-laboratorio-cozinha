@@ -4,14 +4,14 @@ const NUMBERS = [
   { figure: "+2.200", label: "Receitas" },
   { figure: "+630", label: "Ingredientes" },
   { figure: "+50", label: "Cardápios" },
-  { figure: "+30", label: "Anos de Experiência" },
   { figure: "18", label: "Categorias de receitas" },
 ];
 
 export default function NumbersSection() {
   return (
-    <section className="lc-numbers">
-      <div className="lc-container lc-section" style={{ padding: "48px 20px" }}>
+    <section className="lc-numbers" aria-label="O que você encontra dentro do app">
+      <div className="lc-container lc-section">
+        <p className="lc-eyebrow">O que você encontra dentro do app</p>
         <div className="lc-numbers-grid">
           {NUMBERS.map((n) => (
             <div key={n.label}>

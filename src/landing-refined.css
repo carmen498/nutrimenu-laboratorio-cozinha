@@ -3,9 +3,12 @@
   --lc-surface: #f3eadb;
   --lc-surface-strong: #e6d7c0;
   --lc-ink: #34412d;
-  --lc-muted-refined: #665f55;
+  /* #5d564c passa de 4,5:1 sobre todas as superfícies claras da página */
+  --lc-muted-refined: #5d564c;
+  --lc-bege-escuro: #5d564c;
   --lc-line: rgba(52, 65, 45, 0.16);
-  background-image: none;
+  /* alinha as regras vivas da camada base ao accent refinado */
+  --lc-terracota: var(--lc-accent);
   background-color: var(--lc-surface);
   color: var(--lc-ink);
 }
@@ -19,7 +22,15 @@
 .lc-page .lc-pain-close,
 .lc-page .lc-benefit h3,
 .lc-page .lc-guarantee h2 {
-  font-family: ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  font-family: 'Playfair Display', ui-serif, Georgia, Cambria, "Times New Roman", serif;
+}
+
+/* Texto de apoio sobre superfícies claras: mínimo 4,5:1 */
+.lc-page .lc-seals,
+.lc-page .lc-plan-detail,
+.lc-page .lc-faq-a,
+.lc-page .lc-benefit p {
+  color: #5d564c;
 }
 
 .lc-page .lc-eyebrow {
@@ -29,31 +40,74 @@
 
 .lc-page .lc-section { padding-top: 88px; padding-bottom: 88px; }
 .lc-page .lc-section-head { margin-bottom: 48px; }
+.lc-page .lc-section-head--center { text-align: center; }
 .lc-page .lc-container { max-width: 1180px; }
 .lc-page .lc-container--narrow { max-width: 780px; }
 
 .lc-page .lc-btn {
   border-radius: 10px;
   min-height: 48px;
+  line-height: 1.3;
   transition: transform .2s ease, background-color .2s ease, border-color .2s ease;
+}
+
+/* Focus ring com contraste >= 3:1 em cada superfície (WCAG 1.4.11) */
+.lc-page .lc-btn:focus-visible,
+.lc-page a:focus-visible,
+.lc-page summary:focus-visible {
+  outline-color: var(--lc-accent);
+}
+.lc-page .lc-numbers :focus-visible,
+.lc-page .lc-features-close :focus-visible,
+.lc-page .lc-guarantee :focus-visible,
+.lc-page .lc-final :focus-visible,
+.lc-page .lc-sticky-footer :focus-visible {
+  outline-color: var(--lc-acafrao);
 }
 .lc-page .lc-btn--primary { background: var(--lc-accent); color: #fff8ed; }
 .lc-page .lc-btn--primary:hover { background: #7f3318; transform: translateY(-1px); }
 .lc-page .lc-btn--secondary { background: transparent; color: var(--lc-ink); border-color: var(--lc-line); }
 .lc-page .lc-btn--secondary:hover { background: rgba(52,65,45,.06); }
-.lc-page .lc-text-link { color: var(--lc-ink); font-weight: 700; text-underline-offset: 4px; }
+.lc-page .lc-text-link {
+  color: var(--lc-ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
 
-.lc-page .lc-hero { padding-top: 64px; padding-bottom: 72px; }
+.lc-page .lc-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.lc-page .lc-topbar-brand {
+  font-family: 'Playfair Display', ui-serif, Georgia, serif;
+  font-weight: 700;
+  font-size: 1.12rem;
+  color: var(--lc-ink);
+}
+
+.lc-page .lc-hero { padding-top: 28px; padding-bottom: 72px; }
 .lc-page .lc-hero-grid { gap: 64px; }
 .lc-page .lc-hero-copy { max-width: 640px; }
-.lc-page .lc-hero h1 { font-size: clamp(2.7rem, 5.2vw, 4.65rem); line-height: .98; letter-spacing: -.035em; max-width: 12ch; }
+.lc-page .lc-hero h1 { font-size: clamp(2.7rem, 5.2vw, 3.9rem); line-height: 1.05; letter-spacing: -.02em; max-width: 18ch; text-wrap: balance; }
 .lc-page .lc-hero-sub { max-width: 52ch; color: var(--lc-muted-refined); }
 .lc-page .lc-hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 22px; }
 .lc-page .lc-hero-media { border-radius: 12px 54px 12px 12px; box-shadow: 0 34px 70px -40px rgba(52,65,45,.65); border-color: var(--lc-line); }
 .lc-page .lc-hero-media img { aspect-ratio: 4 / 5; }
 
 .lc-page .lc-numbers { background: var(--lc-ink); border: 0; }
+.lc-page .lc-numbers .lc-section { padding: 48px 20px; }
+.lc-page .lc-numbers .lc-eyebrow { color: #e9b65b; text-align: center; margin: 0 0 30px; }
 .lc-page .lc-number-figure { color: #e9b65b; }
+
+/* Seções com fundo destacado (reuso do token, sem estilo inline) */
+.lc-page .lc-section--tinted { background: var(--lc-surface-strong); }
 
 .lc-page .lc-audience-section { background: var(--lc-surface-strong) !important; }
 .lc-page .lc-audience-editorial { display: grid; gap: 34px; }
@@ -76,6 +130,8 @@
 .lc-page .lc-feature-row p { margin: 0; color: var(--lc-muted-refined); max-width: 68ch; }
 .lc-page .lc-features-close { border-radius: 10px; background: var(--lc-ink); padding: 28px 30px; }
 .lc-page .lc-features-close p { margin: 0 0 16px; font-weight: 700; }
+.lc-page .lc-features-close .lc-btn--primary { background: #e9b65b; color: #2f372a; margin-top: 22px; }
+.lc-page .lc-features-close .lc-btn--primary:hover { background: #f0c778; }
 .lc-page .lc-outcome-strip { display: flex; flex-wrap: wrap; gap: 10px 28px; color: #efe2cd; }
 .lc-page .lc-outcome-strip span { position: relative; }
 .lc-page .lc-outcome-strip span:not(:last-child)::after { content: "/"; position: absolute; right: -17px; opacity: .4; }
@@ -83,13 +139,66 @@
 .lc-page .lc-benefit,
 .lc-page .lc-plan,
 .lc-page .lc-faq-item { border-radius: 10px; box-shadow: none; }
+.lc-page .lc-benefits-cta { margin: 30px 0 0; text-align: center; }
 .lc-page .lc-plan--featured { background: #f6ead7; border-color: var(--lc-accent); }
 .lc-page .lc-plan-badge { border-radius: 5px; background: var(--lc-accent); }
+.lc-page .lc-plan-price { line-height: 1.15; }
+.lc-page .lc-plan-detail { margin-bottom: 18px; }
+.lc-page .lc-plan .lc-btn { margin-top: auto; }
+.lc-page .lc-plan-period {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--lc-muted-refined);
+}
+.lc-page .lc-plans-note {
+  margin: 24px auto 0;
+  max-width: 62ch;
+  text-align: center;
+  color: #5d564c;
+  font-size: 0.95rem;
+}
 .lc-page .lc-final { border-radius: 12px; background: var(--lc-ink); }
 .lc-page .lc-final .lc-btn--primary { background: #e9b65b; color: #2f372a; }
+.lc-page .lc-final .lc-btn--primary:hover { background: #f0c778; }
+.lc-page .lc-final .lc-final-seals { margin-top: 22px; }
+.lc-page .lc-final .lc-final-note {
+  font-size: 0.95rem;
+  margin: 18px auto 0;
+  max-width: 56ch;
+  color: rgba(247, 238, 223, 0.88);
+}
 .lc-page .lc-guarantee { border-radius: 10px; }
+.lc-page .lc-guarantee h2 { display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-.lc-page .lc-sticky-footer { z-index: 40; background: rgba(52,65,45,.97); backdrop-filter: blur(12px); }
+/* Rodapé real da página (landmark contentinfo) */
+.lc-page .lc-footer { padding: 20px 20px 36px; }
+.lc-page .lc-footer-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.lc-page .lc-footer nav { display: flex; flex-wrap: wrap; gap: 0 20px; justify-content: center; font-size: 14px; }
+.lc-page .lc-footer nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--lc-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lc-page .lc-footer-copy { font-size: 13px; color: #5d564c; text-align: center; margin: 0; }
+
+.lc-page .lc-sticky-footer { z-index: 40; background: rgba(52,65,45,.97); }
+.lc-page .lc-sticky-text strong { color: #e9b65b; }
+/* Mesmo tratamento dos demais botões sobre fundo escuro: o accent sobre a
+   barra oliva fica em 1,6:1 e o botão some no fundo. */
+.lc-page .lc-sticky-footer .lc-btn--primary { background: #e9b65b; color: #2f372a; }
+.lc-page .lc-sticky-footer .lc-btn--primary:hover { background: #f0c778; }
 
 @media (min-width: 860px) {
   .lc-page .lc-audience-editorial { grid-template-columns: 1.05fr .95fr; align-items: start; }
@@ -97,11 +206,12 @@
   .lc-page .lc-feature-list { margin-left: 18%; }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 859.99px) {
   .lc-page .lc-section { padding: 64px 18px; }
-  .lc-page .lc-hero { padding: 40px 18px 56px; }
-  .lc-page .lc-hero h1 { font-size: clamp(2.45rem, 12vw, 3.45rem); }
+  .lc-page .lc-hero { padding: 24px 18px 56px; }
+  .lc-page .lc-hero h1 { font-size: clamp(2.45rem, 12vw, 2.9rem); }
   .lc-page .lc-hero-media { border-radius: 10px 34px 10px 10px; }
+  .lc-page .lc-topbar { margin-bottom: 28px; }
   .lc-page .lc-audience-photos { grid-template-columns: 1fr; }
   .lc-page .lc-audience-photo--small { display: none; }
   .lc-page .lc-feature-row { grid-template-columns: 42px 1fr; gap: 12px; }

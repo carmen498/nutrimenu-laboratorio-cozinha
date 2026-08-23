@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import "@/landing.css";
 import "@/landing-refined.css";
-import carmenPhoto from "@/assets/carmenPhoto";
+import { useAuth } from "@/lib/AuthContext";
 import StickyFooter from "@/components/landing/StickyFooter";
 import HeroSection from "@/components/landing/HeroSection";
 import NumbersSection from "@/components/landing/NumbersSection";
@@ -14,16 +14,23 @@ import PlansSection from "@/components/landing/PlansSection";
 import GuaranteeSection from "@/components/landing/GuaranteeSection";
 import FaqSection from "@/components/landing/FaqSection";
 import FinalCtaSection from "@/components/landing/FinalCtaSection";
+import heroImg from "@/assets/landing/hero.jpg";
+import painImg from "@/assets/landing/pain.jpg";
+import bakingImg from "@/assets/landing/baking.jpg";
+import coupleImg from "@/assets/landing/couple.jpg";
+import carmenImg from "@/assets/landing/carmen.jpg";
 
 const IMG = {
-  hero: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/5ab5bfbdd_generated_image.png",
-  pain: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/b43340f32_generated_image.png",
-  baking: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/9196f8bd5_generated_image.png",
-  couple: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/ddf030eaf_generated_image.png",
-  carmen: carmenPhoto,
+  hero: heroImg,
+  pain: painImg,
+  baking: bakingImg,
+  couple: coupleImg,
+  carmen: carmenImg,
 };
 
 export default function Landing() {
+  const { isAuthenticated } = useAuth();
+
   useEffect(() => {
     const previousTitle = document.title;
     const existingDescription = document.querySelector('meta[name="description"]');
@@ -55,19 +62,36 @@ export default function Landing() {
   }, []);
 
   return (
-    <main className="lc-page">
-      <HeroSection heroImage={IMG.hero} />
-      <NumbersSection />
-      <PainSection image={IMG.pain} />
-      <AudienceSection imageBaking={IMG.baking} imageCouple={IMG.couple} />
-      <FeaturesSection />
-      <StorySection image={IMG.carmen} />
-      <BenefitsSection />
-      <PlansSection />
-      <GuaranteeSection />
-      <FaqSection />
-      <FinalCtaSection />
+    <div className="lc-page">
+      <main>
+        <HeroSection heroImage={IMG.hero} />
+        <NumbersSection />
+        <PainSection image={IMG.pain} />
+        <AudienceSection imageBaking={IMG.baking} imageCouple={IMG.couple} />
+        <FeaturesSection />
+        <StorySection image={IMG.carmen} />
+        <BenefitsSection />
+        <PlansSection />
+        <GuaranteeSection />
+        <FaqSection />
+        <FinalCtaSection />
+      </main>
+      <footer className="lc-footer">
+        <div className="lc-footer-inner">
+          <nav aria-label="Links legais e acesso">
+            <a href="/sobre">Sobre</a>
+            <a href="/contato">Contato</a>
+            <a href="/termos">Termos de Uso</a>
+            <a href="/privacidade">Política de Privacidade</a>
+            <a href="https://wa.me/555134160886" target="_blank" rel="noopener noreferrer">Suporte</a>
+            <a href={isAuthenticated ? "/app" : "/login"}>{isAuthenticated ? "Entrar no app" : "Entrar"}</a>
+          </nav>
+          <p className="lc-footer-copy">
+            Laboratório de Cozinha é parte da Plataforma ZR · Todos os direitos reservados
+          </p>
+        </div>
+      </footer>
       <StickyFooter />
-    </main>
+    </div>
   );
 }

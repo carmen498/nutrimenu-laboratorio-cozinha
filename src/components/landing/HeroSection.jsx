@@ -7,12 +7,18 @@ export default function HeroSection({ heroImage }) {
   const primaryLabel = isAuthenticated ? "Entrar no app" : "Experimentar 7 dias grátis";
   return (
     <section className="lc-hero" aria-labelledby="landing-hero-title">
+      <div className="lc-container lc-topbar">
+        <span className="lc-topbar-brand">Laboratório de Cozinha</span>
+        <a className="lc-text-link" href={isAuthenticated ? "/app" : "/login"}>
+          {isAuthenticated ? "Entrar no app" : "Já é assinante? Entrar"}
+        </a>
+      </div>
       <div className="lc-container lc-hero-grid">
         <div className="lc-hero-copy">
           <p className="lc-eyebrow">Planejamento de cozinha com método</p>
           <h1 id="landing-hero-title">Planeje, calcule e produza com segurança antes de acender o fogo.</h1>
           <p className="lc-hero-sub">
-            O que vamos cozinhar hoje? Do planejamento ao prato — sem improviso, sem desperdício, sem estresse. O app que organiza sua cozinha, escala suas receitas e calcula tudo por você.
+            Do planejamento ao prato: o app que organiza sua cozinha, escala receitas e calcula custos e compras por você — sem improviso e sem desperdício.
           </p>
           <div className="lc-hero-cta">
             <a className="lc-btn lc-btn--primary lc-btn--lg" href={primaryHref}>
@@ -23,7 +29,7 @@ export default function HeroSection({ heroImage }) {
             </a>
           </div>
           <div className="lc-hero-seals lc-seals" aria-label="Condições do teste">
-            <span className="lc-seal">Acesso imediato</span>
+            <span className="lc-seal">7 dias grátis</span>
             <span className="lc-seal">Sem cartão no teste</span>
             <span className="lc-seal">Sem renovação automática</span>
           </div>
@@ -32,7 +38,9 @@ export default function HeroSection({ heroImage }) {
           <img
             src={heroImage}
             alt="Casal maduro preparando uma refeição em uma cozinha residencial organizada"
-            fetchPriority="high"
+            width="900"
+            height="900"
+            fetchpriority="high"
           />
         </figure>
       </div>

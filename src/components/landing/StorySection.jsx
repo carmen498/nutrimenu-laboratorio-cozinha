@@ -15,7 +15,7 @@ export default function StorySection({ image }) {
     <section className="lc-story lc-section">
       <div className="lc-container lc-story-grid">
         <div className="lc-story-media">
-          <img src={image} alt="Carmen Reinstein cozinhando em uma cozinha rústica, mexendo uma panela de cobre sobre o fogão" loading="lazy" />
+          <img src={image} alt="Carmen Reinstein cozinhando em uma cozinha rústica, mexendo uma panela de cobre sobre o fogão" width="800" height="800" loading="lazy" />
         </div>
         <div className="lc-story-text">
           <h2>Comecei aos 5 anos cuidando das panelas. Nunca mais parei.</h2>
@@ -23,7 +23,7 @@ export default function StorySection({ image }) {
             {PARAGRAPHS.map((p, i) => <p key={i}>{p}</p>)}
           </div>
           <p className="lc-story-sign">Carmen Reinstein · Culinarista · Nutricionista · Empresária</p>
-          <p className="lc-story-seals">👩‍🍳 30+ anos de experiência · 📚 3 livros publicados · 👥 Milhares de alunas formadas</p>
+          <p className="lc-story-seals">30+ anos de experiência · 3 livros publicados · Milhares de alunas formadas</p>
         </div>
       </div>
     </section>
