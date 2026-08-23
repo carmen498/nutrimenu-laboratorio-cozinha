@@ -2,9 +2,13 @@
   "name": "LogEmail",
   "type": "object",
   "properties": {
+    "usuario_id": {
+      "type": "string",
+      "description": "ID t\u00e9cnico do usu\u00e1rio destinat\u00e1rio, quando dispon\u00edvel; usado para deduplica\u00e7\u00e3o sem depender do contato em claro"
+    },
     "destinatario_email": {
       "type": "string",
-      "description": "E-mail do destinat\u00e1rio"
+      "description": "E-mail mascarado do destinat\u00e1rio (ex.: ca***@dominio.com); novos registros n\u00e3o persistem o endere\u00e7o completo"
     },
     "tipo": {
       "type": "string",
@@ -36,7 +40,7 @@
     },
     "detalhe_erro": {
       "type": "string",
-      "description": "Mensagem de erro completa retornada pelo Resend quando o envio falha (c\u00f3digo HTTP + corpo da resposta), para diagn\u00f3stico"
+      "description": "Resumo sanitizado do erro de envio, sem payload bruto, token, e-mail ou telefone"
     }
   },
   "required": [
