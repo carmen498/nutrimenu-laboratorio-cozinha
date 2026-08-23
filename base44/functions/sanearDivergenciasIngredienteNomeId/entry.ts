@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.43';
 import {
   construirIndiceNomes,
   construirIndiceSinonimos,
+  construirIndiceAliasesSeguros,
   classificarDivergenciaIngrediente,
   normIngrediente,
 } from '../../shared/divergenciaIngrediente.ts';
@@ -85,6 +86,7 @@ Deno.serve(async (req) => {
     const itemMap = new Map(itens.map((i: any) => [i.id, i]));
     const nomeIndex = construirIndiceNomes(ingredientes);
     const sinonimoIndex = construirIndiceSinonimos(sinonimos);
+    const aliasSeguroIndex = construirIndiceAliasesSeguros(nomeIndex);
 
     const divergencias: any[] = [];
     const acoesFonte = new Map<string, any>();
@@ -116,6 +118,7 @@ Deno.serve(async (req) => {
             ingredienteMap,
             nomeIndex,
             sinonimoIndex,
+            aliasSeguroIndex,
           });
 
           // Filho divergente com fonte já canônica = cache da Fase 8 ficou velho.
