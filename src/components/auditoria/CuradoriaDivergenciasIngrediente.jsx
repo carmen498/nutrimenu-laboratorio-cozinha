@@ -31,7 +31,7 @@ const MOTIVO_LABEL = {
   mesma_fonte_com_evidencias_conflitantes: "fonte com evidências conflitantes",
 };
 
-const PRIORIDADE_LABEL = { alta: "Alta", media: "Média", baixa: "Baixa" };
+const PRIORIDADE_LABEL = { alta: "P0 · Alta", media: "P1 · Média", baixa: "P2 · Baixa" };
 const norm = (v) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 function GrupoCard({ grupo, onCurar }) {
@@ -231,15 +231,15 @@ export default function CuradoriaDivergenciasIngrediente() {
       <Card className="p-4 border-primary/30">
         <div className="flex flex-wrap justify-between gap-3 items-start">
           <div>
-            <h3 className="font-semibold flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Fase 10.4.2 — Curadoria ID × nome</h3>
+            <h3 className="font-semibold flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Fases 10.4.2–10.4.2.1 — Curadoria ID × nome</h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-3xl">
-              Fila humana para divergências residuais. Similaridade é apenas sugestão; toda mudança de identidade exige justificativa, simulação assinada e confirmação explícita.
+              Fila humana para divergências residuais, com P0/P1 curados por evidência contextual do próprio cadastro. Similaridade é apenas sugestão; toda mudança de identidade exige justificativa e confirmação explícita.
             </p>
           </div>
           <div className="flex flex-wrap gap-2 items-center">
             <div className="px-3 py-1.5 rounded border text-center"><p className="text-[10px] text-muted-foreground">Ocorrências</p><p className="font-bold">{data?.ocorrencias_residuais || 0}</p></div>
             <div className="px-3 py-1.5 rounded border text-center"><p className="text-[10px] text-muted-foreground">Grupos</p><p className="font-bold">{data?.total_grupos || 0}</p></div>
-            <div className="px-3 py-1.5 rounded border text-center"><p className="text-[10px] text-muted-foreground">Alta</p><p className="font-bold">{data?.prioridades?.alta || 0}</p></div>
+            <div className="px-3 py-1.5 rounded border text-center"><p className="text-[10px] text-muted-foreground">P0 abertos</p><p className="font-bold">{data?.prioridades?.alta || 0}</p></div>
             <Button variant="outline" size="sm" onClick={sincronizarFila} disabled={processando} className="gap-1.5">
               {processando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />} Sincronizar fila
             </Button>
@@ -266,9 +266,9 @@ export default function CuradoriaDivergenciasIngrediente() {
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas prioridades</SelectItem>
-            <SelectItem value="alta">Alta · 20+</SelectItem>
-            <SelectItem value="media">Média · 5–19</SelectItem>
-            <SelectItem value="baixa">Baixa · 1–4</SelectItem>
+            <SelectItem value="alta">P0 · Alta · 20+</SelectItem>
+            <SelectItem value="media">P1 · Média · 5–19</SelectItem>
+            <SelectItem value="baixa">P2 · Baixa · 1–4</SelectItem>
           </SelectContent>
         </Select>
       </div>
