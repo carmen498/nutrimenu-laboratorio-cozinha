@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
 import { salvarDadosComerciaisIngrediente } from "@/lib/preferenciaIngredienteUsuario";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 // Hook compartilhado de salvamento de Ingrediente.
 // Segurança/arquitetura:
@@ -61,6 +62,7 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
       const payload = { ...data, preco_por_g_rs: preco_por_g };
 
       if (data.id) {
+        const atualMestre = await base44.entities.Ingrediente.get(data.id);
         const { id, created_date, updated_date, created_by_id, ...rest } = payload;
         const precoAlterado = data.preco_embalagem_rs !== data._preco_anterior || data.peso_embalagem_g !== data._peso_anterior;
 
@@ -91,7 +93,17 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
         delete rest._preferencia_ingrediente_id;
         delete rest._dados_comerciais_pessoais;
         delete rest._preco_personalizado;
-        return base44.entities.Ingrediente.update(id, rest);
+        const atualizado = await base44.entities.Ingrediente.update(id, rest);
+        const custoMudou = ["preco_embalagem_rs", "peso_embalagem_g", "preco_por_g_rs", "fator_correcao"]
+          .some((campo) => Number(atualMestre?.[campo] || 0) !== Number(rest?.[campo] || 0));
+        if (custoMudou) {
+          await invalidarCustosDependentesSeguro({
+            ingredienteIds: [id],
+            motivo: "ingrediente_mestre_preco_ou_fc",
+            origem: "cadastro_ingrediente",
+          });
+        }
+        return atualizado;
       }
 
       if (preco_por_g > 0) {
