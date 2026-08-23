@@ -69,6 +69,14 @@ const ALIASES_SEGUROS = new Map<string, string>([
   [norm('Picanha'), norm('Carne, picanha')],
 ]);
 
+// Materiais gerados dentro do próprio preparo e reutilizados na mesma receita.
+// Permanecem na composição (inclusive nutricional), mas não representam compra
+// adicional nem devem exigir preço comercial.
+const REAPROVEITAMENTOS_PROCESSO = new Set<string>([
+  norm('Caldo do cozimento'),
+  norm('Caldo dos assados'),
+]);
+
 function candidatoAliasSeguro(nome: any, ingredienteNomeMap: Map<string, any[]>) {
   const alvo = ALIASES_SEGUROS.get(norm(nome));
   if (!alvo) return null;
@@ -245,6 +253,7 @@ Deno.serve(async (req) => {
     const updEsquecido = new Map<string, any>();
     const updInsumo = new Map<string, any>();
     const updInsumoReceita = new Map<string, any>();
+    const reaproveitamentosClassificados = new Set<string>();
 
     const receitaFixavel = new Map<string, { total: number; fixaveis: number }>();
     const registrarIssue = (receitaId: string, fixavel: boolean) => {
@@ -328,6 +337,30 @@ Deno.serve(async (req) => {
         }
 
         if (qtd <= 0 || !ingrediente) continue;
+
+        const nomeEfetivo = nomeCache || ingrediente.nome;
+        if (REAPROVEITAMENTOS_PROCESSO.has(norm(nomeEfetivo))) {
+          const fonte = itemFonteEditavel(item, itemMap);
+          const jaClassificado = fonte?.custo_comportamento === 'reaproveitamento_processo';
+          const fixavel = Boolean(fonte);
+          if (!jaClassificado) registrarIssue(receita.id, fixavel);
+          addGrupo(gruposOutros, `reaproveitamento|${norm(nomeEfetivo)}`, {
+            tipo: 'reaproveitamento_processo',
+            ingrediente_id: ingrediente.id,
+            ingrediente_nome: ingrediente.nome,
+            automatico: fixavel,
+            resolucao: fixavel ? 'classificar_reaproveitamento_processo' : 'revisao_manual',
+          }, receita, item.id);
+          if (fixavel && !jaClassificado) {
+            const patchFonte = { id: fonte.id, custo_comportamento: 'reaproveitamento_processo', modelo_versao: 2 };
+            updItem.set(fonte.id, { ...(updItem.get(fonte.id) || {}), ...patchFonte });
+            Object.assign(fonte, patchFonte);
+            reaproveitamentosClassificados.add(fonte.id);
+          }
+          continue;
+        }
+
+        if (item.custo_comportamento === 'reaproveitamento_processo') continue;
         let efetivo = precoEfetivo(ingrediente, ownerId, prefMap, legacyMap);
         if (efetivo > 0) continue;
 
@@ -542,6 +575,7 @@ Deno.serve(async (req) => {
           receitas_potencialmente_resolvidas: resolviveis.length,
           grupos_preco_manuais: gruposPrecoArr.filter((g: any) => !g.automatico).slice(0, 15).map((g: any) => ({ ingrediente_id: g.ingrediente_id, ingrediente_nome: g.ingrediente_nome, ocorrencias: g.ocorrencias, receitas: g.receitas })),
           referencias_manuais: gruposReferenciaArr.filter((g: any) => !g.automatico).slice(0, 15).map((g: any) => ({ tipo: g.tipo, ingrediente_nome_cache: g.ingrediente_nome_cache, ocorrencias: g.ocorrencias })),
+          reaproveitamentos_classificados: reaproveitamentosClassificados.size,
           outros: gruposOutrosArr.slice(0, 15).map((g: any) => ({ tipo: g.tipo, ocorrencias: g.ocorrencias, receitas: g.receitas })),
         }),
       });
@@ -557,6 +591,7 @@ Deno.serve(async (req) => {
         precos_derivados_usuario: updPref.size,
         referencias_reapontaveis: updItem.size + updEsquecido.size,
         insumos_recalculaveis: updInsumoReceita.size,
+        reaproveitamentos_classificaveis: reaproveitamentosClassificados.size,
       },
       grupos: {
         precos: gruposPrecoArr,
