@@ -4,6 +4,8 @@
 // persistida continua sendo a referência/base; a quantidade/custo de produção
 // é sempre derivada em tempo de cálculo.
 
+export const ESCALONAMENTO_CUSTO_MODELO_VERSAO = 2;
+
 export const COMPORTAMENTOS_CUSTO = Object.freeze({
   POR_LOTE: "por_lote",
   PROPORCIONAL: "proporcional",
