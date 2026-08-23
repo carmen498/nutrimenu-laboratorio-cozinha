@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { invalidarCustosPorDependencias } from '../../shared/invalidacaoCusto.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -39,11 +40,23 @@ Deno.serve(async (req) => {
         } catch {}
       }
 
+      let receitasInvalidadas = 0;
+      if (receitaIds.length > 0) {
+        const invalidacao = await invalidarCustosPorDependencias({
+          entities: base44.asServiceRole.entities,
+          receitaIds,
+          motivo: 'ingrediente_mestre_excluido_da_composicao',
+          origem: 'verificar_excluir_ingrediente',
+        });
+        receitasInvalidadas = invalidacao.receitas_invalidadas || 0;
+      }
+
       await base44.asServiceRole.entities.Ingrediente.delete(ingredienteId);
 
       return Response.json({
         success: true,
         receitasAfetadas: receitas.length,
+        receitasInvalidadas,
         receitas,
       });
     }
