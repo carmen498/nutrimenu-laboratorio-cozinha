@@ -6,6 +6,7 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 
 const ASSUNTO_PADRAO = "Seu teste gratuito terminou";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu período de teste no Laboratório de Cozinha terminou hoje.</p>
@@ -14,6 +15,12 @@ const CORPO_PADRAO = `<p>Olá {{nome}}, seu período de teste no Laboratório de
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
+    const gate = await protegerExecucaoAgendada(base44, req, {
+      chave: "enviarTrialVencido",
+      cooldownHoras: 20,
+      janela: { inicioMinuto: 7 * 60 + 30, fimMinuto: 9 * 60 + 30 },
+    });
+    if (gate.response) return gate.response;
 
     const hoje = hojeSaoPauloISO();
 
