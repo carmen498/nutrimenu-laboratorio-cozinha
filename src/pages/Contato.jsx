@@ -4,7 +4,7 @@ import { ArrowLeft, Mail, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 
 const WHATSAPP_NUMERO = "555134160886";
-const EMAIL_CONTATO = "contato@laboratoriodecozinha.com.br";
+const EMAIL_CONTATO = "contato@nutrimenu.com.br";
 
 export default function Contato() {
   const [nome, setNome] = useState("");
