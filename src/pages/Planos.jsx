@@ -49,6 +49,13 @@ export default function Planos() {
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
   const cicloRenovacao = user?.ciclo_renovacao || 0;
+  const jaPossuiHistoricoPlano = user?.role !== "admin" && Boolean(
+    user?.plano_atual ||
+    user?.status_assinatura ||
+    user?.data_inicio ||
+    user?.data_expiracao ||
+    Number(user?.ciclo_renovacao || 0) > 0
+  );
   const acessoAssinatura = avaliarAcessoAssinatura(user);
   const assinaturaVencida =
     user?.role !== "admin" &&
@@ -137,6 +144,8 @@ export default function Planos() {
               validadeLabel="Válido até"
               validadeData={formatarData(user?.data_expiracao)}
               diasRestantes={planoAtual === "trial" ? diasRestantesTrial : null}
+              bloqueado={planoAtual !== "trial" && jaPossuiHistoricoPlano}
+              mensagemBloqueio="Teste grátis disponível apenas para novas contas"
             />
           )}
           {configPorId.mensal && (
