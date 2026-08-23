@@ -6,9 +6,11 @@
 // - se não há pagamento_ativo_id (legado), não revoga automaticamente. Esse caso
 //   deve ser conciliado pelo admin, evitando falso positivo sobre acesso atual.
 
+import { cicloRenovacaoAposEstorno } from "./regraRenovacao.ts";
+
 export async function revogarAcessoEstorno(
   base44: any,
-  pagamento: { id?: string; usuario_id: string },
+  pagamento: { id?: string; usuario_id: string; plano?: string },
 ): Promise<{ revogado: boolean; motivo: string }> {
   const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
   if (!usuario) return { revogado: false, motivo: "usuario_nao_encontrado" };
@@ -25,6 +27,7 @@ export async function revogarAcessoEstorno(
 
   await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
     status_assinatura: "vencido",
+    ciclo_renovacao: cicloRenovacaoAposEstorno(pagamento.plano || "", usuario.ciclo_renovacao),
   });
   return { revogado: true, motivo: "pagamento_ativo_estornado" };
 }
