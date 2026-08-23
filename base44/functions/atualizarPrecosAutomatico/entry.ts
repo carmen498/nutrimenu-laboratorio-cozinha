@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
-import { adquirirCooldownAtualizacaoPrecos } from "../../shared/protecoesAutomacao.ts";
+import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 
 const CATS_VOLATEIS = [
   "Carnes e Ovos", "LATICÍNIOS", "Frutas",
@@ -72,15 +72,15 @@ Deno.serve(async (req) => {
       return Response.json({ message: "Atualização automática pausada pelo usuário." });
     }
 
-    // A function também possui endpoint HTTP público. O cooldown limita disparos
-    // repetidos fora do scheduler e evita reprocessamento caro/spam de e-mail.
-    const cooldown = await adquirirCooldownAtualizacaoPrecos(base44, 20);
-    if (!cooldown.permitido) {
-      return Response.json({
-        message: "Atualização automática ignorada por cooldown de segurança.",
-        ultima_execucao: cooldown.ultimaExecucao,
-      });
-    }
+    // Agenda oficial: segunda-feira às 03:00 em America/Sao_Paulo. Como toda
+    // function Base44 também possui endpoint HTTP, chamadas sem usuário só podem
+    // executar na janela de segunda 02:30–04:30 e no máximo uma vez a cada 6 dias.
+    const gate = await protegerExecucaoAgendada(base44, req, {
+      chave: "atualizarPrecosAutomatico",
+      cooldownHoras: 144,
+      janela: { diasSemana: [1], inicioMinuto: 2 * 60 + 30, fimMinuto: 4 * 60 + 30 },
+    });
+    if (gate.response) return gate.response;
 
     // Buscar todos os ingredientes das categorias voláteis com preço cadastrado
     const allIngs = await base44.asServiceRole.entities.Ingrediente.list("-nome", 1000);
