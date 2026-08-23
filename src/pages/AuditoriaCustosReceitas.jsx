@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
 import CuradoriaCustosPendentes from "@/components/auditoria/CuradoriaCustosPendentes";
+import CuradoriaDivergenciasIngrediente from "@/components/auditoria/CuradoriaDivergenciasIngrediente";
 
 const STATUS_LABEL = {
   atual: "Atual",
@@ -316,7 +317,7 @@ export default function AuditoriaCustosReceitas() {
         <div>
           <h2 className="font-display text-xl font-bold">Receitas · Custos</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-            Fases 10.1–10.4.1: custos canônicos, curadoria, invalidação automática, assinatura semântica e saneamento ID × nome. Registros ambíguos continuam bloqueados para revisão manual.
+            Fases 10.1–10.4.2: custos canônicos, curadoria, invalidação automática, assinatura semântica, saneamento ID × nome e workflow assistido das divergências residuais.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -430,6 +431,8 @@ export default function AuditoriaCustosReceitas() {
           </div>
         </Card>
       )}
+
+      <CuradoriaDivergenciasIngrediente />
 
       {assinaturaPreview && (
         <Card className="p-4 border-primary/30">
