@@ -16,6 +16,7 @@
     "test:production-routes": "node scripts/test-production-routes.mjs",
     "test:auth-production": "node scripts/test-auth-production.mjs",
     "test:auth-e2e-temp": "node scripts/test-auth-e2e-temp-mail.mjs",
+    "test:tenant-e2e-temp": "node scripts/test-tenant-isolation-e2e-temp.mjs",
     "go-live:check": "npm run maintenance:check && npm run test:go-live",
     "preview": "vite preview"
   },
