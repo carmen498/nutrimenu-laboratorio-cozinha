@@ -74,11 +74,11 @@ Deno.serve(async (req) => {
 
     // Agenda oficial: segunda-feira às 03:00 em America/Sao_Paulo. Como toda
     // function Base44 também possui endpoint HTTP, chamadas sem usuário só podem
-    // executar na janela de segunda 02:30–04:30 e no máximo uma vez a cada 6 dias.
+    // executar na janela de segunda 02:45–03:15 e no máximo uma vez a cada 6 dias.
     const gate = await protegerExecucaoAgendada(base44, req, {
       chave: "atualizarPrecosAutomatico",
       cooldownHoras: 144,
-      janela: { diasSemana: [1], inicioMinuto: 2 * 60 + 30, fimMinuto: 4 * 60 + 30 },
+      janela: { diasSemana: [1], inicioMinuto: 2 * 60 + 45, fimMinuto: 3 * 60 + 15 },
     });
     if (gate.response) return gate.response;
 
