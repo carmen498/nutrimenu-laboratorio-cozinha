@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { uploadArquivoSeguro, validarCsvUpload } from "@/lib/securityHardening";
 
 /** @param {{ open: any, onClose: () => void, onImported?: () => void }} props */
-export default function ImportarIngredientesDialog({ open, onClose, onImported = () => {} }) {
+export default function ImportarIngredientesDialog(props) {
+  const { open, onClose, onImported = () => {} } = props;
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
