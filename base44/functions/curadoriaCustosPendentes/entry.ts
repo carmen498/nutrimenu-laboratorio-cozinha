@@ -20,7 +20,10 @@ const norm = (v: any) => txt(v)
   .replace(/\s+/g, ' ');
 
 const STOP = new Set(['DE', 'DA', 'DO', 'DAS', 'DOS', 'EM', 'COM', 'SEM', 'E', 'AO', 'AOS', 'A', 'O']);
-const tokens = (v: any) => norm(v).split(' ').filter((t) => t.length > 1 && !STOP.has(t));
+const tokens = (v: any) => norm(v)
+  .split(' ')
+  .filter((t) => t.length > 1 && !STOP.has(t))
+  .map((t) => (t.length > 3 && t.endsWith('S') ? t.slice(0, -1) : t));
 
 async function listarTudo(entity: any, sort = 'created_date', pageSize = 500) {
   const out: any[] = [];
@@ -339,12 +342,21 @@ async function simular(ctx: any, fila: any, grupo: any, args: any) {
     const precoKg = positivo(args?.preco_por_kg_rs);
     const precoEmb = positivo(args?.preco_embalagem_rs);
     const pesoEmb = positivo(args?.peso_embalagem_g);
-    precoPorG = precoKg > 0 ? precoKg / 1000 : (precoEmb > 0 && pesoEmb > 0 ? precoEmb / pesoEmb : 0);
+    if ((precoEmb > 0) !== (pesoEmb > 0)) throw new Error('Preço e peso/volume da embalagem devem ser informados juntos.');
+    const derivadoEmb = precoEmb > 0 && pesoEmb > 0 ? precoEmb / pesoEmb : 0;
+    precoPorG = precoKg > 0 ? precoKg / 1000 : derivadoEmb;
     if (precoPorG <= 0) throw new Error('Informe preço de referência em R$/kg (ou R$/L), ou preço + peso/volume da embalagem.');
+    if (precoKg > 0 && derivadoEmb > 0) {
+      const diferenca = Math.abs(precoPorG - derivadoEmb) / Math.max(precoPorG, derivadoEmb);
+      if (diferenca > 0.02) throw new Error('R$/kg e preço/peso da embalagem divergem mais de 2%. Corrija os valores antes de aplicar.');
+    }
     impactoCatalogoIds = receitaIdsCatalogoParaIngrediente(ctx, origem.id);
   }
 
-  if (decisao === 'reaproveitamento_processo' && !sourceIds.length) throw new Error('Nenhum item fonte editável foi encontrado neste grupo.');
+  if (decisao === 'reaproveitamento_processo') {
+    if (grupo.tipo_pendencia !== 'ingrediente_sem_preco') throw new Error('Reaproveitamento de processo só pode ser classificado em grupo de ingrediente sem preço.');
+    if (!sourceIds.length) throw new Error('Nenhum item fonte editável foi encontrado neste grupo.');
+  }
 
   const snapshotParts = sourceIds.sort().map((id) => {
     const item = ctx.itemMap.get(id);
@@ -368,6 +380,7 @@ async function simular(ctx: any, fila: any, grupo: any, args: any) {
     ingrediente_destino: destino ? { id: destino.id, nome: destino.nome, categoria: destino.categoria || null, preco_por_g_rs: positivo(destino.preco_por_g_rs) || null } : null,
     preco_por_g_rs: precoPorG > 0 ? Number(precoPorG.toFixed(8)) : null,
     preco_por_kg_rs: precoPorG > 0 ? Number((precoPorG * 1000).toFixed(2)) : null,
+    destino_sem_preco: destino ? precoEfetivo(destino, txt(grupo.owner_id), ctx.prefMap, ctx.legacyMap) <= 0 : false,
     impacto_ocorrencias: grupo.ocorrencias,
     impacto_receitas: grupo.receitas,
     impacto_total_catalogo: new Set(impactoCatalogoIds).size,
@@ -445,6 +458,17 @@ Deno.serve(async (req) => {
       })));
     }
 
+    // Invalida explicitamente os caches afetados. Além de impedir uso de custo
+    // antigo se o recálculo seguinte falhar, atualizar Receita muda updated_date
+    // e faz a assinatura da Fase 8 detectar alterações nas sub-receitas fonte.
+    let cachesInvalidados = 0;
+    if (simulacao.decisao !== 'manter_pendente') {
+      cachesInvalidados = await bulk(ctx.sr.Receita, (simulacao.receita_ids_recalcular || []).map((id: string) => ({
+        id,
+        custo_cache_status: 'a_recalcular',
+      })));
+    }
+
     const status = simulacao.decisao === 'manter_pendente' ? 'mantida_pendente' : 'aplicada';
     await ctx.sr.CuradoriaCustoPendencia.create({
       grupo_chave: simulacao.grupo_chave,
@@ -469,6 +493,7 @@ Deno.serve(async (req) => {
         requer_sincronizacao_subreceitas: simulacao.requer_sincronizacao_subreceitas,
         receita_ids_recalcular: simulacao.receita_ids_recalcular.slice(0, 100),
         itens_fonte_atualizados: atualizados,
+        caches_invalidados: cachesInvalidados,
       }),
     });
 
@@ -476,6 +501,7 @@ Deno.serve(async (req) => {
       aplicado: true,
       status,
       atualizados,
+      caches_invalidados: cachesInvalidados,
       ...simulacao,
     });
   } catch (error: any) {
