@@ -57,10 +57,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Informe marker_id, todos_desatualizados=true ou migrar_preparacoes_exatas=true' }, { status: 400 });
     }
 
+    // Paginar por created_date evita sobreposição/lacunas quando muitos registros
+    // compartilham o mesmo nome/ordem. A ordenação visual por `ordem` é feita
+    // depois, dentro de cada receita.
     const [receitas, itens, ingredientes] = await Promise.all([
-      listarTudo(base44.asServiceRole.entities.Receita, 'nome'),
-      listarTudo(base44.asServiceRole.entities.IngredienteReceita, 'ordem'),
-      migrarPreparacoesExatas ? listarTudo(base44.asServiceRole.entities.Ingrediente, 'nome') : Promise.resolve([]),
+      listarTudo(base44.asServiceRole.entities.Receita, 'created_date'),
+      listarTudo(base44.asServiceRole.entities.IngredienteReceita, 'created_date'),
+      migrarPreparacoesExatas ? listarTudo(base44.asServiceRole.entities.Ingrediente, 'created_date') : Promise.resolve([]),
     ]);
     const receitaMap = new Map((receitas || []).map((r: any) => [r.id, r]));
     const itemMap = new Map((itens || []).map((i: any) => [i.id, i]));
