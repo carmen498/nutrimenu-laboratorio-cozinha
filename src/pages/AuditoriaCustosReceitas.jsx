@@ -155,6 +155,28 @@ export default function AuditoriaCustosReceitas() {
     }
   };
 
+  const recalcularInvalidadas = async () => {
+    if (diagnostico.invalidadas <= 0) return;
+    setProcessando(true);
+    try {
+      const res = await base44.functions.invoke("normalizarCustosReceitas", {
+        dry_run: false,
+        somente_invalidadas: true,
+      });
+      const dados = res?.data || {};
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas"] }),
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas-logs"] }),
+        qc.invalidateQueries({ queryKey: ["receitas"] }),
+      ]);
+      toast.success(`${dados.normalizadas || 0} cache(s) invalidado(s) recalculado(s); ${dados.incompletas || 0} continuam incompletos.`);
+    } catch (error) {
+      toast.error("Erro ao recalcular caches invalidados: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
   const aplicarMigracao = async () => {
     if (!preview) {
       toast.error("Execute a análise antes de aplicar a migração.");
@@ -205,6 +227,10 @@ export default function AuditoriaCustosReceitas() {
           <Button onClick={aplicarSaneamento} disabled={processando || !saneamentoPreview} className="gap-2">
             <ShieldCheck className="w-4 h-4" />
             Aplicar saneamento seguro
+          </Button>
+          <Button variant="outline" onClick={recalcularInvalidadas} disabled={processando || diagnostico.invalidadas === 0} className="gap-2">
+            {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+            Recalcular invalidadas
           </Button>
           <Button variant="outline" onClick={analisarMigracao} disabled={processando} className="gap-2">
             {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
