@@ -47,8 +47,8 @@ const camarao = classificarDivergenciaIngrediente({
   item: { ingrediente_id: 'camM', ingrediente_nome: 'Camarão para recheio' },
   ingredienteAtual: ingredienteMap.get('camM'), ingredienteMap, nomeIndex, sinonimoIndex, aliasSeguroIndex,
 });
-assert.equal(camarao.acao, 'reapontar_id_exato');
-assert.equal(camarao.destino_id, 'camP');
+assert.equal(camarao.acao, 'manual');
+assert.equal(camarao.motivo, 'sinonimo_exato_outro_id_requer_curadoria');
 
 const manual = classificarDivergenciaIngrediente({
   item: { ingrediente_id: 'camM', ingrediente_nome: 'Camarão' },
