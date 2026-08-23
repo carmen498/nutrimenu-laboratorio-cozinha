@@ -609,10 +609,19 @@ Deno.serve(async (req) => {
     // e faz a assinatura da Fase 8 detectar alterações nas sub-receitas fonte.
     let cachesInvalidados = 0;
     if (simulacao.decisao !== 'manter_pendente') {
-      cachesInvalidados = await bulk(ctx.sr.Receita, (simulacao.receita_ids_recalcular || []).map((id: string) => ({
-        id,
-        custo_cache_status: 'a_recalcular',
-      })));
+      cachesInvalidados = await bulk(ctx.sr.Receita, (simulacao.receita_ids_recalcular || []).map((id: string) => {
+        const rec = ctx.receitaMap.get(id);
+        const statusAtual = txt(rec?.custo_cache_status);
+        return {
+          id,
+          custo_cache_status: statusAtual === 'atual' ? 'a_recalcular' : (statusAtual || 'a_recalcular'),
+          custo_cache_invalido: true,
+          custo_cache_invalidado_em: agora,
+          custo_cache_invalidacao_motivo: 'decisao_curadoria_custo',
+          custo_cache_invalidacao_origem: 'curadoria_10_2_1',
+          custo_cache_invalidacao_profundidade: 0,
+        };
+      }));
     }
 
     const status = simulacao.decisao === 'manter_pendente' ? 'mantida_pendente' : 'aplicada';
