@@ -51,7 +51,7 @@ export function mapearIngredientesPorId(ingredientes = []) {
  * de dados (ex.: sem InsumoReceita ou sem preço pessoal) e produzam custos
  * divergentes para a mesma produção.
  */
-export async function carregarContextoCustosReceitas({ receitaIds = [], userId, isAdmin = false } = {}) {
+export async function carregarContextoCustosReceitas(/** @type {any} */ { receitaIds = [], userId, isAdmin = false } = {}) {
   const ids = [...new Set((receitaIds || []).filter(Boolean))];
   const [ingredientesEfetivos, composicoes, insumos, esquecidos] = await Promise.all([
     carregarIngredientesEfetivosCusto({ userId, isAdmin }),
