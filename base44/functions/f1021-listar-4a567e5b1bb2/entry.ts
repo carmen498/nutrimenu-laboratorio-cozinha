@@ -1,3 +1,4 @@
+// executor efêmero somente leitura — validação Fase 10.2.1
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 // Fase 10.2.1 — Curadoria assistida das pendências remanescentes de custo.
