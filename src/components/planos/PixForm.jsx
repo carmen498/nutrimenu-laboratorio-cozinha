@@ -17,6 +17,7 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
   const [statusFinal, setStatusFinal] = useState(null); // 'rejected' | 'cancelled'
   const intervalRef = useRef(null);
   const timeoutRef = useRef(null);
+  const tentativaPagamentoRef = useRef(null);
 
   const pararPolling = () => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -37,6 +38,7 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
           onSuccess?.();
         } else if (pagamento.status === "rejected" || pagamento.status === "cancelled") {
           pararPolling();
+          tentativaPagamentoRef.current = null;
           setStatusFinal(pagamento.status);
         }
       } catch {
@@ -56,10 +58,10 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
     }
     setLoading(true);
     try {
-      const tentativaId = crypto.randomUUID();
+      if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
-        tentativa_id: tentativaId,
+        tentativa_id: tentativaPagamentoRef.current,
         forma_pagamento: "pix",
         aceite_termos: true,
         payer: { email, cpf },
@@ -67,6 +69,8 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
       setResultado(res.data);
       if (res.data?.pagamentoId) iniciarPolling(res.data.pagamentoId);
     } catch (err) {
+      const status = err?.response?.data?.status;
+      if (["rejected", "cancelled", "estornado"].includes(status)) tentativaPagamentoRef.current = null;
       setError(err?.response?.data?.error || err.message || "Erro ao gerar o PIX.");
     } finally {
       setLoading(false);
@@ -86,6 +90,7 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
   };
 
   const handleTentarNovamente = () => {
+    tentativaPagamentoRef.current = null;
     setStatusFinal(null);
     setResultado(null);
   };
