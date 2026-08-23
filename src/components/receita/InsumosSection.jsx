@@ -12,6 +12,7 @@ import { Plus, Trash2, Package, Check, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   COMPORTAMENTO_CUSTO_LABELS,
+  ESCALONAMENTO_CUSTO_MODELO_VERSAO,
   calcularInsumosReceitaEscalados,
   escalarInsumoReceita,
   quantidadeBaseInsumoReceita,
@@ -108,7 +109,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         custo_unitario: insumoDB.preco_unitario || 0,
         custo_total: insumoDB.preco_unitario || 0,
         comportamento_custo: normalizarComportamentoCusto(insumoDB.comportamento_custo_padrao),
-        modelo_custo_versao: 1,
+        modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
     },
     onSuccess: () => {
@@ -140,7 +141,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         custo_unitario: 0,
         custo_total: 0,
         comportamento_custo: "por_lote",
-        modelo_custo_versao: 1,
+        modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
     },
     onSuccess: () => {
@@ -185,7 +186,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
       await base44.entities.InsumoReceita.update(itemId, {
         quantidade,
         custo_total: parseFloat((cu * quantidade).toFixed(4)),
-        modelo_custo_versao: 1,
+        modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
@@ -202,7 +203,7 @@ export default function InsumosSection({ receitaId, escala = { fator: 1, unidade
         comportamento_custo: comportamento,
         quantidade,
         custo_total: parseFloat((quantidade * (Number(item.custo_unitario) || 0)).toFixed(4)),
-        modelo_custo_versao: 1,
+        modelo_custo_versao: ESCALONAMENTO_CUSTO_MODELO_VERSAO,
       });
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["insumos-receita", receitaId] }),
