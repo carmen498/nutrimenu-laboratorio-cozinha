@@ -109,6 +109,47 @@ Deno.serve(async (req) => {
       });
     };
 
+    // Fase 10.3 — uma reconstrução real do cache atômico altera a base de custo
+    // da receita-pai. Propaga a invalidação para pais/avós que a reutilizam.
+    const invalidarCustoAposRebuild = async (receitaRaizId: string) => {
+      const profundidade = new Map<string, number>();
+      const fila: string[] = [receitaRaizId];
+      profundidade.set(receitaRaizId, 0);
+      for (let cursor = 0; cursor < fila.length; cursor++) {
+        const atual = fila[cursor];
+        const depth = profundidade.get(atual) || 0;
+        for (const marker of itens || []) {
+          if (marker?.tipo !== 'subreceita' || txt(marker?.subreceita_id) !== atual) continue;
+          const paiId = txt(marker?.receita_id);
+          if (!paiId || profundidade.has(paiId)) continue;
+          profundidade.set(paiId, depth + 1);
+          fila.push(paiId);
+        }
+      }
+      const agora = new Date().toISOString();
+      const updates: any[] = [];
+      for (const [receitaId, depth] of profundidade.entries()) {
+        const rec: any = receitaMap.get(receitaId);
+        if (!rec) continue;
+        const statusAtual = txt(rec?.custo_cache_status);
+        const status = statusAtual === 'atual' ? 'a_recalcular' : (statusAtual || 'a_recalcular');
+        updates.push({
+          id: receitaId,
+          custo_cache_status: status,
+          custo_cache_invalido: true,
+          custo_cache_invalidado_em: agora,
+          custo_cache_invalidacao_motivo: 'cache_subreceita_reconstruido',
+          custo_cache_invalidacao_origem: 'sincronizar_subreceita',
+          custo_cache_invalidacao_profundidade: depth,
+        });
+        receitaMap.set(receitaId, { ...rec, ...updates[updates.length - 1] });
+      }
+      for (let i = 0; i < updates.length; i += 200) {
+        await base44.asServiceRole.entities.Receita.bulkUpdate(updates.slice(i, i + 200));
+      }
+      return updates.length;
+    };
+
     const calcularCache = (marker: any) => {
       const source = receitaMap.get(marker.subreceita_id);
       if (!source) {
