@@ -61,6 +61,7 @@ import {
 import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 import { calcularCustoReceitaCanonico, CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
 import { consoleErrorSeguro, uploadImagemSeguro } from "@/lib/securityHardening";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 
 export default function ReceitaAberta() {
   const { id } = useParams();
@@ -256,6 +257,7 @@ export default function ReceitaAberta() {
         pesoPrePreparo: rendimentoInfo.pesoPrePreparo,
       });
       await base44.entities.Receita.update(receitaId, campos);
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "rendimento_pdp_alterado", origem: "receita" });
       registrarHistorico(receitaId, receita?.nome, ["Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
       setQuantidadeTotal(val);
@@ -392,6 +394,7 @@ export default function ReceitaAberta() {
     try {
       const { receitaId } = await ensureEditavel();
       await base44.entities.Receita.update(receitaId, { per_capita_g: val });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "per_capita_alterado", origem: "receita" });
       registrarHistorico(receitaId, receita?.nome, ["Per capita"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
     } catch (err) {
@@ -431,6 +434,7 @@ export default function ReceitaAberta() {
         rendimento_origem: tinhaPDP ? (receita.rendimento_origem || "legado") : "estimado",
         rendimento_status: tinhaPDP ? (receita.rendimento_status || "a_validar") : "pendente",
       });
+      await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "composicao_e_rendimento_escalados", origem: "receita" });
       registrarHistorico(receitaId, receita?.nome, ["Ingredientes", "Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
       qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
@@ -696,6 +700,7 @@ export default function ReceitaAberta() {
         return;
       }
       await base44.entities.Ingrediente.update(ingId, { preco_embalagem_rs, peso_embalagem_g, preco_por_g_rs });
+      await invalidarCustosDependentesSeguro({ ingredienteIds: [ingId], motivo: "preco_mestre_alterado", origem: "receita" });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ingredientes"] });
