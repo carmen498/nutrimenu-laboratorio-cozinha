@@ -274,7 +274,9 @@ Deno.serve(async (req) => {
           const fonte = itemFonteEditavel(item, itemMap);
           const fonteJaCorreta = Boolean(unico && fonte?.ingrediente_id === unico.id && norm(fonte?.ingrediente_nome || unico.nome) === norm(unico.nome));
           const jaApontaCorreto = Boolean(unico && ingrediente?.id === unico.id);
-          const fixavel = Boolean(unico && fonte && (direto ? !jaApontaCorreto : true));
+          // Também é seguro quando o ID já aponta para o mestre correto e só o
+          // nome cacheado ficou legado. Nesse caso canonicalizamos o nome.
+          const fixavel = Boolean(unico && fonte && (nomeDivergente || !jaApontaCorreto));
           registrarIssue(receita.id, fixavel);
           const refKey = `${txt(item.ingrediente_id) || '*'}|${norm(nomeCache) || '*'}`;
           addGrupo(gruposReferencia, refKey, {
