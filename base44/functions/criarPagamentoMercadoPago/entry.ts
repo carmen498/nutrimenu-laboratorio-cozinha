@@ -96,14 +96,21 @@ export default async function(req: Request): Promise<Response> {
     const pagamentosExistentes = await base44.asServiceRole.entities.Pagamento.filter({ idempotency_key: idempotencyKey });
     const pagamentoExistente = (pagamentosExistentes || []).find((p: any) => p.usuario_id === user.id);
     if (pagamentoExistente && (pagamentoExistente.mercadopago_order_id || pagamentoExistente.status !== "pending")) {
-      return Response.json({
+      const respostaExistente = {
         pagamentoId: pagamentoExistente.id,
         orderId: pagamentoExistente.mercadopago_order_id || null,
         status: pagamentoExistente.status,
         qrCode: pagamentoExistente.qr_code || null,
         qrCodeBase64: pagamentoExistente.qr_code_base64 || null,
         idempotent: true,
-      });
+      };
+      if (["rejected", "cancelled", "estornado"].includes(pagamentoExistente.status)) {
+        return Response.json({
+          error: pagamentoExistente.status === "rejected" ? "Pagamento recusado" : "Pagamento não concluído",
+          ...respostaExistente,
+        }, { status: 400 });
+      }
+      return Response.json(respostaExistente);
     }
 
     // Se houve falha de rede depois de criar o registro interno, mas antes de salvar
