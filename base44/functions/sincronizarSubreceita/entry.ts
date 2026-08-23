@@ -444,6 +444,8 @@ Deno.serve(async (req) => {
         subreceita_sincronizada_em: agora,
       });
 
+      const cachesCustoInvalidados = await invalidarCustoAposRebuild(marker.receita_id);
+
       await registrarLog({
         marker_id: marker.id,
         receita_pai_id: marker.receita_id,
@@ -466,6 +468,7 @@ Deno.serve(async (req) => {
         filhos_novos: novosPayloads.length,
         assinatura: analise.calculado.assinaturaNova,
         alertas: analise.calculado.alertas,
+        caches_custo_invalidados: cachesCustoInvalidados,
       };
     };
 
