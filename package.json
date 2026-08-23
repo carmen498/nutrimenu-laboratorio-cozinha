@@ -13,6 +13,7 @@
     "audit:security": "npm audit --audit-level=moderate",
     "maintenance:check": "npm run typecheck && npm run lint && npm run build && npm run test:security && npm run audit:security",
     "test:go-live": "node scripts/test-go-live-static.mjs",
+    "test:production-routes": "node scripts/test-production-routes.mjs",
     "go-live:check": "npm run maintenance:check && npm run test:go-live",
     "preview": "vite preview"
   },
