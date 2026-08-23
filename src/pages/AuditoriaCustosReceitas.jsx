@@ -56,6 +56,12 @@ export default function AuditoriaCustosReceitas() {
     staleTime: 30 * 1000,
   });
 
+  const { data: logsDivergencias = [] } = useQuery({
+    queryKey: ["auditoria-custos-divergencias-logs"],
+    queryFn: () => base44.entities.SaneamentoDivergenciaIngredienteLog.list("-executado_em", 20),
+    staleTime: 30 * 1000,
+  });
+
   const diagnostico = useMemo(() => {
     const rows = receitas.map((receita) => {
       const versao = Number(receita.custo_modelo_versao) || 0;
@@ -310,7 +316,7 @@ export default function AuditoriaCustosReceitas() {
         <div>
           <h2 className="font-display text-xl font-bold">Receitas · Custos</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-3xl">
-            Fases 10.1–10.4: custos canônicos, curadoria, invalidação automática e assinatura semântica do cache. Registros ambíguos continuam bloqueados para revisão manual.
+            Fases 10.1–10.4.1: custos canônicos, curadoria, invalidação automática, assinatura semântica e saneamento ID × nome. Registros ambíguos continuam bloqueados para revisão manual.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -404,6 +410,24 @@ export default function AuditoriaCustosReceitas() {
               </div>
             </div>
           )}
+        </Card>
+      )}
+
+      {logsDivergencias.length > 0 && (
+        <Card className="p-4">
+          <h3 className="font-semibold flex items-center gap-2 mb-3"><Wrench className="w-4 h-4" /> Histórico 10.4.1 · ID × nome</h3>
+          <div className="space-y-1.5 text-xs">
+            {logsDivergencias.slice(0, 8).map((log) => (
+              <div key={log.id} className="flex flex-wrap gap-x-3 gap-y-1 border-t first:border-0 pt-1.5 first:pt-0">
+                <span className="font-medium">{log.divergencias_detectadas || 0} divergência(s)</span>
+                <span>{log.nomes_cache_normalizados || 0} nome(s)-cache</span>
+                <span>{log.ids_reapontados || 0} ID(s) reapontado(s)</span>
+                <span>{log.manuais || 0} manual(is)</span>
+                <span>{log.receitas_afetadas || 0} receita(s) afetada(s)</span>
+                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+              </div>
+            ))}
+          </div>
         </Card>
       )}
 
