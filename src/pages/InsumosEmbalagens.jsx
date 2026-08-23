@@ -10,10 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Pencil, Trash2, Package, Check, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { COMPORTAMENTO_CUSTO_LABELS, normalizarComportamentoCusto } from "@/lib/escalonamentoCustos";
 
 const UNIDADES = ["Folha", "Cm", "Metro", "Unidade", "Pacote"];
 
-const emptyForm = { nome: "", categoria: "embalagem", unidade: "Unidade", preco_embalagem: "", quantidade_embalagem: "" };
+const emptyForm = { nome: "", categoria: "embalagem", unidade: "Unidade", preco_embalagem: "", quantidade_embalagem: "", comportamento_custo_padrao: "por_lote" };
 
 export default function InsumosEmbalagens() {
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ export default function InsumosEmbalagens() {
       unidade: i.unidade || "Unidade",
       preco_embalagem: i.preco_embalagem != null ? String(i.preco_embalagem) : "",
       quantidade_embalagem: i.quantidade_embalagem != null ? String(i.quantidade_embalagem) : "",
+      comportamento_custo_padrao: normalizarComportamentoCusto(i.comportamento_custo_padrao),
     });
     setShowForm(true);
   };
@@ -74,6 +76,7 @@ export default function InsumosEmbalagens() {
       preco_embalagem,
       quantidade_embalagem,
       preco_unitario,
+      comportamento_custo_padrao: normalizarComportamentoCusto(form.comportamento_custo_padrao),
     };
     try {
       if (editing) {
@@ -134,6 +137,7 @@ export default function InsumosEmbalagens() {
             <tr className="border-b-2 border-border">
               <th className="text-left px-3 py-2 font-semibold text-xs">Nome</th>
               <th className="text-left px-3 py-2 font-semibold text-xs">Unidade</th>
+              <th className="text-left px-3 py-2 font-semibold text-xs">Escala padrão</th>
               <th className="text-right px-2 py-2 font-semibold text-xs">Preço por unidade</th>
               <th className="px-2 py-2 w-20"></th>
             </tr>
@@ -143,6 +147,7 @@ export default function InsumosEmbalagens() {
               <tr key={i.id} className={`border-b border-border/40 ${idx % 2 === 0 ? "bg-white" : "bg-muted/20"} hover:bg-muted/40`}>
                 <td className="px-3 py-2 font-medium">{i.nome}</td>
                 <td className="px-3 py-2 text-muted-foreground">{i.unidade || "—"}</td>
+                <td className="px-3 py-2 text-muted-foreground text-xs">{COMPORTAMENTO_CUSTO_LABELS[normalizarComportamentoCusto(i.comportamento_custo_padrao)]}</td>
                 <td className={`px-2 py-2 text-right tabular-nums font-semibold ${i.preco_unitario > 0 ? "" : "text-muted-foreground font-normal"}`} style={i.preco_unitario > 0 ? { color: "#1B4332" } : {}}>
                   {fmtPreco(i)}
                 </td>
@@ -160,7 +165,7 @@ export default function InsumosEmbalagens() {
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={4} className="text-center text-muted-foreground py-8 text-sm">
+                <td colSpan={5} className="text-center text-muted-foreground py-8 text-sm">
                   Nenhum insumo encontrado. Clique em "Novo Insumo".
                 </td>
               </tr>
@@ -187,6 +192,16 @@ export default function InsumosEmbalagens() {
                   {UNIDADES.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Comportamento de custo padrão</Label>
+              <Select value={form.comportamento_custo_padrao} onValueChange={(v) => setForm(f => ({ ...f, comportamento_custo_padrao: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(COMPORTAMENTO_CUSTO_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground mt-1">Pode ser alterado em cada receita ou cardápio sem mudar o cadastro mestre.</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
