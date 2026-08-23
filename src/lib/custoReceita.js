@@ -5,6 +5,7 @@
 // cache global de referência/compatibilidade e nunca representa preço pessoal.
 import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
+import { criarEscalaReceitaCanonica, calcularInsumosReceitaEscalados } from "@/lib/escalonamentoCustos";
 
 export const CUSTO_RECEITA_MODELO_VERSAO = 2;
 
@@ -24,12 +25,6 @@ const normalizarNomeReferencia = (valor) => String(valor || "")
 
 export function rendimentoEfetivo(receita, ingredientesReceita = []) {
   return resolverRendimentoReceita(receita, ingredientesReceita).pesoPosPreparoEfetivo || 0;
-}
-
-function custoInsumoReceita(insumo) {
-  const cache = numero(insumo?.custo_total);
-  if (cache > 0) return cache;
-  return numero(insumo?.quantidade) * numero(insumo?.custo_unitario);
 }
 
 function calcularCustoEsquecido(esquecido, ingredienteMap, fator) {
@@ -75,6 +70,8 @@ export function calcularCustoReceitaCanonico(/** @type {any} */ {
   insumosReceita = [],
   esquecidos = [],
   fator = 1,
+  unidadesFinais = 0,
+  numeroLotes = 1,
 } = {}) {
   const fatorSeguro = numero(fator) > 0 ? numero(fator) : 1;
   const porcoesBase = numero(receita?.porcoes_base) > 0 ? numero(receita.porcoes_base) : 1;
@@ -126,7 +123,28 @@ export function calcularCustoReceitaCanonico(/** @type {any} */ {
     }
   }
 
-  const custoInsumos = (insumosReceita || []).reduce((soma, insumo) => soma + custoInsumoReceita(insumo), 0);
+  const rendimentoBase = rendimentoEfetivo(receita, ingredientesReceita);
+  const rendimento = rendimentoBase * fatorSeguro;
+  const perCapita = numero(receita?.per_capita_g);
+  const porcoesEfetivas = numero(unidadesFinais) > 0
+    ? numero(unidadesFinais)
+    : (perCapita > 0 && rendimento > 0
+      ? rendimento / perCapita
+      : porcoesBase * fatorSeguro);
+  const escala = criarEscalaReceitaCanonica({
+    fator: fatorSeguro,
+    rendimentoBase,
+    porcoesBase,
+    perCapita,
+    unidadesFinais: porcoesEfetivas,
+    numeroLotes,
+  });
+  const insumosCalculados = calcularInsumosReceitaEscalados(insumosReceita, escala);
+  const custoInsumos = insumosCalculados.custoTotal;
+  const insumosSemPreco = insumosCalculados.itensSemPreco;
+  if (insumosSemPreco > 0) {
+    problemas.push({ tipo: "insumo_sem_preco", quantidade: insumosSemPreco });
+  }
 
   let custoEsquecidos = 0;
   let esquecidosCacheLegado = 0;
@@ -149,11 +167,6 @@ export function calcularCustoReceitaCanonico(/** @type {any} */ {
   }
 
   const custoTotal = custoIngredientes + custoInsumos + custoEsquecidos;
-  const rendimento = rendimentoEfetivo(receita, ingredientesReceita) * fatorSeguro;
-  const perCapita = numero(receita?.per_capita_g);
-  const porcoesEfetivas = perCapita > 0 && rendimento > 0
-    ? rendimento / perCapita
-    : porcoesBase * fatorSeguro;
   const custoPorPorcao = porcoesEfetivas > 0 ? custoTotal / porcoesEfetivas : 0;
 
   return {
@@ -166,11 +179,14 @@ export function calcularCustoReceitaCanonico(/** @type {any} */ {
     custoEsquecidos,
     custoTotal,
     custoPorPorcao,
+    escala,
+    insumosEscalados: insumosCalculados.itens,
     itensSemPreco,
+    insumosSemPreco,
     referenciasAusentes,
     esquecidosCacheLegado,
     problemas,
-    completo: itensSemPreco === 0 && referenciasAusentes === 0 && esquecidosCacheLegado === 0,
+    completo: itensSemPreco === 0 && insumosSemPreco === 0 && referenciasAusentes === 0 && esquecidosCacheLegado === 0,
   };
 }
 
@@ -190,6 +206,8 @@ export function custoPorGrama(receita, ingredientesReceita = [], contexto = null
       insumosReceita: contexto.insumosReceita || [],
       esquecidos: contexto.esquecidos || [],
       fator: 1,
+      unidadesFinais: contexto.unidadesFinais || 0,
+      numeroLotes: contexto.numeroLotes || 1,
     });
     return calculado.custoTotal / rend;
   }
@@ -221,6 +239,8 @@ export function custoEscalado(receita, ingredientesReceita = [], quantidadeGrama
       insumosReceita: contexto.insumosReceita || [],
       esquecidos: contexto.esquecidos || [],
       fator: quantidade / rend,
+      unidadesFinais: contexto.unidadesFinais || 0,
+      numeroLotes: contexto.numeroLotes || 1,
     }).custoTotal;
   }
 
