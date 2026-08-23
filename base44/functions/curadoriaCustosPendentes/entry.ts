@@ -134,12 +134,13 @@ function contextoReceita(receita: any) {
 
 async function carregar(base44: any) {
   const sr = base44.asServiceRole.entities;
-  const [receitas, ingredientes, itens, preferencias, precosLegados] = await Promise.all([
+  const [receitas, ingredientes, itens, preferencias, precosLegados, estadosCuradoria] = await Promise.all([
     listarTudo(sr.Receita, 'created_date'),
     listarTudo(sr.Ingrediente, 'created_date'),
     listarTudo(sr.IngredienteReceita, 'created_date'),
     listarTudo(sr.IngredienteUsuario, '-updated_date'),
     listarTudo(sr.PrecoIngredienteCliente, '-updated_date'),
+    listarTudo(sr.CuradoriaCustoGrupo, '-updated_date'),
   ]);
   const receitaMap = new Map(receitas.map((r: any) => [r.id, r]));
   const ingredienteMap = new Map(ingredientes.map((i: any) => [i.id, i]));
@@ -155,7 +156,18 @@ async function carregar(base44: any) {
     const key = `${txt(p.user_id)}|${txt(p.ingrediente_id)}`;
     if (txt(p.user_id) && txt(p.ingrediente_id) && !legacyMap.has(key)) legacyMap.set(key, p);
   }
-  return { sr, receitas, ingredientes, itens, receitaMap, ingredienteMap, itemMap, itensPorReceita, prefMap, legacyMap };
+  const estadoMap = new Map<string, any>();
+  for (const estado of estadosCuradoria) {
+    const key = txt(estado.grupo_chave);
+    if (key && !estadoMap.has(key)) estadoMap.set(key, estado);
+  }
+  return { sr, receitas, ingredientes, itens, receitaMap, ingredienteMap, itemMap, itensPorReceita, prefMap, legacyMap, estadosCuradoria, estadoMap };
+}
+
+function prioridadePorImpacto(receitas: number) {
+  if (receitas >= 20) return 'alta';
+  if (receitas >= 5) return 'media';
+  return 'baixa';
 }
 
 function addGrupo(map: Map<string, any>, key: string, base: any, receita: any, item: any, fonte: any) {
@@ -181,7 +193,7 @@ function addGrupo(map: Map<string, any>, key: string, base: any, receita: any, i
 }
 
 function construirGrupos(ctx: any) {
-  const { receitas, ingredientes, ingredienteMap, itemMap, itensPorReceita, prefMap, legacyMap } = ctx;
+  const { receitas, ingredientes, ingredienteMap, itemMap, itensPorReceita, prefMap, legacyMap, estadoMap } = ctx;
   const incompletas = receitas.filter((r: any) => r?.custo_cache_status === 'incompleto');
   const preco = new Map<string, any>();
   const referencia = new Map<string, any>();
@@ -263,15 +275,29 @@ function construirGrupos(ctx: any) {
     if (issues === 0) receitasSemIssue.add(receita.id);
   }
 
-  const serializar = (map: Map<string, any>) => [...map.values()].map((g: any) => ({
-    ...g,
-    ocorrencias: g.ocorrencias,
-    receitas: g.receita_ids.size,
-    receita_ids: [...g.receita_ids],
-    source_item_ids: [...g.source_item_ids],
-    item_ids: [...g.item_ids],
-    sugestoes: g.tipo_pendencia === 'outro' ? [] : sugestoes(g.nome, ingredientes, g.categoria || '', g.ingrediente_origem_id || ''),
-  })).sort((a: any, b: any) => b.receitas - a.receitas || b.ocorrencias - a.ocorrencias || txt(a.nome).localeCompare(txt(b.nome)));
+  const serializar = (map: Map<string, any>) => [...map.values()].map((g: any) => {
+    const receitas = g.receita_ids.size;
+    const estado = estadoMap.get(g.grupo_chave);
+    return {
+      ...g,
+      ocorrencias: g.ocorrencias,
+      receitas,
+      receita_ids: [...g.receita_ids],
+      source_item_ids: [...g.source_item_ids],
+      item_ids: [...g.item_ids],
+      workflow_status: estado?.workflow_status || 'nao_analisado',
+      prioridade: estado?.prioridade || prioridadePorImpacto(receitas),
+      workflow_observacao: estado?.observacao || null,
+      workflow_atualizado_em: estado?.updated_date || null,
+      sugestoes: g.tipo_pendencia === 'outro' ? [] : sugestoes(g.nome, ingredientes, g.categoria || '', g.ingrediente_origem_id || ''),
+    };
+  }).sort((a: any, b: any) => {
+    const peso = { alta: 3, media: 2, baixa: 1 } as Record<string, number>;
+    return (peso[b.prioridade] || 0) - (peso[a.prioridade] || 0)
+      || b.receitas - a.receitas
+      || b.ocorrencias - a.ocorrencias
+      || txt(a.nome).localeCompare(txt(b.nome));
+  });
 
   return {
     incompletas,
@@ -286,6 +312,77 @@ function construirGrupos(ctx: any) {
 
 function encontrarGrupo(fila: any, chave: string) {
   return [...fila.grupos.precos, ...fila.grupos.referencias, ...fila.grupos.outros].find((g: any) => g.grupo_chave === chave) || null;
+}
+
+function todosGrupos(fila: any) {
+  return [...fila.grupos.precos, ...fila.grupos.referencias, ...fila.grupos.outros];
+}
+
+async function salvarEstadoGrupo(ctx: any, grupo: any, userId: string, patch: any) {
+  const existente = ctx.estadoMap.get(grupo.grupo_chave);
+  const agora = new Date().toISOString();
+  const base = {
+    grupo_chave: grupo.grupo_chave,
+    tipo_pendencia: grupo.tipo_pendencia,
+    nome: grupo.nome,
+    ingrediente_origem_id: grupo.ingrediente_origem_id || null,
+    contexto: grupo.contexto || null,
+    prioridade: patch.prioridade || grupo.prioridade || prioridadePorImpacto(grupo.receitas || 0),
+    impacto_receitas: grupo.receitas || 0,
+    impacto_ocorrencias: grupo.ocorrencias || 0,
+    visto_em: agora,
+    atualizado_por_id: userId,
+    ...patch,
+  };
+  if (existente?.id) {
+    await ctx.sr.CuradoriaCustoGrupo.bulkUpdate([{ id: existente.id, ...base }]);
+    Object.assign(existente, base);
+    return existente.id;
+  }
+  const criado = await ctx.sr.CuradoriaCustoGrupo.create({ workflow_status: 'nao_analisado', ...base });
+  if (criado?.id) ctx.estadoMap.set(grupo.grupo_chave, criado);
+  return criado?.id || null;
+}
+
+async function sincronizarFila(ctx: any, fila: any, userId: string) {
+  const vivos = todosGrupos(fila);
+  const chavesVivas = new Set(vivos.map((g: any) => g.grupo_chave));
+  let criados = 0;
+  let atualizados = 0;
+  let resolvidos = 0;
+
+  for (const grupo of vivos) {
+    const existente = ctx.estadoMap.get(grupo.grupo_chave);
+    const assinaturaFila = await sha256(`${grupo.grupo_chave}|${[...(grupo.item_ids || [])].sort().join(',')}|${[...(grupo.receita_ids || [])].sort().join(',')}`);
+    if (!existente) {
+      await salvarEstadoGrupo(ctx, grupo, userId, {
+        workflow_status: 'nao_analisado',
+        prioridade: prioridadePorImpacto(grupo.receitas || 0),
+        assinatura_fila: assinaturaFila,
+      });
+      criados++;
+    } else {
+      const reabriu = existente.workflow_status === 'resolvido';
+      await salvarEstadoGrupo(ctx, grupo, userId, {
+        workflow_status: reabriu ? 'decisao_pendente' : (existente.workflow_status || 'nao_analisado'),
+        prioridade: prioridadePorImpacto(grupo.receitas || 0),
+        assinatura_fila: assinaturaFila,
+        ...(reabriu ? { resolvido_em: null, observacao: 'Grupo reapareceu na fila após ter sido resolvido.' } : {}),
+      });
+      atualizados++;
+    }
+  }
+
+  const agora = new Date().toISOString();
+  const patchesResolvidos = (ctx.estadosCuradoria || [])
+    .filter((e: any) => txt(e.grupo_chave) && !chavesVivas.has(txt(e.grupo_chave)) && e.workflow_status !== 'resolvido')
+    .map((e: any) => ({ id: e.id, workflow_status: 'resolvido', resolvido_em: agora, visto_em: agora, atualizado_por_id: userId }));
+  if (patchesResolvidos.length) {
+    await bulk(ctx.sr.CuradoriaCustoGrupo, patchesResolvidos);
+    resolvidos = patchesResolvidos.length;
+  }
+
+  return { criados, atualizados, resolvidos, grupos_vivos: vivos.length, receitas_incompletas: fila.incompletas.length };
 }
 
 function receitaIdsCatalogoParaIngrediente(ctx: any, ingredienteId: string) {
@@ -373,6 +470,7 @@ async function simular(ctx: any, fila: any, grupo: any, args: any) {
   snapshotParts.push(`decisao:${decisao}`);
   snapshotParts.push(`preco:${precoPorG}`);
   snapshotParts.push(`embalagem:${positivo(args?.preco_embalagem_rs)}@${positivo(args?.peso_embalagem_g)}`);
+  snapshotParts.push(`observacao:${txt(args?.observacao)}`);
   snapshotParts.push(`impacto:${[...new Set(impactoCatalogoIds)].sort().join(',')}`);
   const assinatura = await sha256(`${grupo.grupo_chave}|${snapshotParts.join('|')}`);
 
@@ -408,18 +506,46 @@ Deno.serve(async (req) => {
     const fila = construirGrupos(ctx);
 
     if (acao === 'listar') {
+      const grupos = todosGrupos(fila);
+      const workflow = grupos.reduce((acc: any, g: any) => {
+        const status = g.workflow_status || 'nao_analisado';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {});
+      const prioridades = grupos.reduce((acc: any, g: any) => {
+        const p = g.prioridade || prioridadePorImpacto(g.receitas || 0);
+        acc[p] = (acc[p] || 0) + 1;
+        return acc;
+      }, {});
       return Response.json({
         total_incompletas: fila.incompletas.length,
-        total_grupos: fila.grupos.precos.length + fila.grupos.referencias.length + fila.grupos.outros.length,
+        total_grupos: grupos.length,
         grupos_preco: fila.grupos.precos.length,
         grupos_referencia: fila.grupos.referencias.length,
         grupos_outros: fila.grupos.outros.length,
         receitas_prontas_recalculo: fila.receitas_sem_issue_live.length,
+        workflow,
+        prioridades,
         grupos: fila.grupos,
       });
     }
 
+    if (acao === 'sincronizar_fila') {
+      return Response.json({ sincronizacao: await sincronizarFila(ctx, fila, user.id) });
+    }
+
     const grupo = encontrarGrupo(fila, txt(args?.grupo_chave));
+    if (acao === 'atualizar_workflow') {
+      if (!grupo) return Response.json({ error: 'Grupo não encontrado ou já resolvido.' }, { status: 404 });
+      const status = txt(args?.workflow_status);
+      const permitidos = new Set(['nao_analisado', 'em_analise', 'decisao_pendente', 'mantido_pendente']);
+      if (!permitidos.has(status)) return Response.json({ error: 'Status de workflow inválido.' }, { status: 400 });
+      await salvarEstadoGrupo(ctx, grupo, user.id, {
+        workflow_status: status,
+        observacao: txt(args?.observacao) || grupo.workflow_observacao || null,
+      });
+      return Response.json({ atualizado: true, grupo_chave: grupo.grupo_chave, workflow_status: status });
+    }
     const simulacao = await simular(ctx, fila, grupo, args);
     if (acao === 'simular') return Response.json({ simulacao });
     if (acao !== 'aplicar') return Response.json({ error: 'Ação inválida.' }, { status: 400 });
@@ -475,6 +601,12 @@ Deno.serve(async (req) => {
     }
 
     const status = simulacao.decisao === 'manter_pendente' ? 'mantida_pendente' : 'aplicada';
+    await salvarEstadoGrupo(ctx, grupo, user.id, {
+      workflow_status: simulacao.decisao === 'manter_pendente' ? 'mantido_pendente' : 'resolvido',
+      ultima_decisao: simulacao.decisao,
+      observacao: txt(args?.observacao) || null,
+      ...(simulacao.decisao === 'manter_pendente' ? {} : { resolvido_em: agora }),
+    });
     await ctx.sr.CuradoriaCustoPendencia.create({
       grupo_chave: simulacao.grupo_chave,
       tipo_pendencia: simulacao.tipo_pendencia,
