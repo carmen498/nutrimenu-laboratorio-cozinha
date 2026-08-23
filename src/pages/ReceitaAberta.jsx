@@ -664,6 +664,16 @@ export default function ReceitaAberta() {
   const custoEsquecidos = custoCanonico.custoEsquecidos;
   const custoTotal = custoCanonico.custoTotal;
   const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
+  const assinaturaCustoAtual = useMemo(() => gerarAssinaturaCusto({
+    receita,
+    itens,
+    insumos: insumosReceita,
+    esquecidos,
+    contexto: receita?.is_base === false ? "proprietario" : "global",
+    rendimento: rendimentoInfo.pesoPosPreparoEfetivo || 0,
+    resolverIngrediente: (ingredienteId) => ingMap?.[ingredienteId] || null,
+    resolverPreco: (ingrediente) => Number(ingrediente?.preco_por_g_rs) || 0,
+  }), [receita, itens, insumosReceita, esquecidos, rendimentoInfo.pesoPosPreparoEfetivo, ingMap]);
 
   // O cache persistido é apenas referência. Nunca grava preços pessoais numa
   // receita compartilhada; o admin atualiza somente o contexto global/mestre.
