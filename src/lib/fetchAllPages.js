@@ -13,3 +13,19 @@ export async function fetchAllPages(entityClient, sort, pageSize = 1000) {
   }
   return all;
 }
+
+// Variante paginada para consultas filtradas. O SDK aceita
+// filter(query, sort, limit, skip); usar isto evita truncamento silencioso em
+// receitas/auditorias que ultrapassem o limite de uma única página.
+export async function fetchAllFilteredPages(entityClient, query, sort = "created_date", pageSize = 500) {
+  let all = [];
+  let skip = 0;
+  let lastLen = pageSize;
+  while (lastLen === pageSize) {
+    const page = await entityClient.filter(query, sort, pageSize, skip);
+    all = all.concat(page);
+    lastLen = page.length;
+    skip += pageSize;
+  }
+  return all;
+}
