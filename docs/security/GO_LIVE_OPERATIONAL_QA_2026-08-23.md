@@ -59,16 +59,25 @@ O preflight não retorna valores de secrets. Ele verifica apenas presença/ausê
 
 ## P0 — homologação manual obrigatória
 
-### 1. Isolamento real Usuário A × Usuário B
+### 1. Isolamento real Usuário A × Usuário B — PASS EM 23/08/2026
 
-Usar duas contas comuns em sessões independentes.
+Homologação executada com duas contas comuns reais, OTP e duas sessões autenticadas independentes contra o backend de produção.
 
-- A cria receita, cardápio e dados pessoais.
-- B não consegue localizar, abrir, alterar ou excluir dados privados de A por interface nem por URL direta.
-- A continua acessando seus dados.
-- ambos enxergam catálogo-base.
+- 12 entidades privadas testadas, incluindo Receita, Cardápio, Planejamento, Lista de Compras, Per Capita e as sete entidades-filhas;
+- matriz executada nas duas direções A→B e B→A;
+- 207 verificações;
+- `filter` cruzado sem exposição: 24/24;
+- `get` cruzado bloqueado: 24/24;
+- `update` cruzado bloqueado: 24/24;
+- `delete` cruzado bloqueado: 24/24;
+- forja de `usuario_dono_id`: 6/6 rejeitada;
+- promoção para `is_base=true`: 4/4 rejeitada;
+- ambos continuam lendo catálogo-base (`Ingrediente` e `Tag`);
+- 28/28 registros de negócio temporários removidos ao final.
 
-**GO:** nenhum vazamento A↔B.
+Evidência detalhada: `docs/go-live/TENANT_ISOLATION_E2E_2026-08-23.md`.
+
+**GO: PASS — nenhum vazamento A↔B observado no backend real.**
 
 ### 2. Usuário comum × Admin
 
