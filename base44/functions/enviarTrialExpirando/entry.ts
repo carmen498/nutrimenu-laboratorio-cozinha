@@ -5,6 +5,7 @@ import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 import { hojeSaoPauloISO } from "../../shared/acessoAssinatura.ts";
+import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Seu teste gratuito está acabando";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu período de teste no Laboratório de Cozinha termina em 2 dias.</p>
@@ -39,12 +40,11 @@ export default async function(req: Request): Promise<Response> {
           html,
         });
 
-        await base44.asServiceRole.entities.LogEmail.create({
-          destinatario_email: usuario.email,
+        await registrarLogEmail(base44, {
+          usuarioId: usuario.id,
+          email: usuario.email,
           tipo: "trial_expirando",
-          enviado_em: new Date().toISOString(),
-          status: resultado.ok ? "enviado" : "falhou",
-          detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
+          resultado,
         });
 
         if (resultado.ok) enviados++;
