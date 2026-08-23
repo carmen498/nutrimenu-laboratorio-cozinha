@@ -107,6 +107,7 @@ export async function invalidarCustosPorDependencias({
       custo_cache_invalidacao_motivo: motivo,
       custo_cache_invalidacao_origem: origem,
       custo_cache_invalidacao_profundidade: depth,
+      custo_cache_assinatura_status: 'a_verificar',
     };
     updates.push(patch);
     receitaCache.set(id, { ...receita, ...patch });
