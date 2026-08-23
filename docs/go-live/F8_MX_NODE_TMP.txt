@@ -1,0 +1,1 @@
+[{"exchange":"laboratoriodecozinha.com.br","priority":0}]
