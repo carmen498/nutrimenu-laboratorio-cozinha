@@ -56,8 +56,10 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
     }
     setLoading(true);
     try {
+      const tentativaId = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
+        tentativa_id: tentativaId,
         forma_pagamento: "pix",
         aceite_termos: true,
         payer: { email, cpf },
