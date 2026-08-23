@@ -36,6 +36,7 @@ export default function AuditoriaCustosReceitas() {
   const [preview, setPreview] = useState(null);
   const [saneamentoPreview, setSaneamentoPreview] = useState(null);
   const [assinaturaPreview, setAssinaturaPreview] = useState(null);
+  const [divergenciaPreview, setDivergenciaPreview] = useState(null);
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["auditoria-custos-receitas"],
@@ -192,6 +193,64 @@ export default function AuditoriaCustosReceitas() {
     }
   };
 
+  const analisarDivergenciasIdNome = async () => {
+    setProcessando(true);
+    try {
+      const res = await base44.functions.invoke("sanearDivergenciasIngredienteNomeId", { dry_run: true });
+      const dados = res?.data || {};
+      setDivergenciaPreview(dados);
+      toast.success(
+        `ID × nome: ${dados.divergencias_detectadas || 0} divergência(s); ` +
+        `${(dados.nomes_cache_normalizaveis || 0) + (dados.ids_reapontaveis_exatos || 0)} fonte(s) corrigível(is) automaticamente.`
+      );
+    } catch (error) {
+      toast.error("Erro ao analisar divergências ID × nome: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
+  const aplicarDivergenciasIdNome = async () => {
+    if (!divergenciaPreview) {
+      toast.error("Execute a análise ID × nome antes de aplicar.");
+      return;
+    }
+    const automaticas = (divergenciaPreview.nomes_cache_normalizaveis || 0) + (divergenciaPreview.ids_reapontaveis_exatos || 0);
+    if (!window.confirm(`Aplicar ${automaticas} correção(ões) determinística(s)? Casos sem evidência exata continuarão manuais.`)) return;
+
+    setProcessando(true);
+    try {
+      const res = await base44.functions.invoke("sanearDivergenciasIngredienteNomeId", { dry_run: false, confirmar: true });
+      const dados = res?.data || {};
+      if (dados.requer_sincronizacao_subreceitas) {
+        await base44.functions.invoke("sincronizarSubreceita", { todos_desatualizados: true, dry_run: false });
+      }
+      if ((dados.receita_ids_recalcular || []).length > 0) {
+        await base44.functions.invoke("normalizarCustosReceitas", {
+          dry_run: false,
+          receita_ids: dados.receita_ids_recalcular,
+        });
+      }
+      setDivergenciaPreview(null);
+      setAssinaturaPreview(null);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas"] }),
+        qc.invalidateQueries({ queryKey: ["auditoria-custos-receitas-logs"] }),
+        qc.invalidateQueries({ queryKey: ["receitas"] }),
+        qc.invalidateQueries({ queryKey: ["ingredientes"] }),
+        qc.invalidateQueries({ queryKey: ["itens-receita"] }),
+      ]);
+      toast.success(
+        `${dados.fontes_atualizadas || 0} fonte(s) corrigida(s); ` +
+        `${dados.receitas_invalidadas || 0} cache(s) invalidado(s). Casos ambíguos foram preservados.`
+      );
+    } catch (error) {
+      toast.error("Erro ao aplicar saneamento ID × nome: " + (error?.response?.data?.error || error?.message || "erro desconhecido"));
+    } finally {
+      setProcessando(false);
+    }
+  };
+
   const auditarAssinaturas = async (aplicar = false) => {
     setProcessando(true);
     try {
@@ -267,6 +326,10 @@ export default function AuditoriaCustosReceitas() {
             {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
             Recalcular invalidadas
           </Button>
+          <Button variant="outline" onClick={analisarDivergenciasIdNome} disabled={processando} className="gap-2">
+            {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+            Analisar ID × nome
+          </Button>
           <Button variant="outline" onClick={() => auditarAssinaturas(false)} disabled={processando} className="gap-2">
             {processando ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
             Auditar assinaturas
@@ -295,6 +358,54 @@ export default function AuditoriaCustosReceitas() {
         <Card className="p-3"><p className="text-xs text-muted-foreground">Incompletas</p><p className="text-xl font-bold text-destructive">{diagnostico.incompletas}</p></Card>
         <Card className="p-3"><p className="text-xs text-muted-foreground">Itens problemáticos</p><p className="text-xl font-bold">{diagnostico.semPreco}</p></Card>
       </div>
+
+      {divergenciaPreview && (
+        <Card className="p-4 border-amber-400/50 bg-amber-50/30">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold flex items-center gap-2"><Wrench className="w-4 h-4" /> Fase 10.4.1 — ID × nome</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-3xl">
+                Corrige somente nome canônico/sinônimo exato e único. Filhos derivados não são editados diretamente e nenhum fuzzy matching é usado.
+              </p>
+            </div>
+            <Button onClick={aplicarDivergenciasIdNome} disabled={processando || ((divergenciaPreview.nomes_cache_normalizaveis || 0) + (divergenciaPreview.ids_reapontaveis_exatos || 0) === 0)} className="gap-2">
+              <ShieldCheck className="w-4 h-4" /> Aplicar determinísticas
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mt-3">
+            <div><p className="text-xs text-muted-foreground">Divergências</p><p className="text-lg font-bold">{divergenciaPreview.divergencias_detectadas || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Nome-cache</p><p className="text-lg font-bold text-primary">{divergenciaPreview.nomes_cache_normalizaveis || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Reapontar ID</p><p className="text-lg font-bold text-primary">{divergenciaPreview.ids_reapontaveis_exatos || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Derivados</p><p className="text-lg font-bold text-amber-700">{divergenciaPreview.derivados_para_sincronizar || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Manuais</p><p className="text-lg font-bold text-destructive">{divergenciaPreview.manuais_ocorrencias || 0}</p></div>
+            <div><p className="text-xs text-muted-foreground">Grupos manuais</p><p className="text-lg font-bold">{divergenciaPreview.manuais_grupos || 0}</p></div>
+          </div>
+          {(divergenciaPreview.amostra_deterministica || []).length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Amostra determinística</p>
+              <div className="flex flex-wrap gap-1.5">
+                {divergenciaPreview.amostra_deterministica.slice(0, 20).map((row) => (
+                  <Badge key={row.source_item_id} variant="outline" className="text-[10px]">
+                    {row.nome_cache_atual || "—"} → {row.destino_nome || "—"} · {row.acao === "normalizar_nome_cache" ? "mesmo ID" : "reapontar"}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {(divergenciaPreview.grupos_manuais || []).length > 0 && (
+            <div className="mt-3">
+              <p className="text-xs font-semibold uppercase text-muted-foreground mb-1">Principais casos manuais</p>
+              <div className="flex flex-wrap gap-1.5">
+                {divergenciaPreview.grupos_manuais.slice(0, 16).map((row) => (
+                  <Badge key={row.chave} variant="secondary" className="text-[10px]">
+                    {row.nome || "—"} · {row.ocorrencias || 0} ocorrência(s) · {row.motivo}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
 
       {assinaturaPreview && (
         <Card className="p-4 border-primary/30">
