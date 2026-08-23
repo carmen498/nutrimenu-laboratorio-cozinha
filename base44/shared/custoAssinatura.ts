@@ -1,7 +1,7 @@
 // Fase 10.4 — assinatura semântica canônica dos determinantes de custo.
 // Não usa timestamps: somente dados que alteram o custo/diagnóstico do lote.
 
-export const CUSTO_ASSINATURA_VERSAO = 1;
+export const CUSTO_ASSINATURA_VERSAO = 2;
 
 const txt = (v: any) => v == null ? '' : String(v).trim();
 const num = (v: any) => Number.isFinite(Number(v)) ? Number(v) : 0;
@@ -34,6 +34,7 @@ export function serializarDeterminantesCusto({
   rendimento = 0,
   resolverIngrediente = (_id: string) => null,
   resolverPreco = (_ingrediente: any) => 0,
+  resolverAssinaturaSubreceita = (_subreceitaId: string) => '',
 }: any = {}) {
   const linhas: string[] = [
     `V|${CUSTO_ASSINATURA_VERSAO}`,
@@ -50,8 +51,7 @@ export function serializarDeterminantesCusto({
         txt(item.subreceita_id),
         n(item.quantidade_por_porcao),
         txt(item.unidade_quantidade),
-        txt(item.subreceita_dependencias_assinatura),
-        txt(item.subreceita_sincronizacao_status),
+        txt(resolverAssinaturaSubreceita(txt(item.subreceita_id))),
       ].join('|'));
       continue;
     }
