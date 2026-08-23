@@ -35,12 +35,15 @@ export default function HeroSection({ heroImage }) {
           </div>
         </div>
         <figure className="lc-hero-media">
+          {/* fetchpriority em caixa baixa: no React 18 só atributos
+              desconhecidos minúsculos chegam ao DOM; a grafia camelCase
+              é do React 19 e aqui gera warning a cada render. */}
           <img
             src={heroImage}
             alt="Casal maduro preparando uma refeição em uma cozinha residencial organizada"
             width="900"
             height="900"
-            fetchPriority="high"
+            fetchpriority="high"
           />
         </figure>
       </div>
