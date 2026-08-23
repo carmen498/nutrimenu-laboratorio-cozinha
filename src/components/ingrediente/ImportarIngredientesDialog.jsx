@@ -7,7 +7,7 @@ import { CheckCircle, RefreshCw, XCircle, FileText, Loader2, Upload } from "luci
 import { toast } from "sonner";
 import { uploadArquivoSeguro, validarCsvUpload } from "@/lib/securityHardening";
 
-export default function ImportarIngredientesDialog({ open, onClose, onImported = null }) {
+export default function ImportarIngredientesDialog({ open, onClose, onImported = () => {} }) {
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
@@ -50,7 +50,7 @@ export default function ImportarIngredientesDialog({ open, onClose, onImported =
       if (data.criados > 0 || data.atualizados > 0) {
         toast.success(`${data.criados} criado(s), ${data.atualizados} atualizado(s)`);
       }
-      if (onImported) onImported();
+      onImported();
     } catch (err) {
       const msg = "Erro no processamento: " + (err?.response?.data?.error || err?.message || "erro desconhecido");
       setError(msg);
