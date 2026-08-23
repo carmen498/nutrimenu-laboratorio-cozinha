@@ -7,6 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
+import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
 
 const PLANOS_VALIDOS = ["diario", "mensal", "anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
@@ -189,7 +190,7 @@ export default async function(req: Request): Promise<Response> {
           ? mpData.errors.map((e: any) => `${e.code || ""} ${e.message || ""}`.trim()).join("; ")
           : null;
       const mensagemPrincipal = mpData?.message || mpData?.error || causaDetalhada || "sem mensagem";
-      const detalheSeguro = `HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`;
+      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`);
       const orderIdFalha = mpData?.data?.id || mpData?.id || undefined;
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
