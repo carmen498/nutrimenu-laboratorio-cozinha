@@ -18,7 +18,7 @@ export default async function(req: Request): Promise<Response> {
     const gate = await protegerExecucaoAgendada(base44, req, {
       chave: "enviarTrialExpirando",
       cooldownHoras: 20,
-      janela: { inicioMinuto: 7 * 60 + 30, fimMinuto: 9 * 60 + 30 },
+      janela: { inicioMinuto: 7 * 60 + 55, fimMinuto: 8 * 60 + 25 },
     });
     if (gate.response) return gate.response;
 
