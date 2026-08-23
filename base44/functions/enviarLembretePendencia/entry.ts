@@ -6,6 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
+import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Podemos ajudar com seu pagamento?";
 const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado.</p>
@@ -37,12 +38,11 @@ export default async function(req: Request): Promise<Response> {
 
           if (ativo) {
             const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-            await base44.asServiceRole.entities.LogEmail.create({
-              destinatario_email: usuario.email,
+            await registrarLogEmail(base44, {
+              usuarioId: usuario.id,
+              email: usuario.email,
               tipo: "pagamento_pendente_lembrete",
-              enviado_em: new Date().toISOString(),
-              status: resultado.ok ? "enviado" : "falhou",
-              detalhe_erro: resultado.ok ? undefined : (resultado.detalhe_completo || resultado.error),
+              resultado,
             });
             if (resultado.ok) enviados++;
           } else {
