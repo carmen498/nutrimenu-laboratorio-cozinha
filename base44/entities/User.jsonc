@@ -110,6 +110,17 @@
         }
       }
     },
+    "pagamento_ativo_id": {
+      "type": "string",
+      "description": "ID do Pagamento que concedeu o acesso pago atualmente vigente. Usado para impedir que um estorno antigo revogue uma assinatura posterior.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "cpf_cnpj": {
       "type": "string",
       "description": "CPF ou CNPJ para emiss\u00e3o de nota fiscal (opcional, preenchido s\u00f3 se o cliente pedir nota)"
