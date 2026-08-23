@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { hojeSaoPauloISO } from "../../shared/acessoAssinatura.ts";
+import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Bem-vindo(a) ao Laboratório de Cozinha";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
@@ -65,12 +66,11 @@ export default async function(req: Request): Promise<Response> {
           html,
         });
 
-        await base44.asServiceRole.entities.LogEmail.create({
-          destinatario_email: user.email,
+        await registrarLogEmail(base44, {
+          usuarioId: user.id,
+          email: user.email,
           tipo: "boas_vindas",
-          enviado_em: new Date().toISOString(),
-          status: resultadoEmail.ok ? "enviado" : "falhou",
-          detalhe_erro: resultadoEmail.ok ? undefined : (resultadoEmail.detalhe_completo || resultadoEmail.error),
+          resultado: resultadoEmail,
         });
       } else {
         console.log('Template "boas_vindas" está em rascunho — e-mail não enviado.');
