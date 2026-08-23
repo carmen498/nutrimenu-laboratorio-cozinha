@@ -15,9 +15,10 @@ import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 import { hojeSaoPauloISO } from "./acessoAssinatura.ts";
 import { calcularExpiracaoInclusiva } from "./datasAssinatura.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
+import { proximoCicloRenovacao } from "./regraRenovacao.ts";
 
-const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365 };
-const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual" };
+const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365, renovacao: 365 };
+const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual", renovacao: "Renovação anual" };
 
 export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string }): Promise<void> {
   const dias = DIAS_PLANO[pagamento.plano] ?? 30;
@@ -25,12 +26,15 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
   // data_expiracao é inclusiva no motor de acesso. Portanto, um plano de 30 dias
   // iniciado hoje deve expirar em hoje + 29 dias (e não +30, que daria 31 dias civis).
   const dataExpiracaoFormatada = calcularExpiracaoInclusiva(dataInicio, dias);
+  const usuarioAntes = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+  const cicloRenovacao = proximoCicloRenovacao(pagamento.plano, usuarioAntes?.ciclo_renovacao);
 
   await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {
     status_assinatura: "ativo",
     plano_atual: pagamento.plano,
     data_inicio: dataInicio,
     data_expiracao: dataExpiracaoFormatada,
+    ciclo_renovacao: cicloRenovacao,
     ...(pagamento.id ? { pagamento_ativo_id: pagamento.id } : {}),
   });
 
