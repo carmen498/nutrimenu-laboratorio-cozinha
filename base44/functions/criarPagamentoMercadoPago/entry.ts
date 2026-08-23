@@ -95,7 +95,7 @@ export default async function(req: Request): Promise<Response> {
     // interno e não chama a API do Mercado Pago de novo.
     const pagamentosExistentes = await base44.asServiceRole.entities.Pagamento.filter({ idempotency_key: idempotencyKey });
     const pagamentoExistente = (pagamentosExistentes || []).find((p: any) => p.usuario_id === user.id);
-    if (pagamentoExistente) {
+    if (pagamentoExistente && (pagamentoExistente.mercadopago_order_id || pagamentoExistente.status !== "pending")) {
       return Response.json({
         pagamentoId: pagamentoExistente.id,
         orderId: pagamentoExistente.mercadopago_order_id || null,
@@ -106,7 +106,10 @@ export default async function(req: Request): Promise<Response> {
       });
     }
 
-    const pagamento = await base44.asServiceRole.entities.Pagamento.create({
+    // Se houve falha de rede depois de criar o registro interno, mas antes de salvar
+    // o order_id, uma repetição da MESMA tentativa reutiliza o registro e a mesma
+    // X-Idempotency-Key para consultar/criar com segurança no Mercado Pago.
+    const pagamento = pagamentoExistente || await base44.asServiceRole.entities.Pagamento.create({
       usuario_id: user.id,
       plano,
       forma_pagamento,
@@ -224,7 +227,12 @@ export default async function(req: Request): Promise<Response> {
         detalhe_erro: detalheSeguro.slice(0, 500),
         ...(orderIdFalha ? { mercadopago_order_id: orderIdFalha } : {}),
       });
-      return Response.json({ error: "Não foi possível processar o pagamento", detalhe: detalheSeguro.slice(0, 300) }, { status: 400 });
+      return Response.json({
+        error: "Não foi possível processar o pagamento",
+        detalhe: detalheSeguro.slice(0, 300),
+        pagamentoId: pagamento.id,
+        status: "rejected",
+      }, { status: 400 });
     }
 
     console.log("Order criada no Mercado Pago", { order_id: mpData?.id || null, status: mpData?.status || null, pagamento_id: pagamento.id });
