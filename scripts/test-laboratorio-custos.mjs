@@ -87,12 +87,14 @@ assert.deepEqual(semQuantidade.diagnosticos, ["quantidade_produzida_ausente"]);
 
 // Tela 8 — entitlement do add-on, independente da assinatura-base da Cozinha.
 const agoraEntitlement = new Date("2026-08-24T18:00:00-03:00");
-assert.equal(avaliarAcessoLaboratorioCustos(null, null, agoraEntitlement, true).motivo, "sem_usuario");
-assert.equal(avaliarAcessoLaboratorioCustos({ id: "admin", role: "admin" }, null, agoraEntitlement, false).temAcesso, true);
-assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, null, agoraEntitlement, false).motivo, "comercial_indisponivel");
-assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, null, agoraEntitlement, true).motivo, "addon_nao_contratado");
-assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, { status: "ativo", inicio_em: "2026-08-01T00:00:00-03:00" }, agoraEntitlement, true).temAcesso, true);
-assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, { status: "ativo", fim_em: "2026-08-20T00:00:00-03:00" }, agoraEntitlement, true).motivo, "addon_expirado");
-assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, { status: "cancelado" }, agoraEntitlement, true).motivo, "addon_nao_contratado");
+const configFechado = { modulo_habilitado: false };
+const configAberto = { modulo_habilitado: true };
+assert.equal(avaliarAcessoLaboratorioCustos(null, configAberto, null, agoraEntitlement).motivo, "sem_usuario");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "admin", role: "admin" }, configFechado, null, agoraEntitlement).temAcesso, true);
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, configFechado, null, agoraEntitlement).motivo, "comercial_indisponivel");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, configAberto, null, agoraEntitlement).motivo, "addon_nao_contratado");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, configAberto, { status: "ativo", inicio_em: "2026-08-01T00:00:00-03:00" }, agoraEntitlement).temAcesso, true);
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, configAberto, { status: "ativo", fim_em: "2026-08-20T00:00:00-03:00" }, agoraEntitlement).motivo, "addon_expirado");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, configAberto, { status: "cancelado" }, agoraEntitlement).motivo, "addon_nao_contratado");
 
 console.log("Laboratório de Custos: motor econômico e acesso do add-on OK");
