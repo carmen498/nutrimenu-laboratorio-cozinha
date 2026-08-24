@@ -21,6 +21,7 @@
     "test:cost-scaling": "node scripts/test-escalonamento-custos.mjs",
     "test:cost-signature": "node scripts/test-custo-assinatura.mjs && node scripts/test-custo-assinatura-subreceita.mjs",
     "test:cost-reference": "node scripts/test-divergencia-ingrediente.mjs && node scripts/test-curadoria-divergencia-ingrediente.mjs",
+    "test:cost-lab": "node scripts/test-laboratorio-custos.mjs",
     "maintenance:check": "npm run typecheck && npm run lint && npm run build && npm run test:build-budget && npm run test:cost-scaling && npm run test:cost-signature && npm run test:cost-reference && npm run test:security && npm run audit:security && npm run audit:production",
     "test:go-live": "node scripts/test-go-live-static.mjs",
     "test:production-routes": "node scripts/test-production-routes.mjs",
