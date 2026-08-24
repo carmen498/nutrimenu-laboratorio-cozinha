@@ -26,6 +26,7 @@ import LandingOrRedirect from '@/components/LandingOrRedirect';
 // pelo bundle do app inteiro (jspdf, html2canvas, recharts etc.). Eager ficam
 // apenas Landing (via LandingOrRedirect), autenticação e páginas legais acima.
 const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
+const CustosLayout = lazy(() => import('@/components/custos/CustosLayout'));
 const Home = lazy(() => import('@/pages/Home'));
 const Receitas = lazy(() => import('@/pages/Receitas'));
 const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
