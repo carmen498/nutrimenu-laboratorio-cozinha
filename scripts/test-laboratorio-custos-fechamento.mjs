@@ -18,6 +18,7 @@ const itemSchema = read("base44/entities/CalculoCustoItem.jsonc");
 const configSchema = read("base44/entities/ConfiguracaoCustosUsuario.jsonc");
 const entitlementSchema = read("base44/entities/AcessoLaboratorioCustosUsuario.jsonc");
 const addonSchema = read("base44/entities/ConfiguracaoAddonCustos.jsonc");
+const commercialPreflight = read("base44/functions/preflightLaboratorioCustos/entry.ts");
 
 for (const path of ["/custos", "/custos/despesas", "/custos/calcular", "/custos/ficha/:id", "/custos/historico", "/custos/configuracoes"]) {
   assert.ok(app.includes(`path=\"${path}\"`), `rota do Laboratório de Custos ausente: ${path}`);
@@ -33,6 +34,9 @@ assert.ok(!access.includes("LABORATORIO_CUSTOS_COMERCIAL_ENABLED"), "flag comerc
 assert.ok(bloqueado.includes("venda_habilitada") && bloqueado.includes("preco_exibido"), "upsell não está preparado para configuração comercial");
 assert.ok(addonSchema.includes('"modulo_habilitado"') && addonSchema.includes('"default": false'), "configuração comercial não nasce fechada");
 assert.ok(addonSchema.includes('"venda_habilitada"'), "configuração comercial não separa venda e acesso");
+assert.ok(commercialPreflight.includes('user.role !== "admin"'), "preflight comercial não é admin-only");
+assert.ok(commercialPreflight.includes("checkoutAddonIntegrado = false"), "preflight não mantém checkout do add-on explicitamente fechado");
+assert.ok(commercialPreflight.includes("go_comercial"), "preflight comercial não publica decisão GO/NO-GO");
 
 assert.ok(calcular.includes('base44.functions.invoke("salvarCalculoCusto"'), "Tela 3 não usa gravação server-side");
 assert.ok(!calcular.includes("base44.entities.CalculoCusto.create"), "Tela 3 ainda cria CalculoCusto diretamente");
