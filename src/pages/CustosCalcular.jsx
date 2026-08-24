@@ -26,6 +26,7 @@ export default function CustosCalcular() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [receitaId, setReceitaId] = useState(() => searchParams.get("receita") || "");
+  const recalcularId = searchParams.get("recalcular") || "";
   const [quantidade, setQuantidade] = useState("1");
   const [horas, setHoras] = useState("0");
   const [valorHora, setValorHora] = useState("");
@@ -79,7 +80,16 @@ export default function CustosCalcular() {
     enabled: !!user?.id,
   });
 
+  const { data: calculosAnteriores = [], isLoading: loadingRecalculo } = useQuery({
+    queryKey: ["custos-recalculo-origem", recalcularId, user?.id],
+    queryFn: () => base44.entities.CalculoCusto.filter({ id: recalcularId, user_id: user.id }, "-data_calculo", 1),
+    enabled: !!recalcularId && !!user?.id,
+    staleTime: 0,
+  });
+
   const config = configuracoes[0] || null;
+  const calculoAnterior = calculosAnteriores[0] || null;
+  const recalculoValido = !recalcularId || !!calculoAnterior;
   const qtd = Math.max(0, n(quantidade));
   const valorHoraEfetivo = valorHora === "" ? Number(config?.valor_hora_padrao || 0) : n(valorHora);
 
@@ -102,7 +112,7 @@ export default function CustosCalcular() {
     despesas,
     volumeMensal: Number(config?.volume_mensal_estimado || 0),
     quantidadeProduzida: qtd,
-    gruposRateio: Array.isArray(config?.grupos_rateio_incluidos) && config.grupos_rateio_incluidos.length > 0
+    gruposRateio: Array.isArray(config?.grupos_rateio_incluidos)
       ? config.grupos_rateio_incluidos
       : ["gastos_negocio", "producao", "embalagem_outros"],
     horasMaoDeObra: n(horas),
@@ -118,6 +128,7 @@ export default function CustosCalcular() {
 
   const salvar = async (abrirFicha = false) => {
     if (!user?.id || !receita || !tecnico || qtd <= 0) return toast.error("Selecione uma receita e informe a produção.");
+    if (!recalculoValido) return toast.error("A ficha anterior não foi encontrada. Abra novamente pelo Histórico.");
     if (!tecnico.completo) return toast.error("A receita possui pendências de custo. Corrija preços/referências antes de salvar a ficha.");
     setSalvando(true);
     try {
@@ -155,8 +166,8 @@ export default function CustosCalcular() {
         impostos_pct: formacaoPreco?.impostosPct || 0,
         taxas_variaveis_pct: formacaoPreco?.taxasVariaveisPct || 0,
         custo_fixo_adicional_unitario: formacaoPreco?.custoFixoAdicionalUnitario || 0,
-        status: "finalizado",
-        versao_calculo: 1,
+        status: recalcularId ? "recalculado" : "finalizado",
+        calculo_origem_id: recalcularId || "",
       };
 
       const itens = [
@@ -189,6 +200,8 @@ export default function CustosCalcular() {
         <p className="text-sm text-muted-foreground mt-1">Use uma receita do Laboratório de Cozinha e acrescente os custos do seu negócio.</p>
       </div>
 
+      {recalcularId && (loadingRecalculo ? <Card className="p-4 text-sm text-muted-foreground">Carregando a ficha anterior para gerar uma nova versão...</Card> : calculoAnterior ? <Card className="p-4 border-primary/20 bg-primary/5"><p className="text-sm font-medium text-primary">Recalculando {calculoAnterior.origem_nome_snapshot}</p><p className="text-xs text-muted-foreground mt-1">Será criada a versão {Number(calculoAnterior.versao_calculo || 1) + 1}. A ficha anterior continuará preservada no Histórico.</p></Card> : <Card className="p-4 border-red-200 bg-red-50"><p className="text-sm font-medium text-red-800">A ficha anterior não foi encontrada.</p><p className="text-xs text-red-700 mt-1">Volte ao Histórico e inicie o recálculo novamente.</p></Card>)}
+
       <div className="grid xl:grid-cols-[1fr_300px] gap-5 items-start">
         <div className="space-y-4">
           <Card className="p-5 space-y-3">
@@ -202,7 +215,7 @@ export default function CustosCalcular() {
           </Card>
 
           <Card className="p-5 space-y-4">
-            <div><p className="text-xs font-semibold text-primary">PASSO 2</p><h2 className="font-semibold text-lg">Quanto pretende produzir?</h2><p className="text-xs text-muted-foreground">No MVP, 1 unidade de produção = 1 lote/rendimento completo da receita selecionada.</p></div>
+            <div><p className="text-xs font-semibold text-primary">PASSO 2</p><h2 className="font-semibold text-lg">Quanto pretende produzir?</h2><p className="text-xs text-muted-foreground">1 lote corresponde a 1 rendimento completo da receita selecionada.</p></div>
             <div className="grid sm:grid-cols-3 gap-3"><div className="sm:col-span-1"><Label>Quantidade de lotes</Label><Input type="number" min="0.01" step="0.01" value={quantidade} onChange={(e) => setQuantidade(e.target.value)} /></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Rendimento estimado</p><p className="font-semibold mt-1">{tecnico ? `${Math.round(tecnico.rendimento)} ${receita?.unidade_base || "g"}` : "—"}</p></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Porções estimadas</p><p className="font-semibold mt-1">{tecnico ? totalPorcoes.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) : "—"}</p></div></div>
           </Card>
 
@@ -232,7 +245,7 @@ export default function CustosCalcular() {
             {formacaoPreco && <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs"><p className="font-medium text-primary">Preço formado com margem assistida</p><p className="text-muted-foreground mt-1">Margem alvo {Number(formacaoPreco.margemDesejadaPct || 0).toFixed(1).replace(".", ",")}% · taxas {Number(formacaoPreco.taxasVariaveisPct || 0).toFixed(1).replace(".", ",")}% · preço sugerido {money(formacaoPreco.precoSugerido)}</p></div>}
           </Card>
 
-          <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => salvar(false)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar cálculo</Button><Button onClick={() => salvar(true)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} Gerar Ficha de Custo</Button></div>
+          <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => salvar(false)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0 || !recalculoValido}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} {recalcularId ? "Salvar nova versão" : "Salvar cálculo"}</Button><Button onClick={() => salvar(true)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0 || !recalculoValido}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} {recalcularId ? "Gerar nova Ficha" : "Gerar Ficha de Custo"}</Button></div>
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-4">
