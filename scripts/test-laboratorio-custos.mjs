@@ -60,6 +60,9 @@ perto(calcularMarkupMultiplicador({ custoUnitario: 15.6, precoVendaUnitario: 46.
 perto(calcularPrecoPorMarkup({ custoUnitario: 15.6, markup: 3 }), 46.8);
 perto(calcularPrecoPorMargem({ custoUnitario: 15.6, margemDesejadaPct: 40 }).preco, 26);
 perto(calcularPrecoPorMargem({ custoUnitario: 15.6, margemDesejadaPct: 40, taxasVariaveisPct: 10 }).preco, 31.2);
+const precoComTaxasEFixo = calcularPrecoPorMargem({ custoUnitario: 15.6, margemDesejadaPct: 50, taxasVariaveisPct: 10, custoFixoAdicionalUnitario: 2 });
+perto(precoComTaxasEFixo.preco, 44); // (15,60 + 2,00) / (1 - 0,50 - 0,10)
+perto(precoComTaxasEFixo.preco - 17.6 - (precoComTaxasEFixo.preco * 0.10), 22); // 50% líquido sobre o preço
 assert.equal(calcularPrecoPorMargem({ custoUnitario: 15.6, margemDesejadaPct: 95, taxasVariaveisPct: 5 }).valido, false);
 
 const completo = calcularLaboratorioCustos({
