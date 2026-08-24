@@ -1,20 +1,14 @@
-import { Calculator, History, LockKeyhole, Settings2, WalletCards } from "lucide-react";
+import { Calculator, History, Settings2, WalletCards } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export default function CustosInicio() {
   return (
     <div className="space-y-6 pb-24 md:pb-8">
       <div>
-        <div className="flex items-center gap-2">
-          <h1 className="font-display text-2xl font-bold">Laboratório de Custos</h1>
-          <Badge variant="outline" className="gap-1">
-            <LockKeyhole className="w-3 h-3" /> Beta interna
-          </Badge>
-        </div>
+        <h1 className="font-display text-2xl font-bold">Laboratório de Custos</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Fundação técnica do novo complemento. Nesta fase, nenhum cálculo comercial está ativo para clientes.
+          Transforme o custo técnico das suas receitas em custo de produção, preço de venda e margem.
         </p>
       </div>
 
