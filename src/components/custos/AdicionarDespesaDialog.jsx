@@ -19,10 +19,12 @@ export const GRUPOS_DESPESA_CUSTO = [
 ];
 
 const numero = (valor) => {
-  if (typeof valor === "number") return valor;
-  const normalizado = String(valor || "").replace(/\./g, "").replace(",", ".");
+  if (typeof valor === "number") return Number.isFinite(valor) ? valor : null;
+  const texto = String(valor ?? "").trim();
+  if (!texto) return null;
+  const normalizado = texto.replace(/\./g, "").replace(",", ".");
   const parsed = Number(normalizado);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed) ? parsed : null;
 };
 
 export default function AdicionarDespesaDialog({ open, onClose, userId, grupoInicial = "", despesa = null }) {
@@ -54,6 +56,10 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
       return;
     }
     const valor = numero(valorMensal);
+    if (valor == null) {
+      toast.error("Informe um valor mensal válido.");
+      return;
+    }
     if (valor < 0) {
       toast.error("O valor mensal não pode ser negativo.");
       return;
@@ -96,7 +102,7 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
             {despesa ? "Editar despesa" : "Adicionar despesa"}
           </DialogTitle>
           <DialogDescription>
-            Cadastre uma despesa mensal para incluir no rateio dos seus cálculos de custo.
+            Cadastre um gasto mensal do seu negócio. Os grupos selecionados em Configurações de Rateio entram automaticamente nos cálculos.
           </DialogDescription>
         </DialogHeader>
 
@@ -150,7 +156,7 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <p className="text-sm font-medium">Despesa ativa</p>
-              <p className="text-xs text-muted-foreground">Despesas inativas ficam salvas, mas não entram no rateio.</p>
+              <p className="text-xs text-muted-foreground">Despesas inativas ficam salvas, mas não entram nos cálculos nem nos totais ativos.</p>
             </div>
             <Switch checked={ativo} onCheckedChange={setAtivo} />
           </div>
