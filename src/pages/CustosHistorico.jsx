@@ -98,7 +98,7 @@ export default function CustosHistorico() {
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Fichas salvas</p><p className="text-2xl font-bold mt-1">{indicadores.total}</p></div><FileText className="w-5 h-5 text-primary" /></div></Card>
         <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Cálculos neste mês</p><p className="text-2xl font-bold mt-1">{indicadores.desteMes}</p></div><CalendarDays className="w-5 h-5 text-primary" /></div></Card>
-        <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Custo unitário médio</p><p className="text-2xl font-bold mt-1">{indicadores.total ? money(indicadores.mediaCusto) : "—"}</p></div><WalletCards className="w-5 h-5 text-primary" /></div></Card>
+        <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Custo médio por lote</p><p className="text-2xl font-bold mt-1">{indicadores.total ? money(indicadores.mediaCusto) : "—"}</p></div><WalletCards className="w-5 h-5 text-primary" /></div></Card>
         <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Margem média</p><p className="text-2xl font-bold mt-1">{indicadores.temMargem ? pct(indicadores.mediaMargem) : "—"}</p></div><TrendingUp className="w-5 h-5 text-primary" /></div></Card>
       </div>
 
@@ -127,11 +127,11 @@ export default function CustosHistorico() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-left"><tr><th className="px-4 py-3 font-medium">Receita</th><th className="px-4 py-3 font-medium">Categoria</th><th className="px-4 py-3 font-medium whitespace-nowrap">Data do cálculo</th><th className="px-4 py-3 font-medium">Produção</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Custo unitário</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Preço de venda</th><th className="px-4 py-3 font-medium text-right">Margem</th><th className="px-4 py-3 font-medium text-right">Ações</th></tr></thead>
+              <thead className="bg-muted/40 text-left"><tr><th className="px-4 py-3 font-medium">Receita</th><th className="px-4 py-3 font-medium">Categoria</th><th className="px-4 py-3 font-medium whitespace-nowrap">Data do cálculo</th><th className="px-4 py-3 font-medium">Produção</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Custo por lote</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Preço de venda</th><th className="px-4 py-3 font-medium text-right">Margem</th><th className="px-4 py-3 font-medium text-right">Ações</th></tr></thead>
               <tbody className="divide-y">
                 {exibidos.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/25">
-                    <td className="px-4 py-3"><Link to={`/custos/ficha/${c.id}`} className="font-medium hover:text-primary">{c.origem_nome_snapshot}</Link>{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="ml-2 text-[10px]">Preço assistido</Badge>}</td>
+                    <td className="px-4 py-3"><Link to={`/custos/ficha/${c.id}`} className="font-medium hover:text-primary">{c.origem_nome_snapshot}</Link>{Number(c.versao_calculo || 1) > 1 && <Badge variant="secondary" className="ml-2 text-[10px]">v{c.versao_calculo}</Badge>}{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="ml-2 text-[10px]">Preço assistido</Badge>}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.categoria_snapshot || "—"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{dataCurta(c.data_calculo || c.created_date)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{numero(c.quantidade_produzida)} {c.unidade_producao || "lotes"}</td>
@@ -139,7 +139,7 @@ export default function CustosHistorico() {
                     <td className="px-4 py-3 text-right">{Number(c.preco_venda_informado || 0) > 0 ? money(c.preco_venda_informado) : "—"}</td>
                     <td className="px-4 py-3 text-right">{Number(c.preco_venda_informado || 0) > 0 ? pct(c.margem_estimada) : "—"}</td>
                     <td className="px-4 py-3 text-right">
-                      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem><DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem><DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
                     </td>
                   </tr>
                 ))}
