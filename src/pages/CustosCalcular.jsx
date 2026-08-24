@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Calculator, ChefHat, ExternalLink, FileText, Info, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import FormacaoPrecoDialog from "@/components/custos/FormacaoPrecoDialog";
 
 const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (v) => { const x = Number(String(v ?? "").replace(",", ".")); return Number.isFinite(x) ? x : 0; };
@@ -32,6 +33,8 @@ export default function CustosCalcular() {
   const [embalagemAdicional, setEmbalagemAdicional] = useState("0");
   const [outrosCustos, setOutrosCustos] = useState("0");
   const [precoVenda, setPrecoVenda] = useState("");
+  const [showFormacaoPreco, setShowFormacaoPreco] = useState(false);
+  const [formacaoPreco, setFormacaoPreco] = useState(null);
   const [salvando, setSalvando] = useState(false);
 
   const { data: todasReceitas = [], isLoading: loadingReceitas } = useQuery({
@@ -143,8 +146,15 @@ export default function CustosCalcular() {
         custo_unitario: resultado.custoUnitario,
         custo_por_porcao: resultado.custoPorPorcao,
         preco_venda_informado: n(precoVenda),
+        preco_sugerido: formacaoPreco?.precoSugerido || 0,
         markup_aplicado: resultado.markupMultiplicador,
-        margem_estimada: resultado.margemEstimada,
+        margem_estimada: formacaoPreco?.margemLiquidaPct ?? resultado.margemEstimada,
+        formacao_preco_metodo: formacaoPreco ? "margem" : "informado",
+        margem_desejada_pct: formacaoPreco?.margemDesejadaPct || 0,
+        taxa_cartao_pct: formacaoPreco?.taxaCartaoPct || 0,
+        impostos_pct: formacaoPreco?.impostosPct || 0,
+        taxas_variaveis_pct: formacaoPreco?.taxasVariaveisPct || 0,
+        custo_fixo_adicional_unitario: formacaoPreco?.custoFixoAdicionalUnitario || 0,
         status: "finalizado",
         data_calculo: agora,
         versao_calculo: 1,
@@ -217,7 +227,8 @@ export default function CustosCalcular() {
           <Card className="p-5 space-y-4">
             <div><p className="text-xs font-semibold text-primary">PASSO 4</p><h2 className="font-semibold text-lg">Por quanto pretende vender?</h2></div>
             <div className="grid sm:grid-cols-3 gap-3 items-end"><div><Label>Preço de venda por lote</Label><Input type="number" min="0" step="0.01" value={precoVenda} onChange={(e) => setPrecoVenda(e.target.value)} placeholder="0,00" /></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${resultado.margemEstimada.toFixed(1).replace(".", ",")}%` : "—"}</p></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Markup</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${resultado.markupMultiplicador.toFixed(2).replace(".", ",")}x` : "—"}</p></div></div>
-            <Button variant="outline" disabled><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar · próxima fase</Button>
+            <Button variant="outline" onClick={() => setShowFormacaoPreco(true)} disabled={!receita || !tecnico?.completo || qtd <= 0 || resultado.custoUnitario <= 0}><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar</Button>
+            {formacaoPreco && <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs"><p className="font-medium text-primary">Preço formado com margem assistida</p><p className="text-muted-foreground mt-1">Margem alvo {Number(formacaoPreco.margemDesejadaPct || 0).toFixed(1).replace(".", ",")}% · taxas {Number(formacaoPreco.taxasVariaveisPct || 0).toFixed(1).replace(".", ",")}% · preço sugerido {money(formacaoPreco.precoSugerido)}</p></div>}
           </Card>
 
           <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => salvar(false)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar cálculo</Button><Button onClick={() => salvar(true)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} Gerar Ficha de Custo</Button></div>
@@ -229,6 +240,19 @@ export default function CustosCalcular() {
           {Number(config?.volume_mensal_estimado || 0) <= 0 && <Card className="p-4 border-amber-300 bg-amber-50"><p className="text-sm font-medium text-amber-900">Volume mensal ainda não configurado</p><p className="text-xs text-amber-800 mt-1">O rateio ficará zerado até informar seu volume em Minhas Despesas.</p><Link to="/custos/despesas" className="text-xs font-medium text-amber-900 underline mt-2 inline-block">Configurar agora</Link></Card>}
         </div>
       </div>
+
+      <FormacaoPrecoDialog
+        open={showFormacaoPreco}
+        onClose={() => setShowFormacaoPreco(false)}
+        onApply={(dados) => {
+          setFormacaoPreco(dados);
+          setPrecoVenda(Number(dados.precoSugerido || 0).toFixed(2));
+        }}
+        custoUnitario={resultado.custoUnitario}
+        custoPorPorcao={resultado.custoPorPorcao}
+        custoRateadoUnitario={qtd > 0 ? resultado.rateio.custoDaProducao / qtd : 0}
+        markupPadrao={config?.markup_padrao || 3}
+      />
     </div>
   );
 }
