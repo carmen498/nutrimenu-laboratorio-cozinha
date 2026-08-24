@@ -1,4 +1,5 @@
-import { Calculator, LockKeyhole } from "lucide-react";
+import { Calculator, LockKeyhole, WalletCards } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,17 +18,23 @@ export default function CustosInicio() {
         </p>
       </div>
 
+      <Card className="p-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <WalletCards className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <h2 className="font-semibold">Minhas Despesas</h2>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">Cadastre seus gastos mensais e defina a base de rateio usada pelo Laboratório de Custos.</p>
+          </div>
+          <Link to="/custos/despesas" className="inline-flex items-center justify-center h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">Abrir Minhas Despesas</Link>
+        </div>
+      </Card>
+
       <Card className="p-6 border-dashed">
         <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Calculator className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="font-semibold">Módulo isolado e pronto para a próxima fase</h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-              As próximas etapas serão implementadas somente dentro do namespace /custos, consumindo dados do Laboratório de Cozinha sem criar dependência inversa.
-            </p>
-          </div>
+          <div className="w-11 h-11 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0"><Calculator className="w-5 h-5" /></div>
+          <div><h2 className="font-semibold">Calcular Custo</h2><p className="text-sm text-muted-foreground mt-1">Será liberado na próxima fase, usando as despesas cadastradas aqui e os dados do Laboratório de Cozinha.</p></div>
         </div>
       </Card>
     </div>
