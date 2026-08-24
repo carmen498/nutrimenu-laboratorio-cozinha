@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Calculator, Check, ChefHat, History, LockKeyhole, MessageCircle, Settings2, Sparkles, WalletCards } from "lucide-react";
-import { LABORATORIO_CUSTOS_COMERCIAL_ENABLED } from "@/lib/laboratorioCustosAccess";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 const BENEFICIOS = [
   { icon: WalletCards, titulo: "Custos reais do negócio", texto: "Some receita, despesas rateadas, mão de obra e custos adicionais sem misturar os dados técnicos da Cozinha." },
@@ -24,8 +25,18 @@ const MENSAGEM_MOTIVO = {
 export default function CustosBloqueado() {
   const { user } = useAuth();
   const location = useLocation();
-  const motivo = location.state?.motivo || (LABORATORIO_CUSTOS_COMERCIAL_ENABLED ? "addon_nao_contratado" : "comercial_indisponivel");
+  const { data: configs = [] } = useQuery({
+    queryKey: ["custos-config-addon"],
+    queryFn: () => base44.entities.ConfiguracaoAddonCustos.filter({ chave: "laboratorio_custos" }, "-updated_date", 10),
+    enabled: !!user?.id,
+    staleTime: 0,
+  });
+  const config = configs[0] || null;
+  const motivo = location.state?.motivo || (config?.modulo_habilitado ? "addon_nao_contratado" : "comercial_indisponivel");
   const admin = user?.role === "admin";
+  const precoDisponivel = !!config?.venda_habilitada && Number(config?.preco_exibido || 0) > 0;
+  const sufixoPreco = config?.periodo_exibido === "mes" ? "/mês" : config?.periodo_exibido === "ano" ? "/ano" : "";
+  const precoLabel = precoDisponivel ? `${Number(config.preco_exibido).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}${sufixoPreco}` : "A definir";
 
   if (admin) {
     return (
@@ -72,9 +83,9 @@ export default function CustosBloqueado() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs text-muted-foreground">Valor do complemento</p>
-                <p className="text-2xl font-bold mt-1">A definir</p>
+                <p className="text-2xl font-bold mt-1">{precoLabel}</p>
               </div>
-              <Badge variant="secondary">Venda ainda não habilitada</Badge>
+              <Badge variant="secondary">{config?.venda_habilitada ? "Checkout em preparação" : "Venda ainda não habilitada"}</Badge>
             </div>
             <div className="mt-4 pt-4 border-t space-y-2 text-sm">
               <div className="flex gap-2"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /><span>Sem alteração automática no seu plano atual</span></div>
