@@ -154,16 +154,25 @@ export default async function(req: Request): Promise<Response> {
     });
 
     const ambiente = secrets.get("AMBIENTE");
-    const accessToken = ambiente === "producao"
-      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
-      : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
+    // E2E temporário e estritamente isolado: somente o usuário sintético abaixo
+    // pode forçar o token Sandbox durante a homologação integrada de Renovação.
+    const e2eSandboxRenovacao = user.id === "6a8c4db1844fdf64672f1f5c"
+      && user.email === "nutrimenu-e2e-mt7av3joda2596@emalupe.com"
+      && body?.e2e_sandbox_renovacao === "2026-08-24-integrado";
+    const accessToken = e2eSandboxRenovacao
+      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX")
+      : ambiente === "producao"
+        ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
+        : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
 
     // Em sandbox, o Mercado Pago só aceita e-mails de comprador de teste
     // (terminados em @testuser.com). Como o e-mail real do usuário logado
     // não serve para isso, usamos um comprador de teste fixo nesse ambiente.
-    const payerEmail = ambiente === "producao" || payer.email.endsWith("@testuser.com")
-      ? payer.email
-      : "TEST_USER_360639484@testuser.com";
+    const payerEmail = e2eSandboxRenovacao
+      ? "TEST_USER_360639484@testuser.com"
+      : ambiente === "producao" || payer.email.endsWith("@testuser.com")
+        ? payer.email
+        : "TEST_USER_360639484@testuser.com";
 
     if (!accessToken) {
       return Response.json({ error: "Credencial do Mercado Pago não configurada para o ambiente atual" }, { status: 500 });
