@@ -8,24 +8,24 @@
     "metodo_rateio_padrao": {
       "type": "string",
       "enum": [
-        "unidade_produzida"
+        "lote_produzido"
       ],
-      "default": "unidade_produzida",
-      "description": "M\u00e9todo de rateio dispon\u00edvel no MVP."
+      "default": "lote_produzido",
+      "description": "M\u00e9todo de rateio vigente: despesas mensais divididas pelo n\u00famero estimado de lotes/rendimentos completos produzidos no m\u00eas."
     },
     "volume_mensal_estimado": {
       "type": "number",
       "minimum": 0,
       "default": 0,
-      "description": "Volume mensal estimado usado como base do rateio."
+      "description": "N\u00famero estimado de lotes/rendimentos completos produzidos no m\u00eas."
     },
     "unidade_volume": {
       "type": "string",
       "enum": [
-        "unidades_mes"
+        "lotes_mes"
       ],
-      "default": "unidades_mes",
-      "description": "Unidade de refer\u00eancia do volume mensal no MVP."
+      "default": "lotes_mes",
+      "description": "Unidade da base mensal de rateio."
     },
     "grupos_rateio_incluidos": {
       "type": "array",
@@ -42,7 +42,7 @@
         "producao",
         "embalagem_outros"
       ],
-      "description": "Grupos de despesas mensais inclu\u00eddos no rateio autom\u00e1tico. Trabalho/ajudantes \u00e9 tratado separadamente como m\u00e3o de obra."
+      "description": "Grupos de despesas mensais inclu\u00eddos no rateio autom\u00e1tico. Lista vazia significa nenhum grupo inclu\u00eddo."
     },
     "valor_hora_padrao": {
       "type": "number",
