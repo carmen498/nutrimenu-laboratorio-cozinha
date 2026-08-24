@@ -10,10 +10,11 @@ const nonNeg = (v: any) => Math.max(0, n(v));
 const perto = (a: number, b: number, tol = 0.02) => Math.abs(a - b) <= tol;
 
 export default async function(req: Request): Promise<Response> {
+  let base44: any = null;
   let calculoCriado: any = null;
   const itensCriados: any[] = [];
   try {
-    const base44 = createClientFromRequest(req);
+    base44 = createClientFromRequest(req);
     const { user, response } = await exigirAcessoLaboratorioCustos(base44);
     if (response) return response;
 
@@ -120,8 +121,7 @@ export default async function(req: Request): Promise<Response> {
     return Response.json({ success: true, calculo_id: calculoCriado.id, data_calculo: agora, itens: itensCriados.length });
   } catch (error) {
     try {
-      if (calculoCriado) {
-        const base44 = createClientFromRequest(req);
+      if (base44 && calculoCriado) {
         for (const item of itensCriados.reverse()) await base44.asServiceRole.entities.CalculoCustoItem.delete(item.id).catch(() => null);
         await base44.asServiceRole.entities.CalculoCusto.delete(calculoCriado.id).catch(() => null);
       }
