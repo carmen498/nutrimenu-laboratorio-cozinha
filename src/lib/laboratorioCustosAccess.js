@@ -8,9 +8,8 @@
 // Enquanto COMERCIAL_ENABLED=false, nenhum cliente atual do Laboratório de
 // Cozinha depende ou recebe acesso ao novo módulo.
 export const LABORATORIO_CUSTOS_BETA_ENABLED = true;
-export const LABORATORIO_CUSTOS_COMERCIAL_ENABLED = false;
 
-export function avaliarAcessoLaboratorioCustos(user, entitlement = null, agora = new Date(), comercialEnabled = LABORATORIO_CUSTOS_COMERCIAL_ENABLED) {
+export function avaliarAcessoLaboratorioCustos(user, config = null, entitlement = null, agora = new Date()) {
   if (!user) return { temAcesso: false, motivo: "sem_usuario" };
   if (!LABORATORIO_CUSTOS_BETA_ENABLED) {
     return { temAcesso: false, motivo: "feature_desligada" };
@@ -22,7 +21,7 @@ export function avaliarAcessoLaboratorioCustos(user, entitlement = null, agora =
     return { temAcesso: true, motivo: "admin_beta" };
   }
 
-  if (!comercialEnabled) {
+  if (!config?.modulo_habilitado) {
     return { temAcesso: false, motivo: "comercial_indisponivel" };
   }
 
