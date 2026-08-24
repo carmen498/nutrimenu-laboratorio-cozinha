@@ -25,11 +25,17 @@ const despesas = [
 
 assert.equal(somarDespesasAtivas(despesas), 6800);
 assert.equal(somarDespesasAtivas(despesas, ["producao"]), 1000);
+assert.equal(somarDespesasAtivas(despesas, []), 0, "lista vazia de grupos deve significar nenhum grupo rateado");
 
 const rateio = calcularRateioMensal({ despesas, volumeMensal: 200, quantidadeProducao: 5 });
 perto(rateio.custoPorUnidade, 34);
 perto(rateio.custoDaProducao, 170);
 assert.equal(rateio.valido, true);
+
+const rateioSemGrupos = calcularRateioMensal({ despesas, volumeMensal: 200, quantidadeProducao: 5, gruposIncluidos: [] });
+assert.equal(rateioSemGrupos.totalMensal, 0);
+assert.equal(rateioSemGrupos.custoDaProducao, 0);
+assert.equal(rateioSemGrupos.valido, true);
 
 const rateioSemVolume = calcularRateioMensal({ totalDespesasMensais: 6800, volumeMensal: 0, quantidadeProducao: 5 });
 assert.equal(rateioSemVolume.valido, false);
