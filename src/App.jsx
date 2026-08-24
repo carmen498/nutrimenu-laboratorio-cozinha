@@ -176,6 +176,16 @@ const AuthenticatedApp = () => {
             <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
             <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
           </Route>
+          <Route element={<CustosRoute />}>
+            <Route element={<CustosLayout />}>
+              <Route path="/custos" element={<CustosInicio />} />
+              <Route path="/custos/despesas" element={<CustosDespesas />} />
+              <Route path="/custos/calcular" element={<CustosCalcular />} />
+              <Route path="/custos/ficha/:id" element={<CustosFicha />} />
+              <Route path="/custos/historico" element={<CustosHistorico />} />
+              <Route path="/custos/configuracoes" element={<CustosConfiguracoes />} />
+            </Route>
+          </Route>
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
