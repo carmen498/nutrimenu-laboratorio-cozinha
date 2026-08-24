@@ -1,0 +1,86 @@
+{
+  "type": "object",
+  "properties": {
+    "chave": {
+      "type": "string",
+      "enum": [
+        "laboratorio_custos"
+      ],
+      "default": "laboratorio_custos",
+      "description": "Identificador \u00fanico da oferta comercial do Laborat\u00f3rio de Custos."
+    },
+    "nome": {
+      "type": "string",
+      "default": "Laborat\u00f3rio de Custos",
+      "description": "Nome comercial exibido no bloqueio/upsell."
+    },
+    "modulo_habilitado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Kill switch de acesso comercial. Quando false, somente admins da beta entram no m\u00f3dulo."
+    },
+    "venda_habilitada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Habilita a oferta para novas contrata\u00e7\u00f5es somente ap\u00f3s checkout e pre\u00e7o estarem homologados."
+    },
+    "preco_exibido": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Pre\u00e7o comercial aprovado para exibi\u00e7\u00e3o. Opcional enquanto a oferta n\u00e3o estiver definida."
+    },
+    "periodo_exibido": {
+      "type": "string",
+      "enum": [
+        "mes",
+        "ano",
+        "unico"
+      ],
+      "description": "Periodicidade do pre\u00e7o exibido."
+    },
+    "valor_cobranca": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Valor server-side futuro do checkout do add-on. Opcional enquanto a venda estiver desabilitada."
+    },
+    "beneficios": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Benef\u00edcios comerciais aprovados para a oferta."
+    },
+    "versao_oferta": {
+      "type": "string",
+      "description": "Vers\u00e3o da oferta/pre\u00e7o aprovada para rastreabilidade."
+    },
+    "observacao": {
+      "type": "string",
+      "description": "Observa\u00e7\u00e3o administrativa."
+    }
+  },
+  "required": [
+    "chave",
+    "nome"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "name": "ConfiguracaoAddonCustos"
+}
