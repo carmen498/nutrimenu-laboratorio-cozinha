@@ -2,7 +2,7 @@
 // Nenhuma fórmula de ingrediente é repetida aqui.
 import { calcularCustoReceitaCanonico } from "@/lib/custoReceita";
 
-export function calcularCustoTecnicoReceitaParaCustos({
+export function calcularCustoTecnicoReceitaParaCustos(/** @type {any} */ {
   receita,
   ingredientesReceita = [],
   ingredienteMap = {},
