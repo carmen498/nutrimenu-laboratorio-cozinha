@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -139,7 +140,7 @@ export default function CustosDespesas() {
             <div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Custo rateado por unidade</p><p className="text-2xl font-bold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p>{volume <= 0 && <p className="text-[11px] text-muted-foreground mt-1">Informe o volume mensal para calcular.</p>}</div>
           </Card>
 
-          <Card className="p-4 flex gap-3"><Calculator className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Pronto para calcular?</p><p className="text-xs text-muted-foreground mt-1">Depois de cadastrar suas despesas, o próximo passo será calcular o custo de uma receita.</p></div></Card>
+          <Card className="p-4"><div className="flex gap-3"><Calculator className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Pronto para calcular?</p><p className="text-xs text-muted-foreground mt-1">Use estas despesas junto com uma receita do Laboratório de Cozinha.</p><Link to="/custos/calcular" className="text-xs font-medium text-primary underline mt-2 inline-block">Ir para Calcular Custo</Link></div></div></Card>
         </div>
       </div>
 
