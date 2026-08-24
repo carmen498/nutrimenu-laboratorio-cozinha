@@ -55,6 +55,7 @@ assert(criarPagamento.includes('code: "parcelamento_invalido"'), "checkout backe
 assert(criarPagamento.includes("ConfiguracaoPlano.filter"), "preço não vem da configuração server-side");
 assert(criarPagamento.includes("aceite_termos !== true"), "checkout backend não exige aceite");
 assert(criarPagamento.includes("idempotency_key"), "checkout backend sem idempotência persistida");
+assert(criarPagamento.indexOf("pagamentosAntecipados") < criarPagamento.indexOf("avaliarElegibilidadeRenovacao(user)"), "idempotência da Renovação ocorre depois da janela D-30 e pode falhar em replay pós-aprovação");
 assert(criarPagamento.includes('"X-Idempotency-Key"'), "header de idempotência Mercado Pago ausente");
 assert(!criarPagamento.includes("cardNumber"), "backend recebe número bruto de cartão");
 
