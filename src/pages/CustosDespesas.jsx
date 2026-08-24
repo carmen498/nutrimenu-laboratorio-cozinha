@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,12 +52,12 @@ export default function CustosDespesas() {
 
   const custoRateado = volume > 0 ? totais.total / volume : 0;
 
-  const toggleMut = useMutation({
+  const toggleMut = useMutationAny({
     mutationFn: ({ id, ativo }) => base44.entities.DespesaCustoUsuario.update(id, { ativo }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["custos-despesas", user?.id] }),
   });
 
-  const excluirMut = useMutation({
+  const excluirMut = useMutationAny({
     mutationFn: (id) => base44.entities.DespesaCustoUsuario.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custos-despesas", user?.id] });
