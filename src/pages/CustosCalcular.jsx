@@ -103,14 +103,16 @@ export default function CustosCalcular() {
     despesas,
     volumeMensal: Number(config?.volume_mensal_estimado || 0),
     quantidadeProduzida: qtd,
-    gruposRateio: ["gastos_negocio", "producao", "embalagem_outros"],
+    gruposRateio: Array.isArray(config?.grupos_rateio_incluidos) && config.grupos_rateio_incluidos.length > 0
+      ? config.grupos_rateio_incluidos
+      : ["gastos_negocio", "producao", "embalagem_outros"],
     horasMaoDeObra: n(horas),
     valorHora: valorHoraEfetivo,
     custoEmbalagemAdicional: n(embalagemAdicional),
     outrosCustos: n(outrosCustos),
     totalPorcoes,
     precoVendaUnitario: n(precoVenda),
-  }), [tecnico, despesas, config?.volume_mensal_estimado, qtd, horas, valorHoraEfetivo, embalagemAdicional, outrosCustos, totalPorcoes, precoVenda]);
+  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, qtd, horas, valorHoraEfetivo, embalagemAdicional, outrosCustos, totalPorcoes, precoVenda]);
 
   const rendimentoBase = receita && contexto ? rendimentoEfetivo(receita, contexto.ingredientesPorReceita?.[receita.id] || []) : 0;
   const categoria = receita?.categorias?.[0] || receita?.categoria || "";
@@ -236,7 +238,7 @@ export default function CustosCalcular() {
 
         <div className="space-y-4 xl:sticky xl:top-4">
           <Card className="p-5"><h2 className="font-semibold">Resumo</h2><div className="space-y-3 mt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Receita</span><strong className="text-right max-w-[160px] truncate">{receita?.nome || "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Produção</span><strong>{qtd > 0 ? `${qtd} lote(s)` : "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Custo técnico</span><strong>{money(tecnico?.custoTecnicoTotal)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Mão de obra</span><strong>{money(resultado.maoDeObra.total)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Rateio</span><strong>{money(resultado.rateio.custoDaProducao)}</strong></div><div className="border-t pt-3 flex justify-between"><span className="font-medium">Total</span><strong className="text-primary">{money(resultado.custoTotal)}</strong></div></div></Card>
-          <Card className="p-4 flex gap-3"><Info className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Mão de obra sem duplicidade</p><p className="text-xs text-muted-foreground mt-1">O grupo “Seu trabalho / ajudantes” das despesas mensais não entra automaticamente neste rateio quando você informa horas de trabalho direto aqui.</p></div></Card>
+          <Card className="p-4 flex gap-3"><Info className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Rateio configurável, sem dupla contagem</p><p className="text-xs text-muted-foreground mt-1">Esta produção usa os grupos escolhidos em Configurações de Rateio. “Seu trabalho / ajudantes” permanece separado e é calculado pela mão de obra direta informada aqui.</p><Link to="/custos/configuracoes" className="text-xs font-medium text-primary underline mt-2 inline-block">Revisar configurações de rateio</Link></div></Card>
           {Number(config?.volume_mensal_estimado || 0) <= 0 && <Card className="p-4 border-amber-300 bg-amber-50"><p className="text-sm font-medium text-amber-900">Volume mensal ainda não configurado</p><p className="text-xs text-amber-800 mt-1">O rateio ficará zerado até informar seu volume em Minhas Despesas.</p><Link to="/custos/despesas" className="text-xs font-medium text-amber-900 underline mt-2 inline-block">Configurar agora</Link></Card>}
         </div>
       </div>
