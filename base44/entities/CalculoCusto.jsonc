@@ -3,7 +3,7 @@
   "properties": {
     "user_id": {
       "type": "string",
-      "description": "ID do usu\u00e1rio dono do c\u00e1lculo; seguran\u00e7a efetiva baseada em created_by_id."
+      "description": "ID do usu\u00e1rio dono do c\u00e1lculo; definido e validado server-side."
     },
     "tipo_origem": {
       "type": "string",
@@ -11,48 +11,62 @@
         "receita",
         "cardapio"
       ],
-      "default": "receita",
-      "description": "Tipo da origem do c\u00e1lculo."
+      "default": "receita"
     },
     "origem_id": {
-      "type": "string",
-      "description": "ID da Receita ou Card\u00e1pio usado como origem."
+      "type": "string"
     },
     "origem_nome_snapshot": {
-      "type": "string",
-      "description": "Nome congelado da origem no momento do c\u00e1lculo."
+      "type": "string"
     },
     "origem_versao_snapshot": {
-      "type": "string",
-      "description": "Vers\u00e3o/identificador textual da origem no momento do c\u00e1lculo."
+      "type": "string"
     },
     "categoria_snapshot": {
-      "type": "string",
-      "description": "Categoria exibida na ficha, congelada no momento do c\u00e1lculo."
+      "type": "string"
     },
     "foto_url_snapshot": {
-      "type": "string",
-      "description": "URL da foto exibida na ficha no momento do c\u00e1lculo."
+      "type": "string"
     },
     "quantidade_produzida": {
       "type": "number",
-      "minimum": 0,
-      "description": "Quantidade total planejada para esta produ\u00e7\u00e3o."
+      "minimum": 0
     },
     "unidade_producao": {
-      "type": "string",
-      "description": "Unidade principal da produ\u00e7\u00e3o (bolos, unidades, kg etc.)."
+      "type": "string"
     },
     "rendimento_snapshot": {
       "type": "number",
-      "minimum": 0,
-      "description": "Rendimento num\u00e9rico da origem no momento do c\u00e1lculo."
+      "minimum": 0
     },
     "rendimento_unidade_snapshot": {
-      "type": "string",
-      "description": "Descri\u00e7\u00e3o/unidade do rendimento congelada no momento do c\u00e1lculo."
+      "type": "string"
+    },
+    "total_porcoes_snapshot": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "modelo_tecnico_versao": {
+      "type": "number",
+      "minimum": 1
     },
     "custo_ingredientes_snapshot": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "custo_insumos_tecnicos_snapshot": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "custo_esquecidos_snapshot": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "custo_tecnico_snapshot": {
       "type": "number",
       "minimum": 0,
       "default": 0
@@ -104,12 +118,43 @@
     },
     "margem_estimada": {
       "type": "number",
-      "default": 0,
-      "description": "Margem percentual estimada no momento do c\u00e1lculo."
+      "default": 0
+    },
+    "formacao_preco_metodo": {
+      "type": "string",
+      "enum": [
+        "informado",
+        "margem"
+      ],
+      "default": "informado"
+    },
+    "margem_desejada_pct": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "taxa_cartao_pct": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "impostos_pct": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "taxas_variaveis_pct": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "custo_fixo_adicional_unitario": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
     },
     "observacao": {
-      "type": "string",
-      "description": "Observa\u00e7\u00e3o pessoal da ficha de custo."
+      "type": "string"
     },
     "status": {
       "type": "string",
@@ -122,18 +167,15 @@
     },
     "data_calculo": {
       "type": "string",
-      "format": "date-time",
-      "description": "Data/hora l\u00f3gica do c\u00e1lculo."
+      "format": "date-time"
     },
     "versao_calculo": {
       "type": "number",
       "minimum": 1,
-      "default": 1,
-      "description": "Vers\u00e3o hist\u00f3rica do c\u00e1lculo."
+      "default": 1
     },
     "calculo_origem_id": {
-      "type": "string",
-      "description": "ID do c\u00e1lculo anterior quando esta ficha foi duplicada/recalculada."
+      "type": "string"
     }
   },
   "required": [
@@ -144,6 +186,11 @@
   ],
   "rls": {
     "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
       "$or": [
         {
           "data.user_id": "{{user.id}}"
@@ -155,41 +202,15 @@
         }
       ]
     },
-    "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "delete": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     }
   },
   "name": "CalculoCusto"
