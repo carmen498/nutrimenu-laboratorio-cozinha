@@ -79,16 +79,22 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = () => {
+  const handleGoogle = async () => {
     if (!aceitaTermos) {
       setError("Aceite os Termos de Uso e a Política de Privacidade para continuar com Google.");
       return;
     }
+    setError("");
     // O OAuth interrompe esta página. O marcador de sessão prova que o fluxo foi
     // iniciado após a ação explícita na checkbox; o aceite é persistido pelo backend
     // somente depois que o Google devolver uma sessão autenticada.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
-    base44.auth.loginWithProvider("google", "/");
+    try {
+      base44.auth.loginWithProvider("google", "/");
+    } catch (err) {
+      sessionStorage.removeItem("base44_pending_terms_acceptance");
+      setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");
+    }
   };
 
   if (showOtp) {

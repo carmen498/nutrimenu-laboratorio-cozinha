@@ -1,0 +1,112 @@
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio dono da configura\u00e7\u00e3o; usado para consulta, enquanto a seguran\u00e7a usa created_by_id."
+    },
+    "metodo_rateio_padrao": {
+      "type": "string",
+      "enum": [
+        "unidade_produzida"
+      ],
+      "default": "unidade_produzida",
+      "description": "M\u00e9todo de rateio dispon\u00edvel no MVP."
+    },
+    "volume_mensal_estimado": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "Volume mensal estimado usado como base do rateio."
+    },
+    "unidade_volume": {
+      "type": "string",
+      "enum": [
+        "unidades_mes"
+      ],
+      "default": "unidades_mes",
+      "description": "Unidade de refer\u00eancia do volume mensal no MVP."
+    },
+    "valor_hora_padrao": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "Valor padr\u00e3o da hora de trabalho do usu\u00e1rio, em R$."
+    },
+    "markup_padrao": {
+      "type": "number",
+      "minimum": 0,
+      "default": 3,
+      "description": "Markup padr\u00e3o sugerido para c\u00e1lculos assistidos."
+    },
+    "considera_impostos": {
+      "type": "boolean",
+      "default": false,
+      "description": "Prefer\u00eancia para incluir impostos em c\u00e1lculos avan\u00e7ados futuros."
+    },
+    "considera_taxa_cartao": {
+      "type": "boolean",
+      "default": false,
+      "description": "Prefer\u00eancia para incluir taxa de cart\u00e3o em c\u00e1lculos avan\u00e7ados futuros."
+    },
+    "ativo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Indica se a configura\u00e7\u00e3o est\u00e1 ativa."
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  },
+  "name": "ConfiguracaoCustosUsuario"
+}

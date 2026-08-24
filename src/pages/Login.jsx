@@ -50,8 +50,13 @@ export default function Login() {
     }
   };
 
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", returnTo);
+  const handleGoogle = async () => {
+    setError("");
+    try {
+      base44.auth.loginWithProvider("google", returnTo);
+    } catch (err) {
+      setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");
+    }
   };
 
   return (
