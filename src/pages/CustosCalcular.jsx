@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Calculator, ChefHat, ExternalLink, FileText, Info, Loader2, Save } from "lucide-react";
+import { AlertCircle, Calculator, ChefHat, ExternalLink, FileText, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import FormacaoPrecoDialog from "@/components/custos/FormacaoPrecoDialog";
 
@@ -87,9 +87,31 @@ export default function CustosCalcular() {
     staleTime: 0,
   });
 
+  const { data: itensCalculoAnterior = [], isLoading: loadingItensRecalculo } = useQuery({
+    queryKey: ["custos-recalculo-itens", recalcularId, user?.id],
+    queryFn: () => base44.entities.CalculoCustoItem.filter({ calculo_id: recalcularId, user_id: user.id }, "ordem", 100),
+    enabled: !!recalcularId && !!user?.id && calculosAnteriores.length > 0,
+    staleTime: 0,
+  });
+
   const config = configuracoes[0] || null;
   const calculoAnterior = calculosAnteriores[0] || null;
   const recalculoValido = !recalcularId || !!calculoAnterior;
+  const [recalculoInicializado, setRecalculoInicializado] = useState(false);
+  useEffect(() => {
+    if (!recalcularId || !calculoAnterior || loadingItensRecalculo || recalculoInicializado) return;
+    const itemMaoObra = itensCalculoAnterior.find((i) => i.tipo === "mao_obra");
+    const itemOutros = itensCalculoAnterior.find((i) => i.tipo === "outro");
+    setQuantidade(String(calculoAnterior.quantidade_produzida || 1));
+    setHoras(String(itemMaoObra?.quantidade || 0));
+    setValorHora(itemMaoObra?.valor_unitario != null ? String(itemMaoObra.valor_unitario) : "");
+    setEmbalagemAdicional(String(calculoAnterior.custo_embalagens || 0));
+    setOutrosCustos(String(itemOutros?.valor_total || 0));
+    setPrecoVenda("");
+    setFormacaoPreco(null);
+    setRecalculoInicializado(true);
+  }, [recalcularId, calculoAnterior, itensCalculoAnterior, loadingItensRecalculo, recalculoInicializado]);
+
   const qtd = Math.max(0, n(quantidade));
   const valorHoraEfetivo = valorHora === "" ? Number(config?.valor_hora_padrao || 0) : n(valorHora);
 
@@ -126,10 +148,11 @@ export default function CustosCalcular() {
   const rendimentoBase = receita && contexto ? rendimentoEfetivo(receita, contexto.ingredientesPorReceita?.[receita.id] || []) : 0;
   const categoria = receita?.categorias?.[0] || receita?.categoria || "";
 
-  const salvar = async (abrirFicha = false) => {
+  const salvar = async () => {
     if (!user?.id || !receita || !tecnico || qtd <= 0) return toast.error("Selecione uma receita e informe a produção.");
     if (!recalculoValido) return toast.error("A ficha anterior não foi encontrada. Abra novamente pelo Histórico.");
     if (!tecnico.completo) return toast.error("A receita possui pendências de custo. Corrija preços/referências antes de salvar a ficha.");
+    if (!resultado.valido) return toast.error("Configure o volume mensal de lotes antes de finalizar este cálculo.");
     setSalvando(true);
     try {
       const payloadCalculo = {
@@ -184,8 +207,8 @@ export default function CustosCalcular() {
       const calculoId = resposta?.data?.calculo_id;
       if (!resposta?.data?.success || !calculoId) throw new Error(resposta?.data?.error || "A gravação segura da ficha não foi confirmada.");
       qc.invalidateQueries({ queryKey: ["custos-historico", user.id] });
-      toast.success("Cálculo salvo.");
-      if (abrirFicha) navigate(`/custos/ficha/${calculoId}`);
+      toast.success(recalcularId ? "Nova versão salva." : "Ficha de custo salva.");
+      navigate(`/custos/ficha/${calculoId}`);
     } catch (err) {
       toast.error("Não foi possível salvar o cálculo: " + (err?.message || "erro inesperado"));
     } finally {
@@ -200,7 +223,7 @@ export default function CustosCalcular() {
         <p className="text-sm text-muted-foreground mt-1">Use uma receita do Laboratório de Cozinha e acrescente os custos do seu negócio.</p>
       </div>
 
-      {recalcularId && (loadingRecalculo ? <Card className="p-4 text-sm text-muted-foreground">Carregando a ficha anterior para gerar uma nova versão...</Card> : calculoAnterior ? <Card className="p-4 border-primary/20 bg-primary/5"><p className="text-sm font-medium text-primary">Recalculando {calculoAnterior.origem_nome_snapshot}</p><p className="text-xs text-muted-foreground mt-1">Será criada a versão {Number(calculoAnterior.versao_calculo || 1) + 1}. A ficha anterior continuará preservada no Histórico.</p></Card> : <Card className="p-4 border-red-200 bg-red-50"><p className="text-sm font-medium text-red-800">A ficha anterior não foi encontrada.</p><p className="text-xs text-red-700 mt-1">Volte ao Histórico e inicie o recálculo novamente.</p></Card>)}
+      {recalcularId && (loadingRecalculo || loadingItensRecalculo ? <Card className="p-4 text-sm text-muted-foreground">Carregando a ficha anterior para gerar uma nova versão...</Card> : calculoAnterior ? <Card className="p-4 border-primary/20 bg-primary/5"><p className="text-sm font-medium text-primary">Recalculando {calculoAnterior.origem_nome_snapshot}</p><p className="text-xs text-muted-foreground mt-1">Será criada a versão {Number(calculoAnterior.versao_calculo || 1) + 1}. Quantidade, mão de obra e custos diretos foram reaproveitados da ficha anterior; o preço de venda deve ser revisto com o custo atualizado.</p></Card> : <Card className="p-4 border-red-200 bg-red-50"><p className="text-sm font-medium text-red-800">A ficha anterior não foi encontrada.</p><p className="text-xs text-red-700 mt-1">Volte ao Histórico e inicie o recálculo novamente.</p></Card>)}
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-5 items-start">
         <div className="space-y-4">
@@ -241,17 +264,17 @@ export default function CustosCalcular() {
           <Card className="p-5 space-y-4">
             <div><p className="text-xs font-semibold text-primary">PASSO 4</p><h2 className="font-semibold text-lg">Por quanto pretende vender?</h2></div>
             <div className="grid sm:grid-cols-3 gap-3 items-end"><div><Label>Preço de venda por lote</Label><Input type="number" min="0" step="0.01" value={precoVenda} onChange={(e) => { setPrecoVenda(e.target.value); setFormacaoPreco(null); }} placeholder="0,00" /></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">{formacaoPreco ? "Margem líquida alvo" : "Margem estimada"}</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${Number(formacaoPreco?.margemLiquidaPct ?? resultado.margemEstimada).toFixed(1).replace(".", ",")}%` : "—"}</p></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Markup</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${Number(formacaoPreco?.markup ?? resultado.markupMultiplicador).toFixed(2).replace(".", ",")}x` : "—"}</p></div></div>
-            <Button variant="outline" onClick={() => setShowFormacaoPreco(true)} disabled={!receita || !tecnico?.completo || qtd <= 0 || resultado.custoUnitario <= 0}><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar</Button>
+            <Button variant="outline" onClick={() => setShowFormacaoPreco(true)} disabled={!receita || !tecnico?.completo || qtd <= 0 || resultado.custoUnitario <= 0 || !resultado.valido}><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar</Button>
             {formacaoPreco && <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs"><p className="font-medium text-primary">Preço formado com margem assistida</p><p className="text-muted-foreground mt-1">Margem alvo {Number(formacaoPreco.margemDesejadaPct || 0).toFixed(1).replace(".", ",")}% · taxas {Number(formacaoPreco.taxasVariaveisPct || 0).toFixed(1).replace(".", ",")}% · preço sugerido {money(formacaoPreco.precoSugerido)}</p></div>}
           </Card>
 
-          <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => salvar(false)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0 || !recalculoValido}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} {recalcularId ? "Salvar nova versão" : "Salvar cálculo"}</Button><Button onClick={() => salvar(true)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0 || !recalculoValido}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} {recalcularId ? "Gerar nova Ficha" : "Gerar Ficha de Custo"}</Button></div>
+          <div className="flex justify-end"><Button onClick={salvar} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0 || !recalculoValido || !resultado.valido}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} {recalcularId ? "Gerar nova versão da Ficha" : "Gerar Ficha de Custo"}</Button></div>
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-4">
           <Card className="p-5"><h2 className="font-semibold">Resumo</h2><div className="space-y-3 mt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Receita</span><strong className="text-right max-w-[160px] truncate">{receita?.nome || "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Produção</span><strong>{qtd > 0 ? `${qtd} lote(s)` : "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Custo técnico</span><strong>{money(tecnico?.custoTecnicoTotal)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Mão de obra</span><strong>{money(resultado.maoDeObra.total)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Rateio</span><strong>{money(resultado.rateio.custoDaProducao)}</strong></div><div className="border-t pt-3 flex justify-between"><span className="font-medium">Total</span><strong className="text-primary">{money(resultado.custoTotal)}</strong></div></div></Card>
           <Card className="p-4 flex gap-3"><Info className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Rateio configurável, sem dupla contagem</p><p className="text-xs text-muted-foreground mt-1">Esta produção usa os grupos escolhidos em Configurações de Rateio. “Seu trabalho / ajudantes” permanece separado e é calculado pela mão de obra direta informada aqui.</p><Link to="/custos/configuracoes" className="text-xs font-medium text-primary underline mt-2 inline-block">Revisar configurações de rateio</Link></div></Card>
-          {Number(config?.volume_mensal_estimado || 0) <= 0 && <Card className="p-4 border-amber-300 bg-amber-50"><p className="text-sm font-medium text-amber-900">Volume mensal ainda não configurado</p><p className="text-xs text-amber-800 mt-1">O rateio ficará zerado até informar seu volume em Minhas Despesas.</p><Link to="/custos/despesas" className="text-xs font-medium text-amber-900 underline mt-2 inline-block">Configurar agora</Link></Card>}
+          {!resultado.rateio.valido && <Card className="p-4 border-amber-300 bg-amber-50"><p className="text-sm font-medium text-amber-900">Rateio ainda não pode ser calculado</p><p className="text-xs text-amber-800 mt-1">Há despesas incluídas no rateio, mas o volume mensal de lotes está zerado. A formação do preço e a geração da ficha ficam bloqueadas para evitar custo subestimado.</p><Link to="/custos/configuracoes" className="text-xs font-medium text-amber-900 underline mt-2 inline-block">Configurar volume mensal</Link></Card>}
         </div>
       </div>
 
