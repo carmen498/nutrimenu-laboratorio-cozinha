@@ -50,7 +50,11 @@ export default function CustosDespesas() {
     return { porGrupo, total };
   }, [despesas]);
 
-  const custoRateado = volume > 0 ? totais.total / volume : 0;
+  const gruposRateio = Array.isArray(config?.grupos_rateio_incluidos) && config.grupos_rateio_incluidos.length > 0
+    ? config.grupos_rateio_incluidos
+    : ["gastos_negocio", "producao", "embalagem_outros"];
+  const totalRateio = gruposRateio.reduce((s, grupo) => s + Number(totais.porGrupo[grupo] || 0), 0);
+  const custoRateado = volume > 0 ? totalRateio / volume : 0;
 
   const toggleMut = useMutationAny({
     mutationFn: ({ id, ativo }) => base44.entities.DespesaCustoUsuario.update(id, { ativo }),
@@ -94,7 +98,7 @@ export default function CustosDespesas() {
       <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="flex items-start gap-3 text-sm">
           <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div><p className="font-medium">As despesas ativas serão rateadas automaticamente entre suas produções.</p><p className="text-muted-foreground mt-0.5">Você pode deixar valores em branco ou zerados e completar depois.</p></div>
+          <div><p className="font-medium">As despesas ativas dos grupos selecionados serão rateadas entre suas produções.</p><p className="text-muted-foreground mt-0.5">“Seu trabalho / ajudantes” fica separado da mão de obra direta. Revise os grupos em Configurações de Rateio.</p></div>
         </div>
       </Card>
 
@@ -136,7 +140,7 @@ export default function CustosDespesas() {
           </Card>
 
           <Card className="p-5 space-y-3">
-            <div><h2 className="font-semibold">Como será o rateio?</h2><p className="text-xs text-muted-foreground mt-1">As despesas serão divididas pelo seu volume mensal estimado.</p></div>
+            <div><h2 className="font-semibold">Como será o rateio?</h2><p className="text-xs text-muted-foreground mt-1">{money(totalRateio)} dos grupos selecionados serão divididos pelo volume mensal estimado.</p><Link to="/custos/configuracoes" className="text-[11px] text-primary underline mt-1 inline-block">Revisar grupos incluídos</Link></div>
             <div><label className="text-xs font-medium">Volume mensal estimado</label><div className="flex gap-2 mt-1"><Input type="number" min="0" value={volumeLocal !== "" ? volumeLocal : config?.volume_mensal_estimado ?? ""} onChange={(e) => setVolumeLocal(e.target.value)} placeholder="Ex.: 200" /><Button variant="outline" size="icon" onClick={salvarVolume}><Save className="w-4 h-4" /></Button></div><p className="text-[11px] text-muted-foreground mt-1">unidades/mês</p></div>
             <div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Custo rateado por unidade</p><p className="text-2xl font-bold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p>{volume <= 0 && <p className="text-[11px] text-muted-foreground mt-1">Informe o volume mensal para calcular.</p>}</div>
           </Card>
