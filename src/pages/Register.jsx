@@ -10,6 +10,7 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { consoleErrorSeguro } from "@/lib/securityHardening";
 
 
 export default function Register() {
@@ -47,23 +48,53 @@ export default function Register() {
   const handleVerify = async () => {
     setError("");
     setLoading(true);
+    // O token é obtido já no verifyOtp. As etapas seguintes (perfil, termos,
+    // trial) são best-effort: uma falha transitória nelas nunca deve impedir
+    // a entrada no app nem exibir "Código de verificação inválido", porque
+    // o código na verdade estava certo e o usuário já está autenticado.
     try {
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
+    } catch (err) {
+      setError(err.message || "Código de verificação inválido");
+      setLoading(false);
+      return;
+    }
+
+    // Perfil: falha aqui não bloqueia o app — o AuthContext revalida ao recarregar.
+    try {
       await base44.auth.updateMe({
         nome_completo: fullName,
         telefone_whatsapp: telefone,
       });
-      await base44.functions.invoke("registrarAceiteTermos", {});
-      await base44.functions.invoke("inicializarTrialUsuario", {});
-      window.location.href = "/";
-    } catch (err) {
-      setError(err.message || "Código de verificação inválido");
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      consoleErrorSeguro("Falha ao salvar perfil pós-OTP", e);
     }
+
+    // Aceite dos Termos: falha aqui não bloqueia o app — o AuthContext tenta
+    // registrar o aceite pendente ao revalidar a sessão.
+    try {
+      await base44.functions.invoke("registrarAceiteTermos", {});
+    } catch (e) {
+      consoleErrorSeguro("Falha ao registrar aceite de termos pós-OTP", e);
+    }
+
+    // Trial: best-effort. 409 significa que o trial já existe (outra aba/
+    // AuthContext já inicializou) — tratar como sucesso. Outros erros não
+    // impedem a entrada: a janela de carência do ProtectedRoute libera o
+    // /app para recém-cadastrados enquanto o trial é inicializado.
+    try {
+      await base44.functions.invoke("inicializarTrialUsuario", {});
+    } catch (e) {
+      const status = e?.response?.status || e?.status;
+      if (status !== 409) {
+        consoleErrorSeguro("Falha ao inicializar trial pós-OTP", e);
+      }
+    }
+
+    window.location.href = "/app";
   };
 
   const handleResend = async () => {
@@ -90,7 +121,7 @@ export default function Register() {
     // somente depois que o Google devolver uma sessão autenticada.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
     try {
-      base44.auth.loginWithProvider("google", "/");
+      base44.auth.loginWithProvider("google", "/app");
     } catch (err) {
       sessionStorage.removeItem("base44_pending_terms_acceptance");
       setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");

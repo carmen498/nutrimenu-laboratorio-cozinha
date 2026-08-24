@@ -18,7 +18,14 @@ export default function Login() {
   const emailInputRef = useRef(null);
   // Captured once on mount, before the URL is cleaned up below — used for the
   // post-login redirect instead of re-reading window.location later.
-  const [returnTo] = useState(() => safeReturnTo());
+  // safeReturnTo devolve "/" quando não há destino explícito. Para um login
+  // bem-sucedido, "/" é a Landing Page pública — não faz sentido mandar um
+  // usuário autenticado de volta à página de marketing. Redirecionamos para
+  // /app como destino pós-login padrão.
+  const [returnTo] = useState(() => {
+    const dest = safeReturnTo();
+    return dest === "/" ? "/app" : dest;
+  });
 
   // Handles browser-autofilled e-mail, which doesn't always fire a React onChange
   useEffect(() => {

@@ -51,6 +51,23 @@ export function avaliarAcessoAssinatura(user, agora = new Date()) {
   };
 }
 
+// Janela de carência para recém-cadastrados: se a conta foi criada há poucos
+// minutos e o trial ainda não foi confirmado (inicializarTrialUsuario pode
+// falhar transitivamente ou competir com o AuthContext), liberamos o acesso
+// ao /app para que o usuário não seja mandado para /planos enquanto o trial
+// é inicializado em segundo plano. A janela é curta para não virar acesso
+// gratuito indefinido.
+const MINUTOS_GRACA_RECADASTRO = 15;
+
+export function dentroJanelaGracaRecemCadastrado(user, agora = new Date()) {
+  if (!user || user.role === "admin") return false;
+  if (!user.created_date) return false;
+  const criacao = new Date(user.created_date);
+  if (isNaN(criacao.getTime())) return false;
+  const diffMs = agora.getTime() - criacao.getTime();
+  return diffMs >= 0 && diffMs <= MINUTOS_GRACA_RECADASTRO * 60 * 1000;
+}
+
 // Mesmo sem assinatura ativa o usuário precisa conseguir renovar, consultar a
 // própria conta e pedir suporte. Termos/Privacidade já são rotas públicas no App.jsx.
 const ROTAS_LIBERADAS_SEM_ASSINATURA = new Set([

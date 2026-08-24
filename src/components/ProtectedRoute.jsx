@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import { avaliarAcessoAssinatura, rotaLiberadaSemAssinatura } from '@/lib/acessoAssinatura';
+import { avaliarAcessoAssinatura, rotaLiberadaSemAssinatura, dentroJanelaGracaRecemCadastrado } from '@/lib/acessoAssinatura';
 import { termosAtuaisAceitos } from '@/lib/termosVersao';
 
 const DefaultFallback = () => (
@@ -44,6 +44,12 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
   const rotaLiberada = rotaLiberadaSemAssinatura(location.pathname);
 
   if (!acesso.temAcesso && !rotaLiberada) {
+    // Recém-cadastrado dentro da janela de carência: o trial pode ainda não
+    // ter sido confirmado por uma falha transitória. Liberamos o /app para
+    // que ele não seja mandado para /planos nesta primeira sessão.
+    if (dentroJanelaGracaRecemCadastrado(user)) {
+      return <Outlet />;
+    }
     return (
       <Navigate
         to="/planos"
