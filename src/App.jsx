@@ -70,7 +70,8 @@ const DicaCarmenDetalhe = lazy(() => import('@/pages/DicaCarmenDetalhe'));
 const NovaDicaCarmen = lazy(() => import('@/pages/NovaDicaCarmen'));
 const CustosInicio = lazy(() => import('@/pages/CustosInicio'));
 const CustosDespesas = lazy(() => import('@/pages/CustosDespesas'));
-const CustosCalcular = lazy(() => import('@/pages/CustosCalcular')); 
+const CustosCalcular = lazy(() => import('@/pages/CustosCalcular'));
+const CustosFicha = lazy(() => import('@/pages/CustosFicha')); 
 
 // Routes reachable without a valid session — these must keep rendering even
 // when the app-level check reports 'auth_required', otherwise a genuinely
@@ -162,6 +163,7 @@ const AuthenticatedApp = () => {
               <Route path="/custos" element={<CustosInicio />} />
               <Route path="/custos/despesas" element={<CustosDespesas />} />
               <Route path="/custos/calcular" element={<CustosCalcular />} />
+              <Route path="/custos/ficha/:id" element={<CustosFicha />} />
             </Route>
             <Route element={<AdminRoute />}>
               <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
