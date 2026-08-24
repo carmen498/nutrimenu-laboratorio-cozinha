@@ -25,6 +25,12 @@ export default async function(req: Request): Promise<Response> {
   const scenario = body?.scenario === 'rejected' ? 'OTHE' : 'APRO';
   const tentativa = typeof body?.tentativa_id === 'string' && /^[0-9a-f-]{36}$/i.test(body.tentativa_id) ? body.tentativa_id : crypto.randomUUID();
   if (user.termos_versao_aceita !== VERSAO_TERMOS_ATUAL) return Response.json({ error: 'current_terms_acceptance_required' }, { status: 409 });
+  const key = await idem(user.id, tentativa);
+  const existentes = await base44.asServiceRole.entities.Pagamento.filter({ idempotency_key: key });
+  const existente = (existentes || []).find((p: any) => p.usuario_id === user.id);
+  if (existente && (existente.mercadopago_order_id || existente.status !== 'pending')) {
+    return Response.json({ ok: true, pagamentoId: existente.id, orderId: existente.mercadopago_order_id || null, status: existente.status, idempotent: true, tentativa_id: tentativa });
+  }
   const eleg = avaliarElegibilidadeRenovacao(user);
   if (!eleg.elegivel) return Response.json({ error: 'renovacao_indisponivel', motivo: eleg.motivo }, { status: 409 });
   const parcelas = Number(body?.installments || 6);
@@ -33,12 +39,6 @@ export default async function(req: Request): Promise<Response> {
   const cfg = (await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: 'renovacao' }))?.[0];
   const valor = Number(cfg?.valor_cobranca);
   if (!(valor > 0)) return Response.json({ error: 'preco_invalido' }, { status: 500 });
-  const key = await idem(user.id, tentativa);
-  const existentes = await base44.asServiceRole.entities.Pagamento.filter({ idempotency_key: key });
-  const existente = (existentes || []).find((p: any) => p.usuario_id === user.id);
-  if (existente && (existente.mercadopago_order_id || existente.status !== 'pending')) {
-    return Response.json({ ok: true, pagamentoId: existente.id, orderId: existente.mercadopago_order_id || null, status: existente.status, idempotent: true, tentativa_id: tentativa });
-  }
   const pagamento = existente || await base44.asServiceRole.entities.Pagamento.create({
     usuario_id: user.id, plano: 'renovacao', forma_pagamento: 'cartao', valor, parcelas, status: 'pending',
     idempotency_key: key, termos_aceitos_em: new Date().toISOString(), termos_versao_aceita: VERSAO_TERMOS_ATUAL,
