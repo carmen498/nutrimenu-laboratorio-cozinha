@@ -58,6 +58,32 @@ export default async function(req: Request): Promise<Response> {
     if (!PLANOS_VALIDOS.includes(plano)) {
       return Response.json({ error: "Plano inválido" }, { status: 400 });
     }
+
+    // Idempotência precisa ser resolvida ANTES da elegibilidade de Renovação.
+    // Após uma aprovação, a ativação move a expiração para +365 dias; se a mesma
+    // tentativa HTTP for repetida depois disso, revalidar D-30 primeiro faria a
+    // requisição falhar como fora da janela em vez de devolver o pagamento existente.
+    const idempotencyKeyAntecipada = await derivarIdempotencyKey(user.id, tentativa_id);
+    const pagamentosAntecipados = await base44.asServiceRole.entities.Pagamento.filter({ idempotency_key: idempotencyKeyAntecipada });
+    const pagamentoAntecipado = (pagamentosAntecipados || []).find((p: any) => p.usuario_id === user.id);
+    if (pagamentoAntecipado && (pagamentoAntecipado.mercadopago_order_id || pagamentoAntecipado.status !== "pending")) {
+      const respostaExistente = {
+        pagamentoId: pagamentoAntecipado.id,
+        orderId: pagamentoAntecipado.mercadopago_order_id || null,
+        status: pagamentoAntecipado.status,
+        qrCode: pagamentoAntecipado.qr_code || null,
+        qrCodeBase64: pagamentoAntecipado.qr_code_base64 || null,
+        idempotent: true,
+      };
+      if (["rejected", "cancelled", "estornado"].includes(pagamentoAntecipado.status)) {
+        return Response.json({
+          error: pagamentoAntecipado.status === "rejected" ? "Pagamento recusado" : "Pagamento não concluído",
+          ...respostaExistente,
+        }, { status: 400 });
+      }
+      return Response.json(respostaExistente);
+    }
+
     if (plano === "renovacao") {
       const elegibilidade = avaliarElegibilidadeRenovacao(user);
       if (!elegibilidade.elegivel) {
