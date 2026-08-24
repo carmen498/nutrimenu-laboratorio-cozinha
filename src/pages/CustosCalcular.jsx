@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -23,7 +23,9 @@ export default function CustosCalcular() {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const qc = useQueryClient();
-  const [receitaId, setReceitaId] = useState("");
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [receitaId, setReceitaId] = useState(() => searchParams.get("receita") || "");
   const [quantidade, setQuantidade] = useState("1");
   const [horas, setHoras] = useState("0");
   const [valorHora, setValorHora] = useState("");
@@ -110,7 +112,7 @@ export default function CustosCalcular() {
   const rendimentoBase = receita && contexto ? rendimentoEfetivo(receita, contexto.ingredientesPorReceita?.[receita.id] || []) : 0;
   const categoria = receita?.categorias?.[0] || receita?.categoria || "";
 
-  const salvar = async () => {
+  const salvar = async (abrirFicha = false) => {
     if (!user?.id || !receita || !tecnico || qtd <= 0) return toast.error("Selecione uma receita e informe a produção.");
     if (!tecnico.completo) return toast.error("A receita possui pendências de custo. Corrija preços/referências antes de salvar a ficha.");
     setSalvando(true);
@@ -150,16 +152,18 @@ export default function CustosCalcular() {
 
       const itens = [
         { tipo: "ingredientes", descricao: "Ingredientes da receita", origem: "Motor de Custos Canônico", formula: `${qtd} lote(s) × composição técnica`, quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoIngredientes / qtd : 0, valor_total: tecnico.custoIngredientes, ordem: 1 },
-        { tipo: "embalagem", descricao: "Insumos/embalagens técnicos da receita", origem: "Laboratório de Cozinha", formula: "Conforme cadastro técnico da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoInsumosTecnicos / qtd : 0, valor_total: tecnico.custoInsumosTecnicos, ordem: 2 },
-        { tipo: "embalagem", descricao: "Embalagem/custo específico adicional", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(embalagemAdicional), valor_total: n(embalagemAdicional), ordem: 3 },
-        { tipo: "mao_obra", descricao: "Mão de obra direta", origem: "Informado neste cálculo", formula: `${n(horas)} h × ${money(valorHoraEfetivo)}/h`, quantidade: n(horas), valor_unitario: valorHoraEfetivo, valor_total: resultado.maoDeObra.total, ordem: 4 },
-        { tipo: "despesa_rateada", descricao: "Despesas mensais rateadas", origem: "Minhas Despesas", formula: `${money(resultado.rateio.custoPorUnidade)} × ${qtd} lote(s)`, quantidade: qtd, valor_unitario: resultado.rateio.custoPorUnidade, valor_total: resultado.rateio.custoDaProducao, ordem: 5 },
-        { tipo: "outro", descricao: "Outros custos desta produção", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(outrosCustos), valor_total: n(outrosCustos), ordem: 6 },
+        { tipo: "ingredientes", descricao: "Ingredientes esquecidos", origem: "Laboratório de Cozinha", formula: "Conforme registros técnicos da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoEsquecidos / qtd : 0, valor_total: tecnico.custoEsquecidos, ordem: 2 },
+        { tipo: "embalagem", descricao: "Insumos/embalagens técnicos da receita", origem: "Laboratório de Cozinha", formula: "Conforme cadastro técnico da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoInsumosTecnicos / qtd : 0, valor_total: tecnico.custoInsumosTecnicos, ordem: 3 },
+        { tipo: "embalagem", descricao: "Embalagem/custo específico adicional", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(embalagemAdicional), valor_total: n(embalagemAdicional), ordem: 4 },
+        { tipo: "mao_obra", descricao: "Mão de obra direta", origem: "Informado neste cálculo", formula: `${n(horas)} h × ${money(valorHoraEfetivo)}/h`, quantidade: n(horas), valor_unitario: valorHoraEfetivo, valor_total: resultado.maoDeObra.total, ordem: 5 },
+        { tipo: "despesa_rateada", descricao: "Despesas mensais rateadas", origem: "Minhas Despesas", formula: `${money(resultado.rateio.custoPorUnidade)} × ${qtd} lote(s)`, quantidade: qtd, valor_unitario: resultado.rateio.custoPorUnidade, valor_total: resultado.rateio.custoDaProducao, ordem: 6 },
+        { tipo: "outro", descricao: "Outros custos desta produção", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(outrosCustos), valor_total: n(outrosCustos), ordem: 7 },
       ].filter((i) => i.valor_total > 0 || i.ordem === 1);
 
       await Promise.all(itens.map((item) => base44.entities.CalculoCustoItem.create({ user_id: user.id, calculo_id: calculo.id, ...item })));
       qc.invalidateQueries({ queryKey: ["custos-historico", user.id] });
-      toast.success("Cálculo salvo. A Ficha de Custo será aberta na próxima fase.");
+      toast.success("Cálculo salvo.");
+      if (abrirFicha) navigate(`/custos/ficha/${calculo.id}`);
     } catch (err) {
       toast.error("Não foi possível salvar o cálculo: " + (err?.message || "erro inesperado"));
     } finally {
@@ -216,7 +220,7 @@ export default function CustosCalcular() {
             <Button variant="outline" disabled><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar · próxima fase</Button>
           </Card>
 
-          <div className="flex flex-wrap justify-end gap-2"><Button onClick={salvar} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar cálculo</Button><Button variant="outline" disabled><FileText className="w-4 h-4 mr-2" /> Gerar Ficha de Custo · C6</Button></div>
+          <div className="flex flex-wrap justify-end gap-2"><Button variant="outline" onClick={() => salvar(false)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />} Salvar cálculo</Button><Button onClick={() => salvar(true)} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} Gerar Ficha de Custo</Button></div>
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-4">
