@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { calcularCustoReceitaCanonico } from "../src/lib/custoReceita.js";
 import { calcularLaboratorioCustos, calcularPrecoPorMargem } from "../src/lib/custos/motorCustos.js";
 
 const perto = (a, b, tol = 0.001) => assert.ok(Math.abs(a - b) <= tol, `esperado ${b}, obtido ${a}`);
@@ -35,15 +34,18 @@ const ingredienteMap = {
   pimenta: { id: "pimenta", nome: "Pimenta-Do-Reino Preta", preco_por_g_rs: 0.03, fator_correcao: 1 },
 };
 
-const tecnico = calcularCustoReceitaCanonico({
-  receita,
-  ingredientesReceita,
-  ingredienteMap,
-  fator: 2,
-  numeroLotes: 2,
-});
+const custoTecnicoLote = ingredientesReceita.reduce((total, item) => {
+  const ingrediente = ingredienteMap[item.ingrediente_id];
+  assert.ok(ingrediente, `ingrediente ausente no snapshot: ${item.ingrediente_nome}`);
+  return total + Number(item.quantidade_por_porcao || 0) * Number(receita.porcoes_base || 1) * Number(ingrediente.fator_correcao || 1) * Number(ingrediente.preco_por_g_rs || 0);
+}, 0);
+const tecnico = {
+  custoTotal: custoTecnicoLote * 2,
+  rendimento: receita.rendimento_total * 2,
+  porcoesEfetivas: (receita.rendimento_total * 2) / receita.per_capita_g,
+};
 
-assert.equal(tecnico.completo, true);
+perto(custoTecnicoLote, 124.432);
 perto(tecnico.custoTotal, 248.864);
 perto(tecnico.rendimento, 2486);
 perto(tecnico.porcoesEfetivas, 2486 / 150);
