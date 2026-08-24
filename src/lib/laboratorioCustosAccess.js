@@ -10,7 +10,7 @@
 export const LABORATORIO_CUSTOS_BETA_ENABLED = true;
 export const LABORATORIO_CUSTOS_COMERCIAL_ENABLED = false;
 
-export function avaliarAcessoLaboratorioCustos(user, entitlement = null, agora = new Date()) {
+export function avaliarAcessoLaboratorioCustos(user, entitlement = null, agora = new Date(), comercialEnabled = LABORATORIO_CUSTOS_COMERCIAL_ENABLED) {
   if (!user) return { temAcesso: false, motivo: "sem_usuario" };
   if (!LABORATORIO_CUSTOS_BETA_ENABLED) {
     return { temAcesso: false, motivo: "feature_desligada" };
@@ -22,7 +22,7 @@ export function avaliarAcessoLaboratorioCustos(user, entitlement = null, agora =
     return { temAcesso: true, motivo: "admin_beta" };
   }
 
-  if (!LABORATORIO_CUSTOS_COMERCIAL_ENABLED) {
+  if (!comercialEnabled) {
     return { temAcesso: false, motivo: "comercial_indisponivel" };
   }
 
