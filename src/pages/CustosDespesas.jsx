@@ -50,7 +50,7 @@ export default function CustosDespesas() {
     return { porGrupo, total };
   }, [despesas]);
 
-  const gruposRateio = Array.isArray(config?.grupos_rateio_incluidos) && config.grupos_rateio_incluidos.length > 0
+  const gruposRateio = Array.isArray(config?.grupos_rateio_incluidos)
     ? config.grupos_rateio_incluidos
     : ["gastos_negocio", "producao", "embalagem_outros"];
   const totalRateio = gruposRateio.reduce((s, grupo) => s + Number(totais.porGrupo[grupo] || 0), 0);
@@ -73,7 +73,7 @@ export default function CustosDespesas() {
     if (!user?.id) return;
     const valor = Number(volumeLocal === "" ? config?.volume_mensal_estimado || 0 : volumeLocal);
     if (!Number.isFinite(valor) || valor < 0) return toast.error("Informe um volume mensal válido.");
-    const payload = { user_id: user.id, volume_mensal_estimado: valor, unidade_volume: "unidades_mes", metodo_rateio_padrao: "unidade_produzida" };
+    const payload = { user_id: user.id, volume_mensal_estimado: valor, unidade_volume: "lotes_mes", metodo_rateio_padrao: "lote_produzido" };
     if (config?.id) await base44.entities.ConfiguracaoCustosUsuario.update(config.id, payload);
     else await base44.entities.ConfiguracaoCustosUsuario.create(payload);
     setVolumeLocal("");
@@ -141,8 +141,8 @@ export default function CustosDespesas() {
 
           <Card className="p-5 space-y-3">
             <div><h2 className="font-semibold">Como será o rateio?</h2><p className="text-xs text-muted-foreground mt-1">{money(totalRateio)} dos grupos selecionados serão divididos pelo volume mensal estimado.</p><Link to="/custos/configuracoes" className="text-[11px] text-primary underline mt-1 inline-block">Revisar grupos incluídos</Link></div>
-            <div><label className="text-xs font-medium">Volume mensal estimado</label><div className="flex gap-2 mt-1"><Input type="number" min="0" value={volumeLocal !== "" ? volumeLocal : config?.volume_mensal_estimado ?? ""} onChange={(e) => setVolumeLocal(e.target.value)} placeholder="Ex.: 200" /><Button variant="outline" size="icon" onClick={salvarVolume}><Save className="w-4 h-4" /></Button></div><p className="text-[11px] text-muted-foreground mt-1">unidades/mês</p></div>
-            <div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Custo rateado por unidade</p><p className="text-2xl font-bold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p>{volume <= 0 && <p className="text-[11px] text-muted-foreground mt-1">Informe o volume mensal para calcular.</p>}</div>
+            <div><label className="text-xs font-medium">Volume mensal estimado</label><div className="flex gap-2 mt-1"><Input type="number" min="0" value={volumeLocal !== "" ? volumeLocal : config?.volume_mensal_estimado ?? ""} onChange={(e) => setVolumeLocal(e.target.value)} placeholder="Ex.: 200" /><Button variant="outline" size="icon" onClick={salvarVolume}><Save className="w-4 h-4" /></Button></div><p className="text-[11px] text-muted-foreground mt-1">lotes/rendimentos completos por mês</p></div>
+            <div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Custo rateado por lote</p><p className="text-2xl font-bold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p>{volume <= 0 && <p className="text-[11px] text-muted-foreground mt-1">Informe o volume mensal para calcular.</p>}</div>
           </Card>
 
           <Card className="p-4"><div className="flex gap-3"><Calculator className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Pronto para calcular?</p><p className="text-xs text-muted-foreground mt-1">Use estas despesas junto com uma receita do Laboratório de Cozinha.</p><Link to="/custos/calcular" className="text-xs font-medium text-primary underline mt-2 inline-block">Ir para Calcular Custo</Link></div></div></Card>
