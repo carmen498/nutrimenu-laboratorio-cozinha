@@ -27,6 +27,23 @@
       "default": "unidades_mes",
       "description": "Unidade de refer\u00eancia do volume mensal no MVP."
     },
+    "grupos_rateio_incluidos": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "gastos_negocio",
+          "producao",
+          "embalagem_outros"
+        ]
+      },
+      "default": [
+        "gastos_negocio",
+        "producao",
+        "embalagem_outros"
+      ],
+      "description": "Grupos de despesas mensais inclu\u00eddos no rateio autom\u00e1tico. Trabalho/ajudantes \u00e9 tratado separadamente como m\u00e3o de obra."
+    },
     "valor_hora_padrao": {
       "type": "number",
       "minimum": 0,
@@ -41,18 +58,15 @@
     },
     "considera_impostos": {
       "type": "boolean",
-      "default": false,
-      "description": "Prefer\u00eancia para incluir impostos em c\u00e1lculos avan\u00e7ados futuros."
+      "default": false
     },
     "considera_taxa_cartao": {
       "type": "boolean",
-      "default": false,
-      "description": "Prefer\u00eancia para incluir taxa de cart\u00e3o em c\u00e1lculos avan\u00e7ados futuros."
+      "default": false
     },
     "ativo": {
       "type": "boolean",
-      "default": true,
-      "description": "Indica se a configura\u00e7\u00e3o est\u00e1 ativa."
+      "default": true
     }
   },
   "required": [
