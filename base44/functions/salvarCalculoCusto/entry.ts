@@ -28,6 +28,19 @@ export default async function(req: Request): Promise<Response> {
     const receita = await base44.entities.Receita.get(calculo.origem_id).catch(() => null);
     if (!receita) return Response.json({ error: "Receita não encontrada ou sem acesso", code: "recipe_not_accessible" }, { status: 404 });
 
+    let calculoAnterior: any = null;
+    const calculoOrigemId = String(calculo.calculo_origem_id || "").trim();
+    if (calculoOrigemId) {
+      const anteriores = await base44.asServiceRole.entities.CalculoCusto.filter({ id: calculoOrigemId }, "-data_calculo", 1);
+      calculoAnterior = anteriores?.[0] || null;
+      if (!calculoAnterior || calculoAnterior.user_id !== user.id) {
+        return Response.json({ error: "Ficha anterior não encontrada ou sem acesso", code: "previous_cost_not_accessible" }, { status: 404 });
+      }
+      if (String(calculoAnterior.origem_id) !== String(receita.id)) {
+        return Response.json({ error: "A ficha anterior pertence a outra receita", code: "previous_cost_recipe_mismatch" }, { status: 400 });
+      }
+    }
+
     const itensLimpos = itens.map((item: any, index: number) => {
       if (!TIPOS_ITEM.has(item?.tipo) || !String(item?.descricao || "").trim()) throw new Error(`Item ${index + 1} inválido`);
       return {
@@ -106,10 +119,10 @@ export default async function(req: Request): Promise<Response> {
       taxas_variaveis_pct: nonNeg(calculo.taxas_variaveis_pct),
       custo_fixo_adicional_unitario: nonNeg(calculo.custo_fixo_adicional_unitario),
       observacao: String(calculo.observacao || "").trim().slice(0, 1000),
-      status: "finalizado",
+      status: calculoAnterior ? "recalculado" : "finalizado",
       data_calculo: agora,
-      versao_calculo: 1,
-      calculo_origem_id: calculo.calculo_origem_id ? String(calculo.calculo_origem_id).slice(0, 100) : "",
+      versao_calculo: calculoAnterior ? Math.max(1, Math.trunc(n(calculoAnterior.versao_calculo) || 1)) + 1 : 1,
+      calculo_origem_id: calculoAnterior?.id || "",
     };
 
     calculoCriado = await base44.asServiceRole.entities.CalculoCusto.create(payloadCalculo);
@@ -118,7 +131,7 @@ export default async function(req: Request): Promise<Response> {
       itensCriados.push(criado);
     }
 
-    return Response.json({ success: true, calculo_id: calculoCriado.id, data_calculo: agora, itens: itensCriados.length });
+    return Response.json({ success: true, calculo_id: calculoCriado.id, data_calculo: agora, versao_calculo: calculoCriado.versao_calculo, itens: itensCriados.length });
   } catch (error) {
     try {
       if (base44 && calculoCriado) {
