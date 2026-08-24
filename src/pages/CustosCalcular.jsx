@@ -147,7 +147,7 @@ export default function CustosCalcular() {
         custo_por_porcao: resultado.custoPorPorcao,
         preco_venda_informado: n(precoVenda),
         preco_sugerido: formacaoPreco?.precoSugerido || 0,
-        markup_aplicado: resultado.markupMultiplicador,
+        markup_aplicado: formacaoPreco?.markup ?? resultado.markupMultiplicador,
         margem_estimada: formacaoPreco?.margemLiquidaPct ?? resultado.margemEstimada,
         formacao_preco_metodo: formacaoPreco ? "margem" : "informado",
         margem_desejada_pct: formacaoPreco?.margemDesejadaPct || 0,
@@ -226,7 +226,7 @@ export default function CustosCalcular() {
 
           <Card className="p-5 space-y-4">
             <div><p className="text-xs font-semibold text-primary">PASSO 4</p><h2 className="font-semibold text-lg">Por quanto pretende vender?</h2></div>
-            <div className="grid sm:grid-cols-3 gap-3 items-end"><div><Label>Preço de venda por lote</Label><Input type="number" min="0" step="0.01" value={precoVenda} onChange={(e) => setPrecoVenda(e.target.value)} placeholder="0,00" /></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Margem estimada</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${resultado.margemEstimada.toFixed(1).replace(".", ",")}%` : "—"}</p></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Markup</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${resultado.markupMultiplicador.toFixed(2).replace(".", ",")}x` : "—"}</p></div></div>
+            <div className="grid sm:grid-cols-3 gap-3 items-end"><div><Label>Preço de venda por lote</Label><Input type="number" min="0" step="0.01" value={precoVenda} onChange={(e) => { setPrecoVenda(e.target.value); setFormacaoPreco(null); }} placeholder="0,00" /></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">{formacaoPreco ? "Margem líquida alvo" : "Margem estimada"}</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${Number(formacaoPreco?.margemLiquidaPct ?? resultado.margemEstimada).toFixed(1).replace(".", ",")}%` : "—"}</p></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Markup</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${Number(formacaoPreco?.markup ?? resultado.markupMultiplicador).toFixed(2).replace(".", ",")}x` : "—"}</p></div></div>
             <Button variant="outline" onClick={() => setShowFormacaoPreco(true)} disabled={!receita || !tecnico?.completo || qtd <= 0 || resultado.custoUnitario <= 0}><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar</Button>
             {formacaoPreco && <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs"><p className="font-medium text-primary">Preço formado com margem assistida</p><p className="text-muted-foreground mt-1">Margem alvo {Number(formacaoPreco.margemDesejadaPct || 0).toFixed(1).replace(".", ",")}% · taxas {Number(formacaoPreco.taxasVariaveisPct || 0).toFixed(1).replace(".", ",")}% · preço sugerido {money(formacaoPreco.precoSugerido)}</p></div>}
           </Card>
