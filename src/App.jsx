@@ -164,14 +164,6 @@ const AuthenticatedApp = () => {
             <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
             <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
             <Route path="/custos/adicionar-ao-plano" element={<CustosBloqueado />} />
-            <Route element={<CustosRoute />}>
-              <Route path="/custos" element={<CustosInicio />} />
-              <Route path="/custos/despesas" element={<CustosDespesas />} />
-              <Route path="/custos/calcular" element={<CustosCalcular />} />
-              <Route path="/custos/ficha/:id" element={<CustosFicha />} />
-              <Route path="/custos/historico" element={<CustosHistorico />} />
-              <Route path="/custos/configuracoes" element={<CustosConfiguracoes />} />
-            </Route>
             <Route element={<AdminRoute />}>
               <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
               <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
