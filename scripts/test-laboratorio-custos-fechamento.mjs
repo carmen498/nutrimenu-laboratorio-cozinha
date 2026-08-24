@@ -19,6 +19,9 @@ const configSchema = read("base44/entities/ConfiguracaoCustosUsuario.jsonc");
 const entitlementSchema = read("base44/entities/AcessoLaboratorioCustosUsuario.jsonc");
 const addonSchema = read("base44/entities/ConfiguracaoAddonCustos.jsonc");
 const commercialPreflight = read("base44/functions/preflightLaboratorioCustos/entry.ts");
+const costConfigScreen = read("src/pages/CustosConfiguracoes.jsx");
+const historyScreen = read("src/pages/CustosHistorico.jsx");
+const sheetScreen = read("src/pages/CustosFicha.jsx");
 
 for (const path of ["/custos", "/custos/despesas", "/custos/calcular", "/custos/ficha/:id", "/custos/historico", "/custos/configuracoes"]) {
   assert.ok(app.includes(`path=\"${path}\"`), `rota do Laboratório de Custos ausente: ${path}`);
@@ -44,6 +47,12 @@ assert.ok(!calcular.includes("base44.entities.CalculoCustoItem.create"), "Tela 3
 assert.ok(saveFunction.includes("exigirAcessoLaboratorioCustos(base44)"), "gravação server-side não exige acesso ao add-on");
 assert.ok(saveFunction.includes("cost_composition_mismatch"), "gravação server-side não valida fechamento da composição");
 assert.ok(saveFunction.includes("technical_snapshot_mismatch"), "gravação server-side não valida snapshot técnico");
+assert.ok(saveFunction.includes("previous_cost_not_accessible"), "recálculo não protege acesso à ficha anterior");
+assert.ok(saveFunction.includes("previous_cost_recipe_mismatch"), "recálculo aceita ficha anterior de outra receita");
+assert.ok(saveFunction.includes("calculoAnterior ? Math.max"), "versão do recálculo não é derivada server-side");
+assert.ok(calcular.includes('searchParams.get("recalcular")'), "Tela 3 não reconhece recálculo versionado");
+assert.ok(historyScreen.includes("Recalcular como nova versão"), "Histórico não inicia recálculo versionado");
+assert.ok(sheetScreen.includes("&recalcular="), "Ficha não inicia recálculo versionado");
 assert.ok(saveFunction.includes("CalculoCustoItem.delete") && saveFunction.includes("CalculoCusto.delete"), "gravação server-side não possui rollback compensatório");
 assert.ok(serverAccess.includes("avaliarAcessoAssinaturaServer"), "acesso server-side ao add-on não exige plano-base válido");
 
@@ -56,6 +65,8 @@ for (const schema of [calculoSchema, itemSchema]) {
 assert.ok(entitlementSchema.includes('"create"') && entitlementSchema.includes('"role": "admin"'), "entitlement pode ser autoconcedido pelo usuário");
 assert.ok(entitlementSchema.includes('"data.user_id": "{{user.id}}"'), "entitlement não restringe leitura ao titular");
 assert.ok(configSchema.includes('"grupos_rateio_incluidos"'), "schema versionado de configuração perdeu os grupos de rateio");
+assert.ok(configSchema.includes('"lote_produzido"') && configSchema.includes('"lotes_mes"'), "schema de rateio não está alinhado ao cálculo por lote");
+assert.ok(costConfigScreen.includes("Por lote produzido") && costConfigScreen.includes("Custo rateado por lote"), "Tela 7 não comunica a mesma unidade usada pelo motor");
 assert.ok(despesas.includes("config?.grupos_rateio_incluidos") && despesas.includes("totalRateio"), "Minhas Despesas não usa a mesma seleção de grupos da Tela 7");
 
 console.log("OK: fechamento estrutural, segurança, isolamento e preparação comercial do Laboratório de Custos aprovados.");
