@@ -1,0 +1,97 @@
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio titular do add-on Laborat\u00f3rio de Custos."
+    },
+    "modulo": {
+      "type": "string",
+      "enum": [
+        "laboratorio_custos"
+      ],
+      "default": "laboratorio_custos",
+      "description": "M\u00f3dulo concedido por este entitlement."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "ativo",
+        "suspenso",
+        "cancelado"
+      ],
+      "default": "pendente",
+      "description": "Estado comercial do acesso ao add-on."
+    },
+    "origem": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "checkout",
+        "cortesia",
+        "migracao"
+      ],
+      "default": "admin",
+      "description": "Origem da concess\u00e3o do entitlement."
+    },
+    "inicio_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "In\u00edcio da validade do acesso."
+    },
+    "fim_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fim opcional da validade. Vazio significa sem expira\u00e7\u00e3o pr\u00f3pria enquanto o plano-base estiver v\u00e1lido."
+    },
+    "cancelado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do cancelamento, quando aplic\u00e1vel."
+    },
+    "referencia_pagamento_id": {
+      "type": "string",
+      "description": "Pagamento do add-on que concedeu este acesso, quando houver checkout integrado."
+    },
+    "observacao": {
+      "type": "string",
+      "description": "Observa\u00e7\u00e3o administrativa sobre a concess\u00e3o/cancelamento."
+    }
+  },
+  "required": [
+    "user_id",
+    "modulo",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "name": "AcessoLaboratorioCustosUsuario"
+}

@@ -10,22 +10,32 @@
 export const LABORATORIO_CUSTOS_BETA_ENABLED = true;
 export const LABORATORIO_CUSTOS_COMERCIAL_ENABLED = false;
 
-export function avaliarAcessoLaboratorioCustos(user) {
+export function avaliarAcessoLaboratorioCustos(user, entitlement = null, agora = new Date()) {
   if (!user) return { temAcesso: false, motivo: "sem_usuario" };
   if (!LABORATORIO_CUSTOS_BETA_ENABLED) {
     return { temAcesso: false, motivo: "feature_desligada" };
   }
 
-  // Durante C0/C1, somente administradores participam da beta interna.
+  // A beta interna continua disponível para administradores independentemente
+  // do estado comercial do complemento.
   if (user.role === "admin") {
     return { temAcesso: true, motivo: "admin_beta" };
   }
 
-  // O entitlement comercial será conectado numa fase posterior, sem alterar
-  // a regra de assinatura atual do Laboratório de Cozinha.
   if (!LABORATORIO_CUSTOS_COMERCIAL_ENABLED) {
     return { temAcesso: false, motivo: "comercial_indisponivel" };
   }
 
-  return { temAcesso: false, motivo: "addon_nao_contratado" };
+  if (!entitlement || entitlement.status !== "ativo") {
+    return { temAcesso: false, motivo: "addon_nao_contratado" };
+  }
+
+  if (entitlement.inicio_em && new Date(entitlement.inicio_em) > agora) {
+    return { temAcesso: false, motivo: "addon_ainda_nao_iniciado" };
+  }
+  if (entitlement.fim_em && new Date(entitlement.fim_em) < agora) {
+    return { temAcesso: false, motivo: "addon_expirado" };
+  }
+
+  return { temAcesso: true, motivo: "addon_ativo", entitlement };
 }
