@@ -10,6 +10,7 @@ import {
   calcularRateioMensal,
   somarDespesasAtivas,
 } from "../src/lib/custos/motorCustos.js";
+import { avaliarAcessoLaboratorioCustos } from "../src/lib/laboratorioCustosAccess.js";
 
 const perto = (atual, esperado, tolerancia = 1e-9) => {
   assert.ok(Math.abs(atual - esperado) <= tolerancia, `esperado ${esperado}, recebido ${atual}`);
@@ -84,4 +85,14 @@ const semQuantidade = calcularCustoProducao({ custoTecnicoProducao: 10, quantida
 assert.equal(semQuantidade.valido, false);
 assert.deepEqual(semQuantidade.diagnosticos, ["quantidade_produzida_ausente"]);
 
-console.log("Laboratório de Custos: motor econômico OK");
+// Tela 8 — entitlement do add-on, independente da assinatura-base da Cozinha.
+const agoraEntitlement = new Date("2026-08-24T18:00:00-03:00");
+assert.equal(avaliarAcessoLaboratorioCustos(null, null, agoraEntitlement, true).motivo, "sem_usuario");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "admin", role: "admin" }, null, agoraEntitlement, false).temAcesso, true);
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, null, agoraEntitlement, false).motivo, "comercial_indisponivel");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, null, agoraEntitlement, true).motivo, "addon_nao_contratado");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, { status: "ativo", inicio_em: "2026-08-01T00:00:00-03:00" }, agoraEntitlement, true).temAcesso, true);
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, { status: "ativo", fim_em: "2026-08-20T00:00:00-03:00" }, agoraEntitlement, true).motivo, "addon_expirado");
+assert.equal(avaliarAcessoLaboratorioCustos({ id: "u1", role: "user" }, { status: "cancelado" }, agoraEntitlement, true).motivo, "addon_nao_contratado");
+
+console.log("Laboratório de Custos: motor econômico e acesso do add-on OK");
