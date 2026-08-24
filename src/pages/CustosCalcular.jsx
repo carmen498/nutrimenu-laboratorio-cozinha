@@ -122,8 +122,7 @@ export default function CustosCalcular() {
     if (!tecnico.completo) return toast.error("A receita possui pendências de custo. Corrija preços/referências antes de salvar a ficha.");
     setSalvando(true);
     try {
-      const agora = new Date().toISOString();
-      const calculo = await base44.entities.CalculoCusto.create({
+      const payloadCalculo = {
         user_id: user.id,
         tipo_origem: "receita",
         origem_id: receita.id,
@@ -158,9 +157,8 @@ export default function CustosCalcular() {
         taxas_variaveis_pct: formacaoPreco?.taxasVariaveisPct || 0,
         custo_fixo_adicional_unitario: formacaoPreco?.custoFixoAdicionalUnitario || 0,
         status: "finalizado",
-        data_calculo: agora,
         versao_calculo: 1,
-      });
+      };
 
       const itens = [
         { tipo: "ingredientes", descricao: "Ingredientes da receita", origem: "Motor de Custos Canônico", formula: `${qtd} lote(s) × composição técnica`, quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoIngredientes / qtd : 0, valor_total: tecnico.custoIngredientes, ordem: 1 },
@@ -172,10 +170,12 @@ export default function CustosCalcular() {
         { tipo: "outro", descricao: "Outros custos desta produção", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(outrosCustos), valor_total: n(outrosCustos), ordem: 7 },
       ].filter((i) => i.valor_total > 0 || i.ordem === 1);
 
-      await Promise.all(itens.map((item) => base44.entities.CalculoCustoItem.create({ user_id: user.id, calculo_id: calculo.id, ...item })));
+      const resposta = await base44.functions.invoke("salvarCalculoCusto", { calculo: payloadCalculo, itens });
+      const calculoId = resposta?.data?.calculo_id;
+      if (!resposta?.data?.success || !calculoId) throw new Error(resposta?.data?.error || "A gravação segura da ficha não foi confirmada.");
       qc.invalidateQueries({ queryKey: ["custos-historico", user.id] });
       toast.success("Cálculo salvo.");
-      if (abrirFicha) navigate(`/custos/ficha/${calculo.id}`);
+      if (abrirFicha) navigate(`/custos/ficha/${calculoId}`);
     } catch (err) {
       toast.error("Não foi possível salvar o cálculo: " + (err?.message || "erro inesperado"));
     } finally {
