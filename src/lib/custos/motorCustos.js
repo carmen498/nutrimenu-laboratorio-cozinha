@@ -12,7 +12,7 @@ const numero = (valor) => {
 const naoNegativo = (valor) => Math.max(0, numero(valor));
 
 export function somarDespesasAtivas(despesas = [], gruposIncluidos = null) {
-  const grupos = Array.isArray(gruposIncluidos) && gruposIncluidos.length > 0
+  const grupos = Array.isArray(gruposIncluidos)
     ? new Set(gruposIncluidos)
     : null;
 
