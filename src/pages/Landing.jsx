@@ -80,6 +80,7 @@ export default function Landing() {
         <div className="lc-footer-inner">
           <nav aria-label="Links legais e acesso">
             <a href="/sobre">Sobre</a>
+            <a href="/produto">Produto</a>
             <a href="/contato">Contato</a>
             <a href="/termos">Termos de Uso</a>
             <a href="/privacidade">Política de Privacidade</a>

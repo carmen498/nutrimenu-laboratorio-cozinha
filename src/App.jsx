@@ -20,6 +20,7 @@ import Privacidade from '@/pages/Privacidade';
 import AceitarTermos from '@/pages/AceitarTermos';
 import SobrePublico from '@/pages/SobrePublico';
 import Contato from '@/pages/Contato';
+import Produto from '@/pages/Produto';
 import LandingOrRedirect from '@/components/LandingOrRedirect';
 
 // Rotas protegidas carregadas sob demanda: a rota pública "/" não pode pagar
@@ -81,7 +82,7 @@ const CustosBloqueado = lazy(() => import('@/pages/CustosBloqueado'));
 // when the app-level check reports 'auth_required', otherwise a genuinely
 // fresh visitor (no token yet) gets redirected to /login and then hits a
 // permanent blank screen, since the error never clears on that same page.
-const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -126,6 +127,7 @@ const AuthenticatedApp = () => {
         <Route path="/sobre" element={<SobrePublico />} />
         <Route path="/SobrePublico" element={<Navigate to="/sobre" replace />} />
         <Route path="/contato" element={<Contato />} />
+        <Route path="/produto" element={<Produto />} />
         <Route path="/" element={<LandingOrRedirect />} />
         <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
