@@ -89,7 +89,7 @@ export default function CustosHistorico() {
     <div className="space-y-5 pb-24 md:pb-8 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">6. Histórico de Cálculos</h1>
+          <h1 className="font-display text-2xl font-bold">Histórico de Cálculos</h1>
           <p className="text-sm text-muted-foreground mt-1">Consulte as fichas já calculadas sem alterar os valores históricos.</p>
         </div>
         <Button onClick={() => navigate("/custos/calcular")}><Plus className="w-4 h-4 mr-2" /> Novo cálculo</Button>
