@@ -177,6 +177,7 @@ export default function CustosCalcular() {
     }
 
     if (campoPrecoAtivo === "margem") {
+      if (margemEntrada === "") return { preco: 0, margem: 0, markup: 0, valido: false, origem: "margem" };
       const margem = Math.max(0, n(margemEntrada));
       const calculo = calcularPrecoPorMargem({ custoUnitario: custo, margemDesejadaPct: margem });
       const preco = calculo.valido ? calculo.preco : 0;
