@@ -14,7 +14,7 @@ import { somarDespesasAtivas } from "@/lib/custos/motorCustos";
 
 const GRUPOS_RATEAVEIS = [
   { value: "gastos_negocio", label: "Gastos do negócio", descricao: "Aluguel, internet, contabilidade e outros custos do negócio." },
-  { value: "producao", label: "Produção", descricao: "Energia, gás, água e demais custos mensais de produção." },
+  { value: "producao", label: "Despesas operacionais", descricao: "Energia, gás, água e demais despesas mensais de funcionamento." },
   { value: "embalagem_outros", label: "Embalagem e outros", descricao: "Materiais e despesas gerais mensais não vinculados a uma receita específica." },
 ];
 
@@ -118,10 +118,10 @@ export default function CustosConfiguracoes() {
       <div className="grid lg:grid-cols-[1fr_320px] gap-5 items-start">
         <div className="space-y-4">
           <Card className="p-5 space-y-4">
-            <div className="flex gap-3"><div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Calculator className="w-5 h-5" /></div><div><h2 className="font-semibold text-lg">Base do rateio</h2><p className="text-xs text-muted-foreground mt-1">As despesas são divididas pelo número estimado de lotes/rendimentos completos produzidos no mês.</p></div></div>
+            <div className="flex gap-3"><div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><Calculator className="w-5 h-5" /></div><div><h2 className="font-semibold text-lg">Base do rateio</h2><p className="text-xs text-muted-foreground mt-1">As despesas são divididas pelo número estimado de receitas/rendimentos completos produzidos no mês.</p></div></div>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div><label className="text-sm font-medium">Volume mensal estimado</label><Input className="mt-1" type="number" min="0" step="1" value={volumeEfetivo} onChange={(e) => setVolume(e.target.value)} placeholder="Ex.: 40" /><p className="text-[11px] text-muted-foreground mt-1">lotes/rendimentos completos por mês</p></div>
-              <div><label className="text-sm font-medium">Método de rateio</label><div className="mt-1 h-9 rounded-md border bg-muted/40 px-3 flex items-center text-sm">Por lote produzido</div><p className="text-[11px] text-muted-foreground mt-1">Cada lote corresponde a um rendimento completo da receita.</p></div>
+              <div><label className="text-sm font-medium">Volume mensal estimado</label><Input className="mt-1" type="number" min="0" step="1" value={volumeEfetivo} onChange={(e) => setVolume(e.target.value)} placeholder="Ex.: 40" /><p className="text-[11px] text-muted-foreground mt-1">receitas/rendimentos completos por mês</p></div>
+              <div><label className="text-sm font-medium">Método de rateio</label><div className="mt-1 h-9 rounded-md border bg-muted/40 px-3 flex items-center text-sm">Por receita produzida</div><p className="text-[11px] text-muted-foreground mt-1">Cada receita corresponde a um rendimento completo da receita selecionada.</p></div>
             </div>
           </Card>
 
@@ -146,9 +146,9 @@ export default function CustosConfiguracoes() {
         <div className="space-y-4 lg:sticky lg:top-4">
           <Card className="p-5">
             <div className="flex items-center gap-2"><Settings2 className="w-5 h-5 text-primary" /><h2 className="font-semibold">Resumo do rateio</h2></div>
-            <div className="space-y-3 mt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Despesas incluídas</span><strong>{money(totalIncluido)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Volume mensal</span><strong>{num(volumeEfetivo) > 0 ? `${num(volumeEfetivo)} lote(s)` : "—"}</strong></div><div className="border-t pt-3"><p className="text-xs text-muted-foreground">Custo rateado por lote</p><p className="text-3xl font-bold text-primary mt-1">{num(volumeEfetivo) > 0 ? money(custoRateado) : "—"}</p></div></div>
-            {num(volumeEfetivo) <= 0 && totalIncluido > 0 && <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex gap-2"><AlertCircle className="w-4 h-4 shrink-0" /><span>Informe o volume mensal para calcular o rateio por lote.</span></div>}
-            {num(volumeEfetivo) > 0 && <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-primary flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>Resumo consistente: {money(totalIncluido)} ÷ {num(volumeEfetivo)} = {money(custoRateado)} por lote.</span></div>}
+            <div className="space-y-3 mt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Despesas incluídas</span><strong>{money(totalIncluido)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Volume mensal</span><strong>{num(volumeEfetivo) > 0 ? `${num(volumeEfetivo)} receita(s)` : "—"}</strong></div><div className="border-t pt-3"><p className="text-xs text-muted-foreground">Custo rateado por receita</p><p className="text-3xl font-bold text-primary mt-1">{num(volumeEfetivo) > 0 ? money(custoRateado) : "—"}</p></div></div>
+            {num(volumeEfetivo) <= 0 && totalIncluido > 0 && <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 flex gap-2"><AlertCircle className="w-4 h-4 shrink-0" /><span>Informe o volume mensal para calcular o rateio por receita.</span></div>}
+            {num(volumeEfetivo) > 0 && <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-primary flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>Resumo consistente: {money(totalIncluido)} ÷ {num(volumeEfetivo)} = {money(custoRateado)} por receita.</span></div>}
           </Card>
 
           <Card className="p-4"><div className="flex gap-3"><WalletCards className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Trabalho mensal fora do rateio</p><p className="text-xs text-muted-foreground mt-1">Há {money(totalTrabalho)} cadastrado em “Seu trabalho / ajudantes”. Esse grupo não entra no rateio automático.</p></div></div></Card>
