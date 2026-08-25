@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { toast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { formatarTelefone } from "@/lib/formatarTelefone";
+import PasswordRequirements from "@/components/auth/PasswordRequirements";
+import { mensagemErroCadastro, validarSenhaForte, validarTelefoneBrasileiro } from "@/lib/registerValidation";
 
 
 export default function Register() {
@@ -23,11 +25,19 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [aceitaTermos, setAceitaTermos] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return undefined;
+    const timer = window.setTimeout(() => setResendCooldown((value) => value - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,12 +53,12 @@ export default function Register() {
       setError("Informe seu nome completo.");
       return;
     }
-    if (telefoneDigitos.length < 10 || telefoneDigitos.length > 11) {
+    if (!validarTelefoneBrasileiro(telefoneDigitos)) {
       setError("Informe um telefone com DDD válido.");
       return;
     }
-    if (password.length < 8) {
-      setError("A senha deve ter pelo menos 8 caracteres.");
+    if (!validarSenhaForte(password)) {
+      setError("Crie uma senha com 8 caracteres, letras maiúsculas, minúsculas e um número.");
       return;
     }
     if (password !== confirmPassword) {
@@ -61,8 +71,9 @@ export default function Register() {
     try {
       await base44.auth.register({ email: emailLimpo, password });
       setShowOtp(true);
+      setResendCooldown(30);
     } catch (err) {
-      setError(err.message || "Falha no cadastro");
+      setError(mensagemErroCadastro(err, "Não foi possível criar a conta. Tente novamente."));
     } finally {
       setLoading(false);
     }
@@ -81,7 +92,7 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
       }
     } catch (err) {
-      setError(err.message || "Código de verificação inválido");
+      setError(mensagemErroCadastro(err, "Não foi possível verificar o código. Tente novamente."));
       setLoading(false);
       return;
     }
@@ -90,12 +101,11 @@ export default function Register() {
     // chamada falhar, o AuthContext repete a tentativa após o redirecionamento.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
 
-    // Perfil: falha aqui não bloqueia o app — o AuthContext revalida ao recarregar.
+    const perfilCadastro = { nome_completo: fullName, telefone_whatsapp: telefone };
+    sessionStorage.setItem("base44_pending_registration_profile", JSON.stringify(perfilCadastro));
     try {
-      await base44.auth.updateMe({
-        nome_completo: fullName,
-        telefone_whatsapp: telefone,
-      });
+      await base44.auth.updateMe(perfilCadastro);
+      sessionStorage.removeItem("base44_pending_registration_profile");
     } catch (e) {
       consoleErrorSeguro("Falha ao salvar perfil pós-OTP", e);
     }
@@ -103,7 +113,10 @@ export default function Register() {
     // Aceite dos Termos: falha aqui não bloqueia o app — o AuthContext tenta
     // registrar o aceite pendente ao revalidar a sessão.
     try {
-      await base44.functions.invoke("registrarAceiteTermos", {});
+      await base44.functions.invoke("registrarAceiteTermos", {
+        aceitou_termos: true,
+        aceitou_privacidade: true,
+      });
       sessionStorage.removeItem("base44_pending_terms_acceptance");
     } catch (e) {
       consoleErrorSeguro("Falha ao registrar aceite de termos pós-OTP", e);
@@ -126,16 +139,18 @@ export default function Register() {
   };
 
   const handleResend = async () => {
+    if (resendCooldown > 0) return;
     setError("");
     setResending(true);
     try {
       await base44.auth.resendOtp(email);
+      setResendCooldown(30);
       toast({
         title: "Código enviado",
         description: "Verifique seu e-mail para o novo código.",
       });
     } catch (err) {
-      setError(err.message || "Falha ao reenviar código");
+      setError(mensagemErroCadastro(err, "Não foi possível reenviar o código. Tente novamente."));
     } finally {
       setResending(false);
     }
@@ -147,15 +162,17 @@ export default function Register() {
       return;
     }
     setError("");
+    setGoogleLoading(true);
     // O OAuth interrompe esta página. O marcador de sessão prova que o fluxo foi
     // iniciado após a ação explícita na checkbox; o aceite é persistido pelo backend
     // somente depois que o Google devolver uma sessão autenticada.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
     try {
-      base44.auth.loginWithProvider("google", "/app");
+      await base44.auth.loginWithProvider("google", "/app");
     } catch (err) {
       sessionStorage.removeItem("base44_pending_terms_acceptance");
-      setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");
+      setGoogleLoading(false);
+      setError("Não foi possível iniciar o cadastro com Google. Tente novamente.");
     }
   };
 
@@ -167,10 +184,11 @@ export default function Register() {
         subtitle={`Enviamos um código para ${email}`}
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
             {error}
           </div>
         )}
+        <p className="mb-3 text-center text-sm text-muted-foreground">Digite o código de 6 dígitos.</p>
         <div className="flex justify-center mb-6">
           <InputOTP
             maxLength={6}
@@ -192,7 +210,7 @@ export default function Register() {
         <Button
           className="w-full h-12 font-medium"
           onClick={handleVerify}
-          disabled={loading || otpCode.length < 6}
+          disabled={loading || resending || otpCode.length < 6}
         >
           {loading ? (
             <>
@@ -208,12 +226,20 @@ export default function Register() {
           <button
             type="button"
             onClick={handleResend}
-            disabled={resending}
+            disabled={resending || resendCooldown > 0}
             className="text-primary font-medium hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {resending ? "Reenviando..." : "Reenviar"}
+            {resending ? "Reenviando..." : resendCooldown > 0 ? `Reenviar em ${resendCooldown}s` : "Reenviar"}
           </button>
         </p>
+        <button
+          type="button"
+          onClick={() => { setShowOtp(false); setOtpCode(""); setError(""); }}
+          disabled={loading}
+          className="mt-3 w-full text-center text-sm text-muted-foreground hover:text-foreground hover:underline disabled:opacity-50"
+        >
+          Alterar e-mail
+        </button>
       </AuthLayout>
     );
   }
@@ -236,9 +262,10 @@ export default function Register() {
         variant="outline"
         className="w-full h-12 text-sm font-medium mb-6"
         onClick={handleGoogle}
+        disabled={googleLoading || loading}
       >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continuar com Google
+        {googleLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <GoogleIcon className="w-5 h-5 mr-2" />}
+        {googleLoading ? "Conectando..." : "Continuar com Google"}
       </Button>
 
       <div className="relative mb-6">
@@ -251,7 +278,7 @@ export default function Register() {
       </div>
 
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
         </div>
       )}
@@ -332,6 +359,7 @@ export default function Register() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+          <PasswordRequirements password={password} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirm">Confirmar Senha</Label>

@@ -26,7 +26,10 @@ export default function AceitarTermos() {
     setError("");
     setLoading(true);
     try {
-      await base44.functions.invoke("registrarAceiteTermos", {});
+      await base44.functions.invoke("registrarAceiteTermos", {
+        aceitou_termos: true,
+        aceitou_privacidade: true,
+      });
       await checkUserAuth();
       const destino = location.state?.from;
       navigate(typeof destino === "string" && destino.startsWith("/") ? destino : "/app", { replace: true });
@@ -44,7 +47,7 @@ export default function AceitarTermos() {
       subtitle="Confirme o aceite para continuar no Laboratório de Cozinha"
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+        <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
       <div className="space-y-5">
         <p className="text-sm text-muted-foreground leading-relaxed">

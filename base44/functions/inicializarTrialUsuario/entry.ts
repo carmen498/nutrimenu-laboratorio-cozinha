@@ -4,6 +4,7 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { hojeSaoPauloISO } from "../../shared/acessoAssinatura.ts";
 import { calcularExpiracaoInclusiva } from "../../shared/datasAssinatura.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 
 const ASSUNTO_PADRAO = "Bem-vindo(a) ao Laboratório de Cozinha";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
@@ -14,6 +15,19 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    if (user.role === "admin") {
+      return Response.json({ error: "Administradores não utilizam período de trial" }, { status: 403 });
+    }
+    const aceiteVigente = (
+      user.termos_versao_aceita === VERSAO_TERMOS_ATUAL
+      && user.privacidade_versao_aceita === VERSAO_PRIVACIDADE_ATUAL
+    );
+    if (!aceiteVigente) {
+      return Response.json({
+        error: "Aceite os Termos de Uso e a Política de Privacidade vigentes antes de iniciar o trial",
+        code: "legal_acceptance_required",
+      }, { status: 409 });
+    }
 
     // O trial só pode ser concedido a uma conta realmente nova, antes de qualquer
     // histórico de plano. A proteção deliberadamente não depende de um novo campo

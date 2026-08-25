@@ -105,12 +105,28 @@ export const AuthProvider = ({ children }) => {
       if (aceiteTermosPendente) {
         try {
           if (!currentUser?.termos_aceitos_em || !currentUser?.termos_versao_aceita) {
-            await base44.functions.invoke('registrarAceiteTermos', {});
+            await base44.functions.invoke('registrarAceiteTermos', {
+              aceitou_termos: true,
+              aceitou_privacidade: true,
+            });
             currentUser = await base44.auth.me();
           }
           sessionStorage.removeItem('base44_pending_terms_acceptance');
         } catch (termsError) {
           consoleErrorSeguro('Terms acceptance registration after OAuth failed', termsError);
+        }
+      }
+
+      const perfilPendente = typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem('base44_pending_registration_profile')
+        : null;
+      if (perfilPendente) {
+        try {
+          await base44.auth.updateMe(JSON.parse(perfilPendente));
+          sessionStorage.removeItem('base44_pending_registration_profile');
+          currentUser = await base44.auth.me();
+        } catch (profileError) {
+          consoleErrorSeguro('Registration profile recovery failed', profileError);
         }
       }
 
@@ -185,6 +201,7 @@ export const AuthProvider = ({ children }) => {
       for (const key of [
         'labcozinha_evento_rascunho_v1',
         'base44_pending_terms_acceptance',
+        'base44_pending_registration_profile',
         'base44_pending_return_to',
         'base44_pending_password_reset_token',
       ]) {
