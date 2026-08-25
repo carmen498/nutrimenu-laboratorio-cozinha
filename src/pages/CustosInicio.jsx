@@ -12,14 +12,18 @@ export default function CustosInicio() {
         </p>
       </div>
 
-      <Card className="p-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        {["Cadastre suas despesas", "Defina o rateio", "Calcule uma receita", "Gere sua ficha"].map((texto, index) => <div key={texto} className="rounded-lg border bg-muted/20 px-3 py-3 flex items-start gap-2"><span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">{index + 1}</span><span className="text-xs font-medium leading-snug">{texto}</span></div>)}
+      </div>
+
+      <Card className="p-6 border-primary/20 bg-primary/[0.03]">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
           <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <WalletCards className="w-5 h-5" />
           </div>
           <div className="flex-1">
-            <h2 className="font-semibold">Minhas Despesas</h2>
-            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">Cadastre seus gastos mensais e defina a base de rateio usada pelo Laboratório de Custos.</p>
+            <div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold">Minhas Despesas</h2><span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-semibold">Comece por aqui</span></div>
+            <p className="text-sm text-muted-foreground mt-1 max-w-2xl">Cadastre os gastos mensais do negócio. Depois, escolha em Configurações quais grupos entram no rateio.</p>
           </div>
           <Link to="/custos/despesas" className="inline-flex items-center justify-center h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90">Abrir Minhas Despesas</Link>
         </div>
