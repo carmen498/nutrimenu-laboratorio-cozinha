@@ -126,8 +126,8 @@ export default function CustosDespesas() {
           </Card>
 
           <Card className="p-5 space-y-4">
-            <div className="flex items-start gap-3"><Settings2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h2 className="font-semibold">Rateio atual</h2><p className="text-xs text-muted-foreground mt-1">{money(totalRateio)} dos grupos selecionados serão distribuídos entre seus lotes.</p></div></div>
-            <div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Volume mensal</p><p className="font-semibold mt-1">{volume > 0 ? `${volume} lote(s)` : "Não configurado"}</p></div><div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Rateio por lote</p><p className="font-semibold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p></div></div>
+            <div className="flex items-start gap-3"><Settings2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h2 className="font-semibold">Rateio atual</h2><p className="text-xs text-muted-foreground mt-1">{money(totalRateio)} dos grupos selecionados serão distribuídos entre suas receitas.</p></div></div>
+            <div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Volume mensal</p><p className="font-semibold mt-1">{volume > 0 ? `${volume} receita(s)` : "Não configurado"}</p></div><div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Rateio por receita</p><p className="font-semibold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p></div></div>
             <Button asChild variant="outline" className="w-full"><Link to="/custos/configuracoes">Abrir Configurações de Rateio</Link></Button>
           </Card>
 
