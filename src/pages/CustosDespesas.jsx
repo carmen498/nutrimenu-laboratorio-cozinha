@@ -6,9 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { AlertCircle, Calculator, MoreHorizontal, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { AlertCircle, Calculator, MoreHorizontal, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import AdicionarDespesaDialog, { GRUPOS_DESPESA_CUSTO } from "@/components/custos/AdicionarDespesaDialog";
@@ -21,7 +20,6 @@ export default function CustosDespesas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [grupoInicial, setGrupoInicial] = useState("");
   const [editando, setEditando] = useState(null);
-  const [volumeLocal, setVolumeLocal] = useState("");
 
   const { data: despesas = [], isLoading } = useQuery({
     queryKey: ["custos-despesas", user?.id],
@@ -36,7 +34,7 @@ export default function CustosDespesas() {
   });
 
   const config = configuracoes[0] || null;
-  const volume = volumeLocal !== "" ? Number(volumeLocal) : Number(config?.volume_mensal_estimado || 0);
+  const volume = Number(config?.volume_mensal_estimado || 0);
 
   const totais = useMemo(() => {
     const porGrupo = Object.fromEntries(GRUPOS_DESPESA_CUSTO.map((g) => [g.value, 0]));
@@ -69,18 +67,6 @@ export default function CustosDespesas() {
     },
   });
 
-  const salvarVolume = async () => {
-    if (!user?.id) return;
-    const valor = Number(volumeLocal === "" ? config?.volume_mensal_estimado || 0 : volumeLocal);
-    if (!Number.isFinite(valor) || valor < 0) return toast.error("Informe um volume mensal válido.");
-    const payload = { user_id: user.id, volume_mensal_estimado: valor, unidade_volume: "lotes_mes", metodo_rateio_padrao: "lote_produzido" };
-    if (config?.id) await base44.entities.ConfiguracaoCustosUsuario.update(config.id, payload);
-    else await base44.entities.ConfiguracaoCustosUsuario.create(payload);
-    setVolumeLocal("");
-    await qc.invalidateQueries({ queryKey: ["custos-config", user.id] });
-    toast.success("Volume mensal salvo.");
-  };
-
   const abrirNovo = (grupo = "") => { setEditando(null); setGrupoInicial(grupo); setDialogOpen(true); };
   const abrirEditar = (despesa) => { setEditando(despesa); setGrupoInicial(""); setDialogOpen(true); };
 
@@ -88,7 +74,7 @@ export default function CustosDespesas() {
     <div className="space-y-5 pb-24 md:pb-8">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">2. Minhas Despesas</h1>
+          <h1 className="font-display text-2xl font-bold">Minhas Despesas</h1>
           <p className="text-sm text-muted-foreground mt-1">Informe seus gastos mensais para ratearmos entre suas produções.</p>
           <p className="text-sm text-muted-foreground">Esses valores serão usados nos seus cálculos de custo.</p>
         </div>
@@ -104,14 +90,14 @@ export default function CustosDespesas() {
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-5 items-start">
         <div className="grid md:grid-cols-2 gap-4">
-          {GRUPOS_DESPESA_CUSTO.map((grupo, index) => {
+          {GRUPOS_DESPESA_CUSTO.map((grupo) => {
             const Icon = grupo.icon;
             const itens = despesas.filter((d) => d.grupo === grupo.value);
             return (
               <Card key={grupo.value} className="p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${grupo.bg} ${grupo.accent}`}><Icon className="w-5 h-5" /></div>
-                  <div className="flex-1 min-w-0"><h2 className={`font-semibold ${grupo.accent}`}>{index + 1}. {grupo.label}</h2><p className="text-xs text-muted-foreground mt-0.5">{itens.length ? `${itens.length} despesa${itens.length > 1 ? "s" : ""}` : "Nenhuma despesa cadastrada"}</p></div>
+                  <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className={`font-semibold ${grupo.accent}`}>{grupo.label}</h2>{grupo.value === "trabalho_ajudantes" && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">fora do rateio</span>}</div><p className="text-xs text-muted-foreground mt-0.5">{itens.length ? `${itens.length} despesa${itens.length > 1 ? "s" : ""}` : "Nenhuma despesa cadastrada"}</p></div>
                   <div className="text-right"><p className="text-[10px] text-muted-foreground">Total do grupo</p><p className="font-semibold text-sm">{money(totais.porGrupo[grupo.value])}</p></div>
                 </div>
 
@@ -139,10 +125,10 @@ export default function CustosDespesas() {
             <div className="space-y-2 mt-4 pt-4 border-t">{GRUPOS_DESPESA_CUSTO.map((g) => <div key={g.value} className="flex justify-between gap-3 text-xs"><span className="text-muted-foreground">{g.label}</span><strong>{money(totais.porGrupo[g.value])}</strong></div>)}</div>
           </Card>
 
-          <Card className="p-5 space-y-3">
-            <div><h2 className="font-semibold">Como será o rateio?</h2><p className="text-xs text-muted-foreground mt-1">{money(totalRateio)} dos grupos selecionados serão divididos pelo volume mensal estimado.</p><Link to="/custos/configuracoes" className="text-[11px] text-primary underline mt-1 inline-block">Revisar grupos incluídos</Link></div>
-            <div><label className="text-xs font-medium">Volume mensal estimado</label><div className="flex gap-2 mt-1"><Input type="number" min="0" value={volumeLocal !== "" ? volumeLocal : config?.volume_mensal_estimado ?? ""} onChange={(e) => setVolumeLocal(e.target.value)} placeholder="Ex.: 200" /><Button variant="outline" size="icon" onClick={salvarVolume}><Save className="w-4 h-4" /></Button></div><p className="text-[11px] text-muted-foreground mt-1">lotes/rendimentos completos por mês</p></div>
-            <div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Custo rateado por lote</p><p className="text-2xl font-bold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p>{volume <= 0 && <p className="text-[11px] text-muted-foreground mt-1">Informe o volume mensal para calcular.</p>}</div>
+          <Card className="p-5 space-y-4">
+            <div className="flex items-start gap-3"><Settings2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h2 className="font-semibold">Rateio atual</h2><p className="text-xs text-muted-foreground mt-1">{money(totalRateio)} dos grupos selecionados serão distribuídos entre seus lotes.</p></div></div>
+            <div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Volume mensal</p><p className="font-semibold mt-1">{volume > 0 ? `${volume} lote(s)` : "Não configurado"}</p></div><div className="rounded-lg bg-primary/5 border border-primary/15 p-3"><p className="text-xs text-muted-foreground">Rateio por lote</p><p className="font-semibold text-primary mt-1">{volume > 0 ? money(custoRateado) : "—"}</p></div></div>
+            <Button asChild variant="outline" className="w-full"><Link to="/custos/configuracoes">Abrir Configurações de Rateio</Link></Button>
           </Card>
 
           <Card className="p-4"><div className="flex gap-3"><Calculator className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Pronto para calcular?</p><p className="text-xs text-muted-foreground mt-1">Use estas despesas junto com uma receita do Laboratório de Cozinha.</p><Link to="/custos/calcular" className="text-xs font-medium text-primary underline mt-2 inline-block">Ir para Calcular Custo</Link></div></div></Card>
