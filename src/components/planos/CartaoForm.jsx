@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
+import { carregarMercadoPagoDeviceId, carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
 
 export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTermos = false }) {
@@ -21,8 +21,8 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
   const tentativaPagamentoRef = useRef(null);
 
   useEffect(() => {
-    // Pré-carrega somente quando o formulário de cartão é realmente aberto.
-    carregarMercadoPagoSdk().catch(() => {});
+    // Pré-carrega o SDK e o identificador antifraude somente quando o cartão é aberto.
+    Promise.all([carregarMercadoPagoSdk(), carregarMercadoPagoDeviceId()]).catch(() => {});
   }, []);
 
   const handleSubmit = async (e) => {
@@ -60,6 +60,10 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         identificationNumber: cpfLimpo,
       });
 
+      // O Device ID é um sinal antifraude recomendado pelo Mercado Pago e reduz
+      // recusas legítimas classificadas como "high_risk".
+      const deviceId = await carregarMercadoPagoDeviceId();
+
       if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
@@ -67,6 +71,7 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         forma_pagamento: "cartao",
         aceite_termos: true,
         token: cardToken.id,
+        device_id: deviceId,
         installments: parseInt(parcelas, 10),
         payment_method_id: paymentMethodId,
         payer: { email, cpf: cpfLimpo },

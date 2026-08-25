@@ -23,7 +23,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v16-2026-08-25-card-payer-error-ux";
+const VERSAO_CODIGO = "v17-2026-08-25-device-id-antifraude";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -41,7 +41,7 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { plano, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id } = body;
+    const { plano, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id, device_id } = body;
 
     if (aceite_termos !== true) {
       return Response.json({
@@ -206,11 +206,13 @@ export default async function(req: Request): Promise<Response> {
     const orderBody: Record<string, unknown> = {
       type: "online",
       processing_mode: "automatic",
+      capture_mode: "automatic",
       external_reference: pagamento.id,
       description: descricaoPlano,
       total_amount: valorFormatado,
       payer: {
         email: payerEmail,
+        entity_type: "individual",
         ...(primeiroNome ? { first_name: primeiroNome } : {}),
         ...(sobrenome ? { last_name: sobrenome } : {}),
         // Identificação do pagador também acompanha o cartão. O CPF já foi
@@ -251,6 +253,7 @@ export default async function(req: Request): Promise<Response> {
               type: "credit_card",
               token,
               installments: parcelas,
+              statement_descriptor: "LAB COZINHA",
             },
           },
         ],
@@ -263,6 +266,9 @@ export default async function(req: Request): Promise<Response> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
         "X-Idempotency-Key": idempotencyKey,
+        ...(forma_pagamento === "cartao" && typeof device_id === "string" && /^[A-Za-z0-9_-]{8,256}$/.test(device_id)
+          ? { "X-meli-session-id": device_id }
+          : {}),
       },
       body: JSON.stringify(orderBody),
     });
