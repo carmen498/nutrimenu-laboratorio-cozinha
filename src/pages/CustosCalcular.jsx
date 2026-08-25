@@ -6,13 +6,14 @@ import { useAuth } from "@/lib/AuthContext";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { carregarContextoCustosReceitas } from "@/lib/custoContexto";
 import { calcularCustoTecnicoReceitaParaCustos } from "@/lib/custos/custoTecnicoReceita";
-import { calcularLaboratorioCustos } from "@/lib/custos/motorCustos";
+import { calcularLaboratorioCustos, calcularMargemSobreVenda, calcularMarkupMultiplicador, calcularPrecoPorMargem, calcularPrecoPorMarkup } from "@/lib/custos/motorCustos";
 import { rendimentoEfetivo } from "@/lib/custoReceita";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, Calculator, ChefHat, ExternalLink, FileText, Info, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AlertCircle, Calculator, ChefHat, CircleHelp, ExternalLink, FileText, Info, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import FormacaoPrecoDialog from "@/components/custos/FormacaoPrecoDialog";
 
@@ -32,7 +33,10 @@ export default function CustosCalcular() {
   const [valorHora, setValorHora] = useState("");
   const [embalagemAdicional, setEmbalagemAdicional] = useState("0");
   const [outrosCustos, setOutrosCustos] = useState("0");
-  const [precoVenda, setPrecoVenda] = useState("");
+  const [campoPrecoAtivo, setCampoPrecoAtivo] = useState("padrao");
+  const [precoEntrada, setPrecoEntrada] = useState("");
+  const [margemEntrada, setMargemEntrada] = useState("");
+  const [markupEntrada, setMarkupEntrada] = useState("");
   const [showFormacaoPreco, setShowFormacaoPreco] = useState(false);
   const [formacaoPreco, setFormacaoPreco] = useState(null);
   const [salvando, setSalvando] = useState(false);
@@ -107,7 +111,10 @@ export default function CustosCalcular() {
     setValorHora(itemMaoObra?.valor_unitario != null ? String(itemMaoObra.valor_unitario) : "");
     setEmbalagemAdicional(String(calculoAnterior.custo_embalagens || 0));
     setOutrosCustos(String(itemOutros?.valor_total || 0));
-    setPrecoVenda("");
+    setCampoPrecoAtivo("padrao");
+    setPrecoEntrada("");
+    setMargemEntrada("");
+    setMarkupEntrada("");
     setFormacaoPreco(null);
     setRecalculoInicializado(true);
   }, [recalcularId, calculoAnterior, itensCalculoAnterior, loadingItensRecalculo, recalculoInicializado]);
@@ -142,8 +149,68 @@ export default function CustosCalcular() {
     custoEmbalagemAdicional: n(embalagemAdicional),
     outrosCustos: n(outrosCustos),
     totalPorcoes,
-    precoVendaUnitario: n(precoVenda),
-  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, qtd, horas, valorHoraEfetivo, embalagemAdicional, outrosCustos, totalPorcoes, precoVenda]);
+    precoVendaUnitario: 0,
+  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, qtd, horas, valorHoraEfetivo, embalagemAdicional, outrosCustos, totalPorcoes]);
+
+  const formacaoDireta = useMemo(() => {
+    const custo = Number(resultado.custoUnitario || 0);
+    if (formacaoPreco) {
+      return {
+        preco: Number(formacaoPreco.precoSugerido || 0),
+        margem: Number(formacaoPreco.margemLiquidaPct || 0),
+        markup: Number(formacaoPreco.markup || 0),
+        valido: Number(formacaoPreco.precoSugerido || 0) > 0,
+        origem: "avancada",
+      };
+    }
+    if (custo <= 0) return { preco: 0, margem: 0, markup: 0, valido: false, origem: campoPrecoAtivo };
+
+    if (campoPrecoAtivo === "preco") {
+      const preco = Math.max(0, n(precoEntrada));
+      return {
+        preco,
+        margem: calcularMargemSobreVenda({ custoUnitario: custo, precoVendaUnitario: preco }),
+        markup: calcularMarkupMultiplicador({ custoUnitario: custo, precoVendaUnitario: preco }),
+        valido: preco > 0,
+        origem: "preco",
+      };
+    }
+
+    if (campoPrecoAtivo === "margem") {
+      const margem = Math.max(0, n(margemEntrada));
+      const calculo = calcularPrecoPorMargem({ custoUnitario: custo, margemDesejadaPct: margem });
+      const preco = calculo.valido ? calculo.preco : 0;
+      return {
+        preco,
+        margem,
+        markup: calcularMarkupMultiplicador({ custoUnitario: custo, precoVendaUnitario: preco }),
+        valido: calculo.valido && preco > 0,
+        origem: "margem",
+        diagnostico: calculo.diagnostico,
+      };
+    }
+
+    const markup = campoPrecoAtivo === "markup"
+      ? Math.max(0, n(markupEntrada))
+      : Math.max(0, Number(config?.markup_padrao || 3));
+    const preco = calcularPrecoPorMarkup({ custoUnitario: custo, markup });
+    return {
+      preco,
+      margem: calcularMargemSobreVenda({ custoUnitario: custo, precoVendaUnitario: preco }),
+      markup,
+      valido: markup > 0 && preco > 0,
+      origem: campoPrecoAtivo === "markup" ? "markup" : "padrao",
+    };
+  }, [resultado.custoUnitario, formacaoPreco, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, config?.markup_padrao]);
+
+  const precoVendaEfetivo = Number(formacaoDireta.preco || 0);
+  const valorPrecoCampo = campoPrecoAtivo === "preco" && !formacaoPreco ? precoEntrada : (precoVendaEfetivo > 0 ? precoVendaEfetivo.toFixed(2) : "");
+  const valorMargemCampo = campoPrecoAtivo === "margem" && !formacaoPreco ? margemEntrada : (precoVendaEfetivo > 0 ? Number(formacaoDireta.margem || 0).toFixed(1) : "");
+  const valorMarkupCampo = campoPrecoAtivo === "markup" && !formacaoPreco ? markupEntrada : (Number(formacaoDireta.markup || 0) > 0 ? Number(formacaoDireta.markup).toFixed(2) : "");
+
+  const editarPreco = (valor) => { setFormacaoPreco(null); setCampoPrecoAtivo("preco"); setPrecoEntrada(valor); };
+  const editarMargem = (valor) => { setFormacaoPreco(null); setCampoPrecoAtivo("margem"); setMargemEntrada(valor); };
+  const editarMarkup = (valor) => { setFormacaoPreco(null); setCampoPrecoAtivo("markup"); setMarkupEntrada(valor); };
 
   const rendimentoBase = receita && contexto ? rendimentoEfetivo(receita, contexto.ingredientesPorReceita?.[receita.id] || []) : 0;
   const categoria = receita?.categorias?.[0] || receita?.categoria || "";
@@ -179,10 +246,10 @@ export default function CustosCalcular() {
         custo_total: resultado.custoTotal,
         custo_unitario: resultado.custoUnitario,
         custo_por_porcao: resultado.custoPorPorcao,
-        preco_venda_informado: n(precoVenda),
+        preco_venda_informado: precoVendaEfetivo,
         preco_sugerido: formacaoPreco?.precoSugerido || 0,
-        markup_aplicado: formacaoPreco?.markup ?? resultado.markupMultiplicador,
-        margem_estimada: formacaoPreco?.margemLiquidaPct ?? resultado.margemEstimada,
+        markup_aplicado: formacaoPreco?.markup ?? formacaoDireta.markup,
+        margem_estimada: formacaoPreco?.margemLiquidaPct ?? formacaoDireta.margem,
         formacao_preco_metodo: formacaoPreco ? "margem" : "informado",
         margem_desejada_pct: formacaoPreco?.margemDesejadaPct || 0,
         taxa_cartao_pct: formacaoPreco?.taxaCartaoPct || 0,
@@ -229,7 +296,7 @@ export default function CustosCalcular() {
         <div className="space-y-4">
           <Card className="p-5 space-y-3">
             <div><p className="text-xs font-semibold text-primary">PASSO 1</p><h2 className="font-semibold text-lg">Qual receita você quer calcular?</h2></div>
-            <select value={receitaId} onChange={(e) => setReceitaId(e.target.value)} className="w-full h-10 rounded-md border bg-background px-3 text-sm">
+            <select value={receitaId} onChange={(e) => { setReceitaId(e.target.value); setCampoPrecoAtivo("padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className="w-full h-10 rounded-md border bg-background px-3 text-sm">
               <option value="">Selecione uma receita...</option>
               {receitas.map((r) => <option key={r.id} value={r.id}>{r.nome}{r.is_base === false ? " · Minha Receita" : ""}</option>)}
             </select>
@@ -262,10 +329,16 @@ export default function CustosCalcular() {
           </Card>
 
           <Card className="p-5 space-y-4">
-            <div><p className="text-xs font-semibold text-primary">PASSO 4</p><h2 className="font-semibold text-lg">Por quanto pretende vender?</h2></div>
-            <div className="grid sm:grid-cols-3 gap-3 items-end"><div><Label>Preço de venda por receita</Label><Input type="number" min="0" step="0.01" value={precoVenda} onChange={(e) => { setPrecoVenda(e.target.value); setFormacaoPreco(null); }} placeholder="0,00" /></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">{formacaoPreco ? "Margem líquida alvo" : "Margem estimada"}</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${Number(formacaoPreco?.margemLiquidaPct ?? resultado.margemEstimada).toFixed(1).replace(".", ",")}%` : "—"}</p></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-xs text-muted-foreground">Markup</p><p className="font-semibold mt-1">{n(precoVenda) > 0 ? `${Number(formacaoPreco?.markup ?? resultado.markupMultiplicador).toFixed(2).replace(".", ",")}x` : "—"}</p></div></div>
-            <Button variant="outline" onClick={() => setShowFormacaoPreco(true)} disabled={!receita || !tecnico?.completo || qtd <= 0 || resultado.custoUnitario <= 0 || !resultado.valido}><Calculator className="w-4 h-4 mr-2" /> Não sei quanto cobrar</Button>
-            {formacaoPreco && <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs"><p className="font-medium text-primary">Preço formado com margem assistida</p><p className="text-muted-foreground mt-1">Margem alvo {Number(formacaoPreco.margemDesejadaPct || 0).toFixed(1).replace(".", ",")}% · taxas {Number(formacaoPreco.taxasVariaveisPct || 0).toFixed(1).replace(".", ",")}% · preço sugerido {money(formacaoPreco.precoSugerido)}</p></div>}
+            <div><p className="text-xs font-semibold text-primary">PASSO 4</p><h2 className="font-semibold text-lg">Por quanto pretende vender?</h2><p className="text-xs text-muted-foreground mt-1">Altere qualquer um dos três campos. Preço, margem e markup são recalculados automaticamente a partir do custo por receita.</p></div>
+            <div className="grid sm:grid-cols-3 gap-3 items-start">
+              <div><Label>Preço de venda por receita</Label><Input type="number" min="0" step="0.01" value={valorPrecoCampo} onChange={(e) => editarPreco(e.target.value)} placeholder="0,00" /><p className="text-[11px] text-muted-foreground mt-1">Ao alterar o preço, margem e markup são recalculados.</p></div>
+              <div><Label>Margem (%)</Label><Input type="number" min="0" max="99.9" step="0.1" value={valorMargemCampo} onChange={(e) => editarMargem(e.target.value)} placeholder="Ex.: 40" /><p className="text-[11px] text-muted-foreground mt-1">Ao editar, este valor passa a ser sua margem desejada.</p></div>
+              <div><div className="flex items-center gap-1.5"><Label>Markup (x)</Label><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label="O que é markup?"><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">Markup é um multiplicador, não uma porcentagem.</p><p className="text-muted-foreground mt-2">Exemplo: custo de R$ 100,00 com markup de <strong className="text-foreground">2,50x</strong> gera preço-base de R$ 250,00.</p><p className="text-muted-foreground mt-2">Ao alterar o markup aqui, o preço e a margem desta receita são recalculados. O padrão das Configurações não é alterado.</p></PopoverContent></Popover></div><Input type="number" min="0.01" step="0.01" value={valorMarkupCampo} onChange={(e) => editarMarkup(e.target.value)} placeholder="Ex.: 2,50" /><p className="text-[11px] text-muted-foreground mt-1">Multiplicador. Ex.: 2,50x — não use %.</p></div>
+            </div>
+            {campoPrecoAtivo === "margem" && n(margemEntrada) >= 100 && <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">A margem precisa ser menor que 100% para calcular um preço de venda.</div>}
+            {campoPrecoAtivo === "padrao" && !formacaoPreco && <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">Markup padrão aplicado: <strong className="text-foreground">{Number(config?.markup_padrao || 3).toFixed(2).replace(".", ",")}x</strong>. Você pode alterar qualquer um dos três campos somente para esta receita.</div>}
+            <Button variant="outline" onClick={() => setShowFormacaoPreco(true)} disabled={!receita || !tecnico?.completo || qtd <= 0 || resultado.custoUnitario <= 0 || !resultado.valido}><Calculator className="w-4 h-4 mr-2" /> Formação avançada do preço</Button>
+            {formacaoPreco && <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs"><p className="font-medium text-primary">Formação avançada aplicada</p><p className="text-muted-foreground mt-1">Margem alvo {Number(formacaoPreco.margemDesejadaPct || 0).toFixed(1).replace(".", ",")}% · taxas {Number(formacaoPreco.taxasVariaveisPct || 0).toFixed(1).replace(".", ",")}% · preço sugerido {money(formacaoPreco.precoSugerido)}</p><p className="text-muted-foreground mt-1">Se você editar Preço, Margem ou Markup acima, o cálculo volta ao modo direto, sem as taxas avançadas.</p></div>}
           </Card>
 
           <div className="flex justify-end"><Button onClick={salvar} disabled={salvando || !receita || !tecnico?.completo || qtd <= 0 || !recalculoValido || !resultado.valido}>{salvando ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} {recalcularId ? "Gerar nova versão da Ficha" : "Gerar Ficha de Custo"}</Button></div>
@@ -283,7 +356,7 @@ export default function CustosCalcular() {
         onClose={() => setShowFormacaoPreco(false)}
         onApply={(dados) => {
           setFormacaoPreco(dados);
-          setPrecoVenda(Number(dados.precoSugerido || 0).toFixed(2));
+          setCampoPrecoAtivo("avancada");
         }}
         custoUnitario={resultado.custoUnitario}
         custoPorPorcao={resultado.custoPorPorcao}
