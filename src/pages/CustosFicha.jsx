@@ -72,7 +72,7 @@ export default function CustosFicha() {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div className="flex items-start gap-2">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}><ArrowLeft className="w-5 h-5" /></Button>
-          <div><div className="flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl font-bold">5. Ficha de Custo</h1><Badge variant="outline">Versão {calculo.versao_calculo || 1}</Badge></div><p className="text-sm text-muted-foreground mt-1">Registro histórico do custo calculado. Os valores abaixo são snapshots e não mudam automaticamente.</p></div>
+          <div><div className="flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl font-bold">Ficha de Custo</h1><Badge variant="outline">Versão {calculo.versao_calculo || 1}</Badge></div><p className="text-sm text-muted-foreground mt-1">Registro histórico do custo calculado. Os valores abaixo são snapshots e não mudam automaticamente.</p></div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(calculo.origem_id)}&recalcular=${encodeURIComponent(calculo.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular com preços atuais</Button>
