@@ -125,7 +125,21 @@ export default function CustosHistorico() {
         ) : exibidos.length === 0 ? (
           <div className="py-12 px-6 text-center"><History className="w-10 h-10 mx-auto text-muted-foreground/50" /><h2 className="font-semibold mt-3">Nenhum cálculo encontrado</h2><p className="text-sm text-muted-foreground mt-1">{filtrosAtivos ? "Tente ajustar os filtros." : "Quando você gerar uma Ficha de Custo, ela aparecerá aqui."}</p>{!filtrosAtivos && <Button className="mt-4" onClick={() => navigate("/custos/calcular")}><Calculator className="w-4 h-4 mr-2" /> Calcular custo</Button>}</div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="md:hidden divide-y">
+              {exibidos.map((c) => (
+                <div key={c.id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0"><Link to={`/custos/ficha/${c.id}`} className="font-semibold hover:text-primary block truncate">{c.origem_nome_snapshot}</Link><p className="text-xs text-muted-foreground mt-1">{c.categoria_snapshot || "Sem categoria"} · {dataCurta(c.data_calculo || c.created_date)}</p></div>
+                    <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem><DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">{Number(c.versao_calculo || 1) > 1 && <Badge variant="secondary" className="text-[10px]">v{c.versao_calculo}</Badge>}{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="text-[10px]">Preço assistido</Badge>}</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm"><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Produção</p><strong className="block mt-0.5">{numero(c.quantidade_produzida)} {c.unidade_producao || "lotes"}</strong></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Custo por lote</p><strong className="block mt-0.5">{money(c.custo_unitario)}</strong></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Preço de venda</p><strong className="block mt-0.5">{Number(c.preco_venda_informado || 0) > 0 ? money(c.preco_venda_informado) : "—"}</strong></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Margem</p><strong className="block mt-0.5">{Number(c.preco_venda_informado || 0) > 0 ? pct(c.margem_estimada) : "—"}</strong></div></div>
+                  <Button variant="outline" className="w-full" onClick={() => navigate(`/custos/ficha/${c.id}`)}>Abrir Ficha de Custo</Button>
+                </div>
+              ))}
+            </div>
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-left"><tr><th className="px-4 py-3 font-medium">Receita</th><th className="px-4 py-3 font-medium">Categoria</th><th className="px-4 py-3 font-medium whitespace-nowrap">Data do cálculo</th><th className="px-4 py-3 font-medium">Produção</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Custo por lote</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Preço de venda</th><th className="px-4 py-3 font-medium text-right">Margem</th><th className="px-4 py-3 font-medium text-right">Ações</th></tr></thead>
               <tbody className="divide-y">
@@ -145,7 +159,8 @@ export default function CustosHistorico() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
 
         {!isLoading && filtrados.length > porPagina && (
