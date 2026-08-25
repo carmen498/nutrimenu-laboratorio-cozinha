@@ -11,6 +11,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
+import { formatarTelefone } from "@/lib/formatarTelefone";
 
 
 export default function Register() {
@@ -21,6 +22,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [aceitaTermos, setAceitaTermos] = useState(false);
@@ -30,13 +32,34 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    const nomeLimpo = fullName.trim();
+    const emailLimpo = email.trim().toLowerCase();
+    const telefoneDigitos = telefone.replace(/\D/g, "");
+    if (!aceitaTermos) {
+      setError("Aceite os Termos de Uso e a Política de Privacidade para continuar.");
+      return;
+    }
+    if (nomeLimpo.length < 2) {
+      setError("Informe seu nome completo.");
+      return;
+    }
+    if (telefoneDigitos.length < 10 || telefoneDigitos.length > 11) {
+      setError("Informe um telefone com DDD válido.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("As senhas não coincidem");
       return;
     }
+    setFullName(nomeLimpo);
+    setEmail(emailLimpo);
     setLoading(true);
     try {
-      await base44.auth.register({ email, password });
+      await base44.auth.register({ email: emailLimpo, password });
       setShowOtp(true);
     } catch (err) {
       setError(err.message || "Falha no cadastro");
@@ -63,6 +86,10 @@ export default function Register() {
       return;
     }
 
+    // Mantém um marcador efêmero até o backend confirmar o aceite. Se esta
+    // chamada falhar, o AuthContext repete a tentativa após o redirecionamento.
+    sessionStorage.setItem("base44_pending_terms_acceptance", "true");
+
     // Perfil: falha aqui não bloqueia o app — o AuthContext revalida ao recarregar.
     try {
       await base44.auth.updateMe({
@@ -77,6 +104,7 @@ export default function Register() {
     // registrar o aceite pendente ao revalidar a sessão.
     try {
       await base44.functions.invoke("registrarAceiteTermos", {});
+      sessionStorage.removeItem("base44_pending_terms_acceptance");
     } catch (e) {
       consoleErrorSeguro("Falha ao registrar aceite de termos pós-OTP", e);
     }
@@ -99,6 +127,7 @@ export default function Register() {
 
   const handleResend = async () => {
     setError("");
+    setResending(true);
     try {
       await base44.auth.resendOtp(email);
       toast({
@@ -107,6 +136,8 @@ export default function Register() {
       });
     } catch (err) {
       setError(err.message || "Falha ao reenviar código");
+    } finally {
+      setResending(false);
     }
   };
 
@@ -174,8 +205,13 @@ export default function Register() {
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
           Não recebeu o código?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Reenviar
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={resending}
+            className="text-primary font-medium hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {resending ? "Reenviando..." : "Reenviar"}
           </button>
         </p>
       </AuthLayout>
@@ -246,7 +282,6 @@ export default function Register() {
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -265,7 +300,9 @@ export default function Register() {
               autoComplete="tel"
               placeholder="(00) 00000-0000"
               value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
+              onChange={(e) => setTelefone(formatarTelefone(e.target.value))}
+              inputMode="numeric"
+              maxLength={15}
               className="pl-10 h-12"
               required
             />
@@ -283,6 +320,7 @@ export default function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 pr-10 h-12"
+              minLength={8}
               required
             />
             <button
@@ -307,6 +345,7 @@ export default function Register() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 pr-10 h-12"
+              minLength={8}
               required
             />
             <button

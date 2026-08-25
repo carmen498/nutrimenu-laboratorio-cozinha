@@ -8,6 +8,7 @@ const storage = isNode
 	}
 	: window.localStorage;
 const viteEnv = /** @type {any} */ (import.meta).env || {};
+const APP_ID_FALLBACK = "6a2b263c4c1cb1e47d54d8b7";
 
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -47,7 +48,7 @@ const getAppParams = () => {
 		storage.removeItem('token');
 	}
 	return {
-		appId: getAppParamValue("app_id", { defaultValue: viteEnv.VITE_BASE44_APP_ID }),
+		appId: getAppParamValue("app_id", { defaultValue: viteEnv.VITE_BASE44_APP_ID || APP_ID_FALLBACK }),
 		token: getAppParamValue("access_token", { removeFromUrl: true }),
 		fromUrl: getAppParamValue("from_url", { defaultValue: window.location.href }),
 		functionsVersion: getAppParamValue("functions_version", { defaultValue: viteEnv.VITE_BASE44_FUNCTIONS_VERSION }),
