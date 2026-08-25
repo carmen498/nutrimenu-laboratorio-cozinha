@@ -66,7 +66,7 @@ assert.ok(entitlementSchema.includes('"create"') && entitlementSchema.includes('
 assert.ok(entitlementSchema.includes('"data.user_id": "{{user.id}}"'), "entitlement não restringe leitura ao titular");
 assert.ok(configSchema.includes('"grupos_rateio_incluidos"'), "schema versionado de configuração perdeu os grupos de rateio");
 assert.ok(configSchema.includes('"lote_produzido"') && configSchema.includes('"lotes_mes"'), "schema de rateio não está alinhado ao cálculo por lote");
-assert.ok(costConfigScreen.includes("Por lote produzido") && costConfigScreen.includes("Custo rateado por lote"), "Tela 7 não comunica a mesma unidade usada pelo motor");
+assert.ok(costConfigScreen.includes("Por receita produzida") && costConfigScreen.includes("Custo rateado por receita"), "Tela 7 não comunica a nomenclatura de receita usada na experiência do módulo");
 assert.ok(despesas.includes("config?.grupos_rateio_incluidos") && despesas.includes("totalRateio"), "Minhas Despesas não usa a mesma seleção de grupos da Tela 7");
 
 console.log("OK: fechamento estrutural, segurança, isolamento e preparação comercial do Laboratório de Custos aprovados.");
