@@ -44,6 +44,8 @@ assert(checkout.includes("aceiteContratacao"), "checkout não exige aceite contr
 assert(cartao.includes('forma_pagamento: "cartao"'), "fluxo de cartão ausente");
 assert(pix.includes('forma_pagamento: "pix"'), "fluxo PIX ausente");
 assert(cartao.includes("crypto.randomUUID()") && pix.includes("crypto.randomUUID()"), "tentativa idempotente não é gerada no checkout");
+assert(cartao.includes('const cpfLimpo = cpf.replace(/\\D/g, "")'), "CPF do cartão não é normalizado antes da tokenização");
+assert(cartao.includes("respostaErro?.orientacao"), "checkout de cartão descarta orientação de recusa do backend");
 
 assert(/export const IS_PRODUCTION = (true|false);/.test(mpConfig), "modo Mercado Pago frontend não está explícito");
 assert(mpConfig.includes("SANDBOX_PUBLIC_KEY") && mpConfig.includes("PROD_PUBLIC_KEY"), "public keys por ambiente ausentes");
@@ -58,6 +60,9 @@ assert(criarPagamento.includes("idempotency_key"), "checkout backend sem idempot
 assert(criarPagamento.indexOf("pagamentosAntecipados") < criarPagamento.indexOf("avaliarElegibilidadeRenovacao(user)"), "idempotência da Renovação ocorre depois da janela D-30 e pode falhar em replay pós-aprovação");
 assert(criarPagamento.includes('"X-Idempotency-Key"'), "header de idempotência Mercado Pago ausente");
 assert(!criarPagamento.includes("cardNumber"), "backend recebe número bruto de cartão");
+assert(criarPagamento.includes('identification: { type: "CPF", number: cpfLimpo }'), "CPF do titular não acompanha o payer do cartão");
+assert(criarPagamento.includes("const orientacao = codigoRecusa.includes"), "backend não traduz recusa para orientação segura");
+assert(!criarPagamento.includes("JSON.stringify(mpData)"), "resposta bruta do Mercado Pago voltou a logs ou diagnóstico");
 
 assert(webhook.includes("validarAssinatura(req, dataId)"), "webhook sem validação HMAC");
 assert(webhook.includes("api.mercadopago.com"), "webhook não reconsulta provedor");
