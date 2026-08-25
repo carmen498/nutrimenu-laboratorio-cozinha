@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export const GRUPOS_DESPESA_CUSTO = [
   { value: "gastos_negocio", label: "Gastos do negócio", icon: Building2, accent: "text-emerald-700", bg: "bg-emerald-50" },
   { value: "trabalho_ajudantes", label: "Seu trabalho / ajudantes", icon: UserRound, accent: "text-violet-700", bg: "bg-violet-50" },
-  { value: "producao", label: "Produção (energia, gás, etc.)", icon: Flame, accent: "text-orange-600", bg: "bg-orange-50" },
+  { value: "producao", label: "Despesas operacionais", icon: Flame, accent: "text-orange-600", bg: "bg-orange-50" },
   { value: "embalagem_outros", label: "Embalagem e outros", icon: Package, accent: "text-blue-700", bg: "bg-blue-50" },
 ];
 
