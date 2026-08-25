@@ -7,8 +7,9 @@ const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { AlertCircle, Calculator, MoreHorizontal, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
+import { AlertCircle, Calculator, CircleHelp, MoreHorizontal, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import AdicionarDespesaDialog, { GRUPOS_DESPESA_CUSTO } from "@/components/custos/AdicionarDespesaDialog";
 
@@ -75,8 +76,8 @@ export default function CustosDespesas() {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <h1 className="font-display text-2xl font-bold">Minhas Despesas</h1>
-          <p className="text-sm text-muted-foreground mt-1">Informe seus gastos mensais para ratearmos entre suas produções.</p>
-          <p className="text-sm text-muted-foreground">Esses valores serão usados nos seus cálculos de custo.</p>
+          <p className="text-sm text-muted-foreground mt-1">Cadastre suas despesas mensais para compor os cálculos de custo.</p>
+          <p className="text-sm text-muted-foreground">Você decide em Configurações de Rateio quais grupos entram no rateio automático.</p>
         </div>
         <Button onClick={() => abrirNovo()} className="gap-2"><Plus className="w-4 h-4" /> Adicionar despesa</Button>
       </div>
@@ -97,7 +98,7 @@ export default function CustosDespesas() {
               <Card key={grupo.value} className="p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${grupo.bg} ${grupo.accent}`}><Icon className="w-5 h-5" /></div>
-                  <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className={`font-semibold ${grupo.accent}`}>{grupo.label}</h2>{grupo.value === "trabalho_ajudantes" && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">fora do rateio</span>}</div><p className="text-xs text-muted-foreground mt-0.5">{itens.length ? `${itens.length} despesa${itens.length > 1 ? "s" : ""}` : "Nenhuma despesa cadastrada"}</p></div>
+                  <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className={`font-semibold ${grupo.accent}`}>{grupo.label}</h2><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label={`O que entra em ${grupo.label}?`}><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">{grupo.label}</p><p className="text-muted-foreground mt-2">{grupo.descricao}</p><p className="text-xs font-medium mt-3">Exemplos comuns</p><p className="text-xs text-muted-foreground mt-1">{grupo.sugestoes.join(" · ")}</p></PopoverContent></Popover>{grupo.value === "trabalho_ajudantes" && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">fora do rateio</span>}</div><p className="text-xs text-muted-foreground mt-0.5">{itens.length ? `${itens.length} despesa${itens.length > 1 ? "s" : ""}` : "Nenhuma despesa cadastrada"}</p></div>
                   <div className="text-right"><p className="text-[10px] text-muted-foreground">Total do grupo</p><p className="font-semibold text-sm">{money(totais.porGrupo[grupo.value])}</p></div>
                 </div>
 
