@@ -2,18 +2,14 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import CartaoForm from "./CartaoForm";
 import PixForm from "./PixForm";
 
 export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, email }) {
   const [aprovado, setAprovado] = useState(false);
-  const [aceiteContratacao, setAceiteContratacao] = useState(false);
 
   const handleClose = () => {
     setAprovado(false);
-    setAceiteContratacao(false);
     onOpenChange(false);
   };
 
@@ -34,21 +30,6 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/20 p-3">
-              <Checkbox
-                id="aceite-contratacao"
-                checked={aceiteContratacao}
-                onCheckedChange={(v) => setAceiteContratacao(v === true)}
-                className="mt-0.5"
-              />
-              <Label htmlFor="aceite-contratacao" className="text-xs font-normal leading-relaxed text-muted-foreground">
-                Li e aceito os{" "}
-                <a href="/termos" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Termos de Uso</a>{" "}
-                e a{" "}
-                <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="text-primary font-medium hover:underline">Política de Privacidade</a>{" "}
-                aplicáveis a esta contratação.
-              </Label>
-            </div>
             <Tabs defaultValue="cartao">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="cartao">Cartão</TabsTrigger>
@@ -60,7 +41,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 email={email}
                 onClose={handleClose}
                 onSuccess={() => setAprovado(true)}
-                aceiteTermos={aceiteContratacao}
+                aceiteTermos={true}
               />
             </TabsContent>
             <TabsContent value="pix" className="pt-4">
@@ -69,7 +50,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 email={email}
                 onClose={handleClose}
                 onSuccess={() => setAprovado(true)}
-                aceiteTermos={aceiteContratacao}
+                aceiteTermos={true}
               />
             </TabsContent>
             </Tabs>
