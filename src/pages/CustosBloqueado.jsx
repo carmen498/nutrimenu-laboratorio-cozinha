@@ -43,9 +43,22 @@ export default function CustosBloqueado() {
       <div className="max-w-3xl mx-auto py-10">
         <Card className="p-8 text-center">
           <Sparkles className="w-10 h-10 mx-auto text-primary" />
-          <h1 className="font-display text-2xl font-bold mt-4">Laboratório de Custos liberado para a beta interna</h1>
-          <p className="text-sm text-muted-foreground mt-2">Administradores continuam com acesso mesmo enquanto a contratação comercial está desligada.</p>
+          <h1 className="font-display text-2xl font-bold mt-4">Laboratório de Custos</h1>
+          <p className="text-sm text-muted-foreground mt-2">Acesso administrativo disponível para homologação do módulo.</p>
           <Button asChild className="mt-5"><Link to="/custos">Abrir Laboratório de Custos</Link></Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!config?.venda_habilitada) {
+    return (
+      <div className="max-w-3xl mx-auto py-10 px-1">
+        <Card className="p-6 sm:p-8 text-center">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto"><LockKeyhole className="w-6 h-6" /></div>
+          <h1 className="font-display text-2xl font-bold mt-4">Laboratório de Custos</h1>
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">Este módulo ainda não está disponível para sua conta. Seu acesso ao Laboratório de Cozinha continua funcionando normalmente.</p>
+          <div className="mt-6 flex flex-col sm:flex-row justify-center gap-2"><Button asChild><Link to="/app"><ChefHat className="w-4 h-4 mr-2" /> Voltar ao Laboratório de Cozinha</Link></Button><Button asChild variant="outline"><Link to="/suporte"><MessageCircle className="w-4 h-4 mr-2" /> Falar com suporte</Link></Button></div>
         </Card>
       </div>
     );
