@@ -105,7 +105,7 @@ export default function CustosConfiguracoes() {
     <div className="space-y-5 pb-24 md:pb-8 max-w-6xl mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl font-bold">7. Configurações de Rateio</h1>
+          <h1 className="font-display text-2xl font-bold">Configurações de Rateio</h1>
           <p className="text-sm text-muted-foreground mt-1">Defina como as despesas mensais serão distribuídas entre suas produções.</p>
         </div>
         <Button onClick={salvar} disabled={salvando || loadingConfig}><Save className="w-4 h-4 mr-2" /> {salvando ? "Salvando..." : "Salvar configurações"}</Button>
