@@ -219,7 +219,7 @@ export default function CustosCalcular() {
   return (
     <div className="space-y-5 pb-24 md:pb-8 max-w-6xl mx-auto">
       <div>
-        <h1 className="font-display text-2xl font-bold">3. Calcular Custo</h1>
+        <h1 className="font-display text-2xl font-bold">Calcular Custo</h1>
         <p className="text-sm text-muted-foreground mt-1">Use uma receita do Laboratório de Cozinha e acrescente os custos do seu negócio.</p>
       </div>
 
