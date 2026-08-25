@@ -124,14 +124,17 @@ const AuthenticatedApp = () => {
         <Route path="/privacidade" element={<Privacidade />} />
         <Route path="/aceitar-termos" element={<AceitarTermos />} />
         <Route path="/sobre" element={<SobrePublico />} />
+        <Route path="/SobrePublico" element={<Navigate to="/sobre" replace />} />
         <Route path="/contato" element={<Contato />} />
         <Route path="/" element={<LandingOrRedirect />} />
         <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
           <Route element={<AppLayout />}>
             <Route path="/app" element={<Home />} />
+            <Route path="/Home" element={<Navigate to="/app" replace />} />
             <Route path="/receitas" element={<Receitas />} />
             <Route path="/minhas-receitas" element={<MinhasReceitas />} />
+            <Route path="/MinhasReceitas" element={<Navigate to="/minhas-receitas" replace />} />
             <Route path="/receita/:id" element={<ReceitaAberta />} />
             <Route path="/cardapios" element={<Cardapios />} />
             <Route path="/meus-cardapios" element={<MeusCardapios />} />
@@ -164,6 +167,7 @@ const AuthenticatedApp = () => {
             <Route path="/dicas-carmen/:id" element={<DicaCarmenDetalhe />} />
             <Route path="/relatorio-receitas-pdf" element={<RelatorioReceitasPDF />} />
             <Route path="/custos/adicionar-ao-plano" element={<CustosBloqueado />} />
+            <Route path="/CustosBloqueado" element={<Navigate to="/custos/adicionar-ao-plano" replace />} />
             <Route element={<AdminRoute />}>
               <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
               <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
