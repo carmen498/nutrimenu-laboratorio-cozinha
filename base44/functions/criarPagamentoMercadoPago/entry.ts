@@ -23,7 +23,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v15-2026-08-25-order-detail";
+const VERSAO_CODIGO = "v16-2026-08-25-card-payer-error-ux";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -105,8 +105,8 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "E-mail do pagador é obrigatório" }, { status: 400 });
     }
     const cpfLimpo = typeof payer?.cpf === "string" ? payer.cpf.replace(/\D/g, "") : "";
-    if (forma_pagamento === "pix" && !cpfLimpo) {
-      return Response.json({ error: "CPF do pagador é obrigatório para pagamento via PIX" }, { status: 400 });
+    if (cpfLimpo.length !== 11) {
+      return Response.json({ error: "Informe um CPF válido do titular do pagamento" }, { status: 400 });
     }
 
     // Preço vem sempre do servidor (ConfiguracaoPlano), nunca do frontend — é a mesma
@@ -213,8 +213,9 @@ export default async function(req: Request): Promise<Response> {
         email: payerEmail,
         ...(primeiroNome ? { first_name: primeiroNome } : {}),
         ...(sobrenome ? { last_name: sobrenome } : {}),
-        // CPF exigido pelo Mercado Pago para pagamentos PIX no Brasil.
-        ...(forma_pagamento === "pix" && cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
+        // Identificação do pagador também acompanha o cartão. O CPF já foi
+        // normalizado e validado acima; nunca é persistido na entidade Pagamento.
+        ...(cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
       },
     };
 
@@ -269,7 +270,11 @@ export default async function(req: Request): Promise<Response> {
     const mpData = await mpResponse.json().catch(() => null);
 
     if (!mpResponse.ok) {
-      console.log("Mercado Pago recusou a criação da order", { http_status: mpResponse.status, pagamento_id: pagamento.id, body: JSON.stringify(mpData).slice(0, 800) });
+      console.log("Mercado Pago recusou a criação da order", {
+        http_status: mpResponse.status,
+        pagamento_id: pagamento.id,
+        order_id: mpData?.data?.id || mpData?.id || null,
+      });
       // O MP Orders API pode retornar os detalhes da recusa em várias estruturas.
       // Extraímos de todos os caminhos conhecidos para chegar ao motivo real.
       const extrairErros = (data: any): string | null => {
@@ -327,8 +332,19 @@ export default async function(req: Request): Promise<Response> {
         } catch { /* best-effort — não bloqueia o fluxo de erro */ }
       }
 
-      const snippetBruto = JSON.stringify(mpData).slice(0, 300);
-      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${detalheStatusDetail ? ` [${detalheStatusDetail}]` : ""}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""} [body: ${snippetBruto}]`);
+      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${detalheStatusDetail ? ` [${detalheStatusDetail}]` : ""}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`);
+      const codigoRecusa = `${mensagemPrincipal} ${detalheStatusDetail} ${causaDetalhada || ""}`.toLowerCase();
+      const orientacao = codigoRecusa.includes("insufficient_funds")
+        ? "Saldo ou limite insuficiente. Tente outro cartão ou fale com o banco emissor."
+        : codigoRecusa.includes("security_code")
+          ? "Confira o código de segurança do cartão."
+          : codigoRecusa.includes("bad_filled") || codigoRecusa.includes("invalid")
+            ? "Confira os dados do cartão e do titular."
+            : codigoRecusa.includes("high_risk")
+              ? "A operação não foi autorizada pela análise de segurança. Tente outro meio de pagamento."
+              : codigoRecusa.includes("call_for_authorize")
+                ? "Autorize a compra com o banco emissor e tente novamente."
+                : "Tente outro cartão ou utilize PIX. Se o problema persistir, fale com o banco emissor.";
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
         detalhe_erro: detalheSeguro.slice(0, 500),
@@ -337,6 +353,7 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({
         error: "Não foi possível processar o pagamento",
         detalhe: detalheSeguro.slice(0, 300),
+        orientacao,
         pagamentoId: pagamento.id,
         status: "rejected",
       }, { status: 400 });
