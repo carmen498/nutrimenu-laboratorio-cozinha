@@ -4,18 +4,48 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Flame, Loader2, Package, UserRound, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 
 export const GRUPOS_DESPESA_CUSTO = [
-  { value: "gastos_negocio", label: "Gastos do negócio", icon: Building2, accent: "text-emerald-700", bg: "bg-emerald-50" },
-  { value: "trabalho_ajudantes", label: "Despesas com pessoal", icon: UserRound, accent: "text-violet-700", bg: "bg-violet-50" },
-  { value: "producao", label: "Despesas operacionais", icon: Flame, accent: "text-orange-600", bg: "bg-orange-50" },
-  { value: "embalagem_outros", label: "Embalagem e outros", icon: Package, accent: "text-blue-700", bg: "bg-blue-50" },
+  {
+    value: "gastos_negocio",
+    label: "Gastos do negócio",
+    icon: Building2,
+    accent: "text-emerald-700",
+    bg: "bg-emerald-50",
+    descricao: "Despesas gerais para manter o negócio funcionando, sem vínculo direto com uma receita.",
+    sugestoes: ["Aluguel", "Contabilidade", "Internet / telefone", "Software / assinaturas", "Seguro", "Publicidade / marketing"],
+  },
+  {
+    value: "trabalho_ajudantes",
+    label: "Despesas com pessoal",
+    icon: UserRound,
+    accent: "text-violet-700",
+    bg: "bg-violet-50",
+    descricao: "Despesas mensais com pessoas, como pró-labore, salários, encargos e benefícios. Este grupo fica fora do rateio automático; a mão de obra direta da receita é calculada por horas.",
+    sugestoes: ["Pró-labore", "Salários / ajudantes", "INSS / encargos", "FGTS", "Benefícios", "Vale-transporte / alimentação"],
+  },
+  {
+    value: "producao",
+    label: "Despesas operacionais",
+    icon: Flame,
+    accent: "text-orange-600",
+    bg: "bg-orange-50",
+    descricao: "Despesas mensais da operação, como energia, água, gás, limpeza e manutenção.",
+    sugestoes: ["Energia elétrica", "Água", "Gás", "Limpeza e higiene", "Manutenção", "Controle de pragas"],
+  },
+  {
+    value: "embalagem_outros",
+    label: "Embalagem e outros",
+    icon: Package,
+    accent: "text-blue-700",
+    bg: "bg-blue-50",
+    descricao: "Materiais gerais mensais não vinculados a uma receita específica. Embalagens específicas da receita devem ser lançadas no cálculo dela.",
+    sugestoes: ["Embalagens gerais", "Descartáveis", "Etiquetas", "Lacres", "Sacolas", "Material de apoio"],
+  },
 ];
 
 const numero = (valor) => {
@@ -32,7 +62,6 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
   const [nome, setNome] = useState("");
   const [grupo, setGrupo] = useState("");
   const [valorMensal, setValorMensal] = useState("");
-  const [observacao, setObservacao] = useState("");
   const [ativo, setAtivo] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
@@ -41,7 +70,6 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
     setNome(despesa?.nome || "");
     setGrupo(despesa?.grupo || grupoInicial || "");
     setValorMensal(despesa?.valor_mensal != null ? String(despesa.valor_mensal).replace(".", ",") : "");
-    setObservacao(despesa?.observacao || "");
     setAtivo(despesa?.ativo !== false);
   }, [open, despesa, grupoInicial]);
 
@@ -72,7 +100,6 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
         nome: nome.trim(),
         grupo,
         valor_mensal: valor,
-        observacao: observacao.trim(),
         ativo,
       };
 
@@ -102,25 +129,14 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
             {despesa ? "Editar despesa" : "Adicionar despesa"}
           </DialogTitle>
           <DialogDescription>
-            Cadastre um gasto mensal do seu negócio. Os grupos selecionados em Configurações de Rateio entram automaticamente nos cálculos.
+            Cadastre apenas o essencial. Escolha o grupo, informe o nome e o valor mensal da despesa.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label>Nome da despesa *</Label>
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Ex.: Aluguel, internet, material de limpeza" maxLength={120} />
-          </div>
-
-          <div className="space-y-1.5">
             <Label>Grupo *</Label>
-            <Select value={grupo} onValueChange={setGrupo}>
-              <SelectTrigger><SelectValue placeholder="Selecione o grupo" /></SelectTrigger>
-              <SelectContent>
-                {GRUPOS_DESPESA_CUSTO.map((g) => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {GRUPOS_DESPESA_CUSTO.map((g) => {
                 const Icon = g.icon;
                 const selecionado = grupo === g.value;
@@ -137,6 +153,13 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
                 );
               })}
             </div>
+            {grupo && <p className="text-xs text-muted-foreground">{GRUPOS_DESPESA_CUSTO.find((g) => g.value === grupo)?.descricao}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Nome da despesa *</Label>
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Digite ou escolha uma sugestão abaixo" maxLength={120} />
+            {grupo && <div className="pt-1"><p className="text-[11px] font-medium text-muted-foreground mb-2">Despesas comuns</p><div className="flex flex-wrap gap-1.5">{GRUPOS_DESPESA_CUSTO.find((g) => g.value === grupo)?.sugestoes.map((sugestao) => <Button key={sugestao} type="button" variant={nome === sugestao ? "secondary" : "outline"} size="sm" className="h-7 px-2.5 text-xs" onClick={() => setNome(sugestao)}>{sugestao}</Button>)}</div></div>}
           </div>
 
           <div className="space-y-1.5">
@@ -145,12 +168,6 @@ export default function AdicionarDespesaDialog({ open, onClose, userId, grupoIni
               <span className="h-9 px-3 inline-flex items-center rounded-l-md border border-r-0 bg-muted text-sm">R$</span>
               <Input className="rounded-l-none" inputMode="decimal" value={valorMensal} onChange={(e) => setValorMensal(e.target.value)} placeholder="0,00" />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Observação <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-            <Textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Detalhes sobre esta despesa..." maxLength={300} rows={3} />
-            <p className="text-[11px] text-muted-foreground text-right">{observacao.length}/300</p>
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-3">
