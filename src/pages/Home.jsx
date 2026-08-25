@@ -27,34 +27,24 @@ export default function Home() {
     enabled: !!user?.id,
   });
 
-  // Todas as receitas, ordenadas por data real de atualização (updated_date).
-  // Usada para: contagem total, contagem de "atualizadas nos últimos 30 dias"
-  // e a lista de receitas atualizadas recentemente.
-  const { data: receitasTodas = [], isLoading: carregandoReceitas } = useQuery({
-    queryKey: ["receitas-todas-home"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 500),
+  // Contagens reais via function backend — retorna apenas os números, sem
+  // baixar milhares de registros completos para o cliente.
+  const { data: contagens, isLoading: carregandoContagens } = useQuery({
+    queryKey: ["contagens-home"],
+    queryFn: async () => {
+      const res = await base44.functions.invoke("contagensHome", {});
+      return res.data;
+    },
   });
 
-  // Todos os cardápios, ordenados por data real de atualização (updated_date).
-  const { data: cardapiosTodos = [], isLoading: carregandoCardapios } = useQuery({
-    queryKey: ["cardapios-todos-home"],
-    queryFn: () => base44.entities.Cardapio.list("-updated_date", 500),
+  // Receitas recentes apenas para o fallback da vitrine (quando nenhuma
+  // receita está marcada como destaque). Query leve, limite 10.
+  const { data: receitasRecentes = [] } = useQuery({
+    queryKey: ["receitas-recentes-home"],
+    queryFn: () => base44.entities.Receita.list("-updated_date", 10),
   });
 
-  // Todos os ingredientes — usado apenas para a contagem total real.
-  const { data: ingredientesTodos = [], isLoading: carregandoIngredientes } = useQuery({
-    queryKey: ["ingredientes-todos-home"],
-    queryFn: () => base44.entities.Ingrediente.list("-updated_date", 500),
-  });
-
-  const ha30Dias = new Date();
-  ha30Dias.setDate(ha30Dias.getDate() - 30);
-
-  const receitasAtualizadas30d = receitasTodas.filter(
-    (r) => r.updated_date && new Date(r.updated_date) >= ha30Dias
-  );
-
-  const carregandoIndicadores = carregandoReceitas || carregandoCardapios || carregandoIngredientes;
+  const carregandoIndicadores = carregandoContagens;
 
   // Vitrine "Fichas Técnicas em Destaque": usa as marcadas manualmente (campo `destaque`),
   // as 3 últimas marcadas. Sem nenhuma marcada, cai no fallback: as 3 receitas mais
@@ -64,7 +54,7 @@ export default function Home() {
     queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
     enabled: !carregandoIndicadores,
   });
-  const receitasComFoto = receitasTodas.filter((r) => r.foto_url).slice(0, 3);
+  const receitasComFoto = receitasRecentes.filter((r) => r.foto_url).slice(0, 3);
   const receitasVitrine = receitasDestaqueRaw.length > 0 ? receitasDestaqueRaw.slice(0, 3) : receitasComFoto;
 
   const { data: receitasRevisar = [] } = useQuery({
@@ -122,10 +112,10 @@ export default function Home() {
 
       {/* Indicadores reais */}
       <IndicadoresHome
-        receitas={receitasTodas.length}
-        ingredientes={ingredientesTodos.length}
-        cardapios={cardapiosTodos.length}
-        receitasAtualizadas={receitasAtualizadas30d.length}
+        receitas={contagens?.totalReceitas ?? 0}
+        ingredientes={contagens?.totalIngredientes ?? 0}
+        cardapios={contagens?.totalCardapios ?? 0}
+        receitasAtualizadas={contagens?.receitasAtualizadas30d ?? 0}
         loading={carregandoIndicadores}
       />
 
