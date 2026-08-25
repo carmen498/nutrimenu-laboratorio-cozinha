@@ -82,7 +82,7 @@ export default function FormacaoPrecoDialog({
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2 text-xl">
             <Calculator className="w-5 h-5 text-primary" />
-            4. Formação do Preço
+            Formação do Preço
           </DialogTitle>
           <DialogDescription>
             Informe a margem que deseja obter. O Laboratório calcula o preço necessário para cobrir custos, taxas e lucro.
