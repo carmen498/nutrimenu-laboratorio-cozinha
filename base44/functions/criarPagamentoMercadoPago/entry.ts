@@ -23,7 +23,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v11-2026-08-23-renovacao";
+const VERSAO_CODIGO = "v12-2026-08-25-erro-cartao";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -269,12 +269,30 @@ export default async function(req: Request): Promise<Response> {
     const mpData = await mpResponse.json().catch(() => null);
 
     if (!mpResponse.ok) {
-      console.log("Mercado Pago recusou a criação da order", { http_status: mpResponse.status, pagamento_id: pagamento.id });
-      const causaDetalhada = Array.isArray(mpData?.cause) && mpData.cause.length
-        ? mpData.cause.map((c: any) => c.description || c.code).join("; ")
-        : Array.isArray(mpData?.errors) && mpData.errors.length
-          ? mpData.errors.map((e: any) => `${e.code || ""} ${e.message || ""}`.trim()).join("; ")
-          : null;
+      console.log("Mercado Pago recusou a criação da order", { http_status: mpResponse.status, pagamento_id: pagamento.id, body: JSON.stringify(mpData).slice(0, 800) });
+      // O MP Orders API pode retornar os detalhes da recusa em várias estruturas.
+      // Extraímos de todos os caminhos conhecidos para chegar ao motivo real.
+      const extrairErros = (data: any): string | null => {
+        if (!data) return null;
+        if (Array.isArray(data.cause) && data.cause.length) {
+          return data.cause.map((c: any) => c.description || c.code || JSON.stringify(c)).join("; ");
+        }
+        if (Array.isArray(data.errors) && data.errors.length) {
+          return data.errors.map((e: any) => {
+            const partes = [e.code, e.message];
+            if (Array.isArray(e.cause) && e.cause.length) {
+              partes.push(e.cause.map((c: any) => c.description || c.code).join(", "));
+            }
+            return partes.filter(Boolean).join(": ").trim();
+          }).join("; ");
+        }
+        const payErr = data?.transactions?.payments?.[0]?.errors;
+        if (Array.isArray(payErr) && payErr.length) {
+          return payErr.map((e: any) => e.description || e.code || e.message).join("; ");
+        }
+        return null;
+      };
+      const causaDetalhada = extrairErros(mpData);
       const mensagemPrincipal = mpData?.message || mpData?.error || causaDetalhada || "sem mensagem";
       const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`);
       const orderIdFalha = mpData?.data?.id || mpData?.id || undefined;

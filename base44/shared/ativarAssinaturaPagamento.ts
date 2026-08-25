@@ -44,7 +44,7 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
   if (usuario.email) {
     const nome = usuario.nome_completo || usuario.full_name || "";
     const defaultAssunto = "Pagamento aprovado";
-    const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano no Laboratório de Cozinha já está ativo. Bom uso!</p>`;
+    const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} já está ativo e válido até {{data_expiracao}}.</p><p><a href="https://laboratoriodecozinha.com.br/login" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
 
     const [ano, mes, dia] = dataExpiracaoFormatada.split("-");
     const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
