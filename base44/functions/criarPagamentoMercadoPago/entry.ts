@@ -23,7 +23,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v13-2026-08-25-status-detail";
+const VERSAO_CODIGO = "v14-2026-08-25-raw-body";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -301,7 +301,10 @@ export default async function(req: Request): Promise<Response> {
       };
       const causaDetalhada = extrairErros(mpData);
       const mensagemPrincipal = mpData?.message || mpData?.error || causaDetalhada || "sem mensagem";
-      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`);
+      // Inclui um snippet bruto do corpo da resposta para diagnóstico — os campos
+      // status/status_detail do pagamento podem estar em paths não cobertos pela extração.
+      const snippetBruto = JSON.stringify(mpData).slice(0, 400);
+      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""} [body: ${snippetBruto}]`);
       const orderIdFalha = mpData?.data?.id || mpData?.id || undefined;
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
         status: "rejected",
