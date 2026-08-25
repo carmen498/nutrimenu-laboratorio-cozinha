@@ -84,7 +84,7 @@ export default function CustosDespesas() {
       <Card className="p-4 bg-primary/5 border-primary/20">
         <div className="flex items-start gap-3 text-sm">
           <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div><p className="font-medium">As despesas ativas dos grupos selecionados serão rateadas entre suas produções.</p><p className="text-muted-foreground mt-0.5">“Seu trabalho / ajudantes” fica separado da mão de obra direta. Revise os grupos em Configurações de Rateio.</p></div>
+          <div><p className="font-medium">As despesas ativas dos grupos selecionados serão rateadas entre suas produções.</p><p className="text-muted-foreground mt-0.5">“Despesas com pessoal” fica separado da mão de obra direta. Revise os grupos em Configurações de Rateio.</p></div>
         </div>
       </Card>
 
