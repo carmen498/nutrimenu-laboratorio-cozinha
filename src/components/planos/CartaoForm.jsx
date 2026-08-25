@@ -39,6 +39,10 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
 
       const [mes, ano] = validade.split("/").map((v) => v.trim());
       const cardNumberLimpo = numero.replace(/\s/g, "");
+      const cpfLimpo = cpf.replace(/\D/g, "");
+      if (cpfLimpo.length !== 11) {
+        throw new Error("Informe um CPF válido do titular do cartão.");
+      }
 
       const metodos = await mp.getPaymentMethods({ bin: cardNumberLimpo.slice(0, 6) });
       const paymentMethodId = metodos?.results?.[0]?.id;
@@ -53,7 +57,7 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         cardExpirationYear: ano?.length === 2 ? `20${ano}` : ano,
         securityCode: cvv,
         identificationType: "CPF",
-        identificationNumber: cpf,
+        identificationNumber: cpfLimpo,
       });
 
       if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
@@ -65,14 +69,17 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
         token: cardToken.id,
         installments: parseInt(parcelas, 10),
         payment_method_id: paymentMethodId,
-        payer: { email, cpf },
+        payer: { email, cpf: cpfLimpo },
       });
 
       onSuccess(res.data);
     } catch (err) {
       const status = err?.response?.data?.status;
       if (["rejected", "cancelled", "estornado"].includes(status)) tentativaPagamentoRef.current = null;
-      setError(err?.response?.data?.error || err.message || "Erro ao processar o pagamento.");
+      const respostaErro = err?.response?.data;
+      const mensagem = respostaErro?.error || err.message || "Erro ao processar o pagamento.";
+      const orientacao = respostaErro?.orientacao;
+      setError(orientacao ? `${mensagem}. ${orientacao}` : mensagem);
     } finally {
       setLoading(false);
     }
