@@ -113,7 +113,7 @@ export default function CustosConfiguracoes() {
       </div>
 
       <Card className="p-4 bg-primary/5 border-primary/20">
-        <div className="flex gap-3 text-sm"><Info className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><p className="font-medium">O rateio usa apenas os grupos marcados abaixo.</p><p className="text-muted-foreground mt-1">“Seu trabalho / ajudantes” fica fora do rateio automático porque a mão de obra direta é calculada por horas na produção, evitando dupla contagem.</p></div></div>
+        <div className="flex gap-3 text-sm"><Info className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><p className="font-medium">O rateio usa apenas os grupos marcados abaixo.</p><p className="text-muted-foreground mt-1">“Despesas com pessoal” fica fora do rateio automático porque a mão de obra direta é calculada por horas na produção, evitando dupla contagem.</p></div></div>
       </Card>
 
       <div className="grid lg:grid-cols-[1fr_320px] gap-5 items-start">
@@ -152,7 +152,7 @@ export default function CustosConfiguracoes() {
             {num(volumeEfetivo) > 0 && <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-primary flex gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>Resumo consistente: {money(totalIncluido)} ÷ {num(volumeEfetivo)} = {money(custoRateado)} por receita.</span></div>}
           </Card>
 
-          <Card className="p-4"><div className="flex gap-3"><WalletCards className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Trabalho mensal fora do rateio</p><p className="text-xs text-muted-foreground mt-1">Há {money(totalTrabalho)} cadastrado em “Seu trabalho / ajudantes”. Esse grupo não entra no rateio automático.</p></div></div></Card>
+          <Card className="p-4"><div className="flex gap-3"><WalletCards className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Despesas com pessoal fora do rateio</p><p className="text-xs text-muted-foreground mt-1">Há {money(totalTrabalho)} cadastrado em “Despesas com pessoal”. Esse grupo não entra no rateio automático.</p></div></div></Card>
 
           <Card className="p-4"><p className="text-sm font-medium">Gerenciar despesas</p><p className="text-xs text-muted-foreground mt-1">Os valores desta tela vêm de Minhas Despesas.</p><Link to="/custos/despesas" className="text-xs text-primary underline mt-2 inline-block">Abrir Minhas Despesas</Link></Card>
         </div>
