@@ -23,7 +23,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v12-2026-08-25-erro-cartao";
+const VERSAO_CODIGO = "v13-2026-08-25-status-detail";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -274,6 +274,13 @@ export default async function(req: Request): Promise<Response> {
       // Extraímos de todos os caminhos conhecidos para chegar ao motivo real.
       const extrairErros = (data: any): string | null => {
         if (!data) return null;
+        // status_detail dentro de transactions.payments — é onde o MP coloca o
+        // motivo real da recusa (card_declined, insufficient_funds, etc.)
+        const pay = data?.transactions?.payments?.[0];
+        if (pay && (pay.status_detail || pay.status)) {
+          const partes = [pay.status, pay.status_detail].filter(Boolean);
+          if (partes.length) return partes.join(" — ");
+        }
         if (Array.isArray(data.cause) && data.cause.length) {
           return data.cause.map((c: any) => c.description || c.code || JSON.stringify(c)).join("; ");
         }
