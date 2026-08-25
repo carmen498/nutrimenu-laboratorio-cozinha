@@ -18,6 +18,10 @@ const diasEntreHoje = (dataStr) => {
 };
 
 export default function AvisoAssinaturaHome({ user }) {
+  // Admins nunca veem banners de expiração — a conta administradora não
+  // depende de trial/plano e o status persistido pode estar desatualizado.
+  if (user?.role === "admin") return null;
+
   const status = user?.status_assinatura;
 
   if (status === "vencido") {

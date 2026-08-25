@@ -32,19 +32,19 @@ export default function Home() {
   // e a lista de receitas atualizadas recentemente.
   const { data: receitasTodas = [], isLoading: carregandoReceitas } = useQuery({
     queryKey: ["receitas-todas-home"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 5000),
+    queryFn: () => base44.entities.Receita.list("-updated_date", 500),
   });
 
   // Todos os cardápios, ordenados por data real de atualização (updated_date).
   const { data: cardapiosTodos = [], isLoading: carregandoCardapios } = useQuery({
     queryKey: ["cardapios-todos-home"],
-    queryFn: () => base44.entities.Cardapio.list("-updated_date", 5000),
+    queryFn: () => base44.entities.Cardapio.list("-updated_date", 500),
   });
 
   // Todos os ingredientes — usado apenas para a contagem total real.
   const { data: ingredientesTodos = [], isLoading: carregandoIngredientes } = useQuery({
     queryKey: ["ingredientes-todos-home"],
-    queryFn: () => base44.entities.Ingrediente.list("-updated_date", 5000),
+    queryFn: () => base44.entities.Ingrediente.list("-updated_date", 500),
   });
 
   const ha30Dias = new Date();
@@ -62,6 +62,7 @@ export default function Home() {
   const { data: receitasDestaqueRaw = [] } = useQuery({
     queryKey: ["receitas-destaque-home"],
     queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
+    enabled: !carregandoIndicadores,
   });
   const receitasComFoto = receitasTodas.filter((r) => r.foto_url).slice(0, 3);
   const receitasVitrine = receitasDestaqueRaw.length > 0 ? receitasDestaqueRaw.slice(0, 3) : receitasComFoto;
@@ -69,6 +70,7 @@ export default function Home() {
   const { data: receitasRevisar = [] } = useQuery({
     queryKey: ["receitas-revisar-home"],
     queryFn: () => base44.entities.Receita.filter({ revisar: true }, "-updated_date", 100),
+    enabled: !carregandoIndicadores,
     staleTime: 0,
     refetchOnMount: "always",
   });
