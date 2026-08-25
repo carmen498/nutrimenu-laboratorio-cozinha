@@ -82,10 +82,10 @@ export default function FormacaoPrecoDialog({
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2 text-xl">
             <Calculator className="w-5 h-5 text-primary" />
-            Formação do Preço
+            Formação avançada do preço
           </DialogTitle>
           <DialogDescription>
-            Informe a margem que deseja obter. O Laboratório calcula o preço necessário para cobrir custos, taxas e lucro.
+            Informe a margem desejada e, se houver, os custos de comercialização. O Laboratório calcula o preço necessário para cobrir custos e preservar a margem líquida.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,8 +119,8 @@ export default function FormacaoPrecoDialog({
             <section className="space-y-3 border-t pt-4">
               <div>
                 <p className="text-xs font-semibold text-primary">PASSO 2</p>
-                <h3 className="font-semibold">Taxas da venda <span className="font-normal text-muted-foreground">(opcional)</span></h3>
-                <p className="text-xs text-muted-foreground mt-1">Preencha somente taxas que incidem sobre o preço de venda.</p>
+                <h3 className="font-semibold">Custos de comercialização <span className="font-normal text-muted-foreground">(opcional)</span></h3>
+                <p className="text-xs text-muted-foreground mt-1">Informe aqui os custos que surgem na venda e reduzem a margem líquida, como cartão, plataforma, impostos ou um custo fixo por venda.</p>
               </div>
               <div className="grid sm:grid-cols-3 gap-3">
                 <div>
@@ -128,15 +128,15 @@ export default function FormacaoPrecoDialog({
                   <Input type="number" min="0" max="99" step="0.1" value={taxaCartao} onChange={(e) => setTaxaCartao(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Impostos (%)</Label>
+                  <Label>Impostos sobre a venda (%)</Label>
                   <Input type="number" min="0" max="99" step="0.1" value={impostos} onChange={(e) => setImpostos(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Outro custo fixo por receita</Label>
+                  <Label>Outro custo fixo por venda (R$)</Label>
                   <Input type="number" min="0" step="0.01" value={custoFixo} onChange={(e) => setCustoFixo(e.target.value)} />
                 </div>
               </div>
-              {taxasVariaveisPct > 0 && <p className="text-xs text-muted-foreground">Taxas percentuais consideradas: {taxasVariaveisPct.toFixed(1).replace(".", ",")}% do preço.</p>}
+              {(taxasVariaveisPct > 0 || custoFixoUnitario > 0) && <p className="text-xs text-muted-foreground">Custos de comercialização considerados: {taxasVariaveisPct.toFixed(1).replace(".", ",")}% do preço{custoFixoUnitario > 0 ? ` + ${money(custoFixoUnitario)} por venda` : ""}.</p>}
             </section>
 
             {!formacao.valido && (
@@ -169,14 +169,15 @@ export default function FormacaoPrecoDialog({
               <h3 className="font-semibold">Resumo da formação</h3>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo por receita</span><strong>{money(custoUnitario)}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Rateio incluído</span><strong>{money(custoRateadoUnitario)}</strong></div>
-              {custoFixoUnitario > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo fixo de venda</span><strong>{money(custoFixoUnitario)}</strong></div>}
+              {custoFixoUnitario > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo fixo por venda</span><strong>{money(custoFixoUnitario)}</strong></div>}
               <div className="border-t pt-3 flex justify-between text-sm"><span className="text-muted-foreground">Margem desejada</span><strong>{margemPct.toFixed(1).replace(".", ",")}%</strong></div>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Taxas variáveis</span><strong>{taxasVariaveisPct.toFixed(1).replace(".", ",")}%</strong></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custos variáveis de comercialização</span><strong>{taxasVariaveisPct.toFixed(1).replace(".", ",")}%</strong></div>
             </div>
 
             <div className="rounded-xl border p-4 space-y-3">
               <h3 className="font-semibold">Resultado</h3>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Preço sugerido</span><strong>{formacao.valido ? money(precoSugerido) : "—"}</strong></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custos de comercialização</span><strong>{formacao.valido ? money(taxasValor + custoFixoUnitario) : "—"}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Lucro líquido por receita</span><strong>{formacao.valido ? money(lucroLiquidoUnitario) : "—"}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Margem líquida</span><strong>{formacao.valido ? `${margemPct.toFixed(1).replace(".", ",")}%` : "—"}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Markup</span><strong>{formacao.valido ? `${markup.toFixed(2).replace(".", ",")}x` : "—"}</strong></div>
