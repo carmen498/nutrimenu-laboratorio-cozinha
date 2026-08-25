@@ -19,6 +19,32 @@ import { proximoCicloRenovacao } from "./regraRenovacao.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365, renovacao: 365 };
 const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual", renovacao: "Renovação anual" };
+const ASSUNTO_BOAS_VINDAS = "Bem-vindo(a) ao Laboratório de Cozinha";
+const CORPO_BOAS_VINDAS = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p><p>Explore receitas, cardápios e a gestão de custos da sua cozinha.</p>`;
+
+async function enviarBoasVindasSeNecessario(base44: any, usuario: any): Promise<void> {
+  if (!usuario?.email) return;
+  const enviosAnteriores = await base44.asServiceRole.entities.LogEmail.filter({
+    usuario_id: usuario.id,
+    tipo: "boas_vindas",
+    status: "enviado",
+  });
+  if (enviosAnteriores?.length) return;
+
+  const nome = usuario.nome_completo || usuario.full_name || "";
+  const { assunto, html, ativo } = await renderTemplateEmail(
+    base44, "boas_vindas", nome, ASSUNTO_BOAS_VINDAS, CORPO_BOAS_VINDAS,
+  );
+  if (!ativo) return;
+
+  const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+  await registrarLogEmail(base44, {
+    usuarioId: usuario.id,
+    email: usuario.email,
+    tipo: "boas_vindas",
+    resultado,
+  });
+}
 
 export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string }): Promise<void> {
   const dias = DIAS_PLANO[pagamento.plano] ?? 30;
@@ -67,6 +93,10 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
       console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
     }
   }
+
+  // Garante as boas-vindas no primeiro pagamento quando a inicialização do trial
+  // não conseguiu concluir o envio. O LogEmail evita duplicar quem já recebeu.
+  await enviarBoasVindasSeNecessario(base44, usuario);
 
   await enviarNotificacaoWhatsapp(base44, "pagamento_aprovado", usuario).catch((e: any) =>
     console.log("Falha ao enviar WhatsApp de pagamento aprovado:", e.message)

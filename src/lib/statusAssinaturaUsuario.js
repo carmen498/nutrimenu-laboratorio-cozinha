@@ -41,7 +41,7 @@ export function whatsappHref(telefone) {
   return `https://wa.me/55${digits}`;
 }
 
-export const PLANO_LABEL = { trial: "Trial", mensal: "Mensal", anual: "Anual", renovacao: "Renovação" };
+export const PLANO_LABEL = { trial: "Trial", mensal: "30 dias", anual: "Anual", renovacao: "Renovação" };
 
 export const SEGMENTOS = ["Nutricionista", "Chef de Cozinha", "Cozinha Industrial", "Estudante", "Fabricante de Produtos"];
 export const ORIGENS = ["Google", "Instagram", "Indicação de amigos", "Site", "Outros"];
