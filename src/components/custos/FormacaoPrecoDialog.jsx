@@ -132,7 +132,7 @@ export default function FormacaoPrecoDialog({
                   <Input type="number" min="0" max="99" step="0.1" value={impostos} onChange={(e) => setImpostos(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Outro custo fixo por lote</Label>
+                  <Label>Outro custo fixo por receita</Label>
                   <Input type="number" min="0" step="0.01" value={custoFixo} onChange={(e) => setCustoFixo(e.target.value)} />
                 </div>
               </div>
@@ -155,7 +155,7 @@ export default function FormacaoPrecoDialog({
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-primary mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium">Preço sugerido por lote</p>
+                    <p className="text-sm font-medium">Preço sugerido por receita</p>
                     <p className="text-3xl font-bold text-primary mt-1">{formacao.valido ? money(precoSugerido) : "—"}</p>
                     {precoPorPorcao > 0 && <p className="text-xs text-muted-foreground mt-1">Equivale a aproximadamente {money(precoPorPorcao)} por porção.</p>}
                   </div>
@@ -167,7 +167,7 @@ export default function FormacaoPrecoDialog({
           <aside className="space-y-3">
             <div className="rounded-xl border p-4 space-y-3">
               <h3 className="font-semibold">Resumo da formação</h3>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo por lote</span><strong>{money(custoUnitario)}</strong></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo por receita</span><strong>{money(custoUnitario)}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Rateio incluído</span><strong>{money(custoRateadoUnitario)}</strong></div>
               {custoFixoUnitario > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo fixo de venda</span><strong>{money(custoFixoUnitario)}</strong></div>}
               <div className="border-t pt-3 flex justify-between text-sm"><span className="text-muted-foreground">Margem desejada</span><strong>{margemPct.toFixed(1).replace(".", ",")}%</strong></div>
@@ -177,7 +177,7 @@ export default function FormacaoPrecoDialog({
             <div className="rounded-xl border p-4 space-y-3">
               <h3 className="font-semibold">Resultado</h3>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Preço sugerido</span><strong>{formacao.valido ? money(precoSugerido) : "—"}</strong></div>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Lucro líquido por lote</span><strong>{formacao.valido ? money(lucroLiquidoUnitario) : "—"}</strong></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Lucro líquido por receita</span><strong>{formacao.valido ? money(lucroLiquidoUnitario) : "—"}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Margem líquida</span><strong>{formacao.valido ? `${margemPct.toFixed(1).replace(".", ",")}%` : "—"}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Markup</span><strong>{formacao.valido ? `${markup.toFixed(2).replace(".", ",")}x` : "—"}</strong></div>
             </div>
