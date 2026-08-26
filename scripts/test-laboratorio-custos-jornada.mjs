@@ -50,7 +50,7 @@ perto(tecnico.custoTotal, 248.864);
 perto(tecnico.rendimento, 2486);
 perto(tecnico.porcoesEfetivas, 2486 / 150);
 
-// Jornada econômica controlada: despesas mensais + mão de obra + custos diretos.
+// Jornada econômica controlada: despesas mensais distribuídas pelo Custo do Negócio.
 const despesas = [
   { grupo: "gastos_negocio", nome: "Aluguel", valor_mensal: 1200, ativo: true },
   { grupo: "gastos_negocio", nome: "Internet", valor_mensal: 200, ativo: true },
@@ -63,58 +63,56 @@ const despesas = [
 const resultado = calcularLaboratorioCustos({
   custoTecnicoProducao: tecnico.custoTotal,
   despesas,
-  volumeMensal: 60,
   quantidadeProduzida: 2,
-  gruposRateio: ["gastos_negocio", "producao", "embalagem_outros"],
-  horasMaoDeObra: 3,
-  valorHora: 30,
-  custoEmbalagemAdicional: 12,
-  outrosCustos: 8,
+  gruposRateio: ["gastos_negocio", "trabalho_ajudantes", "producao", "embalagem_outros"],
+  aplicarCustoNegocio: true,
+  baseCustoNegocio: "mes",
+  producaoMediaMes: 60,
   totalPorcoes: tecnico.porcoesEfetivas,
 });
 
 assert.equal(resultado.valido, true);
-perto(resultado.rateio.totalMensal, 2700);
-perto(resultado.rateio.custoPorUnidade, 45);
-perto(resultado.rateio.custoDaProducao, 90);
-perto(resultado.maoDeObra.total, 90);
-perto(resultado.custoTotal, 448.864);
-perto(resultado.custoUnitario, 224.432);
-perto(resultado.custoPorPorcao, 27.0835076428);
+perto(resultado.rateio.totalMensal, 3600);
+perto(resultado.rateio.custoPorUnidade, 60);
+perto(resultado.rateio.custoDaProducao, 120);
+perto(resultado.maoDeObra.total, 0);
+perto(resultado.custoTotal, 368.864);
+perto(resultado.custoUnitario, 184.432);
+perto(resultado.custoPorPorcao, 22.2564762671);
 
-// Formação assistida: 40% de margem líquida, 3% cartão, 6% impostos e R$ 2/lote de custo fixo de venda.
+// Formação avançada: 40% de margem líquida + 20% de Custo médio de comercialização.
 const formacao = calcularPrecoPorMargem({
   custoUnitario: resultado.custoUnitario,
   margemDesejadaPct: 40,
-  taxasVariaveisPct: 9,
-  custoFixoAdicionalUnitario: 2,
+  taxasVariaveisPct: 20,
 });
 assert.equal(formacao.valido, true);
-perto(formacao.preco, 443.9843137255);
-const lucroLiquido = formacao.preco - (resultado.custoUnitario + 2) - (formacao.preco * 0.09);
+perto(formacao.preco, 461.08);
+const lucroLiquido = formacao.preco - resultado.custoUnitario - (formacao.preco * 0.20);
 perto((lucroLiquido / formacao.preco) * 100, 40);
 
-// Proteção da jornada: despesa rateável sem volume mensal não pode ser tratada como cálculo válido.
+// Proteção: se o Custo do Negócio estiver ativado, a base escolhida precisa ter produção informada.
 const semVolume = calcularLaboratorioCustos({
   custoTecnicoProducao: tecnico.custoTotal,
   despesas,
-  volumeMensal: 0,
   quantidadeProduzida: 2,
-  gruposRateio: ["gastos_negocio", "producao", "embalagem_outros"],
+  gruposRateio: ["gastos_negocio", "trabalho_ajudantes", "producao", "embalagem_outros"],
+  aplicarCustoNegocio: true,
+  baseCustoNegocio: "mes",
+  producaoMediaMes: 0,
 });
 assert.equal(semVolume.valido, false);
-assert.equal(semVolume.rateio.diagnostico, "volume_mensal_ausente");
+assert.equal(semVolume.rateio.diagnostico, "producao_mensal_ausente");
 
-// Escolha consciente de nenhum grupo: rateio zero e jornada válida mesmo sem volume.
+// Uso opcional: Custo do Negócio desligado não bloqueia o cálculo e não adiciona despesas.
 const semRateio = calcularLaboratorioCustos({
   custoTecnicoProducao: tecnico.custoTotal,
   despesas,
-  volumeMensal: 0,
   quantidadeProduzida: 2,
-  gruposRateio: [],
+  gruposRateio: ["gastos_negocio", "trabalho_ajudantes", "producao", "embalagem_outros"],
+  aplicarCustoNegocio: false,
 });
 assert.equal(semRateio.valido, true);
-assert.equal(semRateio.rateio.totalMensal, 0);
 assert.equal(semRateio.rateio.custoDaProducao, 0);
 
 console.log("OK: jornada real SALMÃO COM COGUMELOS fecha do custo técnico à formação do preço.");
