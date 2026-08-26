@@ -12,7 +12,6 @@ import {
   Calculator,
   CheckCircle2,
   ChefHat,
-  Circle,
   FileText,
   History,
   PlayCircle,
