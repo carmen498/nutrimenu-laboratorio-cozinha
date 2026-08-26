@@ -32,7 +32,7 @@ export default function CustosCalcular() {
   const [buscaReceita, setBuscaReceita] = useState("");
   const [buscaReceitaAberta, setBuscaReceitaAberta] = useState(false);
   const [insumosAdicionais, setInsumosAdicionais] = useState([]);
-  const [campoPrecoAtivo, setCampoPrecoAtivo] = useState("padrao");
+  const [campoPrecoAtivo, setCampoPrecoAtivo] = useState("margem_padrao");
   const [precoEntrada, setPrecoEntrada] = useState("");
   const [margemEntrada, setMargemEntrada] = useState("");
   const [markupEntrada, setMarkupEntrada] = useState("");
@@ -117,8 +117,8 @@ export default function CustosCalcular() {
   useEffect(() => {
     if (!recalcularId || !calculoAnterior || loadingItensRecalculo || recalculoInicializado) return;
     setQuantidade(String(calculoAnterior.quantidade_produzida || 1));
-    setInsumosAdicionais(itensCalculoAnterior.filter((i) => i.tipo === "outro" && i.origem === "Adicionado neste cálculo").map((i) => ({ id: i.id, descricao: i.descricao, valor: String(i.valor_total || 0) })));
-    setCampoPrecoAtivo("padrao");
+    setInsumosAdicionais(itensCalculoAnterior.filter((i) => i.tipo === "outro" && i.origem === "Adicionado neste cálculo").map((i) => ({ id: i.id, descricao: i.descricao, valor: String(i.valor_unitario || i.valor_total || 0), modo: String(i.formula || "").includes("por receita") ? "por_receita" : "producao" })));
+    setCampoPrecoAtivo("margem_padrao");
     setPrecoEntrada("");
     setMargemEntrada("");
     setMarkupEntrada("");
@@ -142,7 +142,10 @@ export default function CustosCalcular() {
   }, [receita, contexto, qtd]);
 
   const totalPorcoes = tecnico?.porcoesEfetivas || 0;
-  const totalInsumosAdicionais = useMemo(() => insumosAdicionais.reduce((s, item) => s + Math.max(0, n(item.valor)), 0), [insumosAdicionais]);
+  const totalInsumosAdicionais = useMemo(() => insumosAdicionais.reduce((s, item) => {
+    const valor = Math.max(0, n(item.valor));
+    return s + (item.modo === "producao" ? valor : valor * qtd);
+  }, 0), [insumosAdicionais, qtd]);
   const resultado = useMemo(() => calcularLaboratorioCustos({
     custoTecnicoProducao: tecnico?.custoTecnicoTotal || 0,
     despesas,
