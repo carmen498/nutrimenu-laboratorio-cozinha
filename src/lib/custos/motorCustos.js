@@ -2,7 +2,7 @@
 //
 // Esta camada NÃO recalcula ingredientes. O custo técnico da Receita deve vir
 // do Motor de Custos Canônico do Laboratório de Cozinha (custoReceita.js).
-// Aqui entram somente rateio, mão de obra, custos adicionais e formação do preço.
+// Aqui entram o Custo do Negócio distribuído e a formação do preço.
 
 const numero = (valor) => {
   const n = Number(valor);
@@ -40,6 +40,55 @@ export function calcularRateioMensal({ despesas = [], totalDespesasMensais = nul
     custoDaProducao,
     valido: volume > 0 || totalMensal === 0,
     diagnostico: totalMensal > 0 && volume <= 0 ? "volume_mensal_ausente" : null,
+  };
+}
+
+export function calcularCustoNegocio({
+  despesas = [],
+  gruposIncluidos = null,
+  aplicar = false,
+  base = "mes",
+  diasProducaoMes = 0,
+  producaoMediaDia = 0,
+  producaoMediaMes = 0,
+  quantidadeProducao = 0,
+} = {}) {
+  const totalMensal = somarDespesasAtivas(despesas, gruposIncluidos);
+  const quantidade = naoNegativo(quantidadeProducao);
+  const dias = naoNegativo(diasProducaoMes);
+  const porDia = naoNegativo(producaoMediaDia);
+  const porMes = naoNegativo(producaoMediaMes);
+
+  if (!aplicar) {
+    return {
+      aplicar: false,
+      base,
+      totalMensal,
+      custoPorDia: dias > 0 ? totalMensal / dias : 0,
+      producaoReferencia: base === "dia" ? dias * porDia : porMes,
+      custoPorUnidade: 0,
+      custoDaProducao: 0,
+      valido: true,
+      diagnostico: null,
+    };
+  }
+
+  const producaoReferencia = base === "dia" ? dias * porDia : porMes;
+  const custoPorDia = dias > 0 ? totalMensal / dias : 0;
+  const custoPorUnidade = producaoReferencia > 0 ? totalMensal / producaoReferencia : 0;
+  const custoDaProducao = custoPorUnidade * quantidade;
+  const valido = totalMensal === 0 || producaoReferencia > 0;
+
+  return {
+    aplicar: true,
+    base: base === "dia" ? "dia" : "mes",
+    totalMensal,
+    custoPorDia,
+    producaoReferencia,
+    custoPorUnidade,
+    custoDaProducao,
+    valido,
+    diagnostico: valido ? null : (base === "dia" ? "producao_diaria_ausente" : "producao_mensal_ausente"),
   };
 }
 
@@ -145,49 +194,43 @@ export function calcularCustoProducao({
 export function calcularLaboratorioCustos({
   custoTecnicoProducao = 0,
   despesas = [],
-  totalDespesasMensais = null,
-  volumeMensal = 0,
   quantidadeProduzida = 0,
   gruposRateio = null,
-  horasMaoDeObra = 0,
-  valorHora = 0,
-  valorMaoDeObraDireto = null,
-  custoEmbalagemAdicional = 0,
-  outrosCustos = 0,
+  aplicarCustoNegocio = false,
+  baseCustoNegocio = "mes",
+  diasProducaoMes = 0,
+  producaoMediaDia = 0,
+  producaoMediaMes = 0,
   totalPorcoes = 0,
   precoVendaUnitario = 0,
 } = {}) {
-  const rateio = calcularRateioMensal({
+  const custoNegocio = calcularCustoNegocio({
     despesas,
-    totalDespesasMensais,
-    volumeMensal,
-    quantidadeProducao: quantidadeProduzida,
     gruposIncluidos: gruposRateio,
-  });
-  const maoDeObra = calcularMaoDeObra({
-    horas: horasMaoDeObra,
-    valorHora,
-    valorDireto: valorMaoDeObraDireto,
+    aplicar: aplicarCustoNegocio,
+    base: baseCustoNegocio,
+    diasProducaoMes,
+    producaoMediaDia,
+    producaoMediaMes,
+    quantidadeProducao: quantidadeProduzida,
   });
   const producao = calcularCustoProducao({
     custoTecnicoProducao,
-    custoEmbalagemAdicional,
-    custoMaoObraDireta: maoDeObra.total,
-    custoRateadoProducao: rateio.custoDaProducao,
-    outrosCustos,
+    custoRateadoProducao: custoNegocio.custoDaProducao,
     quantidadeProduzida,
     totalPorcoes,
     precoVendaUnitario,
   });
 
   const diagnosticos = [...producao.diagnosticos];
-  if (rateio.diagnostico) diagnosticos.push(rateio.diagnostico);
+  if (custoNegocio.diagnostico) diagnosticos.push(custoNegocio.diagnostico);
 
   return {
     ...producao,
-    rateio,
-    maoDeObra,
-    valido: producao.valido && rateio.valido,
+    rateio: custoNegocio,
+    custoNegocio,
+    maoDeObra: { horas: 0, valorHora: 0, total: 0, origem: "nao_aplicavel" },
+    valido: producao.valido && custoNegocio.valido,
     diagnosticos,
   };
 }
