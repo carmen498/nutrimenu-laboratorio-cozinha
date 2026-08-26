@@ -28,17 +28,14 @@ export function rendimentoEfetivo(receita, ingredientesReceita = []) {
 }
 
 function calcularCustoEsquecido(esquecido, ingredienteMap, fator) {
-  const ingrediente = esquecido?.ingrediente_id ? ingredienteMap?.[esquecido.ingrediente_id] : null;
+  const temIngredienteId = !!esquecido?.ingrediente_id;
+  const ingrediente = temIngredienteId ? ingredienteMap?.[esquecido.ingrediente_id] : null;
   const quantidade = numero(esquecido?.quantidade_g) * fator;
 
-  if (
-    ingrediente &&
-    esquecido?.nome &&
-    normalizarNomeReferencia(esquecido.nome) !== normalizarNomeReferencia(ingrediente.nome)
-  ) {
-    return { custo: 0, origem: "referencia_divergente", semPreco: false, referenciaInvalida: true };
-  }
-
+  // `nome` em IngredienteEsquecidoReceita é uma descrição de uso
+  // (ex.: "Manteiga para untar", "Chocolate ralado para decorar"), e não
+  // uma identidade canônica. Portanto, não deve ser comparado ao nome do
+  // Ingrediente mestre. A integridade é garantida exclusivamente pelo ID.
   if (ingrediente && quantidade > 0) {
     const calculado = calcularItemIngredienteReceita({
       item: { fator_correcao_override: 0 },
@@ -49,6 +46,15 @@ function calcularCustoEsquecido(esquecido, ingredienteMap, fator) {
   }
 
   const cache = numero(esquecido?.custo_total);
+  if (temIngredienteId && !ingrediente) {
+    return {
+      custo: cache > 0 ? cache * fator : quantidade * numero(esquecido?.custo_unitario),
+      origem: "referencia_ausente",
+      semPreco: cache <= 0 && numero(esquecido?.custo_unitario) <= 0,
+      referenciaInvalida: true,
+    };
+  }
+
   if (cache > 0) return { custo: cache * fator, origem: "cache_legado", semPreco: false };
 
   const unitario = numero(esquecido?.custo_unitario);
