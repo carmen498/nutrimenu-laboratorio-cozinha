@@ -279,7 +279,7 @@ export default function CustosCalcular() {
   const preservarRascunhoAntesDeSair = () => {
     if (recalcularId) return;
     try {
-      window.sessionStorage.setItem(RASCUNHO_CUSTOS_KEY, JSON.stringify({ receitaId, buscaReceita, quantidade, insumosAdicionais, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, formacaoPreco }));
+      window.sessionStorage.setItem(RASCUNHO_CUSTOS_KEY, JSON.stringify({ receitaId, buscaReceita, quantidade, insumosAdicionais, exclusoesTecnicas, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, formacaoPreco }));
     } catch {
       // A navegação continua mesmo se o storage do navegador estiver indisponível.
     }
@@ -432,6 +432,7 @@ export default function CustosCalcular() {
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-5 items-start">
         <div className="space-y-4">
+          {receita && !recalcularId && <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex items-center gap-3 text-sm"><Info className="w-4 h-4 text-amber-700 shrink-0" /><div><p className="font-medium text-amber-900">Rascunho — este cálculo ainda não está no Histórico.</p><p className="text-xs text-amber-800 mt-0.5">Você pode sair e voltar sem perder o preenchimento. Para registrar a ficha, use <strong>Salvar cálculo e gerar ficha</strong>.</p></div></div>}
           <Card className="p-5 space-y-3">
             <div><p className="text-xs font-semibold text-primary">PASSO 1</p><h2 className="font-semibold text-lg">Qual receita você quer calcular?</h2></div>
             <div className="relative">
@@ -446,7 +447,7 @@ export default function CustosCalcular() {
                 autoComplete="off"
               />
               {buscaReceitaAberta && !loadingReceitas && <div className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border bg-popover shadow-lg p-1">
-                {receitasFiltradas.length === 0 ? <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma receita encontrada.</p> : receitasFiltradas.map((r) => <button key={r.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setReceitaId(r.id); setBuscaReceita(r.nome); setBuscaReceitaAberta(false); setInsumosAdicionais([]); setCampoPrecoAtivo("margem_padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className={`w-full text-left rounded-md px-3 py-2.5 text-sm hover:bg-muted ${r.id === receitaId ? "bg-primary/5 text-primary" : ""}`}><span className="font-medium">{r.nome}</span>{r.is_base === false && <span className="ml-2 text-xs text-muted-foreground">Minha Receita</span>}</button>)}
+                {receitasFiltradas.length === 0 ? <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma receita encontrada.</p> : receitasFiltradas.map((r) => <button key={r.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setReceitaId(r.id); setBuscaReceita(r.nome); setBuscaReceitaAberta(false); setInsumosAdicionais([]); setExclusoesTecnicas({ insumos: [], esquecidos: [] }); setCampoPrecoAtivo("margem_padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className={`w-full text-left rounded-md px-3 py-2.5 text-sm hover:bg-muted ${r.id === receitaId ? "bg-primary/5 text-primary" : ""}`}><span className="font-medium">{r.nome}</span>{r.is_base === false && <span className="ml-2 text-xs text-muted-foreground">Minha Receita</span>}</button>)}
               </div>}
             </div>
             <div className="flex items-center justify-between gap-3"><p className="text-[11px] text-muted-foreground">Digite parte do nome para localizar rapidamente entre as receitas do Laboratório de Cozinha.</p>{receita && <Link to={`/receita/${receita.id}`} onClick={preservarRascunhoAntesDeSair} className="text-xs text-primary inline-flex gap-1 whitespace-nowrap">Ver receita <ExternalLink className="w-3 h-3" /></Link>}</div>
