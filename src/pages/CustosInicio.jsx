@@ -127,7 +127,7 @@ export default function CustosInicio() {
             <h1 className="font-display text-3xl font-bold tracking-tight">Laboratório de Custos</h1>
             <p className="text-sm sm:text-base text-foreground/80 mt-2 max-w-2xl">Transforme o custo técnico das suas receitas em custo de produção, preço de venda e margem.</p>
             <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 text-xs sm:text-sm">
-              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary" /> Rateio das despesas</span>
+              <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-primary" /> Custo do Negócio</span>
               <span className="inline-flex items-center gap-1.5"><Target className="w-4 h-4 text-primary" /> Formação do preço</span>
               <span className="inline-flex items-center gap-1.5"><FileText className="w-4 h-4 text-primary" /> Ficha de custo</span>
             </div>
