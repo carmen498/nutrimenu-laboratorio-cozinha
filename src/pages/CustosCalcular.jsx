@@ -365,6 +365,7 @@ export default function CustosCalcular() {
         custoPorPorcao={resultado.custoPorPorcao}
         custoRateadoUnitario={qtd > 0 ? resultado.rateio.custoDaProducao / qtd : 0}
         markupPadrao={config?.markup_padrao || 3}
+        dadosIniciais={formacaoPreco}
       />
     </div>
   );
