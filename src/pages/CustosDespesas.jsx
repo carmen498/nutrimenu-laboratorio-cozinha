@@ -82,10 +82,10 @@ export default function CustosDespesas() {
         <Button onClick={() => abrirNovo()} className="gap-2"><Plus className="w-4 h-4" /> Adicionar despesa</Button>
       </div>
 
-      <Card className="p-4 bg-primary/5 border-primary/20">
+      <Card className="px-4 py-3 bg-primary/5 border-primary/20">
         <div className="flex items-start gap-3 text-sm">
-          <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div><p className="font-medium">As despesas ativas dos grupos selecionados serão rateadas entre suas produções.</p><p className="text-muted-foreground mt-0.5">“Despesas com pessoal” fica separado da mão de obra direta. Revise os grupos em Configurações de Rateio.</p></div>
+          <AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <div className="min-w-0"><p><span className="font-medium">Rateio:</span> as despesas ativas dos grupos selecionados serão distribuídas entre suas receitas. <span className="text-muted-foreground">Despesas com pessoal ficam separadas da mão de obra direta.</span></p><Link to="/custos/configuracoes" className="text-xs font-medium text-primary underline mt-1 inline-block">Revisar Configurações de Rateio</Link></div>
         </div>
       </Card>
 
@@ -95,24 +95,31 @@ export default function CustosDespesas() {
             const Icon = grupo.icon;
             const itens = despesas.filter((d) => d.grupo === grupo.value);
             return (
-              <Card key={grupo.value} className="p-4 space-y-3">
-                <div className="flex items-start gap-3">
+              <Card key={grupo.value} className="p-4 space-y-3 h-fit">
+                <div className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-start gap-3">
                   <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${grupo.bg} ${grupo.accent}`}><Icon className="w-5 h-5" /></div>
-                  <div className="flex-1 min-w-0"><div className="flex flex-wrap items-center gap-2"><h2 className={`font-semibold ${grupo.accent}`}>{grupo.label}</h2><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label={`O que entra em ${grupo.label}?`}><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">{grupo.label}</p><p className="text-muted-foreground mt-2">{grupo.descricao}</p><p className="text-xs font-medium mt-3">Exemplos comuns</p><p className="text-xs text-muted-foreground mt-1">{grupo.sugestoes.join(" · ")}</p></PopoverContent></Popover>{grupo.value === "trabalho_ajudantes" && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">fora do rateio</span>}</div><p className="text-xs text-muted-foreground mt-0.5">{itens.length ? `${itens.length} despesa${itens.length > 1 ? "s" : ""}` : "Nenhuma despesa cadastrada"}</p></div>
-                  <div className="text-right"><p className="text-[10px] text-muted-foreground">Total do grupo</p><p className="font-semibold text-sm">{money(totais.porGrupo[grupo.value])}</p></div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 min-h-5"><h2 className={`font-semibold leading-tight ${grupo.accent}`}>{grupo.label}</h2><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground shrink-0" aria-label={`O que entra em ${grupo.label}?`}><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">{grupo.label}</p><p className="text-muted-foreground mt-2">{grupo.descricao}</p><p className="text-xs font-medium mt-3">Exemplos comuns</p><p className="text-xs text-muted-foreground mt-1">{grupo.sugestoes.join(" · ")}</p></PopoverContent></Popover></div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1"><p className="text-xs text-muted-foreground">{itens.length ? `${itens.length} despesa${itens.length > 1 ? "s" : ""}` : "Nenhuma despesa cadastrada"}</p>{grupo.value === "trabalho_ajudantes" && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">fora do rateio</span>}</div>
+                  </div>
+                  <div className="text-right whitespace-nowrap"><p className="text-[10px] text-muted-foreground">Total do grupo</p><p className="font-semibold text-sm">{money(totais.porGrupo[grupo.value])}</p></div>
                 </div>
 
-                <div className="divide-y rounded-lg border min-h-[72px]">
-                  {itens.length === 0 ? <div className="p-4 text-center text-xs text-muted-foreground">Adicione sua primeira despesa deste grupo.</div> : itens.map((d) => (
-                    <div key={d.id} className={`flex items-center gap-2 px-3 py-2 ${d.ativo === false ? "opacity-50" : ""}`}>
-                      <Switch checked={d.ativo !== false} onCheckedChange={(ativo) => toggleMut.mutate({ id: d.id, ativo })} />
-                      <span className="flex-1 min-w-0 text-sm truncate">{d.nome}</span>
-                      <span className="text-sm font-medium">{money(d.valor_mensal)}</span>
-                      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => abrirEditar(d)}><Pencil className="w-4 h-4 mr-2" />Editar</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => excluirMut.mutate(d.id)}><Trash2 className="w-4 h-4 mr-2" />Excluir</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
-                    </div>
-                  ))}
-                </div>
-                <Button variant="outline" className="w-full gap-2" onClick={() => abrirNovo(grupo.value)}><Plus className="w-4 h-4" /> Adicionar item</Button>
+                {itens.length === 0 ? (
+                  <div className="rounded-lg bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground"><span className="font-medium text-foreground/80">Ex.:</span> {grupo.sugestoes.slice(0, 3).join(" · ")}</div>
+                ) : (
+                  <div className="divide-y rounded-lg border">
+                    {itens.map((d) => (
+                      <div key={d.id} className={`flex items-center gap-2 px-3 py-2 ${d.ativo === false ? "opacity-50" : ""}`}>
+                        <Switch checked={d.ativo !== false} onCheckedChange={(ativo) => toggleMut.mutate({ id: d.id, ativo })} />
+                        <span className="flex-1 min-w-0 text-sm truncate">{d.nome}</span>
+                        <span className="text-sm font-medium">{money(d.valor_mensal)}</span>
+                        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-7 w-7"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => abrirEditar(d)}><Pencil className="w-4 h-4 mr-2" />Editar</DropdownMenuItem><DropdownMenuItem className="text-destructive" onClick={() => excluirMut.mutate(d.id)}><Trash2 className="w-4 h-4 mr-2" />Excluir</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button variant="outline" className="w-full gap-2 h-9" onClick={() => abrirNovo(grupo.value)}><Plus className="w-4 h-4" /> Adicionar despesa</Button>
               </Card>
             );
           })}
@@ -132,7 +139,7 @@ export default function CustosDespesas() {
             <Button asChild variant="outline" className="w-full"><Link to="/custos/configuracoes">Abrir Configurações de Rateio</Link></Button>
           </Card>
 
-          <Card className="p-4"><div className="flex gap-3"><Calculator className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Pronto para calcular?</p><p className="text-xs text-muted-foreground mt-1">Use estas despesas junto com uma receita do Laboratório de Cozinha.</p><Link to="/custos/calcular" className="text-xs font-medium text-primary underline mt-2 inline-block">Ir para Calcular Custo</Link></div></div></Card>
+          <Card className="p-4 bg-muted/20 border-dashed"><div className="flex gap-3"><Calculator className="w-5 h-5 text-muted-foreground shrink-0" /><div><p className="text-sm font-medium">Pronto para calcular?</p><p className="text-xs text-muted-foreground mt-1">Use estas despesas junto com uma receita do Laboratório de Cozinha.</p><Link to="/custos/calcular" className="text-xs font-medium text-primary underline mt-2 inline-block">Ir para Calcular Custo</Link></div></div></Card>
         </div>
       </div>
 
