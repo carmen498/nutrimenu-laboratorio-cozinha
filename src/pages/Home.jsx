@@ -11,6 +11,7 @@ import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
 import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
 import DicasCarmenCarousel from "@/components/home/DicasCarmenCarousel";
 import AvisoAssinaturaHome from "@/components/home/AvisoAssinaturaHome";
+import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -23,7 +24,7 @@ export default function Home() {
   // Contagem real de cópias pessoais do usuário atual (feature "Minhas Receitas").
   const { data: minhasReceitas = [] } = useQuery({
     queryKey: ["minhas-receitas-count-home", user?.id],
-    queryFn: () => base44.entities.Receita.filter({ usuario_dono_id: user.id }, "", 500),
+    queryFn: () => fetchAllFilteredPages(base44.entities.Receita, { usuario_dono_id: user.id }, "", 500),
     enabled: !!user?.id,
   });
 

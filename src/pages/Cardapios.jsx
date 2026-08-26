@@ -21,6 +21,7 @@ import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 import { useAuth } from "@/lib/AuthContext";
 import MeusCardapiosCard from "@/components/cardapio/MeusCardapiosCard";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
+import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
 
 const TIPOS_CARDAPIO = [
   { nome: "Diário",        key: "diario",        icone: "🏠", cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
@@ -67,7 +68,7 @@ export default function Cardapios() {
     setLoading(true);
     try {
       const [lista, todasTags] = await Promise.all([
-        base44.entities.Cardapio.list("-created_date", 5000),
+        fetchAllPages(base44.entities.Cardapio, "-created_date", 500),
         base44.entities.Tag.list("nome", 200),
       ]);
       setCardapios(lista || []);
@@ -80,7 +81,7 @@ export default function Cardapios() {
 
   useEffect(() => {
     if (!user?.id) return;
-    base44.entities.Cardapio.filter({ usuario_dono_id: user.id }, "", 500)
+    fetchAllFilteredPages(base44.entities.Cardapio, { usuario_dono_id: user.id }, "", 500)
       .then((lista) => setMeusCardapiosCount((lista || []).length))
       .catch((e) => consoleErrorSeguro("Erro em cardápios", e));
   }, [user?.id]);
@@ -91,7 +92,7 @@ export default function Cardapios() {
     (async () => {
       const all = [];
       for (const tid of tagFilterIds) {
-        const cts = await base44.entities.CardapioTag.filter({ tag_id: tid }, "", 1000);
+        const cts = await fetchAllFilteredPages(base44.entities.CardapioTag, { tag_id: tid }, "", 500);
         all.push(...cts);
       }
       setCardapioTags(all);

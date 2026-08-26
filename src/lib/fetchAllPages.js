@@ -1,6 +1,14 @@
 // Busca TODOS os registros de uma entidade, paginando além do limite máximo
 // de 5000 por requisição imposto pelo backend. Usar sempre que uma auditoria
 // ou relatório precisar refletir 100% da base (não apenas uma amostra).
+export function withTimeout(promise, timeoutMs = 30000, message = "A consulta demorou mais que o esperado.") {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
 export async function fetchAllPages(entityClient, sort, pageSize = 1000) {
   let all = [];
   let skip = 0;

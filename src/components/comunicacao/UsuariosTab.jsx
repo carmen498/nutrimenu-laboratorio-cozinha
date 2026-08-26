@@ -5,6 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUsuario";
 import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
 import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
+import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
@@ -23,7 +24,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 
-export default function UsuariosTab({ usuarios, isLoading, selecionados, setSelecionados, onDispararEmail }) {
+export default function UsuariosTab({ usuarios, isLoading, isError, error, selecionados, setSelecionados, onDispararEmail }) {
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [planoFiltro, setPlanoFiltro] = useState("todos");
@@ -39,9 +40,14 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
   const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
 
-  const { data: pagamentos = [] } = useQuery({
+  const { data: pagamentos = [], isLoading: carregandoPagamentos, isError: erroPagamentos, error: detalheErroPagamentos } = useQuery({
     queryKey: ["admin-pagamentos"],
-    queryFn: () => base44.entities.Pagamento.list("-created_date", 2000),
+    queryFn: () => withTimeout(
+      fetchAllPages(base44.entities.Pagamento, "-created_date", 500),
+      30000,
+      "Não foi possível carregar todo o histórico de pagamentos. Tente novamente."
+    ),
+    retry: false,
   });
 
   const pagamentosPorUsuario = useMemo(() => agruparPagamentosPorUsuario(pagamentos), [pagamentos]);
@@ -175,8 +181,12 @@ export default function UsuariosTab({ usuarios, isLoading, selecionados, setSele
         onExcluir={() => setConfirmExcluirOpen(true)}
       />
 
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando usuários...</p>
+      {isLoading || carregandoPagamentos ? (
+        <p role="status" className="text-sm text-muted-foreground">Carregando usuários e pagamentos...</p>
+      ) : isError || erroPagamentos ? (
+        <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+          {error?.message || detalheErroPagamentos?.message || "Não foi possível carregar os dados administrativos."}
+        </div>
       ) : (
         <UsuariosTable
           usuarios={usuariosFiltrados}

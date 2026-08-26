@@ -30,7 +30,7 @@ import TagBadge from "@/components/tags/TagBadge";
 import { getCorHex } from "@/lib/coresReceita";
 import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/receita/CategoriaPicker";
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
-import { fetchAllPages } from "@/lib/fetchAllPages";
+import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
 import { normalizarNome } from "@/lib/normalizarNome";
 import MinhasReceitasCard from "@/components/home/MinhasReceitasCard";
 import { uploadArquivoSeguro, validarCsvUpload } from "@/lib/securityHardening";
@@ -119,7 +119,7 @@ export default function Receitas() {
 
   const { data: allReceitaTags = [] } = useQuery({
     queryKey: ["all-receita-tags"],
-    queryFn: () => base44.entities.ReceitaTag.filter({}, "", 5000),
+    queryFn: () => fetchAllFilteredPages(base44.entities.ReceitaTag, {}, "", 500),
     staleTime: 0,
   });
 
@@ -131,7 +131,7 @@ export default function Receitas() {
 
   const { data: minhasReceitasList = [] } = useQuery({
     queryKey: ["minhas-receitas-count", user?.id],
-    queryFn: () => base44.entities.Receita.filter({ usuario_dono_id: user.id }, "", 500),
+    queryFn: () => fetchAllFilteredPages(base44.entities.Receita, { usuario_dono_id: user.id }, "", 500),
     enabled: !!user?.id,
   });
 

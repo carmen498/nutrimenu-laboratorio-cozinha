@@ -5,6 +5,7 @@ import { ArrowLeft, MessageSquare } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { base44 } from "@/api/base44Client";
 import { computeStatusUsuario } from "@/lib/statusAssinaturaUsuario";
+import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UsuariosTab from "@/components/comunicacao/UsuariosTab";
@@ -22,10 +23,15 @@ export default function AdminComunicacao() {
   const [tipoTemplateEdicao, setTipoTemplateEdicao] = useState(null);
   const [selecionados, setSelecionados] = useState(new Set());
 
-  const { data: usuarios = [], isLoading } = useQuery({
+  const { data: usuarios = [], isLoading, isError, error } = useQuery({
     queryKey: ["admin-usuarios"],
-    queryFn: () => base44.entities.User.list("-created_date", 500),
+    queryFn: () => withTimeout(
+      fetchAllPages(base44.entities.User, "-created_date", 500),
+      30000,
+      "Não foi possível carregar todos os usuários. Tente novamente."
+    ),
     enabled: user?.role === "admin",
+    retry: false,
   });
 
   if (user && user.role !== "admin") {
@@ -67,6 +73,8 @@ export default function AdminComunicacao() {
           <UsuariosTab
             usuarios={usuarios}
             isLoading={isLoading}
+            isError={isError}
+            error={error}
             selecionados={selecionados}
             setSelecionados={setSelecionados}
             onDispararEmail={() => setAba("campanhas")}
