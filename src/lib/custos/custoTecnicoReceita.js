@@ -30,6 +30,7 @@ export function calcularCustoTecnicoReceitaParaCustos(/** @type {any} */ {
     porcoesEfetivas: canonico.porcoesEfetivas,
     custoIngredientes: canonico.custoIngredientes,
     custoInsumosTecnicos: canonico.custoInsumos,
+    insumosEscalados: canonico.insumosEscalados || [],
     custoEsquecidos: canonico.custoEsquecidos,
     custoTecnicoTotal: canonico.custoTotal,
     custoTecnicoPorPorcao: canonico.custoPorPorcao,
