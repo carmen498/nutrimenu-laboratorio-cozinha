@@ -33,22 +33,56 @@
         "type": "string",
         "enum": [
           "gastos_negocio",
+          "trabalho_ajudantes",
           "producao",
           "embalagem_outros"
         ]
       },
       "default": [
         "gastos_negocio",
+        "trabalho_ajudantes",
         "producao",
         "embalagem_outros"
       ],
-      "description": "Grupos de despesas mensais inclu\u00eddos no rateio autom\u00e1tico. Lista vazia significa nenhum grupo inclu\u00eddo."
+      "description": "Grupos de despesas mensais inclu\u00eddos no Custo do Neg\u00f3cio. Lista vazia significa nenhum grupo inclu\u00eddo."
+    },
+    "aplicar_custo_negocio": {
+      "type": "boolean",
+      "default": false
+    },
+    "base_custo_negocio": {
+      "type": "string",
+      "enum": [
+        "dia",
+        "mes"
+      ],
+      "default": "mes"
+    },
+    "dias_producao_mes": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "producao_media_dia": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "custo_comercializacao_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 99,
+      "default": 20
+    },
+    "aplicar_custo_comercializacao": {
+      "type": "boolean",
+      "default": false
     },
     "valor_hora_padrao": {
       "type": "number",
       "minimum": 0,
       "default": 0,
-      "description": "Valor padr\u00e3o da hora de trabalho do usu\u00e1rio, em R$."
+      "description": "Campo legado. N\u00e3o utilizado pelo fluxo atual."
     },
     "markup_padrao": {
       "type": "number",
