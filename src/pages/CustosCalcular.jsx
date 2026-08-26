@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertCircle, Calculator, ChefHat, CircleHelp, ExternalLink, FileText, Info, Loader2, Plus, Search, Trash2 } from "lucide-react";
+import { AlertCircle, Calculator, CircleHelp, ExternalLink, FileText, Info, Loader2, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import FormacaoPrecoDialog from "@/components/custos/FormacaoPrecoDialog";
 
@@ -320,12 +320,11 @@ export default function CustosCalcular() {
                 autoComplete="off"
               />
               {buscaReceitaAberta && !loadingReceitas && <div className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border bg-popover shadow-lg p-1">
-                {receitasFiltradas.length === 0 ? <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma receita encontrada.</p> : receitasFiltradas.map((r) => <button key={r.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setReceitaId(r.id); setBuscaReceita(r.nome); setBuscaReceitaAberta(false); setInsumosAdicionais([]); setCampoPrecoAtivo("padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className={`w-full text-left rounded-md px-3 py-2.5 text-sm hover:bg-muted ${r.id === receitaId ? "bg-primary/5 text-primary" : ""}`}><span className="font-medium">{r.nome}</span>{r.is_base === false && <span className="ml-2 text-xs text-muted-foreground">Minha Receita</span>}</button>)}
+                {receitasFiltradas.length === 0 ? <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma receita encontrada.</p> : receitasFiltradas.map((r) => <button key={r.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setReceitaId(r.id); setBuscaReceita(r.nome); setBuscaReceitaAberta(false); setInsumosAdicionais([]); setCampoPrecoAtivo("margem_padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className={`w-full text-left rounded-md px-3 py-2.5 text-sm hover:bg-muted ${r.id === receitaId ? "bg-primary/5 text-primary" : ""}`}><span className="font-medium">{r.nome}</span>{r.is_base === false && <span className="ml-2 text-xs text-muted-foreground">Minha Receita</span>}</button>)}
               </div>}
             </div>
-            <p className="text-[11px] text-muted-foreground">Digite parte do nome para localizar rapidamente entre as receitas do Laboratório de Cozinha.</p>
+            <div className="flex items-center justify-between gap-3"><p className="text-[11px] text-muted-foreground">Digite parte do nome para localizar rapidamente entre as receitas do Laboratório de Cozinha.</p>{receita && <Link to={`/receita/${receita.id}`} className="text-xs text-primary inline-flex gap-1 whitespace-nowrap">Ver receita <ExternalLink className="w-3 h-3" /></Link>}</div>
             {loadingReceitas && <p className="text-xs text-muted-foreground">Carregando receitas...</p>}
-            {receita && <div className="flex items-center gap-3 rounded-lg border p-3"><ChefHat className="w-5 h-5 text-primary" /><div className="flex-1"><p className="font-medium">{receita.nome}</p><p className="text-xs text-muted-foreground">{categoria || "Sem categoria"} · origem: Laboratório de Cozinha</p></div><Link to={`/receita/${receita.id}`} className="text-xs text-primary inline-flex gap-1">Ver receita <ExternalLink className="w-3 h-3" /></Link></div>}
           </Card>
 
           <Card className="p-5 space-y-4">
