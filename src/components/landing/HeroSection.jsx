@@ -1,15 +1,16 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { APP_SITE_URLS } from "@/lib/publicUrls";
 
 export default function HeroSection({ heroImage }) {
   const { isAuthenticated } = useAuth();
-  const primaryHref = isAuthenticated ? "/app" : "/register";
+  const primaryHref = isAuthenticated ? APP_SITE_URLS.appHome : APP_SITE_URLS.register;
   const primaryLabel = isAuthenticated ? "Entrar no app" : "Experimentar 7 dias grátis";
   return (
     <section className="lc-hero" aria-labelledby="landing-hero-title">
       <div className="lc-container lc-topbar">
         <span className="lc-topbar-brand">Laboratório de Cozinha</span>
-        <a className="lc-text-link" href={isAuthenticated ? "/app" : "/login"}>
+        <a className="lc-text-link" href={isAuthenticated ? APP_SITE_URLS.appHome : APP_SITE_URLS.login}>
           {isAuthenticated ? "Entrar no app" : "Já é assinante? Entrar"}
         </a>
       </div>

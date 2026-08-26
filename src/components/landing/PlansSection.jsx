@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { APP_SITE_URLS } from "@/lib/publicUrls";
 
 const PLANS = [
   { name: "Teste Grátis", price: "R$ 0", period: "", detail: "7 dias de acesso completo · sem cartão", featured: false, cta: "Começar teste" },
@@ -9,7 +10,7 @@ const PLANS = [
 
 export default function PlansSection() {
   const { isAuthenticated } = useAuth();
-  const ctaHref = isAuthenticated ? "/planos" : "/register";
+  const ctaHref = isAuthenticated ? APP_SITE_URLS.plans : APP_SITE_URLS.register;
   return (
     <section className="lc-section lc-section--tinted" id="planos" aria-labelledby="plans-title">
       <div className="lc-container">

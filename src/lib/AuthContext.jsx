@@ -4,6 +4,7 @@ import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 import { consoleErrorSeguro } from '@/lib/securityHardening';
 import { termosAtuaisAceitos } from '@/lib/termosVersao';
+import { APP_SITE_URLS, buildAppLoginUrl, currentInternalPath } from '@/lib/publicUrls';
 
 const AuthContext = createContext(null);
 
@@ -182,16 +183,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Builds the current URL but strips any pre-existing "from_url" param — passing it
-  // through as-is would nest the already-encoded URL inside itself on every redirect,
-  // growing without end. Read once, never accumulated.
-  const cleanUrlForRedirect = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('from_url');
-    return url.toString();
-  };
-
-  const logout = (redirectTarget = '/') => {
+  const logout = (redirectTarget = APP_SITE_URLS.login) => {
     setUser(null);
     setIsAuthenticated(false);
 
@@ -217,10 +209,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const navigateToLogin = () => {
-    // Already on /login — redirecting again would just re-append from_url and nest it.
     if (window.location.pathname === '/login') return;
-    // Use the SDK's redirectToLogin method
-    base44.auth.redirectToLogin(cleanUrlForRedirect());
+    window.location.replace(buildAppLoginUrl(currentInternalPath()));
   };
 
   return (

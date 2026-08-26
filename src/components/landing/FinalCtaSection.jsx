@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { APP_SITE_URLS } from "@/lib/publicUrls";
 
 export default function FinalCtaSection() {
   const { isAuthenticated } = useAuth();
@@ -11,7 +12,7 @@ export default function FinalCtaSection() {
             Sua cozinha organizada começa hoje. Planejamento. Escala. Custo. Compras. Tudo em um app.
             Feito por quem viveu a cozinha de dentro — e nunca parou de aprender.
           </p>
-          <a className="lc-btn lc-btn--primary lc-btn--lg" href={isAuthenticated ? "/app" : "/register"}>
+          <a className="lc-btn lc-btn--primary lc-btn--lg" href={isAuthenticated ? APP_SITE_URLS.appHome : APP_SITE_URLS.register}>
             {isAuthenticated ? "Entrar no app" : "Começar meus 7 dias grátis"}
           </a>
           {!isAuthenticated && (

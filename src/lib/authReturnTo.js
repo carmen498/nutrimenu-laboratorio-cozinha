@@ -21,9 +21,11 @@ export function safeReturnTo() {
   const raw = params.get("returnTo") || params.get("from_url") || stored;
   if (stored) sessionStorage.removeItem("base44_pending_return_to");
   if (!raw) return "/";
+  // Aceita somente caminho interno literal. URLs absolutas, inclusive da mesma
+  // origem, não fazem parte do contrato e são rejeitadas antes do parse.
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/";
   try {
     const url = new URL(raw, window.location.origin);
-    if (url.origin !== window.location.origin) return "/";
     // Strip app-bootstrap params: app-params.js persists these from the URL into
     // localStorage before the SDK initializes, so a crafted returnTo could
     // otherwise poison the freshly issued session — repointing the app at an

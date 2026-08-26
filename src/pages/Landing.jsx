@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import "@/landing.css";
 import "@/landing-refined.css";
-import { useAuth } from "@/lib/AuthContext";
+import { APP_SITE_URLS } from "@/lib/publicUrls";
 import StickyFooter from "@/components/landing/StickyFooter";
 import HeroSection from "@/components/landing/HeroSection";
 import NumbersSection from "@/components/landing/NumbersSection";
@@ -29,8 +29,6 @@ const IMG = {
 };
 
 export default function Landing() {
-  const { isAuthenticated } = useAuth();
-
   useEffect(() => {
     const previousTitle = document.title;
     const existingDescription = document.querySelector('meta[name="description"]');
@@ -85,7 +83,7 @@ export default function Landing() {
             <a href="/termos">Termos de Uso</a>
             <a href="/privacidade">Política de Privacidade</a>
             <a href="https://wa.me/555134160886" target="_blank" rel="noopener noreferrer">Suporte</a>
-            <a href={isAuthenticated ? "/app" : "/login"}>{isAuthenticated ? "Entrar no app" : "Entrar"}</a>
+            <a href={APP_SITE_URLS.login}>Entrar</a>
           </nav>
           <p className="lc-footer-copy">
             Laboratório de Cozinha é parte da Plataforma ZR · Todos os direitos reservados

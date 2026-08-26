@@ -81,7 +81,7 @@ export default function TopBar({ onMenuClick }) {
               <Info className="w-4 h-4" /> Sobre a Carmen
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout('/')}>
+            <DropdownMenuItem onClick={() => logout()}>
               <LogOut className="w-4 h-4" /> Sair
             </DropdownMenuItem>
           </DropdownMenuContent>

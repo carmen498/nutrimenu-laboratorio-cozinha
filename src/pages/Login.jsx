@@ -8,6 +8,7 @@ import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { APP_SITE_URLS, buildAppLoginUrl, isPublicSiteHost } from "@/lib/publicUrls";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -24,8 +25,15 @@ export default function Login() {
   // /app como destino pós-login padrão.
   const [returnTo] = useState(() => {
     const dest = safeReturnTo();
-    return dest === "/" ? "/app" : dest;
+    return dest === "/" ? new URL(APP_SITE_URLS.appHome).pathname : dest;
   });
+
+  // O login possui um único endereço canônico no subdomínio do aplicativo.
+  useEffect(() => {
+    if (isPublicSiteHost()) {
+      window.location.replace(buildAppLoginUrl(returnTo));
+    }
+  }, [returnTo]);
 
   // Handles browser-autofilled e-mail, which doesn't always fire a React onChange
   useEffect(() => {

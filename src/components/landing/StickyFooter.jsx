@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "@/lib/AuthContext";
+import { APP_SITE_URLS } from "@/lib/publicUrls";
 
 export default function StickyFooter() {
   const { isAuthenticated } = useAuth();
@@ -10,7 +11,7 @@ export default function StickyFooter() {
           <strong>Laboratório de Cozinha</strong> · 7 dias grátis ·
           Planos a partir de R$ 16,50/mês no anual — sem renovação automática
         </p>
-        <a className="lc-btn lc-btn--primary lc-sticky-cta" href={isAuthenticated ? "/app" : "/register"}>
+        <a className="lc-btn lc-btn--primary lc-sticky-cta" href={isAuthenticated ? APP_SITE_URLS.appHome : APP_SITE_URLS.register}>
           {isAuthenticated ? "Entrar no app" : "Começar agora"}
         </a>
       </div>

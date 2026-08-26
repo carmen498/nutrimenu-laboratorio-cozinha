@@ -4,6 +4,20 @@ Data da homologação: 23/08/2026
 Domínio canônico: `https://laboratoriodecozinha.com.br`
 App Base44: `6a2b263c4c1cb1e47d54d8b7`
 
+## Modelo canônico aprovado em 26/08/2026
+
+- Site público e landing page: `https://laboratoriodecozinha.com.br/`.
+- Aplicativo autenticado: `https://app.laboratoriodecozinha.com.br/`.
+- Login canônico: `https://app.laboratoriodecozinha.com.br/login`.
+- A raiz do domínio principal sempre exibe a landing, independentemente da sessão.
+- A raiz do subdomínio `app` envia usuários autenticados para `/app` e visitantes para `/login`.
+- Rotas protegidas preservam `returnTo` como caminho interno; URLs absolutas, caminhos iniciados por `//` e caminhos com barra invertida são rejeitados.
+- Login sem retorno válido termina em `/app`; logout termina sempre no login do subdomínio `app`.
+- CTAs de acesso da landing usam o login no subdomínio; CTAs comerciais continuam no cadastro/planos.
+- URLs canônicas ficam centralizadas em `src/lib/publicUrls.js`.
+
+Configuração externa ainda necessária antes da publicação: criar/apontar o DNS de `app.laboratoriodecozinha.com.br`, vincular esse host ao mesmo app na Base44, emitir/validar TLS e cadastrar o subdomínio entre os endereços autorizados de autenticação/OAuth. A implementação não altera DNS, certificados nem configurações dos provedores.
+
 ## 1. DNS e domínio
 
 - Apex `laboratoriodecozinha.com.br` resolve em IPv4 da infraestrutura publicada.

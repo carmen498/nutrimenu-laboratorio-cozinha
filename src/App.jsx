@@ -22,6 +22,7 @@ import SobrePublico from '@/pages/SobrePublico';
 import Contato from '@/pages/Contato';
 import Produto from '@/pages/Produto';
 import LandingOrRedirect from '@/components/LandingOrRedirect';
+import AppLoginRedirect from '@/components/auth/AppLoginRedirect';
 
 // Rotas protegidas carregadas sob demanda: a rota pública "/" não pode pagar
 // pelo bundle do app inteiro (jspdf, html2canvas, recharts etc.). Eager ficam
@@ -130,7 +131,7 @@ const AuthenticatedApp = () => {
         <Route path="/produto" element={<Produto />} />
         <Route path="/" element={<LandingOrRedirect />} />
         <Route path="/landing" element={<Navigate to="/" replace />} />
-        <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<ProtectedRoute unauthenticatedElement={<AppLoginRedirect />} />}>
           <Route element={<AppLayout />}>
             <Route path="/app" element={<Home />} />
             <Route path="/Home" element={<Navigate to="/app" replace />} />
