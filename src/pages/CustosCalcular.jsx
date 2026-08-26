@@ -227,6 +227,37 @@ export default function CustosCalcular() {
 
   const rendimentoBase = receita && contexto ? rendimentoEfetivo(receita, contexto.ingredientesPorReceita?.[receita.id] || []) : 0;
   const categoria = receita?.categorias?.[0] || receita?.categoria || "";
+  const insumosImportados = tecnico?.insumosEscalados || [];
+  const pendenciasDetalhadas = useMemo(() => {
+    if (!tecnico || !receita || !contexto) return [];
+    const itensReceita = contexto.ingredientesPorReceita?.[receita.id] || [];
+    const itemMap = Object.fromEntries(itensReceita.map((item) => [item.id, item]));
+    const nomes = [];
+    for (const problema of tecnico.problemas || []) {
+      if (problema.tipo === "insumo_sem_preco") continue;
+      const ingrediente = problema.ingrediente_id ? contexto.ingredienteMap?.[problema.ingrediente_id] : null;
+      const item = problema.item_id ? itemMap[problema.item_id] : null;
+      const nome = ingrediente?.nome || item?.ingrediente_nome || "Item da receita";
+      if (problema.tipo === "sem_preco" || problema.tipo === "esquecido_sem_preco") nomes.push(`${nome} — sem preço`);
+      else if (problema.tipo === "ingrediente_nao_encontrado" || problema.tipo === "ingrediente_sem_id") nomes.push(`${nome} — referência ausente`);
+      else if (problema.tipo === "ingrediente_nome_id_divergente" || problema.tipo === "esquecido_nome_id_divergente") nomes.push(`${nome} — referência divergente`);
+      else nomes.push(`${nome} — revisar cadastro`);
+    }
+    for (const insumo of insumosImportados.filter((item) => item.semPreco)) nomes.push(`${insumo.insumo_nome || "Insumo/embalagem"} — sem preço`);
+    return [...new Set(nomes)];
+  }, [tecnico, receita, contexto, insumosImportados]);
+
+  const explicacaoCustoNegocio = useMemo(() => {
+    if (!resultado.rateio.aplicar) return "O Custo do Negócio está desligado em Minhas Despesas e não entra neste cálculo.";
+    const total = money(resultado.rateio.totalMensal || 0);
+    if ((config?.base_custo_negocio || "mes") === "dia") {
+      const dias = Number(config?.dias_producao_mes || 0);
+      const porDia = Number(config?.producao_media_dia || 0);
+      return `${total} de despesas consideradas ÷ ${dias || 0} dia(s) de produção ÷ ${porDia || 0} receita(s) por dia = ${money(resultado.rateio.custoPorUnidade)} por receita.`;
+    }
+    const porMes = Number(config?.volume_mensal_estimado || 0);
+    return `${total} de despesas consideradas ÷ ${porMes || 0} receita(s) por mês = ${money(resultado.rateio.custoPorUnidade)} por receita.`;
+  }, [resultado.rateio, config?.base_custo_negocio, config?.dias_producao_mes, config?.producao_media_dia, config?.volume_mensal_estimado]);
 
   const salvar = async () => {
     if (!user?.id || !receita || !tecnico || qtd <= 0) return toast.error("Selecione uma receita e informe a produção.");
