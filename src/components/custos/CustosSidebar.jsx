@@ -4,9 +4,9 @@ import { useAuth } from "@/lib/AuthContext";
 
 const items = [
   { to: "/custos", label: "Início", icon: Home, exact: true },
-  { to: "/custos/despesas", label: "Minhas Despesas", icon: WalletCards },
   { to: "/custos/calcular", label: "Calcular Custo", icon: Calculator },
   { to: "/custos/historico", label: "Histórico", icon: History },
+  { to: "/custos/despesas", label: "Minhas Despesas", icon: WalletCards, separatorBefore: true },
   { to: "/custos/configuracoes", label: "Configurações", icon: Settings2 },
 ];
 
@@ -31,7 +31,7 @@ function Content({ onNavigate }) {
         <p className="text-[11px] text-white/60 mt-1">Custo, preço e margem</p>
       </div>
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {items.map((item) => <NavItem key={item.to} item={item} pathname={pathname} onNavigate={onNavigate} />)}
+        {items.map((item) => <div key={item.to} className={item.separatorBefore ? "pt-3 mt-3 border-t border-white/10" : ""}><NavItem item={item} pathname={pathname} onNavigate={onNavigate} /></div>)}
         <div className="pt-3 mt-3 border-t border-white/10">
           <Link to="/app" onClick={onNavigate} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white"><ChefHat className="w-4 h-4" /> Laboratório de Cozinha</Link>
         </div>
