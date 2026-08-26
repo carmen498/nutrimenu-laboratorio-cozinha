@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { safeReturnTo } from "../src/lib/authReturnTo.js";
-import { APP_SITE_URLS, buildAppLoginUrl } from "../src/lib/publicUrls.js";
+import { APP_SITE_URLS, buildAppLoginUrl, getCanonicalAppRedirectUrl } from "../src/lib/publicUrls.js";
 
 const ORIGIN = "https://app.laboratoriodecozinha.com.br";
 
@@ -50,6 +50,21 @@ assert.ok(indexHtml.includes("laborat-rio-de-cozinha.base44.app"), "host padrão
 assert.ok(indexHtml.includes(APP_SITE_URLS.resetPassword.replace("/reset-password", "")), "domínio canônico do app não está no bootstrap");
 assert.equal(buildAppLoginUrl("/receitas?filtro=minhas"), `${APP_SITE_URLS.login}?returnTo=%2Freceitas%3Ffiltro%3Dminhas`);
 assert.equal(buildAppLoginUrl(), APP_SITE_URLS.login);
+assert.equal(
+  getCanonicalAppRedirectUrl({ hostname: "laborat-rio-de-cozinha.base44.app", pathname: "/receitas", search: "?filtro=minhas", hash: "" }),
+  `${ORIGIN}/receitas?filtro=minhas`,
+  "rota do host antigo deve migrar para o domínio canônico",
+);
+assert.equal(
+  getCanonicalAppRedirectUrl({ hostname: "laboratoriodecozinha.com.br", pathname: "/login", search: "", hash: "" }),
+  `${ORIGIN}/login`,
+  "login aberto no site institucional deve migrar para o subdomínio do app",
+);
+assert.equal(
+  getCanonicalAppRedirectUrl({ hostname: "laboratoriodecozinha.com.br", pathname: "/termos", search: "", hash: "" }),
+  null,
+  "conteúdo público deve permanecer no domínio institucional",
+);
 assert.ok(indexHtml.includes("window.location.replace("), "reset do host Base44 não redireciona ao domínio próprio");
 assert.ok(indexHtml.includes("base44_pending_password_reset_token"), "token de reset não é capturado no bootstrap");
 assert.ok(indexHtml.includes("qp.delete('token')"), "token de reset não é removido da URL");

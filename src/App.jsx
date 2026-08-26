@@ -23,6 +23,7 @@ import Contato from '@/pages/Contato';
 import Produto from '@/pages/Produto';
 import LandingOrRedirect from '@/components/LandingOrRedirect';
 import AppLoginRedirect from '@/components/auth/AppLoginRedirect';
+import { getCanonicalAppRedirectUrl } from '@/lib/publicUrls';
 
 // Rotas protegidas carregadas sob demanda: a rota pública "/" não pode pagar
 // pelo bundle do app inteiro (jspdf, html2canvas, recharts etc.). Eager ficam
@@ -89,6 +90,11 @@ const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
   const isPublicPath = PUBLIC_PATHS.includes(location.pathname);
+  const canonicalAppRedirectUrl = getCanonicalAppRedirectUrl(window.location);
+
+  useEffect(() => {
+    if (canonicalAppRedirectUrl) window.location.replace(canonicalAppRedirectUrl);
+  }, [canonicalAppRedirectUrl]);
 
   // Redirect is a side effect — must run in an effect, not during render. Doing it in
   // render body fired again on every re-render while authError stayed 'auth_required',
@@ -98,6 +104,8 @@ const AuthenticatedApp = () => {
       navigateToLogin();
     }
   }, [authError, isPublicPath, navigateToLogin]);
+
+  if (canonicalAppRedirectUrl) return null;
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
