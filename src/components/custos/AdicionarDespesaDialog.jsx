@@ -25,7 +25,7 @@ export const GRUPOS_DESPESA_CUSTO = [
     icon: UserRound,
     accent: "text-violet-700",
     bg: "bg-violet-50",
-    descricao: "Despesas mensais com pessoas, como pró-labore, salários, encargos e benefícios. Este grupo fica fora do rateio automático; a mão de obra direta da receita é calculada por horas.",
+    descricao: "Despesas mensais com pessoas, como pró-labore, salários, encargos e benefícios. Este grupo pode fazer parte do Custo do Negócio, conforme sua seleção em Minhas Despesas.",
     sugestoes: ["Pró-labore", "Salários / ajudantes", "INSS / encargos", "FGTS", "Benefícios", "Vale-transporte / alimentação"],
   },
   {
