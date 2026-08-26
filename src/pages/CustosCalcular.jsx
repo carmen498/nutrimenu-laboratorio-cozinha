@@ -19,6 +19,7 @@ import FormacaoPrecoDialog from "@/components/custos/FormacaoPrecoDialog";
 
 const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const n = (v) => { const x = Number(String(v ?? "").replace(",", ".")); return Number.isFinite(x) ? x : 0; };
+const RASCUNHO_CUSTOS_KEY = "laboratorio-custos:calculo-em-andamento";
 
 export default function CustosCalcular() {
   const { user } = useAuth();
@@ -39,6 +40,51 @@ export default function CustosCalcular() {
   const [showFormacaoPreco, setShowFormacaoPreco] = useState(false);
   const [formacaoPreco, setFormacaoPreco] = useState(null);
   const [salvando, setSalvando] = useState(false);
+  const [rascunhoRestaurado, setRascunhoRestaurado] = useState(false);
+
+  useEffect(() => {
+    if (recalcularId || searchParams.get("receita")) {
+      setRascunhoRestaurado(true);
+      return;
+    }
+    try {
+      const bruto = window.sessionStorage.getItem(RASCUNHO_CUSTOS_KEY);
+      if (!bruto) return;
+      const rascunho = JSON.parse(bruto);
+      if (rascunho?.receitaId) setReceitaId(rascunho.receitaId);
+      if (rascunho?.buscaReceita) setBuscaReceita(rascunho.buscaReceita);
+      if (rascunho?.quantidade) setQuantidade(String(rascunho.quantidade));
+      if (Array.isArray(rascunho?.insumosAdicionais)) setInsumosAdicionais(rascunho.insumosAdicionais);
+      if (rascunho?.campoPrecoAtivo) setCampoPrecoAtivo(rascunho.campoPrecoAtivo);
+      if (rascunho?.precoEntrada != null) setPrecoEntrada(String(rascunho.precoEntrada));
+      if (rascunho?.margemEntrada != null) setMargemEntrada(String(rascunho.margemEntrada));
+      if (rascunho?.markupEntrada != null) setMarkupEntrada(String(rascunho.markupEntrada));
+      if (rascunho?.formacaoPreco) setFormacaoPreco(rascunho.formacaoPreco);
+    } catch {
+      window.sessionStorage.removeItem(RASCUNHO_CUSTOS_KEY);
+    } finally {
+      setRascunhoRestaurado(true);
+    }
+  }, [recalcularId, searchParams]);
+
+  useEffect(() => {
+    if (!rascunhoRestaurado || recalcularId) return;
+    try {
+      window.sessionStorage.setItem(RASCUNHO_CUSTOS_KEY, JSON.stringify({
+        receitaId,
+        buscaReceita,
+        quantidade,
+        insumosAdicionais,
+        campoPrecoAtivo,
+        precoEntrada,
+        margemEntrada,
+        markupEntrada,
+        formacaoPreco,
+      }));
+    } catch {
+      // Rascunho é conveniência de navegação; falha de storage não bloqueia o cálculo.
+    }
+  }, [rascunhoRestaurado, recalcularId, receitaId, buscaReceita, quantidade, insumosAdicionais, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, formacaoPreco]);
 
   const { data: todasReceitas = [], isLoading: loadingReceitas } = useQuery({
     queryKey: ["custos-receitas", user?.id, isAdmin],
