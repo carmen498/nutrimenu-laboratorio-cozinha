@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
-import { somarDespesasAtivas } from "@/lib/custos/motorCustos";
+import { calcularCustoNegocio } from "@/lib/custos/motorCustos";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,7 @@ const money = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency",
 const dataCurta = (v) => v ? new Date(v).toLocaleDateString("pt-BR") : "—";
 const numero = (v, max = 2) => Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: max });
 
-const GRUPOS_RATEAVEIS = ["gastos_negocio", "producao", "embalagem_outros"];
+const GRUPOS_CUSTO_NEGOCIO = ["gastos_negocio", "trabalho_ajudantes", "producao", "embalagem_outros"];
 
 export default function CustosInicio() {
   const { user } = useAuth();
@@ -53,27 +53,34 @@ export default function CustosInicio() {
   });
 
   const config = configuracoes[0] || null;
-  const gruposRateio = Array.isArray(config?.grupos_rateio_incluidos)
-    ? config.grupos_rateio_incluidos.filter((g) => GRUPOS_RATEAVEIS.includes(g))
-    : GRUPOS_RATEAVEIS;
-  const volumeMensal = Number(config?.volume_mensal_estimado || 0);
+  const gruposCustoNegocio = Array.isArray(config?.grupos_rateio_incluidos)
+    ? config.grupos_rateio_incluidos.filter((g) => GRUPOS_CUSTO_NEGOCIO.includes(g))
+    : GRUPOS_CUSTO_NEGOCIO;
 
   const totalDespesasAtivas = useMemo(
     () => despesas.filter((d) => d.ativo !== false).reduce((s, d) => s + Number(d.valor_mensal || 0), 0),
     [despesas],
   );
-  const totalRateio = useMemo(() => somarDespesasAtivas(despesas, gruposRateio), [despesas, gruposRateio]);
-  const custoRateadoPorReceita = volumeMensal > 0 ? totalRateio / volumeMensal : 0;
+  const custoNegocio = useMemo(() => calcularCustoNegocio({
+    despesas,
+    gruposIncluidos: gruposCustoNegocio,
+    aplicar: Boolean(config?.aplicar_custo_negocio),
+    base: config?.base_custo_negocio || "mes",
+    diasProducaoMes: Number(config?.dias_producao_mes || 0),
+    producaoMediaDia: Number(config?.producao_media_dia || 0),
+    producaoMediaMes: Number(config?.volume_mensal_estimado || 0),
+    quantidadeProducao: 1,
+  }), [despesas, gruposCustoNegocio, config?.aplicar_custo_negocio, config?.base_custo_negocio, config?.dias_producao_mes, config?.producao_media_dia, config?.volume_mensal_estimado]);
   const ultimosCalculos = calculos.slice(0, 4);
   const ultimoCalculo = calculos[0] || null;
 
   const temDespesas = despesas.some((d) => d.ativo !== false);
-  const rateioConfigurado = !!config && volumeMensal > 0;
+  const custoNegocioConfigurado = !!config && config?.aplicar_custo_negocio != null && custoNegocio.valido;
   const temCalculos = calculos.length > 0;
 
   const fluxo = [
     { label: "Despesas cadastradas", descricao: "Registre seus gastos", concluido: temDespesas, to: "/custos/despesas", Icon: WalletCards },
-    { label: "Rateio configurado", descricao: "Distribua os custos", concluido: rateioConfigurado, to: "/custos/configuracoes", Icon: Settings2 },
+    { label: "Custo do Negócio definido", descricao: "Dia, Mês ou não aplicar", concluido: custoNegocioConfigurado, to: "/custos/despesas", Icon: Settings2 },
     { label: "Cálculo realizado", descricao: "Obtenha o custo", concluido: temCalculos, to: "/custos/calcular", Icon: Calculator },
     { label: "Ficha disponível", descricao: "Registre e consulte", concluido: temCalculos, to: "/custos/historico", Icon: FileText },
   ];
@@ -86,12 +93,12 @@ export default function CustosInicio() {
         to: "/custos/despesas",
         Icon: WalletCards,
       }
-    : !rateioConfigurado
+    : !custoNegocioConfigurado
       ? {
-          titulo: "Defina como as despesas serão rateadas",
-          texto: "Escolha os grupos que entram no rateio e informe quantas receitas completas você produz por mês.",
-          botao: "Configurar rateio",
-          to: "/custos/configuracoes",
+          titulo: "Defina o Custo do Negócio",
+          texto: "Escolha Dia ou Mês, os grupos considerados e se esse custo será aplicado aos cálculos.",
+          botao: "Definir Custo do Negócio",
+          to: "/custos/despesas",
           Icon: Settings2,
         }
       : {
@@ -142,7 +149,7 @@ export default function CustosInicio() {
         </Card>
         <Card className="p-4 border-primary/10">
           <div className="flex items-start justify-between gap-3">
-            <div><p className="text-xs text-muted-foreground">Rateio por receita</p><p className="text-2xl font-bold mt-1">{loading ? "—" : rateioConfigurado ? money(custoRateadoPorReceita) : "—"}</p><p className="text-[11px] text-muted-foreground mt-1">{rateioConfigurado ? `${numero(volumeMensal)} receita(s)/mês` : "Quantidade mensal não configurada"}</p></div>
+            <div><p className="text-xs text-muted-foreground">Custo do Negócio por receita</p><p className="text-2xl font-bold mt-1">{loading ? "—" : custoNegocio.aplicar && custoNegocio.valido ? money(custoNegocio.custoPorUnidade) : "—"}</p><p className="text-[11px] text-muted-foreground mt-1">{custoNegocio.aplicar ? (custoNegocio.base === "dia" ? "Base: produção por dia" : "Base: produção por mês") : "Não aplicado"}</p></div>
             <div className="h-10 w-10 rounded-xl bg-violet-50 text-violet-700 flex items-center justify-center"><Settings2 className="w-5 h-5" /></div>
           </div>
         </Card>
