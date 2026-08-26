@@ -6,8 +6,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 const useMutationAny = /** @type {any} */ (useMutation);
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { AlertCircle, Calculator, CircleHelp, MoreHorizontal, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
+import { AlertCircle, Calculator, CircleHelp, MoreHorizontal, Pencil, Plus, Save, Settings2, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
@@ -21,6 +22,8 @@ export default function CustosDespesas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [grupoInicial, setGrupoInicial] = useState("");
   const [editando, setEditando] = useState(null);
+  const [configLocal, setConfigLocal] = useState({});
+  const [salvandoConfig, setSalvandoConfig] = useState(false);
 
   const { data: despesas = [], isLoading } = useQuery({
     queryKey: ["custos-despesas", user?.id],
@@ -35,7 +38,14 @@ export default function CustosDespesas() {
   });
 
   const config = configuracoes[0] || null;
-  const volume = Number(config?.volume_mensal_estimado || 0);
+  const valorConfig = (campo, fallback) => configLocal[campo] ?? config?.[campo] ?? fallback;
+  const baseCustoNegocio = valorConfig("base_custo_negocio", "mes");
+  const aplicarCustoNegocio = Boolean(valorConfig("aplicar_custo_negocio", false));
+  const diasProducaoMes = Number(valorConfig("dias_producao_mes", 0) || 0);
+  const producaoMediaDia = Number(valorConfig("producao_media_dia", 0) || 0);
+  const producaoMediaMes = Number(valorConfig("volume_mensal_estimado", 0) || 0);
+  const custoComercializacaoPct = Number(valorConfig("custo_comercializacao_pct", 20) || 0);
+  const aplicarCustoComercializacao = Boolean(valorConfig("aplicar_custo_comercializacao", false));
 
   const totais = useMemo(() => {
     const porGrupo = Object.fromEntries(GRUPOS_DESPESA_CUSTO.map((g) => [g.value, 0]));
@@ -49,11 +59,13 @@ export default function CustosDespesas() {
     return { porGrupo, total };
   }, [despesas]);
 
-  const gruposRateio = Array.isArray(config?.grupos_rateio_incluidos)
-    ? config.grupos_rateio_incluidos
-    : ["gastos_negocio", "producao", "embalagem_outros"];
-  const totalRateio = gruposRateio.reduce((s, grupo) => s + Number(totais.porGrupo[grupo] || 0), 0);
-  const custoRateado = volume > 0 ? totalRateio / volume : 0;
+  const todosGrupos = GRUPOS_DESPESA_CUSTO.map((g) => g.value);
+  const gruposPersistidos = Array.isArray(config?.grupos_rateio_incluidos) ? config.grupos_rateio_incluidos : todosGrupos;
+  const gruposCustoNegocio = configLocal.grupos_rateio_incluidos ?? (config?.aplicar_custo_negocio == null ? todosGrupos : gruposPersistidos);
+  const totalCustoNegocio = gruposCustoNegocio.reduce((s, grupo) => s + Number(totais.porGrupo[grupo] || 0), 0);
+  const producaoReferencia = baseCustoNegocio === "dia" ? diasProducaoMes * producaoMediaDia : producaoMediaMes;
+  const custoNegocioPorDia = diasProducaoMes > 0 ? totalCustoNegocio / diasProducaoMes : 0;
+  const custoNegocioPorReceita = producaoReferencia > 0 ? totalCustoNegocio / producaoReferencia : 0;
 
   const toggleMut = useMutationAny({
     mutationFn: ({ id, ativo }) => base44.entities.DespesaCustoUsuario.update(id, { ativo }),
@@ -70,6 +82,41 @@ export default function CustosDespesas() {
 
   const abrirNovo = (grupo = "") => { setEditando(null); setGrupoInicial(grupo); setDialogOpen(true); };
   const abrirEditar = (despesa) => { setEditando(despesa); setGrupoInicial(""); setDialogOpen(true); };
+  const setConfigCampo = (campo, valor) => setConfigLocal((atual) => ({ ...atual, [campo]: valor }));
+  const toggleGrupoCusto = (grupo) => setConfigLocal((atual) => {
+    const base = atual.grupos_rateio_incluidos ?? gruposCustoNegocio;
+    return { ...atual, grupos_rateio_incluidos: base.includes(grupo) ? base.filter((g) => g !== grupo) : [...base, grupo] };
+  });
+  const salvarConfigCusto = async () => {
+    if (!user?.id) return;
+    setSalvandoConfig(true);
+    try {
+      const payload = {
+        user_id: user.id,
+        metodo_rateio_padrao: "lote_produzido",
+        unidade_volume: "lotes_mes",
+        volume_mensal_estimado: Math.max(0, producaoMediaMes),
+        grupos_rateio_incluidos: gruposCustoNegocio,
+        aplicar_custo_negocio: aplicarCustoNegocio,
+        base_custo_negocio: baseCustoNegocio,
+        dias_producao_mes: Math.max(0, diasProducaoMes),
+        producao_media_dia: Math.max(0, producaoMediaDia),
+        custo_comercializacao_pct: Math.min(99, Math.max(0, custoComercializacaoPct)),
+        aplicar_custo_comercializacao: aplicarCustoComercializacao,
+        markup_padrao: Number(config?.markup_padrao || 3),
+        ativo: true,
+      };
+      if (config?.id) await base44.entities.ConfiguracaoCustosUsuario.update(config.id, payload);
+      else await base44.entities.ConfiguracaoCustosUsuario.create(payload);
+      setConfigLocal({});
+      await qc.invalidateQueries({ queryKey: ["custos-config", user.id] });
+      toast.success("Custo do Negócio salvo.");
+    } catch (err) {
+      toast.error("Não foi possível salvar: " + (err?.message || "erro inesperado"));
+    } finally {
+      setSalvandoConfig(false);
+    }
+  };
 
   return (
     <div className="space-y-5 pb-24 md:pb-8">
