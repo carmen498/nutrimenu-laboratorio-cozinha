@@ -201,6 +201,7 @@ export function calcularLaboratorioCustos({
   diasProducaoMes = 0,
   producaoMediaDia = 0,
   producaoMediaMes = 0,
+  insumosAdicionais = 0,
   totalPorcoes = 0,
   precoVendaUnitario = 0,
 } = {}) {
@@ -217,6 +218,7 @@ export function calcularLaboratorioCustos({
   const producao = calcularCustoProducao({
     custoTecnicoProducao,
     custoRateadoProducao: custoNegocio.custoDaProducao,
+    outrosCustos: insumosAdicionais,
     quantidadeProduzida,
     totalPorcoes,
     precoVendaUnitario,
