@@ -43,6 +43,15 @@ export default function CustosFicha() {
   });
   const receitaAtual = receitas[0] || null;
 
+  const { data: versoesPosteriores = [] } = useQuery({
+    queryKey: ["custos-ficha-versao-posterior", calculo?.id, user?.id],
+    queryFn: () => base44.entities.CalculoCusto.filter({ calculo_origem_id: calculo.id, user_id: user.id }, "-data_calculo", 1),
+    enabled: !!calculo?.id && !!user?.id,
+    staleTime: 0,
+  });
+  const versaoPosterior = versoesPosteriores[0] || null;
+  const ehVersaoAtual = !versaoPosterior;
+
   const receitaMudou = useMemo(() => {
     if (!calculo?.origem_versao_snapshot || !receitaAtual) return false;
     const atual = String(receitaAtual.updated_date || receitaAtual.data_personalizacao || receitaAtual.created_date || "");
@@ -76,11 +85,13 @@ export default function CustosFicha() {
           <div><div className="flex items-center gap-2 flex-wrap"><h1 className="font-display text-2xl font-bold">Ficha de Custo</h1><Badge variant="outline">Versão {calculo.versao_calculo || 1}</Badge></div><p className="text-sm text-muted-foreground mt-1">Registro histórico do custo calculado. Os valores desta ficha ficam preservados e não mudam automaticamente.</p></div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(calculo.origem_id)}&recalcular=${encodeURIComponent(calculo.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular com preços atuais</Button>
+          {ehVersaoAtual ? <Button variant="outline" onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(calculo.origem_id)}&recalcular=${encodeURIComponent(calculo.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular com preços atuais</Button> : <Button variant="outline" onClick={() => navigate(`/custos/ficha/${versaoPosterior.id}`)}><RefreshCw className="w-4 h-4 mr-2" /> Ver versão posterior</Button>}
         </div>
       </div>
 
-      {receitaMudou && <Card className="p-4 border-amber-300 bg-amber-50 flex gap-3"><AlertCircle className="w-5 h-5 text-amber-800 shrink-0" /><div><p className="text-sm font-medium text-amber-900">A receita foi alterada depois deste cálculo.</p><p className="text-xs text-amber-800 mt-1">Esta ficha continua mostrando os valores originais. Use “Recalcular com preços atuais” para gerar uma nova versão.</p></div></Card>}
+      {receitaMudou && <Card className="p-4 border-amber-300 bg-amber-50 flex gap-3"><AlertCircle className="w-5 h-5 text-amber-800 shrink-0" /><div><p className="text-sm font-medium text-amber-900">A receita foi alterada depois deste cálculo.</p><p className="text-xs text-amber-800 mt-1">Esta ficha continua mostrando os valores originais. {ehVersaoAtual ? "Use “Recalcular com preços atuais” para gerar uma nova versão." : "Já existe uma versão posterior desta ficha; avance para ela antes de recalcular novamente."}</p></div></Card>}
+
+      {!ehVersaoAtual && <Card className="px-4 py-3 bg-muted/40 border-dashed"><p className="text-sm font-medium">Esta é uma versão histórica.</p><p className="text-xs text-muted-foreground mt-1">A versão {versaoPosterior.versao_calculo || Number(calculo.versao_calculo || 1) + 1} foi criada a partir desta ficha. O histórico permanece preservado e novos recálculos devem partir da versão mais recente.</p></Card>}
 
       <Card className="p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
