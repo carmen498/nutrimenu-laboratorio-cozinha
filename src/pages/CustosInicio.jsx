@@ -242,7 +242,7 @@ export default function CustosInicio() {
             <h2 className="font-semibold">Acesso rápido</h2>
             <div className="divide-y mt-2">
               <Link to="/custos/despesas" className="flex items-center justify-between gap-3 text-sm py-3 hover:text-primary"><span className="inline-flex items-center gap-2"><WalletCards className="w-4 h-4" /> Minhas Despesas</span><ArrowRight className="w-4 h-4" /></Link>
-              <Link to="/custos/configuracoes" className="flex items-center justify-between gap-3 text-sm py-3 hover:text-primary"><span className="inline-flex items-center gap-2"><Settings2 className="w-4 h-4" /> Configurações de Rateio</span><ArrowRight className="w-4 h-4" /></Link>
+              <Link to="/custos/configuracoes" className="flex items-center justify-between gap-3 text-sm py-3 hover:text-primary"><span className="inline-flex items-center gap-2"><Settings2 className="w-4 h-4" /> Configurações</span><ArrowRight className="w-4 h-4" /></Link>
               <Link to="/custos/historico" className="flex items-center justify-between gap-3 text-sm py-3 hover:text-primary"><span className="inline-flex items-center gap-2"><History className="w-4 h-4" /> Histórico</span><ArrowRight className="w-4 h-4" /></Link>
             </div>
           </Card>
