@@ -359,6 +359,8 @@ export default function CustosCalcular() {
         custoRateadoUnitario={qtd > 0 ? resultado.rateio.custoDaProducao / qtd : 0}
         markupPadrao={config?.markup_padrao || 3}
         dadosIniciais={formacaoPreco}
+        custoComercializacaoPct={Number(config?.custo_comercializacao_pct || 0)}
+        aplicarCustoComercializacao={Boolean(config?.aplicar_custo_comercializacao)}
       />
     </div>
   );
