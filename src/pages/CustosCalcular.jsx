@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { AlertCircle, Calculator, ChefHat, CircleHelp, ExternalLink, FileText, Info, Loader2 } from "lucide-react";
+import { AlertCircle, Calculator, ChefHat, CircleHelp, ExternalLink, FileText, Info, Loader2, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import FormacaoPrecoDialog from "@/components/custos/FormacaoPrecoDialog";
 
@@ -305,10 +305,22 @@ export default function CustosCalcular() {
         <div className="space-y-4">
           <Card className="p-5 space-y-3">
             <div><p className="text-xs font-semibold text-primary">PASSO 1</p><h2 className="font-semibold text-lg">Qual receita você quer calcular?</h2></div>
-            <select value={receitaId} onChange={(e) => { setReceitaId(e.target.value); setCampoPrecoAtivo("padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className="w-full h-10 rounded-md border bg-background px-3 text-sm">
-              <option value="">Selecione uma receita...</option>
-              {receitas.map((r) => <option key={r.id} value={r.id}>{r.nome}{r.is_base === false ? " · Minha Receita" : ""}</option>)}
-            </select>
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground pointer-events-none" />
+              <Input
+                value={buscaReceita}
+                onChange={(e) => { setBuscaReceita(e.target.value); setBuscaReceitaAberta(true); }}
+                onFocus={() => setBuscaReceitaAberta(true)}
+                onBlur={() => window.setTimeout(() => setBuscaReceitaAberta(false), 120)}
+                placeholder={receita ? receita.nome : "Digite o nome da receita..."}
+                className="pl-9"
+                autoComplete="off"
+              />
+              {buscaReceitaAberta && !loadingReceitas && <div className="absolute z-30 mt-1 w-full max-h-72 overflow-y-auto rounded-lg border bg-popover shadow-lg p-1">
+                {receitasFiltradas.length === 0 ? <p className="px-3 py-6 text-center text-sm text-muted-foreground">Nenhuma receita encontrada.</p> : receitasFiltradas.map((r) => <button key={r.id} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setReceitaId(r.id); setBuscaReceita(r.nome); setBuscaReceitaAberta(false); setInsumosAdicionais([]); setCampoPrecoAtivo("padrao"); setPrecoEntrada(""); setMargemEntrada(""); setMarkupEntrada(""); setFormacaoPreco(null); }} className={`w-full text-left rounded-md px-3 py-2.5 text-sm hover:bg-muted ${r.id === receitaId ? "bg-primary/5 text-primary" : ""}`}><span className="font-medium">{r.nome}</span>{r.is_base === false && <span className="ml-2 text-xs text-muted-foreground">Minha Receita</span>}</button>)}
+              </div>}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Digite parte do nome para localizar rapidamente entre as receitas do Laboratório de Cozinha.</p>
             {loadingReceitas && <p className="text-xs text-muted-foreground">Carregando receitas...</p>}
             {receita && <div className="flex items-center gap-3 rounded-lg border p-3"><ChefHat className="w-5 h-5 text-primary" /><div className="flex-1"><p className="font-medium">{receita.nome}</p><p className="text-xs text-muted-foreground">{categoria || "Sem categoria"} · origem: Laboratório de Cozinha</p></div><Link to={`/receita/${receita.id}`} className="text-xs text-primary inline-flex gap-1">Ver receita <ExternalLink className="w-3 h-3" /></Link></div>}
           </Card>
@@ -327,8 +339,14 @@ export default function CustosCalcular() {
                 <div className="flex justify-between"><span>Insumos/embalagens já cadastrados na receita</span><strong>{money(tecnico?.custoInsumosTecnicos)}</strong></div>
                 {Number(tecnico?.custoEsquecidos || 0) > 0 && <div className="flex justify-between"><span>Ingredientes esquecidos</span><strong>{money(tecnico?.custoEsquecidos)}</strong></div>}
               </div>
+              <div className="border-t pt-3 space-y-3">
+                <div className="flex items-center justify-between gap-3"><div><p className="text-sm font-medium">Insumos adicionais desta produção</p><p className="text-[11px] text-muted-foreground mt-0.5">Use somente para algo que não esteja cadastrado na receita do Laboratório de Cozinha.</p></div><Button type="button" size="sm" variant="outline" onClick={() => setInsumosAdicionais((atual) => [...atual, { id: `novo-${Date.now()}-${atual.length}`, descricao: "", valor: "" }])}><Plus className="w-4 h-4 mr-1" /> Adicionar insumo</Button></div>
+                {insumosAdicionais.length > 0 && <div className="space-y-2">{insumosAdicionais.map((item, index) => <div key={item.id || index} className="grid grid-cols-[1fr_160px_36px] gap-2 items-center"><Input value={item.descricao} onChange={(e) => setInsumosAdicionais((atual) => atual.map((x, i) => i === index ? { ...x, descricao: e.target.value } : x))} placeholder="Ex.: caixa especial, gelo seco..." /><div className="relative"><span className="absolute left-3 top-2.5 text-sm text-muted-foreground">R$</span><Input className="pl-9" type="number" min="0" step="0.01" value={item.valor} onChange={(e) => setInsumosAdicionais((atual) => atual.map((x, i) => i === index ? { ...x, valor: e.target.value } : x))} placeholder="0,00" /></div><Button type="button" variant="ghost" size="icon" aria-label="Remover insumo" onClick={() => setInsumosAdicionais((atual) => atual.filter((_, i) => i !== index))}><Trash2 className="w-4 h-4" /></Button></div>)}</div>}
+                {totalInsumosAdicionais > 0 && <div className="flex justify-between text-sm rounded-lg bg-muted/30 px-3 py-2"><span>Insumos adicionais</span><strong>{money(totalInsumosAdicionais)}</strong></div>}
+              </div>
               <div className="border-t pt-3 space-y-2 text-sm">
                 <div className="flex justify-between"><span>Custo técnico importado</span><strong>{money(tecnico?.custoTecnicoTotal)}</strong></div>
+                {totalInsumosAdicionais > 0 && <div className="flex justify-between"><span>Insumos adicionados neste cálculo</span><strong>{money(totalInsumosAdicionais)}</strong></div>}
                 <div className="flex justify-between"><span>Custo do Negócio {resultado.rateio.aplicar ? "aplicado" : "não aplicado"}</span><strong>{money(resultado.rateio.custoDaProducao)}</strong></div>
                 {resultado.rateio.aplicar && <p className="text-[11px] text-muted-foreground">{money(resultado.rateio.custoPorUnidade)} por receita, conforme configuração em Minhas Despesas.</p>}
               </div>
@@ -353,7 +371,7 @@ export default function CustosCalcular() {
         </div>
 
         <div className="space-y-4 xl:sticky xl:top-20">
-          <Card className="p-5"><h2 className="font-semibold">Resumo</h2><div className="space-y-3 mt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Receita</span><strong className="text-right max-w-[160px] truncate">{receita?.nome || "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Produção</span><strong>{qtd > 0 ? `${qtd} receita(s)` : "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Custo técnico</span><strong>{money(tecnico?.custoTecnicoTotal)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Custo do Negócio</span><strong>{money(resultado.rateio.custoDaProducao)}</strong></div><div className="border-t pt-3 flex justify-between"><span className="font-medium">Custo total</span><strong className="text-primary">{money(resultado.custoTotal)}</strong></div>{precoValido && <><div className="flex justify-between"><span className="text-muted-foreground">Preço por receita</span><strong>{money(precoVendaEfetivo)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Margem</span><strong>{Number(formacaoDireta.margem || 0).toFixed(1).replace(".", ",")}%</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Markup</span><strong>{Number(formacaoDireta.markup || 0).toFixed(2).replace(".", ",")}x</strong></div></>}</div></Card>
+          <Card className="p-5"><h2 className="font-semibold">Resumo</h2><div className="space-y-3 mt-4 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Receita</span><strong className="text-right max-w-[160px] truncate">{receita?.nome || "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Produção</span><strong>{qtd > 0 ? `${qtd} receita(s)` : "—"}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Custo técnico</span><strong>{money(tecnico?.custoTecnicoTotal)}</strong></div>{totalInsumosAdicionais > 0 && <div className="flex justify-between"><span className="text-muted-foreground">Insumos adicionais</span><strong>{money(totalInsumosAdicionais)}</strong></div>}<div className="flex justify-between"><span className="text-muted-foreground">Custo do Negócio</span><strong>{money(resultado.rateio.custoDaProducao)}</strong></div><div className="border-t pt-3 flex justify-between"><span className="font-medium">Custo total</span><strong className="text-primary">{money(resultado.custoTotal)}</strong></div>{precoValido && <><div className="flex justify-between"><span className="text-muted-foreground">Preço por receita</span><strong>{money(precoVendaEfetivo)}</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Margem</span><strong>{Number(formacaoDireta.margem || 0).toFixed(1).replace(".", ",")}%</strong></div><div className="flex justify-between"><span className="text-muted-foreground">Markup</span><strong>{Number(formacaoDireta.markup || 0).toFixed(2).replace(".", ",")}x</strong></div></>}</div></Card>
           <Card className="p-4 flex gap-3"><Info className="w-5 h-5 text-primary shrink-0" /><div><p className="text-sm font-medium">Custos importados e configuração global</p><p className="text-xs text-muted-foreground mt-1">Ingredientes, insumos e embalagens específicas vêm do Laboratório de Cozinha. O Custo do Negócio é aplicado somente se estiver ativado em Minhas Despesas.</p><Link to="/custos/despesas" className="text-xs font-medium text-primary underline mt-2 inline-block">Revisar Minhas Despesas</Link></div></Card>
           {!resultado.rateio.valido && <Card className="p-4 border-amber-300 bg-amber-50"><p className="text-sm font-medium text-amber-900">Custo do Negócio ainda não pode ser distribuído</p><p className="text-xs text-amber-800 mt-1">A aplicação está ativada, mas faltam dados de produção na base Dia/Mês escolhida.</p><Link to="/custos/despesas" className="text-xs font-medium text-amber-900 underline mt-2 inline-block">Configurar Custo do Negócio</Link></Card>}
         </div>
