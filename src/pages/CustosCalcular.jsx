@@ -100,7 +100,15 @@ export default function CustosCalcular() {
 
   const config = configuracoes[0] || null;
   const calculoAnterior = calculosAnteriores[0] || null;
-  const recalculoValido = !recalcularId || !!calculoAnterior;
+
+  const { data: versoesPosteriores = [], isLoading: loadingVersaoPosterior } = useQuery({
+    queryKey: ["custos-recalculo-versao-posterior", recalcularId, user?.id],
+    queryFn: () => base44.entities.CalculoCusto.filter({ calculo_origem_id: recalcularId, user_id: user.id }, "-data_calculo", 1),
+    enabled: !!recalcularId && !!user?.id && !!calculoAnterior,
+    staleTime: 0,
+  });
+  const versaoPosterior = versoesPosteriores[0] || null;
+  const recalculoValido = !recalcularId || (!!calculoAnterior && !versaoPosterior);
   const [recalculoInicializado, setRecalculoInicializado] = useState(false);
   useEffect(() => {
     if (!recalcularId || !calculoAnterior || loadingItensRecalculo || recalculoInicializado) return;
@@ -293,7 +301,7 @@ export default function CustosCalcular() {
         <p className="text-sm text-muted-foreground mt-1">Use uma receita do Laboratório de Cozinha e acrescente os custos do seu negócio.</p>
       </div>
 
-      {recalcularId && (loadingRecalculo || loadingItensRecalculo ? <Card className="p-4 text-sm text-muted-foreground">Carregando a ficha anterior para gerar uma nova versão...</Card> : calculoAnterior ? <Card className="p-4 border-primary/20 bg-primary/5"><p className="text-sm font-medium text-primary">Recalculando {calculoAnterior.origem_nome_snapshot}</p><p className="text-xs text-muted-foreground mt-1">Será criada a versão {Number(calculoAnterior.versao_calculo || 1) + 1}. Quantidade, mão de obra e custos diretos foram reaproveitados da ficha anterior; o preço de venda deve ser revisto com o custo atualizado.</p></Card> : <Card className="p-4 border-red-200 bg-red-50"><p className="text-sm font-medium text-red-800">A ficha anterior não foi encontrada.</p><p className="text-xs text-red-700 mt-1">Volte ao Histórico e inicie o recálculo novamente.</p></Card>)}
+      {recalcularId && (loadingRecalculo || loadingItensRecalculo || loadingVersaoPosterior ? <Card className="p-4 text-sm text-muted-foreground">Carregando a ficha anterior para gerar uma nova versão...</Card> : versaoPosterior ? <Card className="p-4 border-amber-300 bg-amber-50"><p className="text-sm font-medium text-amber-900">Esta ficha já possui uma versão posterior.</p><p className="text-xs text-amber-800 mt-1">Para manter o histórico linear, novos recálculos devem partir da versão mais recente.</p><Button variant="outline" size="sm" className="mt-3" onClick={() => navigate(`/custos/ficha/${versaoPosterior.id}`)}>Abrir versão {versaoPosterior.versao_calculo || Number(calculoAnterior?.versao_calculo || 1) + 1}</Button></Card> : calculoAnterior ? <Card className="p-4 border-primary/20 bg-primary/5"><p className="text-sm font-medium text-primary">Recalculando {calculoAnterior.origem_nome_snapshot}</p><p className="text-xs text-muted-foreground mt-1">Será criada a versão {Number(calculoAnterior.versao_calculo || 1) + 1}. Quantidade, mão de obra e custos diretos foram reaproveitados da ficha anterior; o preço de venda deve ser revisto com o custo atualizado.</p></Card> : <Card className="p-4 border-red-200 bg-red-50"><p className="text-sm font-medium text-red-800">A ficha anterior não foi encontrada.</p><p className="text-xs text-red-700 mt-1">Volte ao Histórico e inicie o recálculo novamente.</p></Card>)}
 
       <div className="grid xl:grid-cols-[1fr_300px] gap-5 items-start">
         <div className="space-y-4">
