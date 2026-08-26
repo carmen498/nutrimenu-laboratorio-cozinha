@@ -141,20 +141,30 @@ export default function CustosHistorico() {
                 </div>
               ))}
             </div>
-            <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-left"><tr><th className="px-4 py-3 font-medium">Receita</th><th className="px-4 py-3 font-medium">Categoria</th><th className="px-4 py-3 font-medium whitespace-nowrap">Data do cálculo</th><th className="px-4 py-3 font-medium">Produção</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Custo por receita</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Preço de venda</th><th className="px-4 py-3 font-medium text-right">Margem</th><th className="px-4 py-3 font-medium text-right">Ações</th></tr></thead>
+            <div className="hidden md:block overflow-x-auto custos-historico-scroll">
+            <table className="min-w-[1180px] w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-[340px]" />
+                <col className="w-[140px]" />
+                <col className="w-[140px]" />
+                <col className="w-[150px]" />
+                <col className="w-[150px]" />
+                <col className="w-[110px]" />
+                <col className="w-[190px]" />
+                <col className="w-[90px]" />
+              </colgroup>
+              <thead className="bg-muted/40 text-left"><tr><th className="sticky left-0 z-20 bg-muted/95 px-4 py-3 font-medium">Receita</th><th className="px-4 py-3 font-medium whitespace-nowrap">Data do cálculo</th><th className="px-4 py-3 font-medium">Produção</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Custo por receita</th><th className="px-4 py-3 font-medium whitespace-nowrap text-right">Preço de venda</th><th className="px-4 py-3 font-medium text-right">Margem</th><th className="px-4 py-3 font-medium">Categoria</th><th className="px-4 py-3 font-medium text-right">Ações</th></tr></thead>
               <tbody className="divide-y">
                 {exibidos.map((c) => (
-                  <tr key={c.id} className="hover:bg-muted/25">
-                    <td className="px-4 py-3"><Link to={`/custos/ficha/${c.id}`} className="font-medium hover:text-primary">{c.origem_nome_snapshot}</Link><Badge variant={ehVersaoAtual(c) ? "default" : "secondary"} className="ml-2 text-[10px]">v{c.versao_calculo || 1}</Badge><Badge variant="outline" className="ml-2 text-[10px]">{ehVersaoAtual(c) ? "Atual" : "Anterior"}</Badge>{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="ml-2 text-[10px]">Formação avançada</Badge>}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{c.categoria_snapshot || "—"}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{dataCurta(c.data_calculo || c.created_date)}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{numero(c.quantidade_produzida)} receita(s)</td>
-                    <td className="px-4 py-3 text-right font-medium">{money(c.custo_unitario)}</td>
-                    <td className="px-4 py-3 text-right">{Number(c.preco_venda_informado || 0) > 0 ? money(c.preco_venda_informado) : "—"}</td>
-                    <td className="px-4 py-3 text-right">{Number(c.preco_venda_informado || 0) > 0 ? pct(c.margem_estimada) : "—"}</td>
-                    <td className="px-4 py-3 text-right">
+                  <tr key={c.id} className="group hover:bg-muted/25">
+                    <td className="sticky left-0 z-10 bg-background group-hover:bg-muted/25 px-4 py-3 align-top"><div className="min-w-0"><Link to={`/custos/ficha/${c.id}`} className="font-medium hover:text-primary line-clamp-2 leading-snug" title={c.origem_nome_snapshot}>{c.origem_nome_snapshot}</Link><div className="flex flex-wrap gap-1.5 mt-2"><Badge variant={ehVersaoAtual(c) ? "default" : "secondary"} className="text-[10px]">v{c.versao_calculo || 1}</Badge><Badge variant="outline" className="text-[10px]">{ehVersaoAtual(c) ? "Atual" : "Anterior"}</Badge>{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="text-[10px]">Formação avançada</Badge>}</div></div></td>
+                    <td className="px-4 py-3 whitespace-nowrap align-top">{dataCurta(c.data_calculo || c.created_date)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap align-top">{numero(c.quantidade_produzida)} receita(s)</td>
+                    <td className="px-4 py-3 text-right font-medium whitespace-nowrap align-top">{money(c.custo_unitario)}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap align-top">{Number(c.preco_venda_informado || 0) > 0 ? money(c.preco_venda_informado) : "—"}</td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap align-top">{Number(c.preco_venda_informado || 0) > 0 ? pct(c.margem_estimada) : "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground align-top"><span className="line-clamp-2">{c.categoria_snapshot || "—"}</span></td>
+                    <td className="px-4 py-3 text-right align-top">
                       <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem>{ehVersaoAtual(c) ? <DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem> : <DropdownMenuItem disabled><RefreshCw className="w-4 h-4 mr-2" /> Existe versão posterior</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
                     </td>
                   </tr>
