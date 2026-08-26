@@ -41,6 +41,10 @@ assert.equal(
 const indexHtml = fs.readFileSync("index.html", "utf8");
 const resetPage = fs.readFileSync("src/pages/ResetPassword.jsx", "utf8");
 const app = fs.readFileSync("src/App.jsx", "utf8");
+const authContext = fs.readFileSync("src/lib/AuthContext.jsx", "utf8");
+const topBar = fs.readFileSync("src/components/layout/TopBar.jsx", "utf8");
+const sidebar = fs.readFileSync("src/components/layout/Sidebar.jsx", "utf8");
+const landing = fs.readFileSync("src/pages/Landing.jsx", "utf8");
 
 assert.ok(indexHtml.includes("laborat-rio-de-cozinha.base44.app"), "host padrão Base44 do reset não está explicitamente canonicalizado");
 assert.ok(indexHtml.includes(APP_SITE_URLS.resetPassword.replace("/reset-password", "")), "domínio canônico do app não está no bootstrap");
@@ -61,5 +65,9 @@ assert.ok(resetPage.includes('sessionStorage.removeItem("base44_pending_password
 for (const route of ["/login", "/register", "/forgot-password", "/reset-password"]) {
   assert.ok(app.includes(`path=\"${route}\"`), `rota de autenticação ausente: ${route}`);
 }
+assert.ok(authContext.includes("redirectTarget = APP_SITE_URLS.login"), "logout não usa o login canônico do app");
+assert.ok(authContext.includes("buildAppLoginUrl(currentInternalPath())"), "rota protegida não preserva returnTo no login canônico");
+assert.ok(topBar.includes("logout()") && sidebar.includes("logout()"), "algum controle de saída ainda sobrescreve o destino canônico");
+assert.ok(landing.includes("APP_SITE_URLS.login"), "landing não usa a URL centralizada de login");
 
 console.log("OK: roteamento de autenticação, returnTo e proteção do token de reset aprovados.");

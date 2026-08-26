@@ -1,7 +1,8 @@
 # Fase 8 — Domínio, DNS, HTTPS e Rotas de Produção
 
 Data da homologação: 23/08/2026
-Domínio canônico: `https://laboratoriodecozinha.com.br`
+Domínio canônico institucional: `https://laboratoriodecozinha.com.br`
+Domínio canônico do aplicativo: `https://app.laboratoriodecozinha.com.br`
 App Base44: `6a2b263c4c1cb1e47d54d8b7`
 
 ## Modelo canônico aprovado em 26/08/2026
@@ -99,7 +100,7 @@ As páginas `/forgot-password` e `/reset-password` respondem 200 como deep links
 
 A Fase 9 executou E2E real com caixa temporária descartável: OTP entregue, login, pedido de reset, e-mail recebido, link real aberto, senha trocada, senha antiga rejeitada, senha nova aceita e reutilização do token rejeitada.
 
-O ensaio revelou que o e-mail nativo da Base44 aponta para o subdomínio padrão `laborat-rio-de-cozinha.base44.app/reset-password`. O source atual agora canonicaliza esse acesso imediatamente para `https://laboratoriodecozinha.com.br/reset-password`, preservando o token até o bootstrap seguro no domínio próprio.
+O ensaio revelou que o e-mail nativo da Base44 aponta para o subdomínio padrão `laborat-rio-de-cozinha.base44.app/reset-password`. O source atual agora canonicaliza esse acesso imediatamente para `https://app.laboratoriodecozinha.com.br/reset-password`, preservando o token até o bootstrap seguro no subdomínio do aplicativo.
 
 Pendente literal da Fase 9: publicação dessa correção, OAuth Google humano e teste de um token após ultrapassar sua validade real de 1 hora.
 
@@ -197,4 +198,4 @@ Status financeiro E2E da versão atual: PENDENTE FASE 6B.
 - OAuth/recuperação completos com usuário real: PENDENTES FASE 9
 - MP financeiro `v10/v4`: PENDENTE FASE 6B
 
-**Status global da Fase 8: AMARELO somente pela publicação pendente do frontend. O código e os testes locais estão VERDES.**
+**Status histórico da Fase 8: AMARELO pela publicação pendente do frontend. Após a separação canônica aprovada em 26/08/2026, a configuração externa do subdomínio `app`, seu TLS e as origens autorizadas de autenticação também precisam ser concluídas e homologadas antes do go-live.**

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 const ORIGIN = 'https://laboratoriodecozinha.com.br';
+const APP_ORIGIN = 'https://app.laboratoriodecozinha.com.br';
 const APP_ID = '6a2b263c4c1cb1e47d54d8b7';
 
 async function fetchManual(url, options = {}) {
@@ -30,7 +31,8 @@ const httpsWww = await fetchManual('https://www.laboratoriodecozinha.com.br/');
 assert.ok(redirectOk(httpsWww.status), `HTTPS www não redirecionou: ${httpsWww.status}`);
 assert.equal(httpsWww.headers.get('location'), `${ORIGIN}/`, 'www deve canonicalizar para o apex HTTPS');
 
-const routes = [
+const publicRoutes = ['/'];
+const appRoutes = [
   '/',
   '/login',
   '/register',
@@ -56,16 +58,21 @@ const routes = [
   '/auditorias',
 ];
 
-for (const path of routes) {
+for (const path of publicRoutes) {
   const res = await fetch(`${ORIGIN}${path}`, { redirect: 'manual' });
-  assert.equal(res.status, 200, `${path} respondeu ${res.status}; deep link da SPA quebrado`);
-  const html = await res.text();
-  assert.match(html, /<div id=["']root["']/i, `${path} não retornou o shell da SPA`);
+  assert.equal(res.status, 200, `site público ${path} respondeu ${res.status}`);
+  assert.match(await res.text(), /<div id=["']root["']/i, `site público ${path} não retornou o shell da SPA`);
+}
+
+for (const path of appRoutes) {
+  const res = await fetch(`${APP_ORIGIN}${path}`, { redirect: 'manual' });
+  assert.equal(res.status, 200, `app ${path} respondeu ${res.status}; deep link da SPA quebrado`);
+  assert.match(await res.text(), /<div id=["']root["']/i, `app ${path} não retornou o shell da SPA`);
 }
 
 // Exercita somente a rota pública do backend com um endereço propositalmente inexistente.
 // A resposta deve permanecer neutra para não permitir enumeração de contas.
-const resetProbe = await fetch(`${ORIGIN}/api/apps/${APP_ID}/auth/reset-password-request`, {
+const resetProbe = await fetch(`${APP_ORIGIN}/api/apps/${APP_ID}/auth/reset-password-request`, {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -75,7 +82,7 @@ const resetProbe = await fetch(`${ORIGIN}/api/apps/${APP_ID}/auth/reset-password
 });
 assert.equal(resetProbe.status, 200, `reset-password-request no domínio próprio respondeu ${resetProbe.status}`);
 
-const oauthStart = `${ORIGIN}/api/apps/auth/login?app_id=${APP_ID}&from_url=${encodeURIComponent(`${ORIGIN}/`)}`;
+const oauthStart = `${APP_ORIGIN}/api/apps/auth/login?app_id=${APP_ID}&from_url=${encodeURIComponent(`${APP_ORIGIN}/app`)}`;
 const oauthHop1 = await fetchManual(oauthStart);
 assert.ok(redirectOk(oauthHop1.status), `OAuth hop 1 respondeu ${oauthHop1.status}`);
 const hop1Location = oauthHop1.headers.get('location');
@@ -96,4 +103,4 @@ assert.equal(
 );
 assert.ok(googleUrl.searchParams.has('state'), 'OAuth Google sem state');
 
-console.log(`OK: domínio de produção — ${routes.length} deep links + HTTPS/HSTS + www canônico + reset + OAuth Google.`);
+console.log(`OK: domínios de produção — landing pública + ${appRoutes.length} rotas do app + HTTPS/HSTS + www canônico + reset + OAuth Google.`);
