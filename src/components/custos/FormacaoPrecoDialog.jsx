@@ -20,6 +20,7 @@ export default function FormacaoPrecoDialog({
   custoPorPorcao = 0,
   custoRateadoUnitario = 0,
   markupPadrao = 3,
+  dadosIniciais = null,
 }) {
   const margemInicial = useMemo(() => {
     const markup = numero(markupPadrao);
@@ -34,11 +35,11 @@ export default function FormacaoPrecoDialog({
 
   useEffect(() => {
     if (!open) return;
-    setMargem(String(margemInicial.toFixed(1)).replace(".", ","));
-    setTaxaCartao("0");
-    setImpostos("0");
-    setCustoFixo("0");
-  }, [open, margemInicial]);
+    setMargem(String(Number(dadosIniciais?.margemDesejadaPct ?? margemInicial).toFixed(1)).replace(".", ","));
+    setTaxaCartao(String(dadosIniciais?.taxaCartaoPct ?? 0));
+    setImpostos(String(dadosIniciais?.impostosPct ?? 0));
+    setCustoFixo(String(dadosIniciais?.custoFixoAdicionalUnitario ?? 0));
+  }, [open, margemInicial, dadosIniciais]);
 
   const margemPct = numero(margem);
   const taxaCartaoPct = numero(taxaCartao);
@@ -120,7 +121,7 @@ export default function FormacaoPrecoDialog({
               <div>
                 <p className="text-xs font-semibold text-primary">PASSO 2</p>
                 <h3 className="font-semibold">Custos de comercialização <span className="font-normal text-muted-foreground">(opcional)</span></h3>
-                <p className="text-xs text-muted-foreground mt-1">Informe aqui os custos que surgem na venda e reduzem a margem líquida, como cartão, plataforma, impostos ou um custo fixo por venda.</p>
+                <p className="text-xs text-muted-foreground mt-1">Informe aqui os custos que surgem na comercialização e reduzem a margem líquida, como cartão, plataforma, impostos ou um custo fixo por receita vendida.</p>
               </div>
               <div className="grid sm:grid-cols-3 gap-3">
                 <div>
@@ -132,11 +133,11 @@ export default function FormacaoPrecoDialog({
                   <Input type="number" min="0" max="99" step="0.1" value={impostos} onChange={(e) => setImpostos(e.target.value)} />
                 </div>
                 <div>
-                  <Label>Outro custo fixo por venda (R$)</Label>
+                  <Label>Outro custo fixo por receita vendida (R$)</Label>
                   <Input type="number" min="0" step="0.01" value={custoFixo} onChange={(e) => setCustoFixo(e.target.value)} />
                 </div>
               </div>
-              {(taxasVariaveisPct > 0 || custoFixoUnitario > 0) && <p className="text-xs text-muted-foreground">Custos de comercialização considerados: {taxasVariaveisPct.toFixed(1).replace(".", ",")}% do preço{custoFixoUnitario > 0 ? ` + ${money(custoFixoUnitario)} por venda` : ""}.</p>}
+              {(taxasVariaveisPct > 0 || custoFixoUnitario > 0) && <p className="text-xs text-muted-foreground">Custos de comercialização considerados: {taxasVariaveisPct.toFixed(1).replace(".", ",")}% do preço{custoFixoUnitario > 0 ? ` + ${money(custoFixoUnitario)} por receita vendida` : ""}.</p>}
             </section>
 
             {!formacao.valido && (
@@ -169,7 +170,7 @@ export default function FormacaoPrecoDialog({
               <h3 className="font-semibold">Resumo da formação</h3>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo por receita</span><strong>{money(custoUnitario)}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Rateio incluído</span><strong>{money(custoRateadoUnitario)}</strong></div>
-              {custoFixoUnitario > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo fixo por venda</span><strong>{money(custoFixoUnitario)}</strong></div>}
+              {custoFixoUnitario > 0 && <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo fixo por receita vendida</span><strong>{money(custoFixoUnitario)}</strong></div>}
               <div className="border-t pt-3 flex justify-between text-sm"><span className="text-muted-foreground">Margem desejada</span><strong>{margemPct.toFixed(1).replace(".", ",")}%</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custos variáveis de comercialização</span><strong>{taxasVariaveisPct.toFixed(1).replace(".", ",")}%</strong></div>
             </div>
