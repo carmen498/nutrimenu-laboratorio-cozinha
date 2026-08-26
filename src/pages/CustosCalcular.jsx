@@ -8,6 +8,7 @@ import { carregarContextoCustosReceitas } from "@/lib/custoContexto";
 import { calcularCustoTecnicoReceitaParaCustos } from "@/lib/custos/custoTecnicoReceita";
 import { calcularLaboratorioCustos, calcularMargemSobreVenda, calcularMarkupMultiplicador, calcularPrecoPorMargem, calcularPrecoPorMarkup } from "@/lib/custos/motorCustos";
 import { rendimentoEfetivo } from "@/lib/custoReceita";
+import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ export default function CustosCalcular() {
   const [buscaReceita, setBuscaReceita] = useState("");
   const [buscaReceitaAberta, setBuscaReceitaAberta] = useState(false);
   const [insumosAdicionais, setInsumosAdicionais] = useState([]);
+  const [exclusoesTecnicas, setExclusoesTecnicas] = useState({ insumos: [], esquecidos: [] });
   const [campoPrecoAtivo, setCampoPrecoAtivo] = useState("margem_padrao");
   const [precoEntrada, setPrecoEntrada] = useState("");
   const [margemEntrada, setMargemEntrada] = useState("");
@@ -55,6 +57,7 @@ export default function CustosCalcular() {
       if (rascunho?.buscaReceita) setBuscaReceita(rascunho.buscaReceita);
       if (rascunho?.quantidade) setQuantidade(String(rascunho.quantidade));
       if (Array.isArray(rascunho?.insumosAdicionais)) setInsumosAdicionais(rascunho.insumosAdicionais);
+      if (rascunho?.exclusoesTecnicas) setExclusoesTecnicas({ insumos: rascunho.exclusoesTecnicas.insumos || [], esquecidos: rascunho.exclusoesTecnicas.esquecidos || [] });
       if (rascunho?.campoPrecoAtivo) setCampoPrecoAtivo(rascunho.campoPrecoAtivo);
       if (rascunho?.precoEntrada != null) setPrecoEntrada(String(rascunho.precoEntrada));
       if (rascunho?.margemEntrada != null) setMargemEntrada(String(rascunho.margemEntrada));
@@ -75,6 +78,7 @@ export default function CustosCalcular() {
         buscaReceita,
         quantidade,
         insumosAdicionais,
+        exclusoesTecnicas,
         campoPrecoAtivo,
         precoEntrada,
         margemEntrada,
@@ -84,7 +88,7 @@ export default function CustosCalcular() {
     } catch {
       // Rascunho é conveniência de navegação; falha de storage não bloqueia o cálculo.
     }
-  }, [rascunhoRestaurado, recalcularId, receitaId, buscaReceita, quantidade, insumosAdicionais, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, formacaoPreco]);
+  }, [rascunhoRestaurado, recalcularId, receitaId, buscaReceita, quantidade, insumosAdicionais, exclusoesTecnicas, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, formacaoPreco]);
 
   const { data: todasReceitas = [], isLoading: loadingReceitas } = useQuery({
     queryKey: ["custos-receitas", user?.id, isAdmin],
