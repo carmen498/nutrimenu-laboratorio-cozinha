@@ -21,10 +21,23 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "MERCADOPAGO_WEBHOOK_SECRET não configurado" }, { status: 500 });
     }
 
+    const ambiente = (secrets.get("AMBIENTE") || "").trim().toLowerCase();
+    const ambienteValido = ambiente === "producao" || ambiente === "sandbox";
+    if (!ambienteValido) {
+      return Response.json({
+        error: 'AMBIENTE deve ser exatamente "producao" ou "sandbox"',
+        configuracao_ambiente_valida: false,
+      }, { status: 500 });
+    }
+    const accessToken = ambiente === "producao"
+      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
+      : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
+    const credencialAmbienteConfigurada = Boolean((accessToken || "").trim());
+
     const dataIdSimulado = "TESTE_SIMULADO_123";
     const requestIdSimulado = "req-teste-simulado";
     const tsSimulado = Math.floor(Date.now() / 1000).toString();
-    const manifest = `id:${dataIdSimulado};request-id:${requestIdSimulado};ts:${tsSimulado};`;
+    const manifest = `id:${dataIdSimulado.toLowerCase()};request-id:${requestIdSimulado};ts:${tsSimulado};`;
 
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -58,7 +71,10 @@ export default async function(req: Request): Promise<Response> {
     const resultadoInvalido = await validarAssinatura(reqInvalido, dataIdSimulado);
 
     return Response.json({
-      success: resultadoValido.valida && !resultadoInvalido.valida,
+      success: ambienteValido && credencialAmbienteConfigurada && resultadoValido.valida && !resultadoInvalido.valida,
+      ambiente_mercadopago: ambiente,
+      configuracao_ambiente_valida: ambienteValido,
+      credencial_ambiente_configurada: credencialAmbienteConfigurada,
       teste_assinatura_correta_deveria_ser_valida: resultadoValido.valida,
       teste_assinatura_errada_deveria_ser_invalida: !resultadoInvalido.valida,
     });
