@@ -180,16 +180,18 @@ export default function CustosCalcular() {
 
   const tecnico = useMemo(() => {
     if (!receita || !contexto || qtd <= 0) return null;
+    const insumosAtivos = (contexto.insumosPorReceita?.[receita.id] || []).filter((item) => !exclusoesTecnicas.insumos.includes(item.id));
+    const esquecidosAtivos = (contexto.esquecidosPorReceita?.[receita.id] || []).filter((item) => !exclusoesTecnicas.esquecidos.includes(item.id));
     return calcularCustoTecnicoReceitaParaCustos({
       receita,
       ingredientesReceita: contexto.ingredientesPorReceita?.[receita.id] || [],
       ingredienteMap: contexto.ingredienteMap || {},
-      insumosReceita: contexto.insumosPorReceita?.[receita.id] || [],
-      esquecidos: contexto.esquecidosPorReceita?.[receita.id] || [],
+      insumosReceita: insumosAtivos,
+      esquecidos: esquecidosAtivos,
       fator: qtd,
       numeroLotes: qtd,
     });
-  }, [receita, contexto, qtd]);
+  }, [receita, contexto, qtd, exclusoesTecnicas]);
 
   const totalPorcoes = tecnico?.porcoesEfetivas || 0;
   const totalInsumosAdicionais = useMemo(() => insumosAdicionais.reduce((s, item) => {
@@ -286,6 +288,33 @@ export default function CustosCalcular() {
   const rendimentoBase = receita && contexto ? rendimentoEfetivo(receita, contexto.ingredientesPorReceita?.[receita.id] || []) : 0;
   const categoria = receita?.categorias?.[0] || receita?.categoria || "";
   const insumosImportados = tecnico?.insumosEscalados || [];
+  const esquecidosImportados = useMemo(() => {
+    if (!receita || !contexto) return [];
+    return (contexto.esquecidosPorReceita?.[receita.id] || []).filter((item) => !exclusoesTecnicas.esquecidos.includes(item.id)).map((item) => ({
+      ...item,
+      custoEscalado: Number(item.custo_total || 0) * qtd,
+    }));
+  }, [receita, contexto, exclusoesTecnicas.esquecidos, qtd]);
+  const podeAlterarReceitaOrigem = !!receita && (isAdmin || receita.is_base === false);
+
+  const retirarDoCalculo = (tipo, id) => {
+    setExclusoesTecnicas((atual) => ({ ...atual, [tipo]: [...new Set([...(atual[tipo] || []), id])] }));
+    toast.success("Item desconsiderado somente neste cálculo.");
+  };
+
+  const removerDaReceita = async (entityName, tipo, id) => {
+    if (!receita || !podeAlterarReceitaOrigem) return toast.error("Esta receita não pode ser alterada diretamente. Personalize-a no Laboratório de Cozinha para remover o item da origem.");
+    if (!window.confirm("Remover este item da receita? Essa alteração também afetará os próximos cálculos desta receita.")) return;
+    try {
+      await base44.entities[entityName].delete(id);
+      await invalidarCustosDependentesSeguro({ receitaIds: [receita.id], motivo: "item_removido_no_laboratorio_custos", origem: "laboratorio_custos" });
+      setExclusoesTecnicas((atual) => ({ ...atual, [tipo]: (atual[tipo] || []).filter((x) => x !== id) }));
+      await qc.invalidateQueries({ queryKey: ["custos-contexto-receita", receita.id] });
+      toast.success("Item removido da receita.");
+    } catch (err) {
+      toast.error("Não foi possível remover o item: " + (err?.message || "erro inesperado"));
+    }
+  };
   const pendenciasDetalhadas = useMemo(() => {
     if (!tecnico || !receita || !contexto) return [];
     const itensReceita = contexto.ingredientesPorReceita?.[receita.id] || [];
