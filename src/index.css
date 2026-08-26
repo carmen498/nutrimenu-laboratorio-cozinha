@@ -95,6 +95,30 @@
   }
 }
 
+.custos-historico-scroll {
+  scrollbar-width: auto;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.65) hsl(var(--muted));
+}
+
+.custos-historico-scroll::-webkit-scrollbar {
+  height: 14px;
+}
+
+.custos-historico-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 999px;
+}
+
+.custos-historico-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.65);
+  border: 3px solid hsl(var(--muted));
+  border-radius: 999px;
+}
+
+.custos-historico-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.55);
+}
+
 @media print {
   header, nav, .no-print { display: none !important; }
   main { padding: 0 !important; max-width: 100% !important; }
