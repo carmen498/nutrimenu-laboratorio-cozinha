@@ -18,7 +18,7 @@ const num = (v) => {
 export default function CustosConfiguracoes() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [markup, setMarkup] = useState(null);
+  const [margem, setMargem] = useState(null);
   const [salvando, setSalvando] = useState(false);
 
   const { data: configuracoes = [], isLoading } = useQuery({
@@ -29,18 +29,19 @@ export default function CustosConfiguracoes() {
   });
 
   const config = configuracoes[0] || null;
-  const markupEfetivo = markup ?? String(config?.markup_padrao ?? 3);
+  const margemEfetiva = margem ?? String(config?.margem_padrao ?? 20);
 
   const salvar = async () => {
     if (!user?.id) return;
-    const valor = num(markupEfetivo);
-    if (valor <= 0) return toast.error("O markup padrão deve ser maior que zero.");
+    const valor = num(margemEfetiva);
+    if (valor >= 100) return toast.error("A margem inicial precisa ser menor que 100%.");
     setSalvando(true);
     try {
       const payload = {
         user_id: user.id,
         ...(config || {}),
-        markup_padrao: valor,
+        margem_padrao: valor,
+        markup_padrao: valor < 100 ? 1 / (1 - valor / 100) : 1.25,
         ativo: true,
       };
       delete payload.id;
@@ -49,7 +50,7 @@ export default function CustosConfiguracoes() {
       delete payload.created_by_id;
       if (config?.id) await base44.entities.ConfiguracaoCustosUsuario.update(config.id, payload);
       else await base44.entities.ConfiguracaoCustosUsuario.create(payload);
-      setMarkup(null);
+      setMargem(null);
       await qc.invalidateQueries({ queryKey: ["custos-config", user.id] });
       toast.success("Configurações salvas.");
     } catch (err) {
@@ -83,9 +84,9 @@ export default function CustosConfiguracoes() {
       <Card className="p-5 space-y-4">
         <div className="flex items-start gap-3"><Settings2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h2 className="font-semibold">Padrão para formação do preço</h2><p className="text-xs text-muted-foreground mt-1">Este valor é apenas o ponto de partida e pode ser alterado em cada receita.</p></div></div>
         <div className="max-w-sm">
-          <div className="flex items-center gap-1.5"><label className="text-sm font-medium">Markup padrão (x)</label><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label="O que é markup?"><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">Markup é um multiplicador, não uma porcentagem.</p><p className="text-muted-foreground mt-2">Exemplo: custo de R$ 100,00 com markup de 2,50x gera preço-base de R$ 250,00.</p></PopoverContent></Popover></div>
-          <Input className="mt-1" type="number" min="0.01" step="0.01" value={markupEfetivo} onChange={(e) => setMarkup(e.target.value)} placeholder="Ex.: 2,50" />
-          <p className="text-[11px] text-muted-foreground mt-1">Informe o multiplicador. Ex.: 2,50x — não use %.</p>
+          <div className="flex items-center gap-1.5"><label className="text-sm font-medium">Margem inicial sugerida (%)</label><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Como funciona a margem inicial?"><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">É apenas um ponto de partida.</p><p className="text-muted-foreground mt-2">A margem é aplicada sobre o custo completo da receita, depois de ingredientes, insumos e Custo do Negócio. Ela pode ser alterada em cada cálculo.</p><p className="text-muted-foreground mt-2">Com margem de 20%, o markup equivalente é aproximadamente 1,25x.</p></PopoverContent></Popover></div>
+          <Input className="mt-1" type="number" min="0" max="99" step="0.1" value={margemEfetiva} onChange={(e) => setMargem(e.target.value)} placeholder="Ex.: 20" />
+          <p className="text-[11px] text-muted-foreground mt-1">Padrão sugerido: 20%. Ajuste conforme a realidade do negócio.</p>
         </div>
       </Card>
     </div>
