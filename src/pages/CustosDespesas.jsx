@@ -103,7 +103,8 @@ export default function CustosDespesas() {
         producao_media_dia: Math.max(0, producaoMediaDia),
         custo_comercializacao_pct: Math.min(99, Math.max(0, custoComercializacaoPct)),
         aplicar_custo_comercializacao: aplicarCustoComercializacao,
-        markup_padrao: Number(config?.markup_padrao || 3),
+        margem_padrao: Number(config?.margem_padrao ?? 20),
+        markup_padrao: Number(config?.markup_padrao || 1.25),
         ativo: true,
       };
       if (config?.id) await base44.entities.ConfiguracaoCustosUsuario.update(config.id, payload);
