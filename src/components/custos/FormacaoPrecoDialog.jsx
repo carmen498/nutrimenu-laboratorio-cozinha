@@ -151,7 +151,7 @@ export default function FormacaoPrecoDialog({
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo por receita</span><strong>{money(custoUnitario)}</strong></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Rateio incluído</span><strong>{money(custoRateadoUnitario)}</strong></div>
               <div className="border-t pt-3 flex justify-between text-sm"><span className="text-muted-foreground">Margem desejada</span><strong>{margemPct.toFixed(1).replace(".", ",")}%</strong></div>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custos variáveis de comercialização</span><strong>{taxasVariaveisPct.toFixed(1).replace(".", ",")}%</strong></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo médio de comercialização</span><strong>{taxasVariaveisPct.toFixed(1).replace(".", ",")}%</strong></div>
             </div>
 
             <div className="rounded-xl border p-4 space-y-3">
