@@ -19,16 +19,12 @@ export default function FormacaoPrecoDialog({
   custoUnitario = 0,
   custoPorPorcao = 0,
   custoRateadoUnitario = 0,
-  markupPadrao = 3,
+  margemPadrao = 20,
   dadosIniciais = null,
   custoComercializacaoPct = 0,
   aplicarCustoComercializacao = false,
 }) {
-  const margemInicial = useMemo(() => {
-    const markup = numero(markupPadrao);
-    if (markup > 1) return Math.min(90, (1 - 1 / markup) * 100);
-    return 40;
-  }, [markupPadrao]);
+  const margemInicial = useMemo(() => Math.min(90, numero(margemPadrao) || 20), [margemPadrao]);
 
   const [margem, setMargem] = useState(String(margemInicial.toFixed(1)).replace(".", ","));
 
@@ -93,7 +89,7 @@ export default function FormacaoPrecoDialog({
                 <p className="text-xs text-muted-foreground mt-1">Margem é o lucro líquido como percentual do preço de venda.</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {[30, 40, 50, 60, 66.7].map((valor) => (
+                {[10, 15, 20, 25, 30].map((valor) => (
                   <Button
                     key={valor}
                     type="button"
