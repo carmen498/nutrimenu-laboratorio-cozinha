@@ -29,6 +29,9 @@ export default function CustosCalcular() {
   const [receitaId, setReceitaId] = useState(() => searchParams.get("receita") || "");
   const recalcularId = searchParams.get("recalcular") || "";
   const [quantidade, setQuantidade] = useState("1");
+  const [buscaReceita, setBuscaReceita] = useState("");
+  const [buscaReceitaAberta, setBuscaReceitaAberta] = useState(false);
+  const [insumosAdicionais, setInsumosAdicionais] = useState([]);
   const [campoPrecoAtivo, setCampoPrecoAtivo] = useState("padrao");
   const [precoEntrada, setPrecoEntrada] = useState("");
   const [margemEntrada, setMargemEntrada] = useState("");
@@ -60,6 +63,11 @@ export default function CustosCalcular() {
   }, [todasReceitas, isAdmin, user?.id]);
 
   const receita = receitas.find((r) => r.id === receitaId) || null;
+  const receitasFiltradas = useMemo(() => {
+    const termo = buscaReceita.trim().toLocaleLowerCase("pt-BR");
+    if (!termo) return receitas.slice(0, 12);
+    return receitas.filter((r) => String(r.nome || "").toLocaleLowerCase("pt-BR").includes(termo)).slice(0, 20);
+  }, [receitas, buscaReceita]);
 
   const { data: contexto, isLoading: loadingContexto } = useQuery({
     queryKey: ["custos-contexto-receita", receitaId, user?.id, isAdmin],
@@ -109,6 +117,7 @@ export default function CustosCalcular() {
   useEffect(() => {
     if (!recalcularId || !calculoAnterior || loadingItensRecalculo || recalculoInicializado) return;
     setQuantidade(String(calculoAnterior.quantidade_produzida || 1));
+    setInsumosAdicionais(itensCalculoAnterior.filter((i) => i.tipo === "outro" && i.origem === "Adicionado neste cálculo").map((i) => ({ id: i.id, descricao: i.descricao, valor: String(i.valor_total || 0) })));
     setCampoPrecoAtivo("padrao");
     setPrecoEntrada("");
     setMargemEntrada("");
@@ -133,6 +142,7 @@ export default function CustosCalcular() {
   }, [receita, contexto, qtd]);
 
   const totalPorcoes = tecnico?.porcoesEfetivas || 0;
+  const totalInsumosAdicionais = useMemo(() => insumosAdicionais.reduce((s, item) => s + Math.max(0, n(item.valor)), 0), [insumosAdicionais]);
   const resultado = useMemo(() => calcularLaboratorioCustos({
     custoTecnicoProducao: tecnico?.custoTecnicoTotal || 0,
     despesas,
@@ -145,9 +155,10 @@ export default function CustosCalcular() {
     diasProducaoMes: Number(config?.dias_producao_mes || 0),
     producaoMediaDia: Number(config?.producao_media_dia || 0),
     producaoMediaMes: Number(config?.volume_mensal_estimado || 0),
+    insumosAdicionais: totalInsumosAdicionais,
     totalPorcoes,
     precoVendaUnitario: 0,
-  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, config?.aplicar_custo_negocio, config?.base_custo_negocio, config?.dias_producao_mes, config?.producao_media_dia, qtd, totalPorcoes]);
+  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, config?.aplicar_custo_negocio, config?.base_custo_negocio, config?.dias_producao_mes, config?.producao_media_dia, qtd, totalInsumosAdicionais, totalPorcoes]);
 
   const formacaoDireta = useMemo(() => {
     const custo = Number(resultado.custoUnitario || 0);
@@ -265,6 +276,7 @@ export default function CustosCalcular() {
         { tipo: "ingredientes", descricao: "Ingredientes esquecidos", origem: "Laboratório de Cozinha", formula: "Conforme registros técnicos da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoEsquecidos / qtd : 0, valor_total: tecnico.custoEsquecidos, ordem: 2 },
         { tipo: "embalagem", descricao: "Insumos e embalagens da receita", origem: "Laboratório de Cozinha", formula: "Conforme cadastro técnico da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoInsumosTecnicos / qtd : 0, valor_total: tecnico.custoInsumosTecnicos, ordem: 3 },
         { tipo: "despesa_rateada", descricao: "Custo do Negócio", origem: "Minhas Despesas", formula: resultado.rateio.aplicar ? `${money(resultado.rateio.custoPorUnidade)} × ${qtd} receita(s)` : "Não aplicado", quantidade: qtd, valor_unitario: resultado.rateio.custoPorUnidade, valor_total: resultado.rateio.custoDaProducao, ordem: 4 },
+        ...insumosAdicionais.filter((item) => String(item.descricao || "").trim() && n(item.valor) > 0).map((item, index) => ({ tipo: "outro", descricao: String(item.descricao).trim(), origem: "Adicionado neste cálculo", formula: "Valor total informado para esta produção", quantidade: 1, valor_unitario: Math.max(0, n(item.valor)), valor_total: Math.max(0, n(item.valor)), ordem: 10 + index })),
       ].filter((i) => i.valor_total > 0 || i.ordem === 1);
 
       const resposta = await base44.functions.invoke("salvarCalculoCusto", { calculo: payloadCalculo, itens });
