@@ -129,13 +129,6 @@ export default function CustosDespesas() {
         <Button onClick={() => abrirNovo()} className="gap-2"><Plus className="w-4 h-4" /> Adicionar despesa</Button>
       </div>
 
-      <Card className="px-4 py-3 bg-primary/5 border-primary/20">
-        <div className="flex items-start gap-3 text-sm">
-          <AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-          <div className="min-w-0"><p><span className="font-medium">Custo do Negócio:</span> escolha abaixo se quer distribuir suas despesas por Dia ou por Mês. <span className="text-muted-foreground">Despesas com pessoal também podem fazer parte desse custo.</span></p></div>
-        </div>
-      </Card>
-
       <div className="grid xl:grid-cols-[1fr_300px] gap-5 items-start">
         <div className="grid md:grid-cols-2 gap-4">
           {GRUPOS_DESPESA_CUSTO.map((grupo) => {
@@ -181,7 +174,7 @@ export default function CustosDespesas() {
           </Card>
 
           <Card className="p-5 space-y-4">
-            <div className="flex items-start gap-3"><Settings2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><h2 className="font-semibold">Custo do Negócio</h2><p className="text-xs text-muted-foreground mt-1">Defina como suas despesas serão distribuídas. O uso nos cálculos é opcional.</p></div></div>
+            <div className="flex items-start gap-3"><Settings2 className="w-5 h-5 text-primary shrink-0 mt-0.5" /><div><div className="flex items-center gap-1.5"><h2 className="font-semibold">Custo do Negócio</h2><Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Como funciona o Custo do Negócio?"><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">Custo do Negócio</p><p className="text-muted-foreground mt-2">Escolha abaixo se quer distribuir suas despesas por Dia ou por Mês. Despesas com pessoal também podem fazer parte desse custo.</p></PopoverContent></Popover></div><p className="text-xs text-muted-foreground mt-1">Defina como suas despesas serão distribuídas. O uso nos cálculos é opcional.</p></div></div>
             <div className="flex items-center justify-between rounded-lg border p-3"><div><p className="text-sm font-medium">Aplicar nos cálculos</p><p className="text-xs text-muted-foreground">Quando desligado, o custo técnico da receita permanece sem rateio do negócio.</p></div><Switch checked={aplicarCustoNegocio} onCheckedChange={(v) => setConfigCampo("aplicar_custo_negocio", v)} /></div>
             <div><p className="text-sm font-medium mb-2">Custo do Negócio</p><div className="grid grid-cols-2 gap-2"><Button type="button" variant={baseCustoNegocio === "dia" ? "default" : "outline"} onClick={() => setConfigCampo("base_custo_negocio", "dia")}>Dia</Button><Button type="button" variant={baseCustoNegocio === "mes" ? "default" : "outline"} onClick={() => setConfigCampo("base_custo_negocio", "mes")}>Mês</Button></div></div>
             {baseCustoNegocio === "dia" ? <div className="grid grid-cols-2 gap-3"><div><label className="text-xs font-medium">Dias de produção no mês</label><Input className="mt-1" type="number" min="0" step="1" value={diasProducaoMes || ""} onChange={(e) => setConfigCampo("dias_producao_mes", e.target.value)} placeholder="Ex.: 25" /></div><div><label className="text-xs font-medium">Produção média por dia</label><Input className="mt-1" type="number" min="0" step="1" value={producaoMediaDia || ""} onChange={(e) => setConfigCampo("producao_media_dia", e.target.value)} placeholder="Ex.: 20" /></div></div> : <div><label className="text-xs font-medium">Produção média no mês</label><Input className="mt-1" type="number" min="0" step="1" value={producaoMediaMes || ""} onChange={(e) => setConfigCampo("volume_mensal_estimado", e.target.value)} placeholder="Ex.: 500" /></div>}
