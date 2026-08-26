@@ -29,7 +29,7 @@ for (const path of ["/custos", "/custos/despesas", "/custos/calcular", "/custos/
 assert.ok(app.includes("<Route element={<CustosRoute />}>"), "rotas internas não estão protegidas por CustosRoute");
 assert.ok(app.includes("<Route element={<CustosLayout />}>") && layout.includes("CustosSidebar") && layout.includes("CustosTopBar"), "layout próprio do Laboratório de Custos não está conectado");
 assert.ok(app.includes('path="/custos/adicionar-ao-plano" element={<CustosBloqueado />}'), "rota de upsell ausente");
-assert.ok(sidebar.includes('to="/app"') && sidebar.includes("Voltar à Cozinha"), "layout de Custos não oferece retorno explícito à Cozinha");
+assert.ok(sidebar.includes('to="/app"') && sidebar.includes("Laboratório de Cozinha"), "layout de Custos não oferece retorno explícito ao Laboratório de Cozinha");
 
 assert.ok(route.includes("ConfiguracaoAddonCustos.filter"), "guard não lê configuração comercial persistida");
 assert.ok(route.includes("AcessoLaboratorioCustosUsuario.filter"), "guard não lê entitlement do usuário");
@@ -64,9 +64,13 @@ for (const schema of [calculoSchema, itemSchema]) {
 }
 assert.ok(entitlementSchema.includes('"create"') && entitlementSchema.includes('"role": "admin"'), "entitlement pode ser autoconcedido pelo usuário");
 assert.ok(entitlementSchema.includes('"data.user_id": "{{user.id}}"'), "entitlement não restringe leitura ao titular");
-assert.ok(configSchema.includes('"grupos_rateio_incluidos"'), "schema versionado de configuração perdeu os grupos de rateio");
-assert.ok(configSchema.includes('"lote_produzido"') && configSchema.includes('"lotes_mes"'), "schema de rateio não está alinhado ao cálculo por lote");
-assert.ok(costConfigScreen.includes("Por receita produzida") && costConfigScreen.includes("Custo rateado por receita"), "Tela 7 não comunica a nomenclatura de receita usada na experiência do módulo");
-assert.ok(despesas.includes("config?.grupos_rateio_incluidos") && despesas.includes("totalRateio"), "Minhas Despesas não usa a mesma seleção de grupos da Tela 7");
+assert.ok(configSchema.includes('"grupos_rateio_incluidos"'), "schema versionado de configuração perdeu os grupos do Custo do Negócio");
+assert.ok(configSchema.includes('"aplicar_custo_negocio"') && configSchema.includes('"base_custo_negocio"'), "schema não contém o novo modelo opcional Dia/Mês");
+assert.ok(configSchema.includes('"trabalho_ajudantes"'), "Despesas com pessoal não podem ser incluídas no Custo do Negócio");
+assert.ok(configSchema.includes('"custo_comercializacao_pct"') && configSchema.includes('"aplicar_custo_comercializacao"'), "schema perdeu o Custo médio de comercialização global");
+assert.ok(costConfigScreen.includes("Custo do Negócio") && costConfigScreen.includes("Minhas Despesas"), "Configurações não direciona o modelo global para Minhas Despesas");
+assert.ok(despesas.includes("base_custo_negocio") && despesas.includes("Custo do Negócio") && despesas.includes("custo_comercializacao_pct"), "Minhas Despesas não implementa Dia/Mês e comercialização global");
+assert.ok(!calcular.includes("Horas de trabalho direto") && !calcular.includes("Valor da hora"), "Calcular Custo ainda exige custo-hora por receita");
+assert.ok(!calcular.includes("Embalagem/custo específico adicional"), "Calcular Custo ainda pede embalagem específica manual em vez de importar da Cozinha");
 
 console.log("OK: fechamento estrutural, segurança, isolamento e preparação comercial do Laboratório de Custos aprovados.");
