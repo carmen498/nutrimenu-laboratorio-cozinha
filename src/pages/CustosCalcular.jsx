@@ -296,7 +296,7 @@ export default function CustosCalcular() {
         markup_aplicado: formacaoPreco?.markup ?? formacaoDireta.markup,
         margem_estimada: formacaoPreco?.margemLiquidaPct ?? formacaoDireta.margem,
         formacao_preco_metodo: formacaoPreco ? "margem" : "informado",
-        margem_desejada_pct: formacaoPreco?.margemDesejadaPct || 0,
+        margem_desejada_pct: formacaoPreco?.margemDesejadaPct ?? ((formacaoDireta.origem === "margem" || formacaoDireta.origem === "margem_padrao") ? formacaoDireta.margem : 0),
         taxa_cartao_pct: 0,
         impostos_pct: 0,
         taxas_variaveis_pct: formacaoPreco?.taxasVariaveisPct || 0,
@@ -310,7 +310,11 @@ export default function CustosCalcular() {
         { tipo: "ingredientes", descricao: "Ingredientes esquecidos", origem: "Laboratório de Cozinha", formula: "Conforme registros técnicos da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoEsquecidos / qtd : 0, valor_total: tecnico.custoEsquecidos, ordem: 2 },
         { tipo: "embalagem", descricao: "Insumos e embalagens da receita", origem: "Laboratório de Cozinha", formula: "Conforme cadastro técnico da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoInsumosTecnicos / qtd : 0, valor_total: tecnico.custoInsumosTecnicos, ordem: 3 },
         { tipo: "despesa_rateada", descricao: "Custo do Negócio", origem: "Minhas Despesas", formula: resultado.rateio.aplicar ? `${money(resultado.rateio.custoPorUnidade)} × ${qtd} receita(s)` : "Não aplicado", quantidade: qtd, valor_unitario: resultado.rateio.custoPorUnidade, valor_total: resultado.rateio.custoDaProducao, ordem: 4 },
-        ...insumosAdicionais.filter((item) => String(item.descricao || "").trim() && n(item.valor) > 0).map((item, index) => ({ tipo: "outro", descricao: String(item.descricao).trim(), origem: "Adicionado neste cálculo", formula: "Valor total informado para esta produção", quantidade: 1, valor_unitario: Math.max(0, n(item.valor)), valor_total: Math.max(0, n(item.valor)), ordem: 10 + index })),
+        ...insumosAdicionais.filter((item) => String(item.descricao || "").trim() && n(item.valor) > 0).map((item, index) => {
+          const valor = Math.max(0, n(item.valor));
+          const porReceita = item.modo !== "producao";
+          return { tipo: "outro", descricao: String(item.descricao).trim(), origem: "Adicionado neste cálculo", formula: porReceita ? `${money(valor)} por receita × ${qtd} receita(s)` : "Valor total informado para esta produção", quantidade: porReceita ? qtd : 1, valor_unitario: valor, valor_total: porReceita ? valor * qtd : valor, ordem: 10 + index };
+        }),
       ].filter((i) => i.valor_total > 0 || i.ordem === 1);
 
       const resposta = await base44.functions.invoke("salvarCalculoCusto", { calculo: payloadCalculo, itens });
