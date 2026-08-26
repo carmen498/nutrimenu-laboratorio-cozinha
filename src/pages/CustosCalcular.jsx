@@ -187,9 +187,11 @@ export default function CustosCalcular() {
       };
     }
 
-    if (campoPrecoAtivo === "margem") {
-      if (margemEntrada === "") return { preco: 0, margem: 0, markup: 0, valido: false, origem: "margem" };
-      const margem = Math.max(0, n(margemEntrada));
+    if (campoPrecoAtivo === "margem" || campoPrecoAtivo === "margem_padrao") {
+      const margem = campoPrecoAtivo === "margem_padrao"
+        ? Math.max(0, Number(config?.margem_padrao ?? 20))
+        : (margemEntrada === "" ? 0 : Math.max(0, n(margemEntrada)));
+      if (campoPrecoAtivo === "margem" && margemEntrada === "") return { preco: 0, margem: 0, markup: 0, valido: false, origem: "margem" };
       const calculo = calcularPrecoPorMargem({ custoUnitario: custo, margemDesejadaPct: margem });
       const preco = calculo.valido ? calculo.preco : 0;
       return {
@@ -197,23 +199,21 @@ export default function CustosCalcular() {
         margem,
         markup: calcularMarkupMultiplicador({ custoUnitario: custo, precoVendaUnitario: preco }),
         valido: calculo.valido && preco > 0,
-        origem: "margem",
+        origem: campoPrecoAtivo === "margem_padrao" ? "margem_padrao" : "margem",
         diagnostico: calculo.diagnostico,
       };
     }
 
-    const markup = campoPrecoAtivo === "markup"
-      ? Math.max(0, n(markupEntrada))
-      : Math.max(0, Number(config?.markup_padrao || 3));
+    const markup = Math.max(0, n(markupEntrada));
     const preco = calcularPrecoPorMarkup({ custoUnitario: custo, markup });
     return {
       preco,
       margem: calcularMargemSobreVenda({ custoUnitario: custo, precoVendaUnitario: preco }),
       markup,
       valido: markup > 0 && preco > 0,
-      origem: campoPrecoAtivo === "markup" ? "markup" : "padrao",
+      origem: "markup",
     };
-  }, [resultado.custoUnitario, formacaoPreco, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, config?.markup_padrao]);
+  }, [resultado.custoUnitario, formacaoPreco, campoPrecoAtivo, precoEntrada, margemEntrada, markupEntrada, config?.margem_padrao]);
 
   const precoVendaEfetivo = Number(formacaoDireta.preco || 0);
   const precoValido = formacaoDireta.valido && precoVendaEfetivo > 0;
