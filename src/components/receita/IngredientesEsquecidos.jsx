@@ -34,7 +34,7 @@ const SUGESTOES_DECORACAO = [
   { nome: "Chantilly para decorar", busca: ["chantilly", "creme de leite"] },
   { nome: "Frutas frescas para decorar", busca: ["frutas", "morango", "framboesa", "mirtilo"] },
   { nome: "Ervas frescas para decorar", busca: ["ervas", "manjericão", "salsa", "coentro", "cebolinha", "hortelã"] },
-  { nome: "Chocolate ralado para decorar", busca: ["chocolate"] },
+  { nome: "Chocolate ralado para decorar", busca: ["chocolate em barra", "chocolate meio amargo", "chocolate ao leite", "chocolate"] },
   { nome: "Nozes / Castanhas para decorar", busca: ["nozes", "castanha", "amêndoa", "avelã"] },
 ];
 
@@ -173,7 +173,7 @@ export default function IngredientesEsquecidos({ receitaId, fator = 1 }) {
   const custoEscalado = custoTotal * fator;
 
   return (
-    <Card className="p-4">
+    <Card id="ingredientes-esquecidos" className="p-4 scroll-mt-24">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5">
           <h3 className="text-sm font-medium text-muted-foreground italic">
