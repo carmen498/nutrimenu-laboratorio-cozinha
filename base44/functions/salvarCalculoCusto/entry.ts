@@ -39,6 +39,10 @@ export default async function(req: Request): Promise<Response> {
       if (String(calculoAnterior.origem_id) !== String(receita.id)) {
         return Response.json({ error: "A ficha anterior pertence a outra receita", code: "previous_cost_recipe_mismatch" }, { status: 400 });
       }
+      const versoesPosteriores = await base44.asServiceRole.entities.CalculoCusto.filter({ calculo_origem_id: calculoAnterior.id, user_id: user.id }, "-data_calculo", 1);
+      if (versoesPosteriores?.length) {
+        return Response.json({ error: "Esta ficha já possui uma versão posterior. Recalcule a versão mais recente pelo Histórico.", code: "previous_cost_has_newer_version", newer_calculation_id: versoesPosteriores[0].id }, { status: 409 });
+      }
     }
 
     const itensLimpos = itens.map((item: any, index: number) => {
