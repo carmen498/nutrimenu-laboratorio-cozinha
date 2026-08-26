@@ -48,10 +48,12 @@ export default function CustosHistorico() {
       return d.getMonth() === mes && d.getFullYear() === ano;
     }).length;
     const mediaCusto = calculos.length ? calculos.reduce((s, c) => s + Number(c.custo_unitario || 0), 0) / calculos.length : 0;
-    const comPreco = calculos.filter((c) => Number(c.preco_venda_informado || 0) > 0);
-    const mediaMargem = comPreco.length ? comPreco.reduce((s, c) => s + Number(c.margem_estimada || 0), 0) / comPreco.length : 0;
-    return { total: calculos.length, desteMes, mediaCusto, mediaMargem, temMargem: comPreco.length > 0 };
+    const formacoesAvancadas = calculos.filter((c) => c.formacao_preco_metodo === "margem").length;
+    return { total: calculos.length, desteMes, mediaCusto, formacoesAvancadas };
   }, [calculos]);
+
+  const idsComVersaoPosterior = useMemo(() => new Set(calculos.map((c) => c.calculo_origem_id).filter(Boolean)), [calculos]);
+  const ehVersaoAtual = (calculo) => !idsComVersaoPosterior.has(calculo.id);
 
   const filtrados = useMemo(() => {
     const termo = normalizarNome(busca);
@@ -99,7 +101,7 @@ export default function CustosHistorico() {
         <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Fichas salvas</p><p className="text-2xl font-bold mt-1">{indicadores.total}</p></div><FileText className="w-5 h-5 text-primary" /></div></Card>
         <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Cálculos neste mês</p><p className="text-2xl font-bold mt-1">{indicadores.desteMes}</p></div><CalendarDays className="w-5 h-5 text-primary" /></div></Card>
         <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Custo médio por receita</p><p className="text-2xl font-bold mt-1">{indicadores.total ? money(indicadores.mediaCusto) : "—"}</p></div><WalletCards className="w-5 h-5 text-primary" /></div></Card>
-        <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Margem média</p><p className="text-2xl font-bold mt-1">{indicadores.temMargem ? pct(indicadores.mediaMargem) : "—"}</p></div><TrendingUp className="w-5 h-5 text-primary" /></div></Card>
+        <Card className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs text-muted-foreground">Formações avançadas</p><p className="text-2xl font-bold mt-1">{indicadores.formacoesAvancadas}</p></div><TrendingUp className="w-5 h-5 text-primary" /></div></Card>
       </div>
 
       <Card className="p-4 space-y-3">
@@ -131,9 +133,9 @@ export default function CustosHistorico() {
                 <div key={c.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0"><Link to={`/custos/ficha/${c.id}`} className="font-semibold hover:text-primary block truncate">{c.origem_nome_snapshot}</Link><p className="text-xs text-muted-foreground mt-1">{c.categoria_snapshot || "Sem categoria"} · {dataCurta(c.data_calculo || c.created_date)}</p></div>
-                    <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem><DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                    <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem>{ehVersaoAtual(c) ? <DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem> : <DropdownMenuItem disabled><RefreshCw className="w-4 h-4 mr-2" /> Existe versão posterior</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">{Number(c.versao_calculo || 1) > 1 && <Badge variant="secondary" className="text-[10px]">v{c.versao_calculo}</Badge>}{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="text-[10px]">Preço assistido</Badge>}</div>
+                  <div className="flex flex-wrap gap-1.5"><Badge variant={ehVersaoAtual(c) ? "default" : "secondary"} className="text-[10px]">v{c.versao_calculo || 1}</Badge><Badge variant="outline" className="text-[10px]">{ehVersaoAtual(c) ? "Versão atual" : "Versão anterior"}</Badge>{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="text-[10px]">Formação avançada</Badge>}</div>
                   <div className="grid grid-cols-2 gap-2 text-sm"><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Produção</p><strong className="block mt-0.5">{numero(c.quantidade_produzida)} receita(s)</strong></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Custo por receita</p><strong className="block mt-0.5">{money(c.custo_unitario)}</strong></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Preço de venda</p><strong className="block mt-0.5">{Number(c.preco_venda_informado || 0) > 0 ? money(c.preco_venda_informado) : "—"}</strong></div><div className="rounded-lg bg-muted/40 p-3"><p className="text-[11px] text-muted-foreground">Margem</p><strong className="block mt-0.5">{Number(c.preco_venda_informado || 0) > 0 ? pct(c.margem_estimada) : "—"}</strong></div></div>
                   <Button variant="outline" className="w-full" onClick={() => navigate(`/custos/ficha/${c.id}`)}>Abrir Ficha de Custo</Button>
                 </div>
@@ -145,7 +147,7 @@ export default function CustosHistorico() {
               <tbody className="divide-y">
                 {exibidos.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/25">
-                    <td className="px-4 py-3"><Link to={`/custos/ficha/${c.id}`} className="font-medium hover:text-primary">{c.origem_nome_snapshot}</Link>{Number(c.versao_calculo || 1) > 1 && <Badge variant="secondary" className="ml-2 text-[10px]">v{c.versao_calculo}</Badge>}{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="ml-2 text-[10px]">Preço assistido</Badge>}</td>
+                    <td className="px-4 py-3"><Link to={`/custos/ficha/${c.id}`} className="font-medium hover:text-primary">{c.origem_nome_snapshot}</Link><Badge variant={ehVersaoAtual(c) ? "default" : "secondary"} className="ml-2 text-[10px]">v{c.versao_calculo || 1}</Badge><Badge variant="outline" className="ml-2 text-[10px]">{ehVersaoAtual(c) ? "Atual" : "Anterior"}</Badge>{c.formacao_preco_metodo === "margem" && <Badge variant="outline" className="ml-2 text-[10px]">Formação avançada</Badge>}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.categoria_snapshot || "—"}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{dataCurta(c.data_calculo || c.created_date)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{numero(c.quantidade_produzida)} receita(s)</td>
@@ -153,7 +155,7 @@ export default function CustosHistorico() {
                     <td className="px-4 py-3 text-right">{Number(c.preco_venda_informado || 0) > 0 ? money(c.preco_venda_informado) : "—"}</td>
                     <td className="px-4 py-3 text-right">{Number(c.preco_venda_informado || 0) > 0 ? pct(c.margem_estimada) : "—"}</td>
                     <td className="px-4 py-3 text-right">
-                      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem><DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
+                      <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="w-4 h-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuItem onClick={() => navigate(`/custos/ficha/${c.id}`)}><FileText className="w-4 h-4 mr-2" /> Abrir ficha</DropdownMenuItem>{ehVersaoAtual(c) ? <DropdownMenuItem onClick={() => navigate(`/custos/calcular?receita=${encodeURIComponent(c.origem_id)}&recalcular=${encodeURIComponent(c.id)}`)}><RefreshCw className="w-4 h-4 mr-2" /> Recalcular como nova versão</DropdownMenuItem> : <DropdownMenuItem disabled><RefreshCw className="w-4 h-4 mr-2" /> Existe versão posterior</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu>
                     </td>
                   </tr>
                 ))}
