@@ -33,7 +33,7 @@ function Content({ onNavigate }) {
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {items.map((item) => <NavItem key={item.to} item={item} pathname={pathname} onNavigate={onNavigate} />)}
         <div className="pt-3 mt-3 border-t border-white/10">
-          <Link to="/app" onClick={onNavigate} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white"><ChefHat className="w-4 h-4" /> Voltar à Cozinha</Link>
+          <Link to="/app" onClick={onNavigate} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white"><ChefHat className="w-4 h-4" /> Laboratório de Cozinha</Link>
         </div>
       </nav>
       <div className="p-3 border-t border-white/10">
