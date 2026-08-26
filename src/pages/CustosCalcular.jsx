@@ -199,7 +199,7 @@ export default function CustosCalcular() {
     gruposRateio: Array.isArray(config?.grupos_rateio_incluidos)
       ? config.grupos_rateio_incluidos
       : ["gastos_negocio", "trabalho_ajudantes", "producao", "embalagem_outros"],
-    aplicarCustoNegocio: Boolean(config?.aplicar_custo_negocio),
+    aplicarCustoNegocio: Boolean(receita && tecnico && config?.aplicar_custo_negocio),
     baseCustoNegocio: config?.base_custo_negocio || "mes",
     diasProducaoMes: Number(config?.dias_producao_mes || 0),
     producaoMediaDia: Number(config?.producao_media_dia || 0),
@@ -277,16 +277,19 @@ export default function CustosCalcular() {
   const pendenciasDetalhadas = useMemo(() => {
     if (!tecnico || !receita || !contexto) return [];
     const itensReceita = contexto.ingredientesPorReceita?.[receita.id] || [];
+    const esquecidosReceita = contexto.esquecidosPorReceita?.[receita.id] || [];
     const itemMap = Object.fromEntries(itensReceita.map((item) => [item.id, item]));
+    const esquecidoMap = Object.fromEntries(esquecidosReceita.map((item) => [item.id, item]));
     const nomes = [];
     for (const problema of tecnico.problemas || []) {
       if (problema.tipo === "insumo_sem_preco") continue;
       const ingrediente = problema.ingrediente_id ? contexto.ingredienteMap?.[problema.ingrediente_id] : null;
       const item = problema.item_id ? itemMap[problema.item_id] : null;
-      const nome = ingrediente?.nome || item?.ingrediente_nome || "Item da receita";
+      const esquecido = problema.item_id ? esquecidoMap[problema.item_id] : null;
+      const nome = esquecido?.nome || item?.ingrediente_nome || ingrediente?.nome || "Item da receita";
       if (problema.tipo === "sem_preco" || problema.tipo === "esquecido_sem_preco") nomes.push(`${nome} — sem preço`);
-      else if (problema.tipo === "ingrediente_nao_encontrado" || problema.tipo === "ingrediente_sem_id") nomes.push(`${nome} — referência ausente`);
-      else if (problema.tipo === "ingrediente_nome_id_divergente" || problema.tipo === "esquecido_nome_id_divergente") nomes.push(`${nome} — referência divergente`);
+      else if (problema.tipo === "ingrediente_nao_encontrado" || problema.tipo === "ingrediente_sem_id" || problema.tipo === "esquecido_nome_id_divergente") nomes.push(`${nome} — referência ausente ou inválida`);
+      else if (problema.tipo === "ingrediente_nome_id_divergente") nomes.push(`${nome} — referência divergente`);
       else nomes.push(`${nome} — revisar cadastro`);
     }
     for (const insumo of insumosImportados.filter((item) => item.semPreco)) nomes.push(`${insumo.insumo_nome || "Insumo/embalagem"} — sem preço`);
@@ -368,6 +371,7 @@ export default function CustosCalcular() {
       if (!resposta?.data?.success || !calculoId) throw new Error(resposta?.data?.error || "A gravação segura da ficha não foi confirmada.");
       qc.invalidateQueries({ queryKey: ["custos-historico", user.id] });
       toast.success(recalcularId ? "Nova versão salva." : "Ficha de custo salva.");
+      if (!recalcularId) window.sessionStorage.removeItem(RASCUNHO_CUSTOS_KEY);
       navigate(`/custos/ficha/${calculoId}`);
     } catch (err) {
       toast.error("Não foi possível salvar o cálculo: " + (err?.message || "erro inesperado"));
@@ -416,7 +420,7 @@ export default function CustosCalcular() {
           <Card className="p-5 space-y-4">
             <div><p className="text-xs font-semibold text-primary">PASSO 3</p><h2 className="font-semibold text-lg">Custo desta produção</h2></div>
             {loadingContexto ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Calculando custo técnico...</div> : !receita ? <p className="text-sm text-muted-foreground">Selecione uma receita para calcular.</p> : <>
-              {!tecnico?.completo && tecnico && <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><div className="flex items-start gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /><div className="flex-1"><p className="font-medium">Há {pendenciasDetalhadas.length || (tecnico.itensSemPreco + tecnico.insumosSemPreco + tecnico.referenciasAusentes)} pendência(s) na receita.</p>{pendenciasDetalhadas.length > 0 && <ul className="mt-1 space-y-0.5 text-xs">{pendenciasDetalhadas.map((item) => <li key={item}>• {item}</li>)}</ul>}<Link to={`/receita/${receita.id}`} className="inline-flex items-center gap-1 text-xs font-medium underline mt-2">Ver na receita <ExternalLink className="w-3 h-3" /></Link></div></div></div>}
+              {!tecnico?.completo && tecnico && <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"><div className="flex items-start gap-2"><AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /><div className="flex-1"><p className="font-medium">Há {pendenciasDetalhadas.length || (tecnico.itensSemPreco + tecnico.insumosSemPreco + tecnico.referenciasAusentes)} pendência(s) na receita.</p>{pendenciasDetalhadas.length > 0 && <ul className="mt-1 space-y-0.5 text-xs">{pendenciasDetalhadas.map((item) => <li key={item}>• {item}</li>)}</ul>}<Link to={`/receita/${receita.id}#ingredientes-esquecidos`} className="inline-flex items-center gap-1 text-xs font-medium underline mt-2">Ver na receita <ExternalLink className="w-3 h-3" /></Link></div></div></div>}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3"><span className="inline-flex items-center gap-1.5">Ingredientes <Popover><PopoverTrigger asChild><button type="button" className="text-muted-foreground hover:text-foreground" aria-label="Como é calculado o custo dos ingredientes?"><CircleHelp className="w-3.5 h-3.5" /></button></PopoverTrigger><PopoverContent className="w-80 text-sm" align="start"><p className="font-medium">Ingredientes</p><p className="text-muted-foreground mt-2">Soma do custo dos ingredientes da receita cadastrada no Laboratório de Cozinha, considerando a quantidade de receitas informada.</p></PopoverContent></Popover></span><strong>{money(tecnico?.custoIngredientes)}</strong></div>
                 <div className="flex justify-between gap-3"><span className="inline-flex items-center gap-2">Insumos e embalagens importados da receita {insumosImportados.length > 0 && <Popover><PopoverTrigger asChild><button type="button" className="text-xs text-primary underline">Ver itens</button></PopoverTrigger><PopoverContent className="w-96 text-sm" align="start"><p className="font-medium">Insumos e embalagens importados</p><div className="mt-2 divide-y max-h-64 overflow-y-auto">{insumosImportados.map((item, index) => <div key={item.id || index} className="py-2 flex justify-between gap-3"><div><p>{item.insumo_nome || `Item ${index + 1}`}</p>{item.semPreco && <p className="text-xs text-amber-700">Sem preço cadastrado</p>}</div><strong className="whitespace-nowrap">{item.semPreco ? "—" : money(item.custoEscalado)}</strong></div>)}</div></PopoverContent></Popover>}</span><strong>{money(tecnico?.custoInsumosTecnicos)}</strong></div>
