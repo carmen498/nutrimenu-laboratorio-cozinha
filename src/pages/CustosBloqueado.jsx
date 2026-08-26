@@ -83,7 +83,7 @@ export default function CustosBloqueado() {
           <div className="relative mt-8 flex flex-wrap gap-2">
             <Button disabled className="min-w-[190px]"><LockKeyhole className="w-4 h-4 mr-2" /> Adicionar ao plano · em breve</Button>
             <Button asChild variant="outline"><Link to="/suporte"><MessageCircle className="w-4 h-4 mr-2" /> Falar com suporte</Link></Button>
-            <Button asChild variant="ghost"><Link to="/app"><ChefHat className="w-4 h-4 mr-2" /> Voltar à Cozinha</Link></Button>
+            <Button asChild variant="ghost"><Link to="/app"><ChefHat className="w-4 h-4 mr-2" /> Laboratório de Cozinha</Link></Button>
           </div>
         </Card>
 
