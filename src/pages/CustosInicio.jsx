@@ -7,11 +7,11 @@ import { somarDespesasAtivas } from "@/lib/custos/motorCustos";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { custosHeroImage } from "@/assets/custosHeroImage";
 import {
   ArrowRight,
   Calculator,
   CheckCircle2,
-  ChefHat,
   FileText,
   History,
   PlayCircle,
@@ -112,10 +112,8 @@ export default function CustosInicio() {
         <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-lime-300/20 blur-2xl" />
         <div className="absolute right-28 -bottom-20 h-44 w-44 rounded-full bg-primary/10 blur-2xl" />
         <div className="relative grid lg:grid-cols-[190px_1fr_auto] gap-5 lg:items-center">
-          <div className="hidden lg:flex h-36 rounded-2xl border border-white/70 bg-white/55 backdrop-blur-sm items-center justify-center relative overflow-hidden">
-            <div className="absolute left-5 top-5 h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center"><ChefHat className="w-6 h-6 text-primary" /></div>
-            <div className="absolute right-5 bottom-5 h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-sm"><Calculator className="w-7 h-7" /></div>
-            <div className="h-16 w-16 rounded-full border-8 border-primary/10 flex items-center justify-center"><WalletCards className="w-7 h-7 text-primary" /></div>
+          <div className="hidden lg:block h-36 rounded-2xl border border-white/70 bg-white/55 backdrop-blur-sm overflow-hidden shadow-sm">
+            <img src={custosHeroImage} alt="Ingredientes e calculadora do Laboratório de Custos" className="w-full h-full object-cover" />
           </div>
 
           <div className="min-w-0">
