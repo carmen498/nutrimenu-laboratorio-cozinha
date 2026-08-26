@@ -29,10 +29,6 @@ export default function CustosCalcular() {
   const [receitaId, setReceitaId] = useState(() => searchParams.get("receita") || "");
   const recalcularId = searchParams.get("recalcular") || "";
   const [quantidade, setQuantidade] = useState("1");
-  const [horas, setHoras] = useState("0");
-  const [valorHora, setValorHora] = useState("");
-  const [embalagemAdicional, setEmbalagemAdicional] = useState("0");
-  const [outrosCustos, setOutrosCustos] = useState("0");
   const [campoPrecoAtivo, setCampoPrecoAtivo] = useState("padrao");
   const [precoEntrada, setPrecoEntrada] = useState("");
   const [margemEntrada, setMargemEntrada] = useState("");
@@ -112,13 +108,7 @@ export default function CustosCalcular() {
   const [recalculoInicializado, setRecalculoInicializado] = useState(false);
   useEffect(() => {
     if (!recalcularId || !calculoAnterior || loadingItensRecalculo || recalculoInicializado) return;
-    const itemMaoObra = itensCalculoAnterior.find((i) => i.tipo === "mao_obra");
-    const itemOutros = itensCalculoAnterior.find((i) => i.tipo === "outro");
     setQuantidade(String(calculoAnterior.quantidade_produzida || 1));
-    setHoras(String(itemMaoObra?.quantidade || 0));
-    setValorHora(itemMaoObra?.valor_unitario != null ? String(itemMaoObra.valor_unitario) : "");
-    setEmbalagemAdicional(String(calculoAnterior.custo_embalagens || 0));
-    setOutrosCustos(String(itemOutros?.valor_total || 0));
     setCampoPrecoAtivo("padrao");
     setPrecoEntrada("");
     setMargemEntrada("");
@@ -128,7 +118,6 @@ export default function CustosCalcular() {
   }, [recalcularId, calculoAnterior, itensCalculoAnterior, loadingItensRecalculo, recalculoInicializado]);
 
   const qtd = Math.max(0, n(quantidade));
-  const valorHoraEfetivo = valorHora === "" ? Number(config?.valor_hora_padrao || 0) : n(valorHora);
 
   const tecnico = useMemo(() => {
     if (!receita || !contexto || qtd <= 0) return null;
@@ -147,18 +136,18 @@ export default function CustosCalcular() {
   const resultado = useMemo(() => calcularLaboratorioCustos({
     custoTecnicoProducao: tecnico?.custoTecnicoTotal || 0,
     despesas,
-    volumeMensal: Number(config?.volume_mensal_estimado || 0),
     quantidadeProduzida: qtd,
     gruposRateio: Array.isArray(config?.grupos_rateio_incluidos)
       ? config.grupos_rateio_incluidos
-      : ["gastos_negocio", "producao", "embalagem_outros"],
-    horasMaoDeObra: n(horas),
-    valorHora: valorHoraEfetivo,
-    custoEmbalagemAdicional: n(embalagemAdicional),
-    outrosCustos: n(outrosCustos),
+      : ["gastos_negocio", "trabalho_ajudantes", "producao", "embalagem_outros"],
+    aplicarCustoNegocio: Boolean(config?.aplicar_custo_negocio),
+    baseCustoNegocio: config?.base_custo_negocio || "mes",
+    diasProducaoMes: Number(config?.dias_producao_mes || 0),
+    producaoMediaDia: Number(config?.producao_media_dia || 0),
+    producaoMediaMes: Number(config?.volume_mensal_estimado || 0),
     totalPorcoes,
     precoVendaUnitario: 0,
-  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, qtd, horas, valorHoraEfetivo, embalagemAdicional, outrosCustos, totalPorcoes]);
+  }), [tecnico, despesas, config?.volume_mensal_estimado, config?.grupos_rateio_incluidos, config?.aplicar_custo_negocio, config?.base_custo_negocio, config?.dias_producao_mes, config?.producao_media_dia, qtd, totalPorcoes]);
 
   const formacaoDireta = useMemo(() => {
     const custo = Number(resultado.custoUnitario || 0);
@@ -251,8 +240,8 @@ export default function CustosCalcular() {
         custo_insumos_tecnicos_snapshot: tecnico.custoInsumosTecnicos,
         custo_esquecidos_snapshot: tecnico.custoEsquecidos,
         custo_tecnico_snapshot: tecnico.custoTecnicoTotal,
-        custo_embalagens: n(embalagemAdicional),
-        custo_mao_obra: resultado.maoDeObra.total,
+        custo_embalagens: 0,
+        custo_mao_obra: 0,
         custo_rateado: resultado.rateio.custoDaProducao,
         custo_total: resultado.custoTotal,
         custo_unitario: resultado.custoUnitario,
@@ -263,22 +252,19 @@ export default function CustosCalcular() {
         margem_estimada: formacaoPreco?.margemLiquidaPct ?? formacaoDireta.margem,
         formacao_preco_metodo: formacaoPreco ? "margem" : "informado",
         margem_desejada_pct: formacaoPreco?.margemDesejadaPct || 0,
-        taxa_cartao_pct: formacaoPreco?.taxaCartaoPct || 0,
-        impostos_pct: formacaoPreco?.impostosPct || 0,
+        taxa_cartao_pct: 0,
+        impostos_pct: 0,
         taxas_variaveis_pct: formacaoPreco?.taxasVariaveisPct || 0,
-        custo_fixo_adicional_unitario: formacaoPreco?.custoFixoAdicionalUnitario || 0,
+        custo_fixo_adicional_unitario: 0,
         status: recalcularId ? "recalculado" : "finalizado",
         calculo_origem_id: recalcularId || "",
       };
 
       const itens = [
-        { tipo: "ingredientes", descricao: "Ingredientes da receita", origem: "Motor de Custos Canônico", formula: `${qtd} receita(s) × composição técnica`, quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoIngredientes / qtd : 0, valor_total: tecnico.custoIngredientes, ordem: 1 },
+        { tipo: "ingredientes", descricao: "Ingredientes da receita", origem: "Laboratório de Cozinha", formula: `${qtd} receita(s) × composição técnica`, quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoIngredientes / qtd : 0, valor_total: tecnico.custoIngredientes, ordem: 1 },
         { tipo: "ingredientes", descricao: "Ingredientes esquecidos", origem: "Laboratório de Cozinha", formula: "Conforme registros técnicos da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoEsquecidos / qtd : 0, valor_total: tecnico.custoEsquecidos, ordem: 2 },
-        { tipo: "embalagem", descricao: "Insumos/embalagens técnicos da receita", origem: "Laboratório de Cozinha", formula: "Conforme cadastro técnico da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoInsumosTecnicos / qtd : 0, valor_total: tecnico.custoInsumosTecnicos, ordem: 3 },
-        { tipo: "embalagem", descricao: "Embalagem/custo específico adicional", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(embalagemAdicional), valor_total: n(embalagemAdicional), ordem: 4 },
-        { tipo: "mao_obra", descricao: "Mão de obra direta", origem: "Informado neste cálculo", formula: `${n(horas)} h × ${money(valorHoraEfetivo)}/h`, quantidade: n(horas), valor_unitario: valorHoraEfetivo, valor_total: resultado.maoDeObra.total, ordem: 5 },
-        { tipo: "despesa_rateada", descricao: "Despesas mensais rateadas", origem: "Minhas Despesas", formula: `${money(resultado.rateio.custoPorUnidade)} × ${qtd} receita(s)`, quantidade: qtd, valor_unitario: resultado.rateio.custoPorUnidade, valor_total: resultado.rateio.custoDaProducao, ordem: 6 },
-        { tipo: "outro", descricao: "Outros custos desta produção", origem: "Informado neste cálculo", formula: "Valor direto", quantidade: 1, valor_unitario: n(outrosCustos), valor_total: n(outrosCustos), ordem: 7 },
+        { tipo: "embalagem", descricao: "Insumos e embalagens da receita", origem: "Laboratório de Cozinha", formula: "Conforme cadastro técnico da receita", quantidade: qtd, valor_unitario: qtd > 0 ? tecnico.custoInsumosTecnicos / qtd : 0, valor_total: tecnico.custoInsumosTecnicos, ordem: 3 },
+        { tipo: "despesa_rateada", descricao: "Custo do Negócio", origem: "Minhas Despesas", formula: resultado.rateio.aplicar ? `${money(resultado.rateio.custoPorUnidade)} × ${qtd} receita(s)` : "Não aplicado", quantidade: qtd, valor_unitario: resultado.rateio.custoPorUnidade, valor_total: resultado.rateio.custoDaProducao, ordem: 4 },
       ].filter((i) => i.valor_total > 0 || i.ordem === 1);
 
       const resposta = await base44.functions.invoke("salvarCalculoCusto", { calculo: payloadCalculo, itens });
