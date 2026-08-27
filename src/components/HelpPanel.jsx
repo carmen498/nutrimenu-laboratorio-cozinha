@@ -42,7 +42,8 @@ export default function HelpPanel({ screenName = "", open: openProp, onOpenChang
     setAnswer("");
     try {
       const ctxInfo = content?.context ? `Contexto da tela: ${content.context}` : "";
-      const systemPrompt = `Você é a assistente do app Laboratório de Cozinha. O usuário está na tela ${screenName || "do app"}. ${ctxInfo} Responda em português brasileiro de forma direta e prática. REGRA: apenas oriente o usuário a criar uma receita quando ele mencionar explicitamente o nome de uma receita para cadastrar — nunca sugira criar receitas de forma proativa.`;
+      const produtoAtual = screenName?.startsWith("Custos —") ? "Laboratório de Custos" : "Laboratório de Cozinha";
+      const systemPrompt = `Você é a assistente do ${produtoAtual}. O usuário está na tela ${screenName || "do app"}. ${ctxInfo} Responda em português brasileiro de forma direta e prática. REGRA: apenas oriente o usuário a criar uma receita quando ele mencionar explicitamente o nome de uma receita para cadastrar — nunca sugira criar receitas de forma proativa.`;
       const res = await base44.integrations.Core.InvokeLLM({
         prompt: `[System: ${systemPrompt}]\n\nPergunta do usuário: ${question}`,
         model: "automatic",
