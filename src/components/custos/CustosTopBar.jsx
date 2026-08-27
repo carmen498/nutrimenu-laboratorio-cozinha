@@ -3,7 +3,7 @@ import { ChefHat, ChevronDown, HelpCircle, LogOut, Menu, User } from "lucide-rea
 import { useAuth } from "@/lib/AuthContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function CustosTopBar({ onMenuClick }) {
+export default function CustosTopBar({ onMenuClick, onHelpClick }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const iniciais = (user?.full_name || user?.nome_completo || user?.email || "U").trim().split(/\s+/).filter(Boolean).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
@@ -17,7 +17,7 @@ export default function CustosTopBar({ onMenuClick }) {
       </Link>
       <div className="hidden md:flex flex-1 items-center"><span className="text-xs text-white/55">Custo de produção · Formação do preço · Margem</span></div>
       <div className="flex items-center gap-2 ml-auto">
-        <button onClick={() => navigate("/suporte")} className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/75 hover:text-white"><HelpCircle className="w-4 h-4" /> Ajuda</button>
+        <button onClick={onHelpClick} className="hidden sm:flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white/75 hover:text-white"><HelpCircle className="w-4 h-4" /> Ajuda</button>
         <button onClick={() => navigate("/app")} className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-md bg-white text-[#17382D] text-xs font-semibold"><ChefHat className="w-4 h-4" /> Laboratório de Cozinha</button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><button className="flex items-center gap-1"><div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center text-xs font-bold">{iniciais}</div><ChevronDown className="w-4 h-4 text-white/60 hidden md:block" /></button></DropdownMenuTrigger>
