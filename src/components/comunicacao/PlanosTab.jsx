@@ -22,7 +22,9 @@ export default function PlanosTab() {
     queryFn: () => base44.entities.ConfiguracaoPlano.list("ordem"),
   });
 
-  const renovacoes = planos.filter((p) => p.plano_id === "renovacao");
+  const planosCozinha = planos.filter((p) => !p.produto || p.produto === "laboratorio_cozinha");
+  const planosCustos = planos.filter((p) => p.produto === "laboratorio_custos");
+  const renovacoes = planosCozinha.filter((p) => p.plano_id === "renovacao");
   const renovacao = renovacoes[0];
   const renovacaoInvalida =
     renovacoes.length !== 1 ||
@@ -85,29 +87,33 @@ export default function PlanosTab() {
         </div>
       )}
 
-      {planos.map((plano) => (
-        <div key={plano.id} className="flex items-center justify-between gap-4 rounded-lg border p-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-foreground">{plano.nome}</p>
-              {plano.mais_popular && (
-                <Badge className="gap-1">
-                  <Star className="w-3 h-3" /> Mais popular
-                </Badge>
-              )}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 pt-2"><div><h3 className="font-semibold">Laboratório de Cozinha</h3><p className="text-xs text-muted-foreground">Produto-base e ofertas já comercializadas.</p></div><Badge variant="outline">Produto-base</Badge></div>
+        {planosCozinha.map((plano) => (
+          <div key={plano.id} className="flex items-center justify-between gap-4 rounded-lg border p-4">
+            <div>
+              <div className="flex items-center gap-2"><p className="font-semibold text-foreground">{plano.nome}</p>{plano.mais_popular && <Badge className="gap-1"><Star className="w-3 h-3" /> Mais popular</Badge>}</div>
+              <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
+              <p className="text-sm mt-1"><span className="font-medium">{formatarPreco(plano)}</span>{plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}<span className="text-muted-foreground"> · cobrado: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span></p>
             </div>
-            <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
-            <p className="text-sm mt-1">
-              <span className="font-medium">{formatarPreco(plano)}</span>
-              {plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}
-              <span className="text-muted-foreground"> · cobrado: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span>
-            </p>
+            <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}>
-            <Pencil className="w-4 h-4 mr-1.5" /> Editar
-          </Button>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      <div className="space-y-3 pt-5 border-t">
+        <div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">Laboratório de Custos</h3><p className="text-xs text-muted-foreground">Complemento opcional em preparação. Checkout e venda permanecem desligados.</p></div><Badge variant="secondary">Homologação</Badge></div>
+        {planosCustos.map((plano) => (
+          <div key={plano.id} className="flex items-center justify-between gap-4 rounded-lg border border-dashed p-4 bg-muted/20">
+            <div>
+              <div className="flex items-center gap-2"><p className="font-semibold text-foreground">{plano.nome}</p>{plano.mais_popular && <Badge className="gap-1"><Star className="w-3 h-3" /> Mais popular</Badge>}<Badge variant="outline" className="text-[10px]">Venda desligada</Badge></div>
+              <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
+              <p className="text-sm mt-1"><span className="font-medium">{formatarPreco(plano)}</span>{plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}<span className="text-muted-foreground"> · futuro checkout: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span></p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
+          </div>
+        ))}
+      </div>
 
       {planoEdicao && (
         <ConfiguracaoPlanoDialog
