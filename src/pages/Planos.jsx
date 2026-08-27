@@ -45,7 +45,8 @@ export default function Planos() {
     queryKey: ["configuracao-planos-publico"],
     queryFn: () => base44.entities.ConfiguracaoPlano.list("ordem"),
   });
-  const configPorId = Object.fromEntries(configPlanos.map((p) => [p.plano_id, p]));
+  const configPlanosCozinha = configPlanos.filter((p) => !p.produto || p.produto === "laboratorio_cozinha");
+  const configPorId = Object.fromEntries(configPlanosCozinha.map((p) => [p.plano_id, p]));
 
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
