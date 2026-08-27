@@ -1,4 +1,7 @@
+import { custosHelpContent } from "@/lib/custosHelpContent";
+
 export const helpContent = {
+  ...custosHelpContent,
   "Início": {
     context:
       "Este é o ponto de partida do Laboratório de Cozinha, sua plataforma de gastronomia planejada. Aqui você acessa rapidamente os módulos principais: Receitas, Cardápios, Ingredientes, Lista de Compras e a tabela de Per Capita. Cada módulo foi desenhado para facilitar o dia a dia de quem cozinha profissionalmente — do cálculo de custos à montagem de cardápios completos.",
