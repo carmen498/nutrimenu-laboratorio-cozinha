@@ -16,5 +16,11 @@ export function getScreenName(pathname, search = "") {
   if (p === "/auditorias") return "Auditorias";
   if (p === "/historico") return "Histórico";
   if (p.startsWith("/exportar/")) return "Exportar Receita";
+  if (p === "/custos") return "Custos — Início";
+  if (p === "/custos/calcular") return "Custos — Calcular Custo";
+  if (p.startsWith("/custos/ficha/")) return "Custos — Ficha de Custo";
+  if (p === "/custos/historico") return "Custos — Histórico";
+  if (p === "/custos/despesas") return "Custos — Minhas Despesas";
+  if (p === "/custos/configuracoes") return "Custos — Configurações";
   return "";
 }
