@@ -89,6 +89,18 @@ export default function AcessosCustosTab({ usuarios = [] }) {
     retry: false,
   });
 
+  const { data: homologacoes = [] } = useQuery({
+    queryKey: ["admin-homologacao-trial-custos"],
+    queryFn: () => fetchAllPages(base44.entities.HomologacaoTrialCustosUsuario, "-updated_date", 500),
+    retry: false,
+  });
+
+  const homologacaoPorUsuario = useMemo(() => {
+    const map = new Map();
+    for (const item of homologacoes) if (item?.user_id && !map.has(item.user_id)) map.set(item.user_id, item);
+    return map;
+  }, [homologacoes]);
+
   const acessosPorUsuario = useMemo(() => {
     const map = new Map();
     for (const acesso of acessos) {
@@ -110,7 +122,9 @@ export default function AcessosCustosTab({ usuarios = [] }) {
         const estado = estadoDoAcesso(atual);
         const trialUsado = historico.some((a) => a.modalidade === "trial" || a.origem === "trial" || !!a.trial_ativado_em);
         const base = avaliarAcessoAssinatura(u);
-        return { usuario: u, historico, atual, estado, trialUsado, baseAtiva: base.temAcesso };
+        const homologacao = homologacaoPorUsuario.get(u.id) || null;
+        const homologacaoAtiva = !!homologacao?.habilitado && (!homologacao.expira_em || new Date(homologacao.expira_em) >= new Date());
+        return { usuario: u, historico, atual, estado, trialUsado, baseAtiva: base.temAcesso, homologacao, homologacaoAtiva }; 
       })
       .filter((linha) => {
         if (termo) {
@@ -121,7 +135,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
         if (modalidadeFiltro !== "todos" && linha.atual?.modalidade !== modalidadeFiltro) return false;
         return true;
       });
-  }, [usuarios, acessosPorUsuario, busca, estadoFiltro, modalidadeFiltro]);
+  }, [usuarios, acessosPorUsuario, homologacaoPorUsuario, busca, estadoFiltro, modalidadeFiltro]);
 
   const totais = useMemo(() => {
     const valores = { ativo: 0, trial: 0, expirado: 0, semAcesso: 0 };
@@ -139,6 +153,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
       qc.invalidateQueries({ queryKey: ["admin-acessos-laboratorio-custos-completo"] }),
       qc.invalidateQueries({ queryKey: ["admin-acessos-laboratorio-custos"] }),
       qc.invalidateQueries({ queryKey: ["custos-entitlement"] }),
+      qc.invalidateQueries({ queryKey: ["admin-homologacao-trial-custos"] }),
     ]);
   };
 
@@ -189,6 +204,35 @@ export default function AcessosCustosTab({ usuarios = [] }) {
       toast({ title: "Não foi possível conceder o acesso", description: err?.message || "Tente novamente.", variant: "destructive" });
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const alternarHomologacaoTrial = async (linha) => {
+    if (linha.trialUsado) {
+      toast({ title: "Trial já utilizado", description: "A homologação não pode reabrir um trial já consumido.", variant: "destructive" });
+      return;
+    }
+    if (!linha.baseAtiva) {
+      toast({ title: "Laboratório de Cozinha inativo", description: "Ative o produto-base antes da homologação.", variant: "destructive" });
+      return;
+    }
+    setAcaoId(`homologacao:${linha.usuario.id}`);
+    try {
+      if (linha.homologacao?.id) {
+        await base44.entities.HomologacaoTrialCustosUsuario.update(linha.homologacao.id, { habilitado: !linha.homologacaoAtiva });
+      } else {
+        await base44.entities.HomologacaoTrialCustosUsuario.create({
+          user_id: linha.usuario.id,
+          habilitado: true,
+          observacao: "Autorizado para homologação E2E do trial de 7 dias do Laboratório de Custos.",
+        });
+      }
+      await invalidar();
+      toast({ title: linha.homologacaoAtiva ? "Trial E2E revogado" : "Trial E2E liberado", description: "A liberação vale somente para este usuário e não altera a chave global." });
+    } catch (err) {
+      toast({ title: "Não foi possível alterar a homologação", description: err?.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setAcaoId(null);
     }
   };
 
@@ -249,6 +293,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
                     {["ativo", "trial_ativo"].includes(linha.estado) && <Button variant="ghost" size="sm" onClick={() => alterarStatus(linha, "suspenso")} disabled={acaoId === `${linha.atual?.id}:suspenso`}><PauseCircle className="w-3.5 h-3.5 mr-1" /> Suspender</Button>}
                     {["ativo", "trial_ativo", "suspenso"].includes(linha.estado) && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => alterarStatus(linha, "cancelado")} disabled={acaoId === `${linha.atual?.id}:cancelado`}><XCircle className="w-3.5 h-3.5 mr-1" /> Cancelar</Button>}
                     {podeReativar && <Button variant="ghost" size="sm" onClick={() => alterarStatus(linha, "ativo")} disabled={acaoId === `${linha.atual?.id}:ativo`}><PlayCircle className="w-3.5 h-3.5 mr-1" /> Reativar</Button>}
+                    {!linha.trialUsado && <Button variant={linha.homologacaoAtiva ? "secondary" : "ghost"} size="sm" onClick={() => alternarHomologacaoTrial(linha)} disabled={!linha.baseAtiva || acaoId === `homologacao:${linha.usuario.id}`}>{linha.homologacaoAtiva ? "Revogar trial E2E" : "Liberar trial E2E"}</Button>}
                     {linha.historico.length > 0 && <Button variant="ghost" size="sm" onClick={() => setHistoricoDialog(linha)}>Histórico</Button>}
                   </div></TableCell>
                 </TableRow>;
