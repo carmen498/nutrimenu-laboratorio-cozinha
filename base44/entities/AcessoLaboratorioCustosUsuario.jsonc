@@ -19,10 +19,32 @@
         "pendente",
         "ativo",
         "suspenso",
-        "cancelado"
+        "cancelado",
+        "expirado"
       ],
       "default": "pendente",
-      "description": "Estado comercial do acesso ao add-on."
+      "description": "Estado persistido do acesso. A validade temporal tamb\u00e9m \u00e9 conferida por inicio_em/fim_em."
+    },
+    "modalidade": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "30_dias",
+        "anual",
+        "cortesia",
+        "admin",
+        "migracao"
+      ],
+      "description": "Modalidade comercial ou administrativa que originou o acesso."
+    },
+    "plano_id": {
+      "type": "string",
+      "enum": [
+        "custos_trial",
+        "custos_mensal",
+        "custos_anual"
+      ],
+      "description": "Oferta do Laborat\u00f3rio de Custos relacionada ao acesso, quando aplic\u00e1vel."
     },
     "origem": {
       "type": "string",
@@ -30,7 +52,8 @@
         "admin",
         "checkout",
         "cortesia",
-        "migracao"
+        "migracao",
+        "trial"
       ],
       "default": "admin",
       "description": "Origem da concess\u00e3o do entitlement."
@@ -43,7 +66,16 @@
     "fim_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Fim opcional da validade. Vazio significa sem expira\u00e7\u00e3o pr\u00f3pria enquanto o plano-base estiver v\u00e1lido."
+      "description": "Fim opcional da validade do acesso."
+    },
+    "trial_ativado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que o trial \u00fanico de 7 dias foi ativado."
+    },
+    "oferta_versao": {
+      "type": "string",
+      "description": "Vers\u00e3o da oferta que originou o acesso, para rastreabilidade."
     },
     "cancelado_em": {
       "type": "string",
