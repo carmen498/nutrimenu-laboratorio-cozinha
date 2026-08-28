@@ -22,12 +22,24 @@
     "venda_habilitada": {
       "type": "boolean",
       "default": false,
-      "description": "Habilita a oferta para novas contrata\u00e7\u00f5es somente ap\u00f3s checkout e pre\u00e7o estarem homologados."
+      "description": "Habilita ofertas pagas somente ap\u00f3s checkout homologado."
+    },
+    "trial_habilitado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Habilita o trial p\u00fablico de 7 dias. Permanece false durante homologa\u00e7\u00e3o."
+    },
+    "trial_dias": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 30,
+      "default": 7,
+      "description": "Dura\u00e7\u00e3o do trial do Laborat\u00f3rio de Custos em dias corridos."
     },
     "preco_exibido": {
       "type": "number",
       "minimum": 0,
-      "description": "Pre\u00e7o comercial aprovado para exibi\u00e7\u00e3o. Opcional enquanto a oferta n\u00e3o estiver definida."
+      "description": "Campo legado de oferta \u00fanica; mantido por compatibilidade."
     },
     "periodo_exibido": {
       "type": "string",
@@ -36,12 +48,12 @@
         "ano",
         "unico"
       ],
-      "description": "Periodicidade do pre\u00e7o exibido."
+      "description": "Campo legado de periodicidade da oferta \u00fanica."
     },
     "valor_cobranca": {
       "type": "number",
       "minimum": 0,
-      "description": "Valor server-side futuro do checkout do add-on. Opcional enquanto a venda estiver desabilitada."
+      "description": "Campo legado de valor da oferta \u00fanica; checkout futuro usa ConfiguracaoPlano por produto."
     },
     "beneficios": {
       "type": "array",
