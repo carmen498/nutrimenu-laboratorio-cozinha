@@ -13,18 +13,23 @@ export function avaliarAcessoLaboratorioCustosServer(
   if (!base.temAcesso) return { temAcesso: false, motivo: "plano_base_inativo", motivoBase: base.motivo };
 
   if (!config?.modulo_habilitado) return { temAcesso: false, motivo: "comercial_indisponivel" };
-  if (!entitlement || entitlement.status !== "ativo") return { temAcesso: false, motivo: "addon_nao_contratado" };
+  if (!entitlement) return { temAcesso: false, motivo: "addon_nao_contratado", estado: "nao_contratado" };
+  if (entitlement.status === "suspenso") return { temAcesso: false, motivo: "addon_suspenso", estado: "suspenso", entitlement };
+  if (entitlement.status === "cancelado") return { temAcesso: false, motivo: "addon_cancelado", estado: "cancelado", entitlement };
+  if (entitlement.status === "expirado") return { temAcesso: false, motivo: "addon_expirado", estado: "expirado", entitlement };
+  if (entitlement.status !== "ativo") return { temAcesso: false, motivo: "addon_pendente", estado: "pendente", entitlement };
 
   if (entitlement.inicio_em) {
     const inicio = new Date(entitlement.inicio_em);
-    if (!Number.isNaN(inicio.getTime()) && inicio > agora) return { temAcesso: false, motivo: "addon_ainda_nao_iniciado" };
+    if (!Number.isNaN(inicio.getTime()) && inicio > agora) return { temAcesso: false, motivo: "addon_ainda_nao_iniciado", estado: "pendente", entitlement };
   }
   if (entitlement.fim_em) {
     const fim = new Date(entitlement.fim_em);
-    if (!Number.isNaN(fim.getTime()) && fim < agora) return { temAcesso: false, motivo: "addon_expirado" };
+    if (!Number.isNaN(fim.getTime()) && fim < agora) return { temAcesso: false, motivo: "addon_expirado", estado: "expirado", entitlement };
   }
 
-  return { temAcesso: true, motivo: "addon_ativo", entitlement };
+  const estado = entitlement.modalidade === "trial" ? "trial_ativo" : "ativo";
+  return { temAcesso: true, motivo: entitlement.modalidade === "trial" ? "trial_ativo" : "addon_ativo", estado, entitlement };
 }
 
 export async function exigirAcessoLaboratorioCustos(base44: any, agora = new Date()) {
