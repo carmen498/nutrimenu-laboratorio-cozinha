@@ -169,7 +169,6 @@ const AuthenticatedApp = () => {
             <Route path="/relatorio-categorias" element={<RelatorioCategorias />} />
             <Route path="/medidas-caseiras" element={<MedidasCaseiras />} />
             <Route path="/insumos-embalagens" element={<InsumosEmbalagens />} />
-            <Route path="/configuracoes" element={<Configuracoes />} />
             <Route path="/historico" element={<Historico />} />
             <Route path="/suporte" element={<Suporte />} />
             <Route path="/sobre-carmen" element={<Sobre />} />
@@ -181,6 +180,7 @@ const AuthenticatedApp = () => {
             <Route path="/custos/adicionar-ao-plano" element={<CustosBloqueado />} />
             <Route path="/CustosBloqueado" element={<Navigate to="/custos/adicionar-ao-plano" replace />} />
             <Route element={<AdminRoute />}>
+              <Route path="/configuracoes" element={<Configuracoes />} />
               <Route path="/admin/usuarios" element={<Navigate to="/admin/comunicacao" replace />} />
               <Route path="/admin/comunicacao" element={<AdminComunicacao />} />
               <Route path="/dicas-carmen/nova" element={<NovaDicaCarmen />} />
