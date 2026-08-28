@@ -21,9 +21,14 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'É necessário ter acesso ativo ao Laboratório de Cozinha.', code: 'base_plan_required' }, { status: 409 });
     }
 
-    const configs = await base44.asServiceRole.entities.ConfiguracaoAddonCustos.filter({ chave: MODULO });
+    const [configs, autorizacoes] = await Promise.all([
+      base44.asServiceRole.entities.ConfiguracaoAddonCustos.filter({ chave: MODULO }),
+      base44.asServiceRole.entities.HomologacaoTrialCustosUsuario.filter({ user_id: user.id, habilitado: true }),
+    ]);
     const config = (configs || [])[0] || null;
-    if (!config?.trial_habilitado) {
+    const agoraAutorizacao = new Date();
+    const autorizacaoHomologacao = (autorizacoes || []).find((a: any) => !a.expira_em || new Date(a.expira_em) >= agoraAutorizacao) || null;
+    if (!config?.trial_habilitado && !autorizacaoHomologacao) {
       return Response.json({ error: 'O teste gratuito do Laboratório de Custos ainda não foi liberado.', code: 'cost_trial_disabled' }, { status: 409 });
     }
 
@@ -53,8 +58,12 @@ export default async function(req: Request): Promise<Response> {
       fim_em: fim.toISOString(),
       trial_ativado_em: agora.toISOString(),
       oferta_versao: oferta?.versao_oferta || config?.versao_oferta || '',
-      observacao: 'Trial único do Laboratório de Custos.'
+      observacao: autorizacaoHomologacao ? 'Trial único do Laboratório de Custos — homologação controlada.' : 'Trial único do Laboratório de Custos.'
     });
+
+    if (autorizacaoHomologacao?.id) {
+      await base44.asServiceRole.entities.HomologacaoTrialCustosUsuario.update(autorizacaoHomologacao.id, { habilitado: false });
+    }
 
     if (user.email) {
       const nome = user.nome_completo || user.full_name || '';
