@@ -241,5 +241,21 @@ export const custosHelpContent = {
       { q: "As configurações valem para todas as receitas?", a: "Elas funcionam como padrões gerais para novos cálculos, mas podem ser substituídas dentro de cada cálculo." },
       { q: "Posso alterar uma configuração somente para um cálculo?", a: "Parâmetros como preço, margem e markup podem ser alterados diretamente no cálculo sem mudar o padrão global." }
     ]
+  },
+
+  "Custos — Planos": {
+    context: "A tela Planos mostra a oferta preparada para o Laboratório de Custos dentro do mesmo ambiente do Laboratório de Cozinha. Nesta fase ela serve para homologação: os valores e o fluxo do trial estão cadastrados, mas contratação, checkout e Mercado Pago continuam desligados até a publicação comercial.",
+    faqs: [
+      { q: "Quais planos do Laboratório de Custos estão cadastrados?", a: "7 dias grátis, 30 dias por R$ 8,90 e plano anual por R$ 87,00." },
+      { q: "Os planos já estão disponíveis para compra?", a: "Não. Nesta fase a tela está em homologação e os botões de contratação permanecem desativados." },
+      { q: "O teste grátis já está liberado para usuários?", a: "Não. O trial de 7 dias está tecnicamente preparado, mas a chave trial_habilitado permanece desligada até a liberação comercial." },
+      { q: "O trial pode ser usado mais de uma vez?", a: "Não. A regra preparada permite uma única utilização do trial por usuário." },
+      { q: "Preciso ter o Laboratório de Cozinha para usar o Laboratório de Custos?", a: "Sim. O Laboratório de Custos é um complemento e depende de um acesso ativo ao Laboratório de Cozinha." },
+      { q: "O que acontece com minhas fichas se o acesso ao Custos expirar?", a: "As fichas e o histórico permanecem preservados. Uma futura reativação restaura o acesso aos registros existentes." },
+      { q: "O plano de 30 dias renova automaticamente?", a: "Não no modelo atualmente definido. Ele representa 30 dias de acesso, sem renovação automática." },
+      { q: "O plano anual renova automaticamente?", a: "Não no modelo atualmente definido. Ele representa 365 dias de acesso, sem renovação automática." },
+      { q: "O Mercado Pago já está integrado a estes planos?", a: "Não. A integração de pagamento continua desligada e será realizada somente após homologação da arquitetura comercial definitiva." },
+      { q: "Por que vejo os planos se eles ainda não estão publicados?", a: "Contas administrativas podem visualizar a experiência de homologação para conferir preços, textos, fluxo do trial e estados comerciais antes da publicação." }
+    ]
   }
 };
