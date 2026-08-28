@@ -1,0 +1,50 @@
+{
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Usu\u00e1rio autorizado a percorrer o fluxo real do trial do Laborat\u00f3rio de Custos durante homologa\u00e7\u00e3o."
+    },
+    "habilitado": {
+      "type": "boolean",
+      "default": true,
+      "description": "Permite ao usu\u00e1rio iniciar o trial real mesmo com trial_habilitado global desligado."
+    },
+    "expira_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Validade opcional da autoriza\u00e7\u00e3o de homologa\u00e7\u00e3o; n\u00e3o \u00e9 a validade do trial."
+    },
+    "observacao": {
+      "type": "string",
+      "description": "Nota administrativa sobre a homologa\u00e7\u00e3o."
+    }
+  },
+  "required": [
+    "user_id",
+    "habilitado"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  },
+  "name": "HomologacaoTrialCustosUsuario"
+}
