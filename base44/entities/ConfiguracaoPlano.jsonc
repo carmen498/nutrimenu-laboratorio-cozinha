@@ -2,27 +2,39 @@
   "name": "ConfiguracaoPlano",
   "type": "object",
   "properties": {
+    "produto": {
+      "type": "string",
+      "enum": [
+        "laboratorio_cozinha",
+        "laboratorio_custos"
+      ],
+      "default": "laboratorio_cozinha",
+      "description": "Produto ao qual a oferta pertence. Registros legados sem produto s\u00e3o tratados como Laborat\u00f3rio de Cozinha."
+    },
     "plano_id": {
       "type": "string",
       "enum": [
         "trial",
         "mensal",
         "anual",
-        "renovacao"
+        "renovacao",
+        "custos_trial",
+        "custos_mensal",
+        "custos_anual"
       ],
-      "description": "Identificador fixo do plano \u2014 usado para casar com o Pagamento e determinar o valor cobrado no checkout"
+      "description": "Identificador fixo da oferta. Ofertas do Laborat\u00f3rio de Custos usam prefixo custos_."
     },
     "nome": {
       "type": "string",
-      "description": "Nome do plano exibido no card (ex: Mensal)"
+      "description": "Nome do plano exibido no card."
     },
     "subtitulo": {
       "type": "string",
-      "description": "Texto de destaque/subt\u00edtulo abaixo do nome (ex: Sem compromisso)"
+      "description": "Texto de destaque/subt\u00edtulo abaixo do nome."
     },
     "preco_exibido": {
       "type": "number",
-      "description": "Valor num\u00e9rico exibido em destaque no card (ex: 29.90, ou 16.50 para o equivalente mensal do plano anual)"
+      "description": "Valor num\u00e9rico exibido em destaque no card."
     },
     "periodo_exibido": {
       "type": "string",
@@ -32,15 +44,15 @@
         "unico"
       ],
       "default": "mes",
-      "description": "Sufixo exibido junto ao pre\u00e7o em destaque (/m\u00eas, /ano, ou nenhum para valor \u00fanico)"
+      "description": "Sufixo exibido junto ao pre\u00e7o em destaque."
     },
     "preco_detalhe": {
       "type": "string",
-      "description": "Texto complementar menor abaixo do pre\u00e7o em destaque (ex: 'R$ 198/ano', 'ou 6x de R$ 16,50')"
+      "description": "Texto complementar menor abaixo do pre\u00e7o em destaque."
     },
     "valor_cobranca": {
       "type": "number",
-      "description": "Valor real, em R$, cobrado no checkout via Mercado Pago para este plano (fonte \u00fanica de verdade do pre\u00e7o cobrado)"
+      "description": "Valor real reservado para cobran\u00e7a server-side quando o checkout do respectivo produto estiver homologado."
     },
     "beneficios": {
       "type": "array",
@@ -48,17 +60,26 @@
         "type": "string"
       },
       "default": [],
-      "description": "Lista de benef\u00edcios/funcionalidades inclu\u00eddas, exibida no card do plano"
+      "description": "Lista de benef\u00edcios/funcionalidades inclu\u00eddas."
     },
     "mais_popular": {
       "type": "boolean",
       "default": false,
-      "description": "Quando true, exibe o destaque visual 'Mais popular' no card"
+      "description": "Quando true, exibe destaque visual no card."
     },
     "ordem": {
       "type": "number",
       "default": 0,
-      "description": "Ordem de exibi\u00e7\u00e3o dos cards na tela p\u00fablica de Planos"
+      "description": "Ordem de exibi\u00e7\u00e3o dentro do produto."
+    },
+    "venda_habilitada": {
+      "type": "boolean",
+      "default": true,
+      "description": "Controla se esta oferta pode ser usada comercialmente. Para Laborat\u00f3rio de Custos permanece false at\u00e9 homologa\u00e7\u00e3o."
+    },
+    "versao_oferta": {
+      "type": "string",
+      "description": "Vers\u00e3o comercial da oferta para rastreabilidade."
     }
   },
   "required": [
