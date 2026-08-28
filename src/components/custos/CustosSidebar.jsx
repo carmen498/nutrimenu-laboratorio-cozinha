@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Calculator, ChefHat, History, Home, LogOut, Settings2, WalletCards, X } from "lucide-react";
+import { Calculator, ChefHat, CreditCard, History, Home, LogOut, Settings2, WalletCards, X } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
 const items = [
@@ -8,6 +8,7 @@ const items = [
   { to: "/custos/historico", label: "Histórico", icon: History },
   { to: "/custos/despesas", label: "Minhas Despesas", icon: WalletCards, separatorBefore: true },
   { to: "/custos/configuracoes", label: "Configurações", icon: Settings2 },
+  { to: "/custos/planos", label: "Planos", icon: CreditCard },
 ];
 
 function NavItem({ item, pathname, onNavigate }) {
