@@ -198,7 +198,6 @@ export default function AcessosCustosTab({ usuarios = [] }) {
     try {
       const dados = { status };
       if (status === "cancelado") dados.cancelado_em = new Date().toISOString();
-      if (status === "ativo") dados.cancelado_em = null;
       await base44.entities.AcessoLaboratorioCustosUsuario.update(linha.atual.id, dados);
       await invalidar();
       toast({ title: status === "ativo" ? "Acesso reativado" : status === "suspenso" ? "Acesso suspenso" : "Acesso cancelado" });
@@ -232,7 +231,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
       {isLoading ? <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin" /></div> : (
         <div className="border rounded-lg overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Usuário</TableHead><TableHead>Co­zinha</TableHead><TableHead>Estado Custos</TableHead><TableHead>Modalidade</TableHead><TableHead>Início</TableHead><TableHead>Vencimento</TableHead><TableHead>Trial</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Usuário</TableHead><TableHead>Cozinha</TableHead><TableHead>Estado Custos</TableHead><TableHead>Modalidade</TableHead><TableHead>Início</TableHead><TableHead>Vencimento</TableHead><TableHead>Trial</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
             <TableBody>
               {linhas.map((linha) => {
                 const vencido = linha.atual?.fim_em && new Date(linha.atual.fim_em) < new Date();
