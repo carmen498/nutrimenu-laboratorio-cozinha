@@ -22,5 +22,6 @@ export function getScreenName(pathname, search = "") {
   if (p === "/custos/historico") return "Custos — Histórico";
   if (p === "/custos/despesas") return "Custos — Minhas Despesas";
   if (p === "/custos/configuracoes") return "Custos — Configurações";
+  if (p === "/custos/planos") return "Custos — Planos";
   return "";
 }
