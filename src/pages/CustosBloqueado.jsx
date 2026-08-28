@@ -1,10 +1,12 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Calculator, Check, ChefHat, Clock3, History, LockKeyhole, MessageCircle, ShieldCheck, Sparkles, WalletCards } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 import { base44 } from "@/api/base44Client";
 
 const BENEFICIOS = [
@@ -29,7 +31,7 @@ function dinheiro(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function PlanoCard({ plano, admin }) {
+function PlanoCard({ plano, admin, trialLiberado = false, trialLoading = false, onTrial }) {
   const trial = plano.plano_id === "custos_trial";
   const anual = plano.plano_id === "custos_anual";
   return (
@@ -48,9 +50,9 @@ function PlanoCard({ plano, admin }) {
           <div key={beneficio} className="flex gap-2 text-sm"><Check className="w-4 h-4 text-primary mt-0.5 shrink-0" /><span>{beneficio}</span></div>
         ))}
       </div>
-      <Button disabled className="mt-5 w-full" variant={trial ? "default" : anual ? "default" : "outline"}>
-        <LockKeyhole className="w-4 h-4 mr-2" />
-        {trial ? "Começar 7 dias grátis" : "Escolher este plano"}
+      <Button disabled={!trial || !trialLiberado || admin || trialLoading} onClick={trial ? onTrial : undefined} className="mt-5 w-full" variant={trial ? "default" : anual ? "default" : "outline"}>
+        {(!trial || !trialLiberado || admin) && <LockKeyhole className="w-4 h-4 mr-2" />}
+        {trial ? (trialLoading ? "Ativando..." : "Começar 7 dias grátis") : "Escolher este plano"}
       </Button>
       {admin && <p className="text-[11px] text-center text-amber-700 mt-2">Homologação: ação comercial desativada</p>}
     </Card>
@@ -87,6 +89,8 @@ function FluxoTrial() {
 export default function CustosBloqueado() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [ativandoTrial, setAtivandoTrial] = useState(false);
   const { data: configs = [] } = useQuery({
     queryKey: ["custos-config-addon"],
     queryFn: () => base44.entities.ConfiguracaoAddonCustos.filter({ chave: "laboratorio_custos" }, "-updated_date", 10),
@@ -99,12 +103,34 @@ export default function CustosBloqueado() {
     enabled: !!user?.id,
     staleTime: 0,
   });
+  const { data: trialPreflight = null, isLoading: carregandoTrial } = useQuery({
+    queryKey: ["custos-trial-preflight", user?.id],
+    queryFn: async () => (await base44.functions.invoke("preflightTrialLaboratorioCustos", {})).data,
+    enabled: !!user?.id && user?.role !== "admin",
+    staleTime: 0,
+    retry: false,
+  });
 
   const config = configs[0] || null;
   const admin = user?.role === "admin";
   const motivo = location.state?.motivo || (config?.modulo_habilitado ? "addon_nao_contratado" : "comercial_indisponivel");
+  const trialLiberado = !!trialPreflight?.elegivel;
 
-  if (!admin && !config?.venda_habilitada && !config?.trial_habilitado) {
+  const ativarTrial = async () => {
+    if (!trialLiberado || ativandoTrial) return;
+    setAtivandoTrial(true);
+    try {
+      await base44.functions.invoke("inicializarTrialLaboratorioCustos", {});
+      toast({ title: "Trial ativado", description: "Você tem 7 dias de acesso ao Laboratório de Custos." });
+      navigate("/custos", { replace: true });
+    } catch (err) {
+      toast({ title: "Não foi possível ativar o trial", description: err?.response?.data?.error || err?.message || "Tente novamente.", variant: "destructive" });
+    } finally {
+      setAtivandoTrial(false);
+    }
+  };
+
+  if (!admin && !config?.venda_habilitada && !config?.trial_habilitado && !trialLiberado && !carregandoTrial) {
     return (
       <div className="max-w-3xl mx-auto py-10 px-1">
         <Card className="p-6 sm:p-8 text-center">
@@ -149,7 +175,7 @@ export default function CustosBloqueado() {
 
       <section>
         <div className="text-center max-w-2xl mx-auto"><p className="text-xs font-semibold uppercase tracking-wide text-primary">Escolha como começar</p><h2 className="font-display text-2xl font-bold mt-2">Três formas de acessar o Laboratório de Custos</h2><p className="text-sm text-muted-foreground mt-2">A contratação ainda não está liberada. Esta é a prévia da experiência que será anexada ao Laboratório de Cozinha.</p></div>
-        <div className="grid md:grid-cols-3 gap-4 mt-6">{planos.map((plano) => <PlanoCard key={plano.id} plano={plano} admin={admin} />)}</div>
+        <div className="grid md:grid-cols-3 gap-4 mt-6">{planos.map((plano) => <PlanoCard key={plano.id} plano={plano} admin={admin} trialLiberado={trialLiberado} trialLoading={ativandoTrial} onTrial={ativarTrial} />)}</div>
       </section>
 
       <FluxoTrial />
