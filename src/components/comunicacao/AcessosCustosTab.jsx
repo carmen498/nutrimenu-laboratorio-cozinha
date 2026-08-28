@@ -77,6 +77,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
   const [estadoFiltro, setEstadoFiltro] = useState("todos");
   const [modalidadeFiltro, setModalidadeFiltro] = useState("todos");
   const [usuarioDialog, setUsuarioDialog] = useState(null);
+  const [historicoDialog, setHistoricoDialog] = useState(null);
   const [modalidadeNova, setModalidadeNova] = useState("30_dias");
   const [observacao, setObservacao] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -249,6 +250,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
                     {["ativo", "trial_ativo"].includes(linha.estado) && <Button variant="ghost" size="sm" onClick={() => alterarStatus(linha, "suspenso")} disabled={acaoId === `${linha.atual?.id}:suspenso`}><PauseCircle className="w-3.5 h-3.5 mr-1" /> Suspender</Button>}
                     {["ativo", "trial_ativo", "suspenso"].includes(linha.estado) && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => alterarStatus(linha, "cancelado")} disabled={acaoId === `${linha.atual?.id}:cancelado`}><XCircle className="w-3.5 h-3.5 mr-1" /> Cancelar</Button>}
                     {podeReativar && <Button variant="ghost" size="sm" onClick={() => alterarStatus(linha, "ativo")} disabled={acaoId === `${linha.atual?.id}:ativo`}><PlayCircle className="w-3.5 h-3.5 mr-1" /> Reativar</Button>}
+                    {linha.historico.length > 0 && <Button variant="ghost" size="sm" onClick={() => setHistoricoDialog(linha)}>Histórico</Button>}
                   </div></TableCell>
                 </TableRow>;
               })}
@@ -259,6 +261,26 @@ export default function AcessosCustosTab({ usuarios = [] }) {
       )}
 
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 flex gap-3 text-sm text-amber-950"><AlertTriangle className="w-5 h-5 shrink-0" /><div><p className="font-medium">Controle administrativo não é checkout</p><p className="mt-1 text-xs">Conceder acesso aqui cria um entitlement administrativo. Não gera Pagamento, não envia cobrança e não altera os planos do Laboratório de Cozinha.</p></div></div>
+
+      <Dialog open={!!historicoDialog} onOpenChange={(v) => !v && setHistoricoDialog(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Histórico de acessos — {historicoDialog?.usuario?.nome_completo || historicoDialog?.usuario?.full_name || historicoDialog?.usuario?.email}</DialogTitle></DialogHeader>
+          <div className="max-h-[60vh] overflow-y-auto space-y-2">
+            {(historicoDialog?.historico || []).map((acesso) => {
+              const estado = estadoDoAcesso(acesso);
+              return <div key={acesso.id} className="rounded-lg border p-3 grid sm:grid-cols-[1fr_auto] gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2"><Badge variant="outline" className={badgeClasse(estado)}>{LABEL_ESTADO[estado]}</Badge><span className="text-sm font-medium">{LABEL_MODALIDADE[acesso.modalidade] || acesso.modalidade || "Sem modalidade"}</span></div>
+                  <p className="text-xs text-muted-foreground mt-2">Início: {formatarDataHora(acesso.inicio_em)} · Fim: {formatarDataHora(acesso.fim_em)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Origem: {acesso.origem || "—"}{acesso.observacao ? ` · ${acesso.observacao}` : ""}</p>
+                </div>
+                <div className="text-xs text-muted-foreground sm:text-right">Atualizado<br />{formatarDataHora(acesso.updated_date)}</div>
+              </div>;
+            })}
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setHistoricoDialog(null)}>Fechar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!usuarioDialog} onOpenChange={(v) => !v && setUsuarioDialog(null)}>
         <DialogContent className="max-w-md">
