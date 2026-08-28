@@ -12,7 +12,8 @@ export function avaliarAcessoLaboratorioCustosServer(
   const base = avaliarAcessoAssinaturaServer(user, agora);
   if (!base.temAcesso) return { temAcesso: false, motivo: "plano_base_inativo", motivoBase: base.motivo };
 
-  if (!config?.modulo_habilitado) return { temAcesso: false, motivo: "comercial_indisponivel" };
+  const trialControladoAtivo = entitlement?.status === "ativo" && entitlement?.origem === "trial" && entitlement?.trial_ativado_em;
+  if (!config?.modulo_habilitado && !trialControladoAtivo) return { temAcesso: false, motivo: "comercial_indisponivel" };
   if (!entitlement) return { temAcesso: false, motivo: "addon_nao_contratado", estado: "nao_contratado" };
   if (entitlement.status === "suspenso") return { temAcesso: false, motivo: "addon_suspenso", estado: "suspenso", entitlement };
   if (entitlement.status === "cancelado") return { temAcesso: false, motivo: "addon_cancelado", estado: "cancelado", entitlement };
