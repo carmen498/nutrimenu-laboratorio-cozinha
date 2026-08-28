@@ -84,6 +84,48 @@ const LINHAS = [
     corpoPadrao: `<p>Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado.</p>
 <p>Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.</p>`,
   },
+  {
+    gatilho: "Custos · Trial ativado",
+    status: "Rascunho",
+    tipoLog: "custos_trial_ativado",
+    assuntoPadrao: "Seu teste do Laboratório de Custos começou",
+    corpoPadrao: `<p>Olá {{nome}}, seu teste gratuito do Laboratório de Custos já começou.</p><p>Você tem 7 dias para explorar custos de produção, custo por receita, margem, markup e histórico de fichas.</p>`,
+  },
+  {
+    gatilho: "Custos · Trial expirando",
+    status: "Rascunho",
+    tipoLog: "custos_trial_expirando",
+    assuntoPadrao: "Seu teste do Laboratório de Custos termina em breve",
+    corpoPadrao: `<p>Olá {{nome}}, seu teste gratuito do Laboratório de Custos termina em {{dias_restantes}} dia(s).</p><p>Seu histórico permanece preservado.</p>`,
+  },
+  {
+    gatilho: "Custos · Trial encerrado",
+    status: "Rascunho",
+    tipoLog: "custos_trial_vencido",
+    assuntoPadrao: "Seu teste do Laboratório de Custos terminou",
+    corpoPadrao: `<p>Olá {{nome}}, seu teste gratuito do Laboratório de Custos terminou hoje.</p><p>Suas fichas continuam preservadas para uma futura reativação.</p>`,
+  },
+  {
+    gatilho: "Custos · Pagamento aprovado",
+    status: "Rascunho",
+    tipoLog: "custos_pagamento_aprovado",
+    assuntoPadrao: "Laboratório de Custos ativado",
+    corpoPadrao: `<p>Olá {{nome}}, seu pagamento foi aprovado.</p><p>Seu plano {{plano}} do Laboratório de Custos está ativo até {{data_expiracao}}.</p>`,
+  },
+  {
+    gatilho: "Custos · Plano perto de vencer",
+    status: "Rascunho",
+    tipoLog: "custos_plano_vencendo",
+    assuntoPadrao: "Seu Laboratório de Custos está perto de vencer",
+    corpoPadrao: `<p>Olá {{nome}}, seu acesso ao Laboratório de Custos vence em {{dias_restantes}} dia(s), em {{data_expiracao}}.</p><p>Seu histórico permanece preservado.</p>`,
+  },
+  {
+    gatilho: "Custos · Acesso expirado",
+    status: "Rascunho",
+    tipoLog: "custos_acesso_expirado",
+    assuntoPadrao: "Seu acesso ao Laboratório de Custos expirou",
+    corpoPadrao: `<p>Olá {{nome}}, seu acesso ao Laboratório de Custos expirou em {{data_expiracao}}.</p><p>Suas fichas e seu histórico continuam preservados.</p>`,
+  },
 ];
 
 export default function TransacionaisTab() {
