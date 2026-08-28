@@ -15,6 +15,7 @@ import WhatsappReativoTab from "@/components/comunicacao/WhatsappReativoTab";
 import TemplateWascriptTab from "@/components/comunicacao/TemplateWascriptTab";
 import ConfiguracoesEmailTab from "@/components/comunicacao/ConfiguracoesEmailTab";
 import PlanosTab from "@/components/comunicacao/PlanosTab";
+import AcessosCustosTab from "@/components/comunicacao/AcessosCustosTab";
 
 export default function AdminComunicacao() {
   const navigate = useNavigate();
@@ -60,8 +61,9 @@ export default function AdminComunicacao() {
       </div>
 
       <Tabs value={aba} onValueChange={setAba}>
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="acessos-custos">Acessos Custos</TabsTrigger>
           <TabsTrigger value="planos">Planos</TabsTrigger>
           <TabsTrigger value="transacionais">Transacionais</TabsTrigger>
           <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
@@ -79,6 +81,9 @@ export default function AdminComunicacao() {
             setSelecionados={setSelecionados}
             onDispararEmail={() => setAba("campanhas")}
           />
+        </TabsContent>
+        <TabsContent value="acessos-custos" className="pt-4">
+          <AcessosCustosTab usuarios={usuarios} />
         </TabsContent>
         <TabsContent value="planos" className="pt-4">
           <PlanosTab />
