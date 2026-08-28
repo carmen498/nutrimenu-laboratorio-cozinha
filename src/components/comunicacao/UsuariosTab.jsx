@@ -50,6 +50,18 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
     retry: false,
   });
 
+  const { data: acessosCustos = [], isLoading: carregandoAcessosCustos } = useQuery({
+    queryKey: ["admin-acessos-laboratorio-custos"],
+    queryFn: () => fetchAllPages(base44.entities.AcessoLaboratorioCustosUsuario, "-updated_date", 500),
+    retry: false,
+  });
+
+  const acessoCustosPorUsuario = useMemo(() => {
+    const map = new Map();
+    for (const acesso of acessosCustos) if (acesso?.user_id && !map.has(acesso.user_id)) map.set(acesso.user_id, acesso);
+    return map;
+  }, [acessosCustos]);
+
   const pagamentosPorUsuario = useMemo(() => agruparPagamentosPorUsuario(pagamentos), [pagamentos]);
 
   const intervaloPeriodo = useMemo(
@@ -181,7 +193,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         onExcluir={() => setConfirmExcluirOpen(true)}
       />
 
-      {isLoading || carregandoPagamentos ? (
+      {isLoading || carregandoPagamentos || carregandoAcessosCustos ? (
         <p role="status" className="text-sm text-muted-foreground">Carregando usuários e pagamentos...</p>
       ) : isError || erroPagamentos ? (
         <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
@@ -195,6 +207,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
           onToggleAll={handleToggleAll}
           pagamentosPorUsuario={pagamentosPorUsuario}
           pagamentosPorUsuarioPeriodo={pagamentosPorUsuarioPeriodo}
+          acessoCustosPorUsuario={acessoCustosPorUsuario}
         />
       )}
 
