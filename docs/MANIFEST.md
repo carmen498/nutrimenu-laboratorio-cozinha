@@ -42,5 +42,6 @@
 | `33-BASE44-EXPORT-INVENTORY.md` | export pré-saída | COMPLETE | inventário |
 | `34-BASE44-REPLACEMENT-MAP.md` | substituições | COMPLETE | acoplamentos |
 | `35-DOCUMENTATION-AUDIT.md` | auditoria final | COMPLETE | segunda passagem |
+| `36-LABORATORIO-CUSTOS-SUPABASE-HANDOFF.md` | contrato técnico/funcional do Laboratório de Custos para Supabase | COMPLETE | implementação homologada + decisões de produto |
 
 `PARTIAL/BLOCKED` exigem as ações em `32`; não são aceitos como conclusão de migração.
