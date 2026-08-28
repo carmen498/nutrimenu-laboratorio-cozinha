@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { ChefHat, ChevronDown, HelpCircle, LogOut, Menu, User } from "lucide-react";
+import { ChefHat, ChevronDown, HelpCircle, LogOut, Menu, Sparkles, User } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -25,6 +25,7 @@ export default function CustosTopBar({ onMenuClick, onHelpClick }) {
             <DropdownMenuLabel className="truncate">{user?.full_name || user?.nome_completo || user?.email}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => navigate("/conta")}><User className="w-4 h-4" /> Conta</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/custos/planos")}><Sparkles className="w-4 h-4" /> Planos</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/app")}><ChefHat className="w-4 h-4" /> Laboratório de Cozinha</DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/suporte")}><HelpCircle className="w-4 h-4" /> Suporte</DropdownMenuItem>
             <DropdownMenuSeparator />
