@@ -77,7 +77,9 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           {isAdmin && (
             <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           )}
-          <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
+          {isAdmin && (
+            <NavLink to="/configuracoes" icon={Settings} label="Configurações" active={isActive("/configuracoes")} onClick={onNavigate} />
+          )}
           {isAdmin && (
             <NavLink to="/admin/comunicacao" icon={MessageSquare} label="Administração" active={isActive("/admin/comunicacao")} onClick={onNavigate} />
           )}
