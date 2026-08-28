@@ -25,6 +25,12 @@ const VARIAVEIS_POR_TIPO = {
   nota_fiscal_solicitada: ["nome"],
   pagamento_estornado: ["nome"],
   pagamento_pendente_lembrete: ["nome"],
+  custos_trial_ativado: ["nome"],
+  custos_trial_expirando: ["nome", "dias_restantes"],
+  custos_trial_vencido: ["nome"],
+  custos_pagamento_aprovado: ["nome", "plano", "data_expiracao"],
+  custos_plano_vencendo: ["nome", "plano", "dias_restantes", "data_expiracao"],
+  custos_acesso_expirado: ["nome", "data_expiracao"],
 };
 
 export default function TemplateEmailDialog({ open, onOpenChange, tipo, titulo, assuntoPadrao, corpoPadrao }) {
