@@ -15,7 +15,7 @@ export default function CustosRoute() {
     staleTime: 0,
   });
   const config = configs[0] || null;
-  const consultarEntitlement = !!user?.id && !admin && !!config?.modulo_habilitado;
+  const consultarEntitlement = !!user?.id && !admin;
 
   const { data: acessos = [], isLoading: loadingEntitlement } = useQuery({
     queryKey: ["custos-entitlement", user?.id],
@@ -24,7 +24,7 @@ export default function CustosRoute() {
     staleTime: 0,
   });
 
-  if (!admin && (loadingConfig || (consultarEntitlement && loadingEntitlement))) {
+  if (!admin && (loadingConfig || loadingEntitlement)) {
     return <div className="py-12 text-center text-sm text-muted-foreground">Verificando acesso ao Laboratório de Custos...</div>;
   }
 
