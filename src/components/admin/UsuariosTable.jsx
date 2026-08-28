@@ -11,7 +11,7 @@ import {
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
 } from "@/lib/pagamentosUsuario";
 
-export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo }) {
+export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map() }) {
   const [expandidos, setExpandidos] = useState(new Set());
 
   if (usuarios.length === 0) {
@@ -40,6 +40,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             <TableHead>Nome</TableHead>
             <TableHead>Plano</TableHead>
             <TableHead>Expira em</TableHead>
+            <TableHead>Lab. Custos</TableHead>
             <TableHead>Último pagamento</TableHead>
             <TableHead>Situação</TableHead>
             <TableHead>Contato</TableHead>
@@ -52,6 +53,16 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             const ultimoPagamento = getUltimoPagamento(pagamentosPorUsuarioPeriodo, u.id);
             const historico = pagamentosPorUsuario.get(u.id) || [];
             const expandido = expandidos.has(u.id);
+            const acessoCustos = acessoCustosPorUsuario.get(u.id);
+            let statusCustos = "Não contratado";
+            if (acessoCustos) {
+              if (acessoCustos.status === "suspenso") statusCustos = "Suspenso";
+              else if (acessoCustos.status === "cancelado") statusCustos = "Cancelado";
+              else if (acessoCustos.status === "expirado" || (acessoCustos.fim_em && new Date(acessoCustos.fim_em) < new Date())) statusCustos = "Expirado";
+              else if (acessoCustos.status === "pendente") statusCustos = "Pendente";
+              else if (acessoCustos.status === "ativo" && acessoCustos.modalidade === "trial") statusCustos = "Trial ativo";
+              else if (acessoCustos.status === "ativo") statusCustos = "Ativo";
+            }
             return (
               <Fragment key={u.id}>
                 <TableRow>
@@ -70,6 +81,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                   <TableCell className="font-medium">{u.nome_completo || u.full_name || "—"}</TableCell>
                   <TableCell>{PLANO_LABEL[u.plano_atual] || "—"}</TableCell>
                   <TableCell>{formatarData(u.data_expiracao) || "—"}</TableCell>
+                  <TableCell><Badge variant="outline">{statusCustos}</Badge></TableCell>
                   <TableCell>
                     {ultimoPagamento ? (
                       <span className="text-sm">
@@ -92,7 +104,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 </TableRow>
                 {expandido && (
                   <TableRow>
-                    <TableCell colSpan={9} className="bg-muted/30 p-0">
+                    <TableCell colSpan={10} className="bg-muted/30 p-0">
                       <HistoricoPagamentosLinha pagamentos={historico} />
                     </TableCell>
                   </TableRow>
