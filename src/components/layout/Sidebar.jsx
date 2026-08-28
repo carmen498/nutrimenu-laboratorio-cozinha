@@ -61,6 +61,19 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
         <div className="pt-3 mt-3 border-t border-sidebar-border space-y-0.5">
           <NavLink to="/lista-compras" icon={ShoppingCart} label="Carrinho" active={isActive("/lista-compras")} onClick={onNavigate} />
           <NavLink to="/historico" icon={History} label="Histórico" active={isActive("/historico")} onClick={onNavigate} />
+        </div>
+
+        <div className="pt-4 mt-4 border-t border-sidebar-border">
+          <div className="px-3 pb-1 flex items-center justify-between gap-2">
+            <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
+              Laboratório de Custos
+            </p>
+            <span className="text-[10px] font-semibold text-amber-300">Breve</span>
+          </div>
+          <NavLink to="/custos" icon={Calculator} label="Laboratório de Custos" active={location.pathname.startsWith("/custos")} onClick={onNavigate} />
+        </div>
+
+        <div className="pt-4 mt-4 border-t border-sidebar-border space-y-0.5">
           {isAdmin && (
             <NavLink to="/auditorias" icon={ClipboardCheck} label="Auditorias" active={isActive("/auditorias")} onClick={onNavigate} />
           )}
@@ -68,16 +81,6 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           {isAdmin && (
             <NavLink to="/admin/comunicacao" icon={MessageSquare} label="Administração" active={isActive("/admin/comunicacao")} onClick={onNavigate} />
           )}
-        </div>
-
-        <div className="pt-4 mt-4 border-t border-sidebar-border">
-          <div className="px-3 pb-1 flex items-center gap-2">
-            <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
-              Laboratório de Custos
-            </p>
-            <span className="text-[10px] font-semibold text-amber-300">Breve</span>
-          </div>
-          <NavLink to="/custos" icon={Calculator} label="Laboratório de Custos" active={location.pathname.startsWith("/custos")} onClick={onNavigate} />
         </div>
       </nav>
 
