@@ -25,16 +25,32 @@ export function avaliarAcessoLaboratorioCustos(user, config = null, entitlement 
     return { temAcesso: false, motivo: "comercial_indisponivel" };
   }
 
-  if (!entitlement || entitlement.status !== "ativo") {
-    return { temAcesso: false, motivo: "addon_nao_contratado" };
+  if (!entitlement) {
+    return { temAcesso: false, motivo: "addon_nao_contratado", estado: "nao_contratado" };
   }
+
+  if (entitlement.status === "suspenso") return { temAcesso: false, motivo: "addon_suspenso", estado: "suspenso", entitlement };
+  if (entitlement.status === "cancelado") return { temAcesso: false, motivo: "addon_cancelado", estado: "cancelado", entitlement };
+  if (entitlement.status === "expirado") return { temAcesso: false, motivo: "addon_expirado", estado: "expirado", entitlement };
+  if (entitlement.status !== "ativo") return { temAcesso: false, motivo: "addon_pendente", estado: "pendente", entitlement };
 
   if (entitlement.inicio_em && new Date(entitlement.inicio_em) > agora) {
-    return { temAcesso: false, motivo: "addon_ainda_nao_iniciado" };
+    return { temAcesso: false, motivo: "addon_ainda_nao_iniciado", estado: "pendente", entitlement };
   }
   if (entitlement.fim_em && new Date(entitlement.fim_em) < agora) {
-    return { temAcesso: false, motivo: "addon_expirado" };
+    return { temAcesso: false, motivo: "addon_expirado", estado: "expirado", entitlement };
   }
 
-  return { temAcesso: true, motivo: "addon_ativo", entitlement };
+  const estado = entitlement.modalidade === "trial" ? "trial_ativo" : "ativo";
+  return { temAcesso: true, motivo: entitlement.modalidade === "trial" ? "trial_ativo" : "addon_ativo", estado, entitlement };
 }
+
+export const ESTADO_ACESSO_CUSTOS_LABEL = {
+  nao_contratado: "Não contratado",
+  pendente: "Pendente",
+  trial_ativo: "Trial ativo",
+  ativo: "Ativo",
+  expirado: "Expirado",
+  suspenso: "Suspenso",
+  cancelado: "Cancelado",
+};
