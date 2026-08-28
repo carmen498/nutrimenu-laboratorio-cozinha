@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home, BookOpen, Apple, CalendarDays, Gauge, Utensils, Package,
-  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, MessageSquare,
+  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, MessageSquare, Calculator,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { getScreenName } from "@/lib/getScreenName";
@@ -68,6 +68,16 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
           {isAdmin && (
             <NavLink to="/admin/comunicacao" icon={MessageSquare} label="Administração" active={isActive("/admin/comunicacao")} onClick={onNavigate} />
           )}
+        </div>
+
+        <div className="pt-4 mt-4 border-t border-sidebar-border">
+          <div className="px-3 pb-1 flex items-center gap-2">
+            <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
+              Laboratório de Custos
+            </p>
+            <span className="text-[10px] font-semibold text-amber-300">Breve</span>
+          </div>
+          <NavLink to="/custos" icon={Calculator} label="Laboratório de Custos" active={location.pathname.startsWith("/custos")} onClick={onNavigate} />
         </div>
       </nav>
 
