@@ -21,7 +21,8 @@ export function avaliarAcessoLaboratorioCustos(user, config = null, entitlement 
     return { temAcesso: true, motivo: "admin_beta" };
   }
 
-  if (!config?.modulo_habilitado) {
+  const trialControladoAtivo = entitlement?.status === "ativo" && entitlement?.origem === "trial" && entitlement?.trial_ativado_em;
+  if (!config?.modulo_habilitado && !trialControladoAtivo) {
     return { temAcesso: false, motivo: "comercial_indisponivel" };
   }
 
