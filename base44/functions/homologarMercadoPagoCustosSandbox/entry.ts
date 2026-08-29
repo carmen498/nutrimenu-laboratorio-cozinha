@@ -94,22 +94,9 @@ export default async function(req: Request): Promise<Response> {
     const orderBody: any = {
       type: "online",
       processing_mode: "automatic",
-      capture_mode: "automatic",
       external_reference: pagamento.id,
-      description: descricao,
       total_amount: valorTotal.toFixed(2),
-      payer: {
-        email: TEST_BUYER_EMAIL,
-        entity_type: "individual",
-        first_name: "APRO",
-        identification: { type: "CPF", number: "12345678909" },
-      },
-      items: combinado
-        ? [
-            { title: `Laboratório de Cozinha ${basePlano}`, unit_price: valorCozinha.toFixed(2), quantity: 1 },
-            { title: `Laboratório de Custos ${plano}`, unit_price: valorCustos.toFixed(2), quantity: 1 },
-          ]
-        : [{ title: `Laboratório de Custos ${plano}`, unit_price: valorCustos.toFixed(2), quantity: 1 }],
+      payer: { email: TEST_BUYER_EMAIL },
       transactions: {
         payments: [{
           amount: valorTotal.toFixed(2),
@@ -118,7 +105,6 @@ export default async function(req: Request): Promise<Response> {
             type: "credit_card",
             token: cardToken,
             installments: 1,
-            statement_descriptor: "PLATAFORMA ZR",
           },
         }],
       },
