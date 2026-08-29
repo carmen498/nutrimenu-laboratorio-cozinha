@@ -89,7 +89,8 @@ const [pagamento, ativar, revogar, schema, planos, cartao, preflight, sync] = aw
   ler("base44/functions/sincronizarConfiguracaoPlanos/entry.ts"),
 ]);
 
-assert.ok(pagamento.includes('const PLANOS_VALIDOS = ["mensal", "anual", "renovacao"]'), "backend precisa aceitar Renovação");
+assert.ok(pagamento.includes('"renovacao"') && pagamento.includes('const PLANOS_VALIDOS'), "backend precisa aceitar Renovação");
+assert.ok(pagamento.includes('"custos_mensal"') && pagamento.includes('"custos_anual"'), "backend multiproduto precisa aceitar os planos pagos do Laboratório de Custos");
 assert.ok(pagamento.includes("avaliarElegibilidadeRenovacao(user)"), "backend precisa revalidar elegibilidade");
 assert.ok(pagamento.includes('code: "parcelamento_invalido"'), "backend precisa recusar parcelamento inválido");
 assert.ok(ativar.includes("proximoCicloRenovacao"), "ativação precisa atualizar ciclo");
