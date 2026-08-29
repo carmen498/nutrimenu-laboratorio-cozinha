@@ -7,9 +7,11 @@ import PixForm from "./PixForm";
 
 export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, email, planoValor = 0, addon = null, addonCheckoutBloqueado = false, somenteAddon = false }) {
   const [aprovado, setAprovado] = useState(false);
+  const [aceiteContratacao, setAceiteContratacao] = useState(false);
 
   const handleClose = () => {
     setAprovado(false);
+    setAceiteContratacao(false);
     onOpenChange(false);
   };
 
@@ -56,6 +58,17 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
           </div>
         ) : (
           <div className="space-y-4">
+            <label className="flex items-start gap-2 rounded-lg border p-3 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4"
+                checked={aceiteContratacao}
+                onChange={(e) => setAceiteContratacao(e.target.checked)}
+              />
+              <span className="leading-snug text-muted-foreground">
+                Li e aceito os <a href="/termos" target="_blank" rel="noreferrer" className="underline text-foreground">Termos de Uso</a> e a <a href="/privacidade" target="_blank" rel="noreferrer" className="underline text-foreground">Política de Privacidade</a> desta contratação.
+              </span>
+            </label>
             <Tabs defaultValue="cartao">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="cartao">Cartão</TabsTrigger>
@@ -69,7 +82,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 email={email}
                 onClose={handleClose}
                 onSuccess={() => setAprovado(true)}
-                aceiteTermos={true}
+                aceiteTermos={aceiteContratacao}
               />
             </TabsContent>
             <TabsContent value="pix" className="pt-4">
@@ -80,7 +93,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 email={email}
                 onClose={handleClose}
                 onSuccess={() => setAprovado(true)}
-                aceiteTermos={true}
+                aceiteTermos={aceiteContratacao}
               />
             </TabsContent>
             </Tabs>
