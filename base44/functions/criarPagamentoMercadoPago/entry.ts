@@ -289,14 +289,14 @@ export default async function(req: Request): Promise<Response> {
     // A Orders API não aceita a propriedade "items" em pedidos PIX (retorna
     // HTTP 400 "unsupported_properties") — só é suportada no fluxo de cartão.
     if (forma_pagamento === "cartao") {
-      orderBody.items = [
-        {
-          title: descricaoPlano,
-          description: descricaoPlano,
-          unit_price: valorFormatado,
-          quantity: 1,
-        },
-      ];
+      orderBody.items = produtoCompra === "cozinha_mais_custos"
+        ? [
+            { title: NOME_PLANOS[planoBaseId], description: NOME_PLANOS[planoBaseId], unit_price: valorCozinha.toFixed(2), quantity: 1 },
+            { title: NOME_PLANOS[addonId], description: NOME_PLANOS[addonId], unit_price: valorCustos.toFixed(2), quantity: 1 },
+          ]
+        : [
+            { title: descricaoPlano, description: descricaoPlano, unit_price: valorFormatado, quantity: 1 },
+          ];
     }
 
     if (forma_pagamento === "pix") {
@@ -318,7 +318,7 @@ export default async function(req: Request): Promise<Response> {
               type: "credit_card",
               token,
               installments: parcelas,
-              statement_descriptor: "LAB COZINHA",
+              statement_descriptor: "PLATAFORMA ZR",
             },
           },
         ],
