@@ -1,1 +1,0 @@
-Deno.serve(() => Response.json({ error: 'Executor temporário da Fase 10.2 desativado.' }, { status: 410 }));
