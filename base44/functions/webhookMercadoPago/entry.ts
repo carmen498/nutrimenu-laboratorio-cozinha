@@ -13,8 +13,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
-import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
-import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
+import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
+import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
@@ -137,7 +137,7 @@ export default async function(req: Request): Promise<Response> {
     if (pagamento.status === novoStatus) {
       // Se a gravação do pagamento ocorreu, mas a atualização do usuário falhou,
       // um replay aprovado repara a liberação. O helper ignora quem já foi ativado.
-      if (novoStatus === "approved") await ativarPlanoEEnviarEmail(base44, pagamento);
+      if (novoStatus === "approved") await ativarCompraPagamento(base44, pagamento);
       console.log(`Pagamento já estava ${novoStatus} — efeitos colaterais ignorados (idempotência).`);
       await registrarLog({ assinatura_valida: true, resultado: "processado", pagamento_id: pagamentoId, status_resolvido: novoStatus });
       return Response.json({ received: true, status: novoStatus, idempotent: true });
@@ -145,19 +145,15 @@ export default async function(req: Request): Promise<Response> {
 
     if (novoStatus === "approved") {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
-      await ativarPlanoEEnviarEmail(base44, pagamento);
+      await ativarCompraPagamento(base44, pagamento);
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
 
       // Estorno reverte um acesso que já havia sido concedido — revoga o plano do
       // usuário. "rejected"/"cancelled" são tentativas que nunca ativaram nada.
       if (novoStatus === "estornado") {
-        const revogacao = await revogarAcessoEstorno(base44, pagamento);
-        console.log("Resultado da revogação por estorno", {
-          pagamento_id: pagamento.id,
-          revogado: revogacao.revogado,
-          motivo: revogacao.motivo,
-        });
+        const revogacao = await revogarCompraEstorno(base44, pagamento);
+        console.log("Resultado da revogação por estorno", { pagamento_id: pagamento.id, revogacao });
       }
 
       // Dispara o e-mail transacional de pagamento recusado/estornado, apenas se o
