@@ -407,6 +407,180 @@ Fluxo:
 7. confirmar estratégia de coexistência e sincronização incremental;
 8. definir RPO, RTO, janela de corte e responsáveis.
 
+## 14. Configuração Vite de destino
+
+A migração mantém o Vite e remove somente as extensões específicas do Base44. Configuração-alvo mínima:
+
+```js
+import react from '@vitejs/plugin-react'
+import { defineConfig, loadEnv } from 'vite'
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
+    plugins: [react()],
+    build: {
+      outDir: 'dist',
+      sourcemap: mode !== 'production',
+    },
+    server: {
+      port: 5173,
+      proxy: env.VITE_API_PROXY_TARGET
+        ? { '/api': { target: env.VITE_API_PROXY_TARGET, changeOrigin: true } }
+        : undefined,
+    },
+  }
+})
+```
+
+Regras:
+
+1. remover `@base44/vite-plugin` somente depois de substituir SDK, bootstrap, analytics e chamadas de funções;
+2. não usar `define` para injetar segredos;
+3. acessar apenas variáveis públicas pelo `import.meta.env` no frontend;
+4. manter funções Vercel fora do grafo de build da SPA;
+5. gerar `dist/` com `npm run build` e validar os chunks lazy das rotas protegidas;
+6. manter sourcemaps de produção privados, caso sejam habilitados.
+
+### Configuração no painel Vercel
+
+```text
+Framework Preset: Vite
+Node.js Version: 20.x
+Install Command: npm ci
+Build Command: npm run build
+Output Directory: dist
+Root Directory: ./
+```
+
+Preview e Production executam o mesmo build; diferenças ficam nas variáveis de ambiente, não em mudanças manuais no código.
+
+## 15. Separação do domínio principal e subdomínio app
+
+### Responsabilidade por host
+
+```text
+laboratoriodecozinha.com.br
+  /                 landing page
+  /produto          página pública
+  /sobre            página pública
+  /contato          página pública
+  /termos           documento público
+  /privacidade      documento público
+
+app.laboratoriodecozinha.com.br
+  /login            autenticação
+  /register         cadastro
+  /forgot-password  solicitação de recuperação
+  /reset-password   definição de nova senha
+  /app              início autenticado
+  /*                demais rotas operacionais
+```
+
+A primeira migração pode usar um único projeto Vercel atendendo ambos os hosts. O frontend identifica `window.location.hostname` e aplica a matriz de rotas, mantendo um único build.
+
+### Redirects obrigatórios
+
+- `www.laboratoriodecozinha.com.br/*` → domínio sem `www` com 308;
+- rota operacional aberta no domínio público → mesmo caminho em `app.`;
+- aliases legados internos continuam como redirects do React Router durante a transição;
+- query e hash são preservados, exceto tokens capturados e removidos com segurança;
+- `returnTo` aceita apenas caminho interno sanitizado.
+
+Não redirecionar globalmente todo o domínio público para `app.`: isso quebraria a landing page, páginas institucionais e documentos legais.
+
+### DNS e certificados
+
+1. adicionar os três hosts no projeto Vercel;
+2. aplicar os registros exibidos pela Vercel no provedor DNS;
+3. verificar certificado para cada host;
+4. testar pelo deployment Vercel antes da troca de DNS;
+5. reduzir TTL antes da janela de corte;
+6. trocar DNS conforme o runbook, sem misturar etapas não homologadas;
+7. manter o host Base44 antigo durante a janela de rollback e expiração de links.
+
+## 16. Mapeamento exato de variáveis de ambiente
+
+### Variáveis atuais e destino
+
+| Atual | Destino Vercel | Escopo | Ação |
+|---|---|---|---|
+| `VITE_BASE44_APP_ID` | nenhuma | frontend | remover após troca do SDK |
+| `VITE_BASE44_FUNCTIONS_VERSION` | `VITE_API_VERSION`, somente se necessário | frontend | normalmente remover |
+| `VITE_BASE44_APP_BASE_URL` | `VITE_API_BASE_URL` | frontend | usar `/api` no mesmo projeto |
+| `BASE44_LEGACY_SDK_IMPORTS` | nenhuma | build | remover com o plugin Base44 |
+| app ID fallback em `app-params.js` | nenhuma | frontend | remover |
+| domínios em `publicUrls.js` | `VITE_PUBLIC_SITE_URL`, `VITE_APP_SITE_URL` | frontend | substituir na implementação |
+| `AMBIENTE` | `APP_ENVIRONMENT` e `MERCADOPAGO_ENVIRONMENT` | backend | separar app e provedor |
+| `MERCADOPAGO_ACCESS_TOKEN_PROD` | mesmo nome | backend | somente Production |
+| `MERCADOPAGO_ACCESS_TOKEN_SANDBOX` | mesmo nome | backend | Development/Preview |
+| `MERCADOPAGO_WEBHOOK_SECRET` | mesmo nome, por ambiente | backend | corresponder ao endpoint |
+| `RESEND_API_KEY` | mesmo nome | backend | separar por ambiente quando possível |
+| `WASCRIPT_API_TOKEN` | mesmo nome | backend | nunca expor no frontend |
+| `WASCRIPT_MODO_TESTE` | mesmo nome | backend | `true` obrigatório em Preview |
+
+### Frontend público
+
+```dotenv
+VITE_PUBLIC_SITE_URL=https://laboratoriodecozinha.com.br
+VITE_APP_SITE_URL=https://app.laboratoriodecozinha.com.br
+VITE_API_BASE_URL=/api
+VITE_SUPABASE_URL=https://<projeto>.supabase.co
+VITE_SUPABASE_ANON_KEY=<chave-publica-anon>
+VITE_ENVIRONMENT=production
+```
+
+A chave anon do Supabase é pública por natureza; ela não substitui RLS. Nenhuma service role ou chave de provedor pode começar com `VITE_`.
+
+### Backend secreto
+
+```dotenv
+APP_ENVIRONMENT=production
+PUBLIC_SITE_URL=https://laboratoriodecozinha.com.br
+APP_SITE_URL=https://app.laboratoriodecozinha.com.br
+SUPABASE_URL=https://<projeto>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<segredo>
+MERCADOPAGO_ENVIRONMENT=production
+MERCADOPAGO_ACCESS_TOKEN_PROD=<segredo>
+MERCADOPAGO_ACCESS_TOKEN_SANDBOX=<segredo>
+MERCADOPAGO_WEBHOOK_SECRET=<segredo>
+RESEND_API_KEY=<segredo>
+WASCRIPT_API_TOKEN=<segredo>
+WASCRIPT_MODO_TESTE=false
+CRON_SECRET=<segredo>
+```
+
+`DATABASE_URL` só é necessária se as funções acessarem PostgreSQL diretamente. Se todo acesso ocorrer pelo cliente Supabase, não cadastrar conexão SQL sem necessidade.
+
+### Matriz por ambiente
+
+| Configuração | Development | Preview | Production |
+|---|---|---|---|
+| Supabase | local/dev | projeto staging | projeto produção |
+| Mercado Pago | sandbox | sandbox | produção |
+| Wascript | teste | teste obrigatório | conforme operação |
+| Resend | teste | destinatários controlados | produção |
+| URLs | localhost | URL Preview/staging | domínios canônicos |
+| Cron | manual/inativo | sem efeitos | ativo após cutover |
+| service role | dev | staging | produção |
+
+Nunca combinar Preview com banco, service role, Mercado Pago ou comunicação de produção.
+
+## 17. Sequência técnica recomendada
+
+1. criar projeto Supabase de staging e definir schema/RLS;
+2. criar projeto Vercel e cadastrar variáveis de Development/Preview;
+3. introduzir adaptadores de autenticação, dados, arquivos e API;
+4. portar funções para `/api`, começando por consultas sem efeitos;
+5. trocar a configuração Vite e remover o plugin Base44;
+6. validar Preview com banco staging;
+7. portar pagamentos, webhook e jobs mantendo-os inativos;
+8. cadastrar domínios na Vercel sem trocar DNS;
+9. cadastrar variáveis Production;
+10. executar exportação/delta e testes de equivalência;
+11. promover release, trocar DNS/callbacks/webhook e ativar jobs conforme runbook;
+12. confirmar ausência de chamadas Base44 antes de encerrar a coexistência.
+
 ## Referências
 
 - [Configuração](09-CONFIGURATION.md)
