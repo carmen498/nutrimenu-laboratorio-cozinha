@@ -1,32 +1,32 @@
 {
-  "name": "DummyNoop2",
   "type": "object",
   "properties": {
-    "noop": {
+    "x": {
       "type": "string"
     }
   },
-  "required": [],
   "rls": {
     "create": {
       "user_condition": {
-        "role": "__disabled__"
+        "role": "admin"
       }
     },
     "read": {
       "user_condition": {
-        "role": "__disabled__"
+        "role": "admin"
       }
     },
     "update": {
       "user_condition": {
-        "role": "__disabled__"
+        "role": "admin"
       }
     },
     "delete": {
       "user_condition": {
-        "role": "__disabled__"
+        "role": "admin"
       }
     }
-  }
+  },
+  "required": [],
+  "name": "_temp_trial_e2e_probe"
 }
