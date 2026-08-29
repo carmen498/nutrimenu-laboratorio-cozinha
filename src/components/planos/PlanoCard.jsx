@@ -19,6 +19,10 @@ export default function PlanoCard({
   diasRestantes = null,
   bloqueado = false,
   mensagemBloqueio = "",
+  complemento = null,
+  complementoActionLabel = "",
+  onComplementoAction,
+  complementoActionDisabled = false,
 }) {
   return (
     <div
@@ -58,6 +62,12 @@ export default function PlanoCard({
         )}
       </div>
 
+      {complemento && (
+        <div className="mb-4 pt-4 border-t border-border">
+          {complemento}
+        </div>
+      )}
+
       {isCurrentPlan ? (
         <div className="flex flex-col items-center gap-1 text-center">
           <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-3 py-2 rounded-lg w-full justify-center">
@@ -72,6 +82,16 @@ export default function PlanoCard({
             <p className="text-xs font-medium text-primary">
               {diasRestantes} {diasRestantes === 1 ? "dia restante" : "dias restantes"}
             </p>
+          )}
+          {complementoActionLabel && (
+            <Button
+              className="w-full h-10 mt-2"
+              variant="outline"
+              disabled={complementoActionDisabled}
+              onClick={onComplementoAction}
+            >
+              {complementoActionLabel}
+            </Button>
           )}
         </div>
       ) : bloqueado ? (
