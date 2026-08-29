@@ -11,7 +11,6 @@ import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
 import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
 import DicasCarmenCarousel from "@/components/home/DicasCarmenCarousel";
 import AvisoAssinaturaHome from "@/components/home/AvisoAssinaturaHome";
-import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -21,21 +20,16 @@ const CORES = {
 export default function Home() {
   const { user } = useAuth();
 
-  // Contagem real de cópias pessoais do usuário atual (feature "Minhas Receitas").
-  const { data: minhasReceitas = [] } = useQuery({
-    queryKey: ["minhas-receitas-count-home", user?.id],
-    queryFn: () => fetchAllFilteredPages(base44.entities.Receita, { usuario_dono_id: user.id }, "", 500),
-    enabled: !!user?.id,
-  });
-
-  // Contagens reais via function backend — retorna apenas os números, sem
-  // baixar milhares de registros completos para o cliente.
+  // Uma única chamada retorna contagens globais e pessoais, sem baixar
+  // milhares de receitas completas para o navegador.
   const { data: contagens, isLoading: carregandoContagens } = useQuery({
-    queryKey: ["contagens-home"],
+    queryKey: ["contagens-home", user?.id],
     queryFn: async () => {
       const res = await base44.functions.invoke("contagensHome", {});
       return res.data;
     },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Receitas recentes apenas para o fallback da vitrine (quando nenhuma
@@ -53,7 +47,6 @@ export default function Home() {
   const { data: receitasDestaqueRaw = [] } = useQuery({
     queryKey: ["receitas-destaque-home"],
     queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
-    enabled: !carregandoIndicadores,
   });
   const receitasComFoto = receitasRecentes.filter((r) => r.foto_url).slice(0, 3);
   const receitasVitrine = receitasDestaqueRaw.length > 0 ? receitasDestaqueRaw.slice(0, 3) : receitasComFoto;
@@ -61,9 +54,7 @@ export default function Home() {
   const { data: receitasRevisar = [] } = useQuery({
     queryKey: ["receitas-revisar-home"],
     queryFn: () => base44.entities.Receita.filter({ revisar: true }, "-updated_date", 100),
-    enabled: !carregandoIndicadores,
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: 5 * 60 * 1000,
   });
 
   return (
@@ -74,18 +65,18 @@ export default function Home() {
       <div className="pt-0 pb-1">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-1">
           <div className="text-left flex flex-col justify-center">
-            <div className="flex items-center gap-5">
+            <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left min-w-0">
               <img
                 src="https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/a5c36b28a_IMAGEMlABORATORIODECOZINHA.png"
                 alt="Laboratório de Cozinha"
-                className="w-[160px] h-[160px] rounded-full object-cover shadow-lg shrink-0"
+                className="w-[150px] h-[150px] sm:w-[160px] sm:h-[160px] rounded-full object-cover shadow-lg shrink-0"
               />
-              <div>
-                <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight whitespace-nowrap"
+              <div className="min-w-0">
+                <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight"
                   style={{ color: CORES.verdeEscuro }}>
                   Laboratório de Cozinha
                 </h1>
-                <p className="mt-1 text-2xl md:text-3xl font-script whitespace-nowrap" style={{ color: CORES.dourado }}>Receitas que se Multiplicam</p>
+                <p className="mt-1 text-2xl md:text-3xl font-script" style={{ color: CORES.dourado }}>Receitas que se Multiplicam</p>
                 <p className="mt-2 text-sm font-medium italic"
                   style={{ color: CORES.dourado }}>
                   Gastronomia Planejada · por Carmen Reinstein
@@ -109,7 +100,7 @@ export default function Home() {
       </div>
 
       {/* Ações principais */}
-      <AcoesPrincipaisHome minhasReceitasCount={minhasReceitas.length} />
+      <AcoesPrincipaisHome minhasReceitasCount={contagens?.minhasReceitas ?? 0} />
 
       {/* Indicadores reais */}
       <IndicadoresHome

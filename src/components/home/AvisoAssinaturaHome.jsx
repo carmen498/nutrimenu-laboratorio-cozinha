@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { AlertTriangle, Clock } from "lucide-react";
+import { statusAssinaturaEfetivo } from "@/lib/acessoAssinatura";
 
 const formatarData = (dataStr) => {
   if (!dataStr) return null;
@@ -22,7 +23,7 @@ export default function AvisoAssinaturaHome({ user }) {
   // depende de trial/plano e o status persistido pode estar desatualizado.
   if (user?.role === "admin") return null;
 
-  const status = user?.status_assinatura;
+  const status = statusAssinaturaEfetivo(user);
 
   if (status === "vencido") {
     return (

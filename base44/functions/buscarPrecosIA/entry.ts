@@ -53,8 +53,8 @@ IMPORTANTE:
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { response } = await exigirAssinaturaAtiva(base44);
-    if (response) return response;
+    const { response: acessoNegado } = await exigirAssinaturaAtiva(base44);
+    if (acessoNegado) return acessoNegado;
 
     const body = await req.json();
     const ingredientes = body.ingredientes || [];

@@ -3,6 +3,7 @@
 // que eventualmente ainda não tenha atualizado status_assinatura no banco.
 
 const STATUS_COM_ACESSO = new Set(["ativo", "trial"]);
+const PLANOS_PAGOS = new Set(["mensal", "anual", "renovacao"]);
 
 export function hojeSaoPauloISO(agora = new Date()) {
   const partes = new Intl.DateTimeFormat("en-CA", {
@@ -18,37 +19,37 @@ export function hojeSaoPauloISO(agora = new Date()) {
   return `${ano}-${mes}-${dia}`;
 }
 
+export function statusAssinaturaEfetivo(user, agora = new Date()) {
+  const status = user?.status_assinatura;
+  const dataExpiracao = user?.data_expiracao;
+  const dataValida = /^\d{4}-\d{2}-\d{2}$/.test(dataExpiracao || "");
+  const pagamentoVigente = PLANOS_PAGOS.has(user?.plano_atual) && !!user?.pagamento_ativo_id;
+
+  if (status === "vencido" && dataValida && dataExpiracao >= hojeSaoPauloISO(agora) && pagamentoVigente) {
+    return "ativo";
+  }
+  return status;
+}
+
 export function avaliarAcessoAssinatura(user, agora = new Date()) {
-  if (!user) {
-    return { temAcesso: false, motivo: "sem_usuario" };
-  }
+  if (!user) return { temAcesso: false, motivo: "sem_usuario" };
+  if (user.role === "admin") return { temAcesso: true, motivo: "admin" };
 
-  // A conta administradora não depende de trial/plano/expiração.
-  if (user.role === "admin") {
-    return { temAcesso: true, motivo: "admin" };
-  }
-
-  const status = user.status_assinatura;
+  const status = statusAssinaturaEfetivo(user, agora);
   if (!STATUS_COM_ACESSO.has(status)) {
     return { temAcesso: false, motivo: status || "sem_status" };
   }
 
   const dataExpiracao = user.data_expiracao;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataExpiracao || "")) {
-    // Fail closed: conta paga/trial sem uma validade confiável não libera o app.
     return { temAcesso: false, motivo: "sem_data_expiracao" };
   }
 
-  const hoje = hojeSaoPauloISO(agora);
-  if (dataExpiracao < hoje) {
+  if (dataExpiracao < hojeSaoPauloISO(agora)) {
     return { temAcesso: false, motivo: "expirado" };
   }
 
-  return {
-    temAcesso: true,
-    motivo: status,
-    dataExpiracao,
-  };
+  return { temAcesso: true, motivo: status, dataExpiracao };
 }
 
 // Janela de carência para recém-cadastrados: se a conta foi criada há poucos

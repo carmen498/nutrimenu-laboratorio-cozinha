@@ -3,6 +3,7 @@
 // o acesso só expira quando data_expiracao < hoje em America/Sao_Paulo.
 
 const STATUS_COM_ACESSO = new Set(["ativo", "trial"]);
+const PLANOS_PAGOS = new Set(["mensal", "anual", "renovacao"]);
 
 export function hojeSaoPauloISO(agora = new Date()): string {
   const partes = new Intl.DateTimeFormat("en-CA", {
@@ -18,11 +19,23 @@ export function hojeSaoPauloISO(agora = new Date()): string {
   return `${ano}-${mes}-${dia}`;
 }
 
+export function statusAssinaturaEfetivoServer(user: any, agora = new Date()) {
+  const status = user?.status_assinatura;
+  const dataExpiracao = user?.data_expiracao;
+  const dataValida = /^\d{4}-\d{2}-\d{2}$/.test(dataExpiracao || "");
+  const pagamentoVigente = PLANOS_PAGOS.has(user?.plano_atual) && !!user?.pagamento_ativo_id;
+
+  if (status === "vencido" && dataValida && dataExpiracao >= hojeSaoPauloISO(agora) && pagamentoVigente) {
+    return "ativo";
+  }
+  return status;
+}
+
 export function avaliarAcessoAssinaturaServer(user: any, agora = new Date()) {
   if (!user) return { temAcesso: false, motivo: "sem_usuario" };
   if (user.role === "admin") return { temAcesso: true, motivo: "admin" };
 
-  const status = user.status_assinatura;
+  const status = statusAssinaturaEfetivoServer(user, agora);
   if (!STATUS_COM_ACESSO.has(status)) {
     return { temAcesso: false, motivo: status || "sem_status" };
   }
@@ -32,8 +45,7 @@ export function avaliarAcessoAssinaturaServer(user: any, agora = new Date()) {
     return { temAcesso: false, motivo: "sem_data_expiracao" };
   }
 
-  const hoje = hojeSaoPauloISO(agora);
-  if (dataExpiracao < hoje) {
+  if (dataExpiracao < hojeSaoPauloISO(agora)) {
     return { temAcesso: false, motivo: "expirado", dataExpiracao };
   }
 
