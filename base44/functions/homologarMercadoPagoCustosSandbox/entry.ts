@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
+import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
 
 const NONCE = "hml-custos-20260829-6f7d7f8b-21f8-46d6-b23d-a9cfd1c2d6ee";
 const USER_ID = "6a8ee59b65972cf2635543cf";
@@ -54,6 +55,23 @@ export default async function(req: Request): Promise<Response> {
   try {
     const body = await req.json().catch(() => ({}));
     if (body?.nonce !== NONCE) return Response.json({ error: "not_found" }, { status: 404 });
+    if (body?.acao === "refund") {
+      const base44 = createClientFromRequest(req);
+      const accessToken = secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
+      if (!accessToken) return Response.json({ error: "sandbox_token_missing" }, { status: 500 });
+      const pagamentoId = String(body?.pagamento_id || "");
+      const pagamento = pagamentoId ? await base44.asServiceRole.entities.Pagamento.get(pagamentoId).catch(() => null) : null;
+      if (!pagamento?.mercadopago_order_id) return Response.json({ error: "pagamento_order_missing" }, { status: 400 });
+      const { res, data } = await mpJson(`https://api.mercadopago.com/v1/orders/${pagamento.mercadopago_order_id}/refund`, {
+        method: "POST",
+        headers: { "X-Idempotency-Key": crypto.randomUUID() },
+      }, accessToken);
+      if (!res.ok) return Response.json({ ok: false, etapa: "refund", http_status: res.status, mp_error: data?.message || data?.error || data?.errors || null }, { status: 200 });
+      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "estornado" });
+      const revogacao = await revogarCompraEstorno(base44, pagamento);
+      return Response.json({ ok: true, etapa: "refund", pagamento_id: pagamento.id, order_id: pagamento.mercadopago_order_id, mp_status: data?.status || null, mp_status_detail: data?.status_detail || null, revogacao });
+    }
+
     const plano = body?.plano === "custos_anual" ? "custos_anual" : "custos_mensal";
     const combinado = body?.combinado === true;
     const basePlano = combinado ? (body?.base_plano === "anual" ? "anual" : "mensal") : null;
