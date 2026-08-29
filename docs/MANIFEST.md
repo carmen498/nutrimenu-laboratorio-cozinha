@@ -44,5 +44,6 @@
 | `34-BASE44-REPLACEMENT-MAP.md` | substituições | COMPLETE | acoplamentos |
 | `35-DOCUMENTATION-AUDIT.md` | auditoria final | COMPLETE | segunda passagem |
 | `36-LABORATORIO-CUSTOS-SUPABASE-HANDOFF.md` | contrato técnico/funcional do Laboratório de Custos para Supabase | COMPLETE | implementação homologada + decisões de produto |
+| `37-VERCEL-DEPLOYMENT-GUIDE.md` | guia operacional de build Vite, domínios, redirects, ambiente e migração de functions para Vercel | COMPLETE | código atual + arquitetura destino + contratos críticos |
 
 `PARTIAL/BLOCKED` exigem as ações em `32`; não são aceitos como conclusão de migração.
