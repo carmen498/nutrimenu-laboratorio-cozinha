@@ -45,5 +45,6 @@
 | `35-DOCUMENTATION-AUDIT.md` | auditoria final | COMPLETE | segunda passagem |
 | `36-LABORATORIO-CUSTOS-SUPABASE-HANDOFF.md` | contrato técnico/funcional do Laboratório de Custos para Supabase | COMPLETE | implementação homologada + decisões de produto |
 | `37-VERCEL-DEPLOYMENT-GUIDE.md` | guia operacional de build Vite, domínios, redirects, ambiente e migração de functions para Vercel | COMPLETE | código atual + arquitetura destino + contratos críticos |
+| `38-RECIPE-COST-DATA-EXPORT-GUIDE.md` | contrato de exportação portátil de receitas, composição, preços e custos para bancos externos/Supabase | COMPLETE | schemas atuais + regras canônicas + plano de migração de dados |
 
 `PARTIAL/BLOCKED` exigem as ações em `32`; não são aceitos como conclusão de migração.
