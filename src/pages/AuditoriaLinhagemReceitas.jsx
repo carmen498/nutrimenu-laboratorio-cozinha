@@ -12,6 +12,7 @@ import {
   resolverReceitaRaizId,
   resolverDonoReceitaId,
 } from "@/lib/receitaLineage";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 const PROBLEMA_LABEL = {
   origens_conflitantes: "origens conflitantes",
@@ -188,7 +189,7 @@ export default function AuditoriaLinhagemReceitas() {
                 <span className="font-medium">{log.normalizadas || 0} normalizada(s)</span>
                 <span>{log.a_revisar || 0} a revisar</span>
                 <span>{log.ciclos || 0} ciclo(s)</span>
-                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+                <span className="text-muted-foreground">{log.executado_em ? formatarDataHoraBrasilia(log.executado_em) : ""}</span>
               </div>
             ))}
           </div>

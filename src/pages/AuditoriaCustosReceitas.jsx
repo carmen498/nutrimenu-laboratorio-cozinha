@@ -10,6 +10,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { CUSTO_RECEITA_MODELO_VERSAO } from "@/lib/custoReceita";
 import CuradoriaCustosPendentes from "@/components/auditoria/CuradoriaCustosPendentes";
 import CuradoriaDivergenciasIngrediente from "@/components/auditoria/CuradoriaDivergenciasIngrediente";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 const STATUS_LABEL = {
   atual: "Atual",
@@ -425,7 +426,7 @@ export default function AuditoriaCustosReceitas() {
                 <span>{log.ids_reapontados || 0} ID(s) reapontado(s)</span>
                 <span>{log.manuais || 0} manual(is)</span>
                 <span>{log.receitas_afetadas || 0} receita(s) afetada(s)</span>
-                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+                <span className="text-muted-foreground">{log.executado_em ? formatarDataHoraBrasilia(log.executado_em) : ""}</span>
               </div>
             ))}
           </div>
@@ -592,7 +593,7 @@ export default function AuditoriaCustosReceitas() {
                 <span>{log.referencias_reapontadas || 0} referência(s) reapontada(s)</span>
                 <span>{log.insumos_recalculados || 0} insumo(s) corrigido(s)</span>
                 <span>{log.pendencias_manuais == null ? "—" : log.pendencias_manuais} receita(s) manual(is)</span>
-                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+                <span className="text-muted-foreground">{log.executado_em ? formatarDataHoraBrasilia(log.executado_em) : ""}</span>
               </div>
             ))}
           </div>
@@ -609,7 +610,7 @@ export default function AuditoriaCustosReceitas() {
                 <span>{log.incompletas || 0} incompleta(s)</span>
                 <span>{log.itens_sem_preco || 0} sem preço</span>
                 <span>{log.referencias_ausentes || 0} referência(s) ausente(s)</span>
-                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+                <span className="text-muted-foreground">{log.executado_em ? formatarDataHoraBrasilia(log.executado_em) : ""}</span>
               </div>
             ))}
           </div>

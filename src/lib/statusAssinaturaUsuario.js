@@ -1,8 +1,7 @@
+import { formatarDataBrasilia, formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
+
 export function formatarData(dataStr) {
-  if (!dataStr) return null;
-  const data = new Date(`${dataStr}T00:00:00`);
-  if (isNaN(data.getTime())) return null;
-  return data.toLocaleDateString("pt-BR");
+  return formatarDataBrasilia(dataStr);
 }
 
 export function diasEntreHoje(dataStr) {
@@ -74,8 +73,5 @@ export function usuarioMatchTipo(u, tipoFiltro) {
 }
 
 export function formatarDataHora(dataStr) {
-  if (!dataStr) return null;
-  const data = new Date(dataStr);
-  if (isNaN(data.getTime())) return null;
-  return data.toLocaleDateString("pt-BR");
+  return formatarDataHoraBrasilia(dataStr);
 }

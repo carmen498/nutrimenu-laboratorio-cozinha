@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle2, GitBranch, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 const atualizadoEm = (r) => r?.updated_date || r?.updated_at || r?.created_date || "";
 const assinatura = (deps) => [...deps.entries()]
@@ -406,7 +407,7 @@ export default function AuditoriaSubreceitas() {
               <div key={log.id} className="flex flex-wrap gap-x-3 gap-y-1 border-t first:border-0 pt-1.5 first:pt-0">
                 <span className="font-medium">{log.acao}</span>
                 <span>{log.filhos_anteriores ?? 0} → {log.filhos_novos ?? 0} itens</span>
-                <span className="text-muted-foreground">{log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : ""}</span>
+                <span className="text-muted-foreground">{log.executado_em ? formatarDataHoraBrasilia(log.executado_em) : ""}</span>
               </div>
             ))}
           </div>

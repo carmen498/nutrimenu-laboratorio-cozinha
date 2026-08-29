@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { resolverRendimentoReceita, formatarStatusRendimento } from "@/lib/rendimentoReceita";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 const fmt = (v) => Number(v || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 const fmtFator = (v) => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
@@ -185,7 +186,7 @@ export default function AuditoriaRendimento() {
               <div key={log.id} className="flex flex-wrap gap-2 items-center px-3 py-2 border-t border-border text-sm">
                 <div className="flex-1 min-w-[220px]">{log.receita_nome}</div>
                 <div className="text-muted-foreground">{fmt(log.rendimento_anterior)} → <strong>{fmt(log.rendimento_novo)} g</strong></div>
-                <div className="text-xs text-muted-foreground">{log.created_date ? new Date(log.created_date).toLocaleString("pt-BR") : "—"}</div>
+                <div className="text-xs text-muted-foreground">{formatarDataHoraBrasilia(log.created_date) || "—"}</div>
               </div>
             ))}
           </div>

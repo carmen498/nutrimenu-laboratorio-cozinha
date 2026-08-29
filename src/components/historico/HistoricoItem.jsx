@@ -1,11 +1,9 @@
 import { Link } from "react-router-dom";
-import moment from "moment";
 import { FileEdit } from "lucide-react";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 export default function HistoricoItem({ registro }) {
-  const dataFormatada = registro.created_date
-    ? moment(registro.created_date).format("DD/MM/YYYY HH:mm")
-    : "—";
+  const dataFormatada = formatarDataHoraBrasilia(registro.created_date) || "—";
 
   return (
     <div className="flex items-start gap-3 py-3 px-4 border-b border-border last:border-0">

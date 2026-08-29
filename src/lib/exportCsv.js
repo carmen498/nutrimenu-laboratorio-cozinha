@@ -1,9 +1,13 @@
 // Generic CSV export helper — UTF-8 without BOM, comma-separated, direct download.
 // Read-only utility: never mutates any data, only formats it for download.
 
+import { paraIsoBrasilia } from "@/lib/fusoBrasilia";
+
 function escapeCsvValue(value) {
   if (value === null || value === undefined) return "";
-  const str = String(value);
+  const str = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(String(value))
+    ? paraIsoBrasilia(value)
+    : String(value);
   if (str.includes(",") || str.includes('"') || str.includes("\n")) {
     return '"' + str.replace(/"/g, '""') + '"';
   }

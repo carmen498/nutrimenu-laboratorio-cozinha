@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { History } from "lucide-react";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 const LABELS = {
   normalizar: "Normalização em lote",
@@ -31,7 +32,7 @@ export default function HistoricoSaneamentoMedidas() {
           <div key={log.id} className="py-2 flex flex-wrap items-center gap-2 text-sm">
             <Badge variant="outline">{LABELS[log.acao] || log.acao}</Badge>
             <span className="text-xs text-muted-foreground">
-              {log.executado_em ? new Date(log.executado_em).toLocaleString("pt-BR") : "data não informada"}
+              {formatarDataHoraBrasilia(log.executado_em) || "data não informada"}
             </span>
             {Number(log.ingrediente_receita_atualizados) > 0 && (
               <span className="text-xs">{log.ingrediente_receita_atualizados} vínculo(s) de receita repontado(s)</span>

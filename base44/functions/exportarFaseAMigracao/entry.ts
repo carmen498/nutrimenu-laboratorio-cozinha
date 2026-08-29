@@ -1,5 +1,6 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.44";
 import { criarZipSemCompressao, sha256Hex, textoBytes } from "../../shared/migrationArchive.ts";
+import { converterDatasBrasilia, paraIsoBrasilia } from "../../shared/fusoBrasilia.ts";
 
 const TAMANHO_PAGINA = 500;
 const CAMPOS_PESSOAIS = new Set([
@@ -20,6 +21,7 @@ async function listarTudo(entidade, filtro = null) {
 }
 
 function removerDadosPessoais(valor) {
+  if (typeof valor === "string") return converterDatasBrasilia(valor);
   if (Array.isArray(valor)) return valor.map(removerDadosPessoais);
   if (!valor || typeof valor !== "object") return valor;
   const limpo = {};
@@ -37,8 +39,8 @@ function envelope(nome, registro) {
   return {
     entity_name: nome,
     id: registro.id,
-    created_date: registro.created_date || null,
-    updated_date: registro.updated_date || null,
+    created_date: registro.created_date ? paraIsoBrasilia(registro.created_date) : null,
+    updated_date: registro.updated_date ? paraIsoBrasilia(registro.updated_date) : null,
     payload,
   };
 }
@@ -208,7 +210,8 @@ export default async function(req) {
 
     const contagens = Object.fromEntries(Object.entries(dados).map(([nome, registros]) => [nome, registros.length]));
     const relatorioRelacoes = {
-      generated_at: new Date().toISOString(),
+      generated_at: paraIsoBrasilia(new Date()),
+      timezone: "America/Sao_Paulo",
       scope: "fase_a_catalogo_sem_dados_pessoais",
       total_relacoes_invalidas: relacoes.reduce((soma, item) => soma + item.total_invalidos, 0),
       relacoes,
@@ -220,8 +223,9 @@ export default async function(req) {
     const manifesto = {
       format_version: "1.0",
       export_id: crypto.randomUUID(),
-      started_at: inicio.toISOString(),
-      finished_at: new Date().toISOString(),
+      started_at: paraIsoBrasilia(inicio),
+      finished_at: paraIsoBrasilia(new Date()),
+      timezone: "America/Sao_Paulo",
       source: "base44-public-catalog",
       mode: "fase_a",
       cursor_rule: "id_ascendente,offset_sob_congelamento_logico",
@@ -249,7 +253,7 @@ export default async function(req) {
     if (dryRun) return Response.json(resumo);
 
     const zip = criarZipSemCompressao(arquivos, inicio);
-    const nomeArquivo = `laboratorio-cozinha-fase-a-${inicio.toISOString().replace(/[:.]/g, "-")}.zip`;
+    const nomeArquivo = `laboratorio-cozinha-fase-a-${String(paraIsoBrasilia(inicio)).replace(/[:.]/g, "-")}.zip`;
     const upload = await base44.asServiceRole.integrations.Core.UploadPrivateFile({
       file: new File([zip], nomeArquivo, { type: "application/zip" }),
     });

@@ -3,6 +3,7 @@ import { ShieldCheck, RefreshCw, CheckCircle2, XCircle, AlertTriangle } from "lu
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { IS_PRODUCTION } from "@/lib/mercadoPagoConfig";
+import { converterDatasObjetoBrasilia } from "@/lib/fusoBrasilia";
 
 function Linha({ ok, children, warning = false }) {
   const Icon = warning ? AlertTriangle : ok ? CheckCircle2 : XCircle;
@@ -101,7 +102,7 @@ export default function GoLivePreflightAdmin() {
       {data?.operacao_recente && (
         <div className="rounded-xl border bg-card p-4 space-y-2 text-sm">
           <h3 className="font-semibold">Sinais operacionais recentes</h3>
-          <pre className="overflow-auto rounded bg-muted p-3 text-xs">{JSON.stringify(data.operacao_recente, null, 2)}</pre>
+          <pre className="overflow-auto rounded bg-muted p-3 text-xs">{JSON.stringify(converterDatasObjetoBrasilia(data.operacao_recente), null, 2)}</pre>
         </div>
       )}
     </div>

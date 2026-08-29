@@ -1,11 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 export default function HistoricoAtualizacoesDialog({ open, onClose, logs }) {
-  const formatDate = (d) => {
-    const date = new Date(d);
-    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
-      + " " + date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", hour12: false }) + "h";
-  };
 
   const formatSegundos = (s) => {
     if (!s) return "—";
@@ -40,7 +36,7 @@ export default function HistoricoAtualizacoesDialog({ open, onClose, logs }) {
               <tbody>
                 {logs.map((log) => (
                   <tr key={log.id} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="py-2.5 pr-3">{formatDate(log.data_execucao)}</td>
+                    <td className="py-2.5 pr-3">{formatarDataHoraBrasilia(log.data_execucao) || "—"}</td>
                     <td className="text-center py-2.5 px-2">{log.total_processado || 0}</td>
                     <td className="text-center py-2.5 px-2 text-green-700 font-medium">{log.total_atualizado || 0}</td>
                     <td className="text-center py-2.5 px-2 text-muted-foreground">{log.total_mantido || 0}</td>
