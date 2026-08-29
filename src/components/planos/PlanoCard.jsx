@@ -39,7 +39,7 @@ export default function PlanoCard({
         </span>
       )}
 
-      <div className="min-h-[132px] flex flex-col items-center">
+      <div className="min-h-[112px] flex flex-col items-center">
         <h3 className="font-heading text-lg font-semibold text-foreground text-center mt-2">
           {nome}
         </h3>
@@ -57,18 +57,18 @@ export default function PlanoCard({
         )}
       </div>
 
-      <div className="min-h-[108px] border-t border-border flex flex-col items-center justify-center py-3">
-        <p className="font-heading text-2xl font-bold leading-none text-center text-foreground whitespace-nowrap">{preco}</p>
+      <div className="min-h-[88px] border-t border-border flex flex-col items-center justify-center py-2">
+        <p className="font-heading text-xl font-bold leading-none text-center text-foreground whitespace-nowrap">{preco}</p>
         {precoDetalhe && (
           <p className="text-xs text-muted-foreground mt-1 text-center">{precoDetalhe}</p>
         )}
       </div>
 
-      <div className="min-h-[108px] border-t border-border pt-3 flex items-start">
+      <div className="min-h-[92px] border-t border-border pt-3 flex items-start">
         {complemento}
       </div>
 
-      <div className="mt-auto min-h-[98px] flex flex-col justify-end">
+      <div className="mt-auto min-h-[84px] flex flex-col justify-end">
         {isCurrentPlan ? (
           <div className="flex flex-col items-center gap-1 text-center">
             <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-sm font-semibold px-3 py-2 rounded-lg w-full justify-center">
@@ -79,14 +79,9 @@ export default function PlanoCard({
                 {validadeLabel} {validadeData}
               </p>
             )}
-            {diasRestantes != null && (
-              <p className="text-xs font-medium text-primary">
-                {diasRestantes} {diasRestantes === 1 ? "dia restante" : "dias restantes"}
-              </p>
-            )}
             {complementoActionLabel && (
               <Button
-                className="w-full h-10 mt-2"
+                className="w-full h-9 mt-2 px-2 text-xs leading-tight whitespace-normal"
                 variant="outline"
                 disabled={complementoActionDisabled}
                 onClick={onComplementoAction}
