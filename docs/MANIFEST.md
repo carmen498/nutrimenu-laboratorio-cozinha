@@ -7,6 +7,7 @@
 | `01-ARCHITECTURE.md` | arquitetura/diagramas | PARTIAL | código/Base44 |
 | `02-CODEBASE-INVENTORY.md` | árvore/acoplamento | PARTIAL | árvore/package |
 | `03-FEATURE-CATALOG.md` | catálogo funcional | PARTIAL | pages/functions/entities |
+| `BUSINESS-RULES.md` | índice central das regras de negócio e seis referências técnicas | COMPLETE | entities/libs/functions homologados |
 | `04-ROUTES-AND-UI.md` | rotas/telas | PARTIAL | App/pages |
 | `05-API-REFERENCE.md` | APIs | PARTIAL | functions |
 | `openapi.yaml` | OpenAPI | PARTIAL | funções inspecionadas |
