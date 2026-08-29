@@ -20,9 +20,11 @@ async function mpJson(url: string, options: RequestInit, accessToken: string) {
   return { res, data };
 }
 
-async function criarCardToken(accessToken: string) {
-  const { res, data } = await mpJson("https://api.mercadopago.com/v1/card_tokens", {
+async function criarCardToken() {
+  const publicKey = "APP_USR-d5eb6ba4-9921-4c6c-bd65-f0edbd382ae2";
+  const res = await fetch(`https://api.mercadopago.com/v1/card_tokens?public_key=${encodeURIComponent(publicKey)}`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       card_number: "5031433215406351",
       expiration_month: 11,
@@ -33,7 +35,8 @@ async function criarCardToken(accessToken: string) {
         identification: { type: "CPF", number: "12345678909" },
       },
     }),
-  }, accessToken);
+  });
+  const data = await res.json().catch(() => null);
   if (!res.ok || !data?.id) throw new Error(`card_token_failed:${res.status}:${data?.message || data?.error || "unknown"}`);
   return data.id as string;
 }
@@ -71,7 +74,7 @@ export default async function(req: Request): Promise<Response> {
     const produtoCompra = combinado ? "cozinha_mais_custos" : "laboratorio_custos";
     const planoPagamento = combinado ? basePlano : plano;
 
-    const cardToken = await criarCardToken(accessToken);
+    const cardToken = await criarCardToken();
     const pagamento = await base44.asServiceRole.entities.Pagamento.create({
       usuario_id: USER_ID,
       plano: planoPagamento,
