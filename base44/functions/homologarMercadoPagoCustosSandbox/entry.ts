@@ -142,6 +142,14 @@ export default async function(req: Request): Promise<Response> {
         pagamento_id: pagamento.id,
         mp_error: data?.message || data?.error || null,
         mp_cause: data?.cause || data?.errors || null,
+        mp_validation: data ? {
+          code: data.code || null,
+          message: data.message || null,
+          error: data.error || null,
+          details: data.details || null,
+          errors: data.errors || null,
+          cause: data.cause || null,
+        } : null,
       }, { status: 200 });
     }
 
