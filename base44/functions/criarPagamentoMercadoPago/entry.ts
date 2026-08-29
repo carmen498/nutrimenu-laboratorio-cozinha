@@ -132,23 +132,57 @@ export default async function(req: Request): Promise<Response> {
       }, { status: 409 });
     }
 
-    // Preço vem sempre do servidor (ConfiguracaoPlano), nunca do frontend — é a mesma
-    // fonte editada pelo admin em Administração > Planos e exibida na tela pública.
-    const configsPlano = await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: plano });
-    const configPlano = configsPlano?.[0];
-    if (!configPlano || configPlano.valor_cobranca == null) {
-      return Response.json({ error: `Preço não configurado para o plano ${plano}` }, { status: 500 });
+    // Preço e composição vêm sempre do servidor. O frontend informa apenas IDs de ofertas.
+    const planoEhCustos = ["custos_mensal", "custos_anual"].includes(plano);
+    const planoBaseId = somente_addon || planoEhCustos ? null : plano;
+    const addonId = addon_plano_id || (planoEhCustos ? plano : null);
+
+    if (addonId && !["custos_mensal", "custos_anual"].includes(addonId)) {
+      return Response.json({ error: "Plano do Laboratório de Custos inválido" }, { status: 400 });
     }
-    const valor = Number(configPlano.valor_cobranca);
-    if (!(valor > 0)) {
-      return Response.json({ error: `Preço inválido para o plano ${plano}` }, { status: 500 });
+    if (somente_addon && !addonId) {
+      return Response.json({ error: "Informe o plano do Laboratório de Custos" }, { status: 400 });
     }
+    if (somente_addon && !avaliarAcessoAssinaturaServer(user).temAcesso) {
+      return Response.json({ error: "É necessário ter Laboratório de Cozinha ativo para contratar o Laboratório de Custos", code: "base_plan_required" }, { status: 409 });
+    }
+
+    let configBase: any = null;
+    let configAddon: any = null;
+    let valorCozinha = 0;
+    let valorCustos = 0;
+
+    if (planoBaseId) {
+      configBase = (await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: planoBaseId, produto: "laboratorio_cozinha" }))?.[0]
+        || (await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: planoBaseId }))?.find((p: any) => !p.produto || p.produto === "laboratorio_cozinha");
+      if (!configBase || configBase.valor_cobranca == null) return Response.json({ error: `Preço não configurado para o plano ${planoBaseId}` }, { status: 500 });
+      valorCozinha = Number(configBase.valor_cobranca);
+      if (!(valorCozinha > 0)) return Response.json({ error: `Preço inválido para o plano ${planoBaseId}` }, { status: 500 });
+    }
+
+    if (addonId) {
+      const configsAddon = await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: addonId, produto: "laboratorio_custos" });
+      configAddon = configsAddon?.[0] || null;
+      const configsModulo = await base44.asServiceRole.entities.ConfiguracaoAddonCustos.filter({ chave: "laboratorio_custos" });
+      const configModulo = configsModulo?.[0] || null;
+      if (!configAddon || configAddon.valor_cobranca == null) return Response.json({ error: `Preço não configurado para o plano ${addonId}` }, { status: 500 });
+      if (!configAddon.venda_habilitada || !configModulo?.venda_habilitada) {
+        return Response.json({ error: "A contratação paga do Laboratório de Custos ainda está em homologação", code: "cost_checkout_disabled" }, { status: 409 });
+      }
+      valorCustos = Number(configAddon.valor_cobranca);
+      if (!(valorCustos > 0)) return Response.json({ error: `Preço inválido para o plano ${addonId}` }, { status: 500 });
+    }
+
+    const valor = valorCozinha + valorCustos;
+    if (!(valor > 0)) return Response.json({ error: "Valor total inválido" }, { status: 500 });
+    const produtoCompra = addonId ? (planoBaseId ? "cozinha_mais_custos" : "laboratorio_custos") : "laboratorio_cozinha";
     const valorFormatado = valor.toFixed(2);
     const parcelas = forma_pagamento === "cartao" ? (parseInt(installments, 10) || 1) : 1;
-    const parcelamento = validarParcelamentoPlano(plano, parcelas);
+    const planoParcelamento = planoBaseId || addonId || plano;
+    const parcelamento = validarParcelamentoPlano(planoParcelamento, parcelas);
     if (!parcelamento.valido) {
       return Response.json({
-        error: `Parcelamento inválido para o plano ${plano}. Máximo permitido: ${parcelamento.maximo}x`,
+        error: `Parcelamento inválido para o plano ${planoParcelamento}. Máximo permitido: ${parcelamento.maximo}x`,
         code: "parcelamento_invalido",
         max_parcelas: parcelamento.maximo,
       }, { status: 400 });
@@ -193,7 +227,11 @@ export default async function(req: Request): Promise<Response> {
     // X-Idempotency-Key para consultar/criar com segurança no Mercado Pago.
     const pagamento = pagamentoExistente || await base44.asServiceRole.entities.Pagamento.create({
       usuario_id: user.id,
-      plano,
+      plano: planoBaseId || addonId || plano,
+      produto_compra: produtoCompra,
+      ...(addonId ? { addon_plano_id: addonId } : {}),
+      valor_cozinha: valorCozinha,
+      valor_custos: valorCustos,
       forma_pagamento,
       valor,
       parcelas,
@@ -220,7 +258,9 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "Credencial do Mercado Pago não configurada para o ambiente atual" }, { status: 500 });
     }
 
-    const descricaoPlano = NOME_PLANOS[plano];
+    const descricaoPlano = produtoCompra === "cozinha_mais_custos"
+      ? `${NOME_PLANOS[planoBaseId]} + ${NOME_PLANOS[addonId]}`
+      : NOME_PLANOS[planoBaseId || addonId || plano];
 
     // Nome do pagador, para aparecer identificado no painel do Mercado Pago
     // (sem isso o campo "comprador" fica em branco na conciliação).
