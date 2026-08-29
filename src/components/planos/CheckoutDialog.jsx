@@ -63,7 +63,9 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
             </TabsList>
             <TabsContent value="cartao" className="pt-4">
               <CartaoForm
-                plano={plano}
+                plano={somenteAddon ? addon?.id : plano}
+                addonPlanoId={addon?.id || null}
+                somenteAddon={somenteAddon}
                 email={email}
                 onClose={handleClose}
                 onSuccess={() => setAprovado(true)}
@@ -72,7 +74,9 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
             </TabsContent>
             <TabsContent value="pix" className="pt-4">
               <PixForm
-                plano={plano}
+                plano={somenteAddon ? addon?.id : plano}
+                addonPlanoId={addon?.id || null}
+                somenteAddon={somenteAddon}
                 email={email}
                 onClose={handleClose}
                 onSuccess={() => setAprovado(true)}
