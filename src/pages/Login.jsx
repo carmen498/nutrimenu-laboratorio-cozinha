@@ -68,7 +68,8 @@ export default function Login() {
   const handleGoogle = async () => {
     setError("");
     try {
-      base44.auth.loginWithProvider("google", returnTo);
+      const destinoOAuth = new URL(returnTo, window.location.origin).toString();
+      await base44.auth.loginWithProvider("google", destinoOAuth);
     } catch (err) {
       setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");
     }

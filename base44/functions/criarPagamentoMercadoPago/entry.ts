@@ -23,7 +23,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v17-2026-08-25-device-id-antifraude";
+const VERSAO_CODIGO = "v18-2026-08-29-fingerprint-sync-idempotente";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -81,6 +81,9 @@ export default async function(req: Request): Promise<Response> {
           ...respostaExistente,
         }, { status: 400 });
       }
+      if (pagamentoAntecipado.status === "approved") {
+        await ativarPlanoEEnviarEmail(base44, pagamentoAntecipado);
+      }
       return Response.json(respostaExistente);
     }
 
@@ -101,12 +104,29 @@ export default async function(req: Request): Promise<Response> {
     if (forma_pagamento === "cartao" && !token) {
       return Response.json({ error: "Token do cartão é obrigatório" }, { status: 400 });
     }
+    if (forma_pagamento === "cartao" && (typeof token !== "string" || token.length < 32)) {
+      return Response.json({
+        error: "Os dados protegidos do cartão estão incompletos. Preencha novamente.",
+        code: "invalid_card_token",
+      }, { status: 400 });
+    }
     if (!payer?.email) {
       return Response.json({ error: "E-mail do pagador é obrigatório" }, { status: 400 });
     }
     const cpfLimpo = typeof payer?.cpf === "string" ? payer.cpf.replace(/\D/g, "") : "";
     if (cpfLimpo.length !== 11) {
       return Response.json({ error: "Informe um CPF válido do titular do pagamento" }, { status: 400 });
+    }
+
+    const ambiente = (secrets.get("AMBIENTE") || "").trim().toLowerCase();
+    const deviceIdSeguro = typeof device_id === "string" ? device_id.trim() : "";
+    const deviceIdValido = /^[\x21-\x7E]{8,256}$/.test(deviceIdSeguro);
+    if (forma_pagamento === "cartao" && ambiente === "producao" && !deviceIdValido) {
+      return Response.json({
+        error: "Não foi possível validar a segurança deste dispositivo.",
+        code: "device_fingerprint_unavailable",
+        orientacao: "Atualize a página e tente novamente em um navegador como Chrome ou Safari.",
+      }, { status: 409 });
     }
 
     // Preço vem sempre do servidor (ConfiguracaoPlano), nunca do frontend — é a mesma
@@ -159,6 +179,9 @@ export default async function(req: Request): Promise<Response> {
           ...respostaExistente,
         }, { status: 400 });
       }
+      if (pagamentoExistente.status === "approved") {
+        await ativarPlanoEEnviarEmail(base44, pagamentoExistente);
+      }
       return Response.json(respostaExistente);
     }
 
@@ -179,7 +202,6 @@ export default async function(req: Request): Promise<Response> {
       versao_codigo: VERSAO_CODIGO,
     });
 
-    const ambiente = secrets.get("AMBIENTE");
     const accessToken = ambiente === "producao"
       ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
       : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
@@ -266,8 +288,8 @@ export default async function(req: Request): Promise<Response> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${accessToken}`,
         "X-Idempotency-Key": idempotencyKey,
-        ...(forma_pagamento === "cartao" && typeof device_id === "string" && /^[A-Za-z0-9_-]{8,256}$/.test(device_id)
-          ? { "X-meli-session-id": device_id }
+        ...(forma_pagamento === "cartao" && deviceIdValido
+          ? { "X-meli-session-id": deviceIdSeguro }
           : {}),
       },
       body: JSON.stringify(orderBody),
@@ -338,7 +360,10 @@ export default async function(req: Request): Promise<Response> {
         } catch { /* best-effort — não bloqueia o fluxo de erro */ }
       }
 
-      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${detalheStatusDetail ? ` [${detalheStatusDetail}]` : ""}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}`);
+      const diagnosticoSeguro = forma_pagamento === "cartao"
+        ? ` [fingerprint:${deviceIdValido ? "enviado" : "ausente"}; metodo:${String(body.payment_method_id || "ausente")}; token:${typeof token === "string" ? token.length : 0} caracteres]`
+        : "";
+      const detalheSeguro = resumirErroOperacional(`HTTP ${mpResponse.status} — ${mensagemPrincipal}${detalheStatusDetail ? ` [${detalheStatusDetail}]` : ""}${causaDetalhada && mensagemPrincipal !== causaDetalhada ? ` (${causaDetalhada})` : ""}${diagnosticoSeguro}`);
       const codigoRecusa = `${mensagemPrincipal} ${detalheStatusDetail} ${causaDetalhada || ""}`.toLowerCase();
       const orientacao = codigoRecusa.includes("insufficient_funds")
         ? "Saldo ou limite insuficiente. Tente outro cartão ou fale com o banco emissor."

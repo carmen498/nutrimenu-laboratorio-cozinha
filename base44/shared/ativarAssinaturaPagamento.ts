@@ -46,13 +46,27 @@ async function enviarBoasVindasSeNecessario(base44: any, usuario: any): Promise<
   });
 }
 
-export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string }): Promise<void> {
+export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string; created_date?: string }): Promise<void> {
+  const usuarioAntes = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+
+  // A mesma transação pode voltar pela resposta síncrona, por repetição HTTP e pelo
+  // webhook. Se ela já concedeu o acesso, não prolonga o plano nem repete notificações.
+  if (pagamento.id && usuarioAntes?.pagamento_ativo_id === pagamento.id) return;
+
+  // Uma aprovação antiga reentregue fora de ordem nunca substitui uma compra mais nova.
+  if (pagamento.id && usuarioAntes?.pagamento_ativo_id && usuarioAntes.pagamento_ativo_id !== pagamento.id) {
+    const pagamentoAtivo = await base44.asServiceRole.entities.Pagamento
+      .get(usuarioAntes.pagamento_ativo_id)
+      .catch(() => null);
+    if (pagamentoAtivo?.created_date && pagamento.created_date
+      && new Date(pagamentoAtivo.created_date) >= new Date(pagamento.created_date)) return;
+  }
+
   const dias = DIAS_PLANO[pagamento.plano] ?? 30;
   const dataInicio = hojeSaoPauloISO();
   // data_expiracao é inclusiva no motor de acesso. Portanto, um plano de 30 dias
   // iniciado hoje deve expirar em hoje + 29 dias (e não +30, que daria 31 dias civis).
   const dataExpiracaoFormatada = calcularExpiracaoInclusiva(dataInicio, dias);
-  const usuarioAntes = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
   const cicloRenovacao = proximoCicloRenovacao(pagamento.plano, usuarioAntes?.ciclo_renovacao);
 
   await base44.asServiceRole.entities.User.update(pagamento.usuario_id, {

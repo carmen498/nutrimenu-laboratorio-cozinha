@@ -168,7 +168,7 @@ export default function Register() {
     // somente depois que o Google devolver uma sessão autenticada.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
     try {
-      await base44.auth.loginWithProvider("google", "/app");
+      await base44.auth.loginWithProvider("google", new URL("/app", window.location.origin).toString());
     } catch (err) {
       sessionStorage.removeItem("base44_pending_terms_acceptance");
       setGoogleLoading(false);

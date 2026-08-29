@@ -135,6 +135,9 @@ export default async function(req: Request): Promise<Response> {
     // (ou repetição da mesma notificação assinada) não devem reenviar e-mail/WhatsApp,
     // reativar plano nem executar revogação de estorno uma segunda vez.
     if (pagamento.status === novoStatus) {
+      // Se a gravação do pagamento ocorreu, mas a atualização do usuário falhou,
+      // um replay aprovado repara a liberação. O helper ignora quem já foi ativado.
+      if (novoStatus === "approved") await ativarPlanoEEnviarEmail(base44, pagamento);
       console.log(`Pagamento já estava ${novoStatus} — efeitos colaterais ignorados (idempotência).`);
       await registrarLog({ assinatura_valida: true, resultado: "processado", pagamento_id: pagamentoId, status_resolvido: novoStatus });
       return Response.json({ received: true, status: novoStatus, idempotent: true });

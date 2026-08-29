@@ -63,6 +63,9 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
       // O Device ID é um sinal antifraude recomendado pelo Mercado Pago e reduz
       // recusas legítimas classificadas como "high_risk".
       const deviceId = await carregarMercadoPagoDeviceId();
+      if (!deviceId) {
+        throw new Error("Não foi possível validar a segurança deste dispositivo. Atualize a página e tente novamente no Chrome ou Safari.");
+      }
 
       if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {

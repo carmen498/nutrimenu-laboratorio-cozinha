@@ -16,7 +16,10 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
-      await base44.auth.resetPasswordRequest(email.trim().toLowerCase());
+      await Promise.race([
+        base44.auth.resetPasswordRequest(email.trim().toLowerCase()),
+        new Promise((_, reject) => window.setTimeout(() => reject(new Error("timeout")), 15000)),
+      ]);
     } catch {
       // Always show success regardless
     } finally {
