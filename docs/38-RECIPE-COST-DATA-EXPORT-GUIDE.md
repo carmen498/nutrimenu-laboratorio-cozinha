@@ -460,6 +460,7 @@ Aplicar freeze/journal, exportar delta final, reconciliar, trocar a fonte de lei
 
 - [Plano de migração de dados](07-DATA-MIGRATION.md)
 - [Banco e RLS](06-DATABASE.md)
+- [Inventário e migração de arquivos](11-STORAGE.md)
 - [Inventário de exportação](33-BASE44-EXPORT-INVENTORY.md)
 - [Handoff do Laboratório de Custos](36-LABORATORIO-CUSTOS-SUPABASE-HANDOFF.md)
 - [Guia de implantação Vercel](37-VERCEL-DEPLOYMENT-GUIDE.md)
