@@ -10,10 +10,12 @@ async function listarTudo(entidade, filtro = null) {
   const registros = [];
   for (let skip = 0; ; skip += TAMANHO_PAGINA) {
     const pagina = filtro
-      ? await entidade.filter(filtro, "updated_date", TAMANHO_PAGINA, skip)
-      : await entidade.list("updated_date", TAMANHO_PAGINA, skip);
+      ? await entidade.filter(filtro, "id", TAMANHO_PAGINA, skip)
+      : await entidade.list("id", TAMANHO_PAGINA, skip);
     registros.push(...(pagina || []));
-    if (!pagina || pagina.length < TAMANHO_PAGINA) return registros;
+    if (!pagina || pagina.length < TAMANHO_PAGINA) {
+      return Array.from(new Map(registros.map((item) => [item.id, item])).values());
+    }
   }
 }
 
@@ -90,7 +92,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
     if (user.role !== "admin") return Response.json({ error: "Forbidden" }, { status: 403 });
-    const { dry_run: dryRun = false } = await req.json().catch(() => ({}));
+    const { dry_run: dryRun = false, revisar_pendencias: revisarPendencias = false } = await req.json().catch(() => ({}));
     const inicio = new Date();
     const entidades = base44.asServiceRole.entities;
 
@@ -110,7 +112,10 @@ export default async function(req) {
       listarTudo(entidades.Insumo),
     ]);
 
+    const todasReceitas = revisarPendencias ? await listarTudo(entidades.Receita) : receitas;
     const receitaIds = new Set(receitas.map((item) => item.id));
+    const receitaPorId = new Map(todasReceitas.map((item) => [item.id, item]));
+    const receitaBasePorId = new Map(receitas.map((item) => [item.id, item]));
     const componentes = todosComponentes.filter((item) => receitaIds.has(item.receita_id));
     const insumosReceita = todosInsumosReceita.filter((item) => receitaIds.has(item.receita_id));
     const esquecidos = todosEsquecidos.filter((item) => receitaIds.has(item.receita_id));
@@ -149,6 +154,44 @@ export default async function(req) {
       relacao("ReceitaTag.tag_id -> Tag", idsAusentes(receitasTags, "tag_id", tagIds)),
     ];
 
+    if (revisarPendencias) {
+      const ingredientesPendentes = componentes.filter((item) => item.tipo === "ingrediente" && item.ingrediente_id && !ingredienteIds.has(item.ingrediente_id));
+      const subreceitasPendentes = componentes.filter((item) => item.tipo === "subreceita" && item.subreceita_id && !receitaIds.has(item.subreceita_id));
+      const agrupar = (registros, chave) => Object.entries(registros.reduce((acc, item) => {
+        const valor = chave(item);
+        acc[valor] = (acc[valor] || 0) + 1;
+        return acc;
+      }, {})).sort((a, b) => b[1] - a[1]).map(([valor, total]) => ({ valor, total }));
+      const resumirItem = (item) => ({
+        item_id: item.id,
+        receita_pai_id: item.receita_id,
+        receita_pai: receitaBasePorId.get(item.receita_id)?.nome || null,
+        referencia_id: item.ingrediente_id || item.subreceita_id,
+        nome_cache: item.ingrediente_nome || item.subreceita_nome || null,
+      });
+      return Response.json({
+        ingredientes: {
+          total: ingredientesPendentes.length,
+          referencias_unicas: new Set(ingredientesPendentes.map((item) => item.ingrediente_id)).size,
+          receitas_afetadas: new Set(ingredientesPendentes.map((item) => item.receita_id)).size,
+          itens: ingredientesPendentes.map(resumirItem),
+        },
+        subreceitas: {
+          total: subreceitasPendentes.length,
+          referencias_unicas: new Set(subreceitasPendentes.map((item) => item.subreceita_id)).size,
+          receitas_afetadas: new Set(subreceitasPendentes.map((item) => item.receita_id)).size,
+          por_causa: agrupar(subreceitasPendentes, (item) => {
+            const alvo = receitaPorId.get(item.subreceita_id);
+            if (!alvo) return "referencia_inexistente";
+            if (alvo.usuario_dono_id) return "aponta_para_receita_pessoal";
+            return "receita_existente_nao_catalogada";
+          }),
+          por_status: agrupar(subreceitasPendentes, (item) => item.subreceita_sincronizacao_status || "sem_status"),
+          por_referencia: agrupar(subreceitasPendentes, (item) => `${item.subreceita_id}|${receitaPorId.get(item.subreceita_id)?.nome || item.subreceita_nome || "sem_nome"}`),
+        },
+      });
+    }
+
     const arquivos = [];
     const entradasManifesto = [];
     for (const [nome, registros] of Object.entries(dados)) {
@@ -181,7 +224,7 @@ export default async function(req) {
       finished_at: new Date().toISOString(),
       source: "base44-public-catalog",
       mode: "fase_a",
-      cursor_rule: "updated_date,offset_sob_congelamento_logico",
+      cursor_rule: "id_ascendente,offset_sob_congelamento_logico",
       transformer_version: "fase-a-1.0.0",
       personal_data_included: false,
       entities: entradasManifesto,
