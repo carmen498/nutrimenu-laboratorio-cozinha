@@ -5,25 +5,28 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
-import { ativarPlanoEEnviarEmail } from "../../shared/ativarAssinaturaPagamento.ts";
+import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
+import { avaliarAcessoAssinaturaServer } from "../../shared/acessoAssinatura.ts";
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { avaliarElegibilidadeRenovacao } from "../../shared/regraRenovacao.ts";
 import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
 
-const PLANOS_VALIDOS = ["mensal", "anual", "renovacao"];
+const PLANOS_VALIDOS = ["mensal", "anual", "renovacao", "custos_mensal", "custos_anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
 const NOME_PLANOS: Record<string, string> = {
   mensal: "Plano 30 dias — Laboratório de Cozinha",
   anual: "Plano Anual — Laboratório de Cozinha",
   renovacao: "Renovação Anual — Laboratório de Cozinha",
+  custos_mensal: "Laboratório de Custos — 30 dias",
+  custos_anual: "Laboratório de Custos — Anual",
 };
 
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v18-2026-08-29-fingerprint-sync-idempotente";
+const VERSAO_CODIGO = "v19-2026-08-29-checkout-multiproduto";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -41,7 +44,7 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { plano, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id, device_id } = body;
+    const { plano, addon_plano_id, somente_addon = false, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id, device_id } = body;
 
     if (aceite_termos !== true) {
       return Response.json({
@@ -82,7 +85,7 @@ export default async function(req: Request): Promise<Response> {
         }, { status: 400 });
       }
       if (pagamentoAntecipado.status === "approved") {
-        await ativarPlanoEEnviarEmail(base44, pagamentoAntecipado);
+        await ativarCompraPagamento(base44, pagamentoAntecipado);
       }
       return Response.json(respostaExistente);
     }
@@ -180,7 +183,7 @@ export default async function(req: Request): Promise<Response> {
         }, { status: 400 });
       }
       if (pagamentoExistente.status === "approved") {
-        await ativarPlanoEEnviarEmail(base44, pagamentoExistente);
+        await ativarCompraPagamento(base44, pagamentoExistente);
       }
       return Response.json(respostaExistente);
     }
@@ -415,7 +418,7 @@ export default async function(req: Request): Promise<Response> {
     // se o webhook chegar depois para esta mesma order, ele vai encontrar o Pagamento
     // já "approved" e pular a reativação (idempotência tratada no webhook).
     if (statusOrder === "approved") {
-      await ativarPlanoEEnviarEmail(base44, pagamento);
+      await ativarCompraPagamento(base44, pagamento);
     } else if (["rejected", "cancelled", "estornado"].includes(statusOrder)) {
       return Response.json({
         error: statusOrder === "rejected" ? "Pagamento recusado" : "Pagamento não concluído",
