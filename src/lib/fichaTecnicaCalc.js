@@ -2,7 +2,7 @@
 // Fase 5: PB permanece conceito de compra/custo; o rendimento técnico compara
 // peso líquido pré-preparo com PDP (peso pós-preparo).
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
-import { sugerirPerCapita } from "@/lib/perCapitaData";
+import { resolverPerCapitaReceita } from "@/lib/perCapitaReceita";
 import {
   calcularItemIngredienteReceita,
   resolverUnidadeQuantidade,
@@ -10,7 +10,7 @@ import {
 import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 import { calcularCustoReceitaCanonico } from "@/lib/custoReceita";
 
-export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita = [], esquecidos = [] }) {
+export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita = [], esquecidos = [], perCapitaUsuario = 0 }) {
   const porcoesBase = receita?.porcoes_base || 1;
   const temOrdemManual = itens.some((i) => (i.ordem || 0) > 0);
 
@@ -111,11 +111,14 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
   const pesoPrePreparo = rendimento.pesoPrePreparo;
   const rendimentoTotal = rendimento.pesoPosPreparoEfetivo;
 
-  const cat = (receita?.categorias || []).length > 0 ? receita.categorias[0] : (receita?.categoria || "");
-  const pcRecomendado = receita?.per_capita_g || sugerirPerCapita(receita?.nome, cat) || 0;
-  const nPorcoes = pcRecomendado > 0 && rendimentoTotal > 0
-    ? +(rendimentoTotal / pcRecomendado).toFixed(1)
-    : porcoesBase;
+  const perCapita = resolverPerCapitaReceita(receita, perCapitaUsuario);
+  const pcRecomendado = perCapita.valorExibicao;
+  const pcCalculo = perCapita.valorCalculo;
+  // PDP e PC são as duas fontes canônicas. Mantemos precisão integral no cálculo;
+  // arredondamento pertence somente à apresentação.
+  const nPorcoes = pcCalculo > 0 && rendimentoTotal > 0
+    ? rendimentoTotal / pcCalculo
+    : 0;
 
   // Fase 11.1: a ficha usa o MESMO motor da tela de receita/cardápio.
   // Em especial, custo_total persistido em InsumoReceita é apenas cache da
@@ -127,14 +130,16 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     insumosReceita,
     esquecidos,
     fator: 1,
-    unidadesFinais: nPorcoes,
+    unidadesFinais: nPorcoes > 0 ? nPorcoes : porcoesBase,
     numeroLotes: 1,
   });
   const custoIngredientes = custoCanonico.custoIngredientes;
   const custoInsumos = custoCanonico.custoInsumos;
   const custoEsquecidos = custoCanonico.custoEsquecidos;
   const custoTotal = custoCanonico.custoTotal;
-  const custoPorPorcao = nPorcoes > 0 ? custoTotal / nPorcoes : 0;
+  const custoPorPorcao = nPorcoes > 0 && custoCanonico.completo
+    ? custoTotal / nPorcoes
+    : null;
 
   const perda = rendimento.variacaoPercentual == null
     ? null
@@ -157,6 +162,11 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     custoTotal,
     porcoesBase,
     pcRecomendado,
+    pcCalculo,
+    pcSugerido: perCapita.sugerido,
+    pcOrigem: perCapita.origem,
+    pcStatus: perCapita.status,
+    pcLegadoSuspeito: perCapita.legadoSuspeito,
     rendimentoTotal,
     rendimentoInformado: rendimento.pesoPosPreparoInformado,
     rendimentoEstimado: rendimento.rendimentoEstimado,
@@ -166,6 +176,9 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     variacaoRendimentoPct: rendimento.variacaoPercentual,
     nPorcoes,
     custoPorPorcao,
+    custoCompleto: custoCanonico.completo,
+    itensSemPreco: custoCanonico.itensSemPreco + custoCanonico.insumosSemPreco,
+    problemasCusto: custoCanonico.problemas,
     perda,
   };
 }

@@ -88,6 +88,12 @@ export default function FichaTecnicaReceita() {
     queryFn: () => base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: id }),
   });
 
+  const { data: perCapitasUsuario = [] } = useQuery({
+    queryKey: ["per-capita-usuario-ficha", user?.id],
+    queryFn: () => base44.entities.PerCapitaUsuario.filter({ created_by_id: user.id }, "-updated_date", 500),
+    enabled: !!user?.id,
+  });
+
   const { data: receitaTags = [] } = useQuery({
     queryKey: ["receita-tags", id],
     queryFn: () => base44.entities.ReceitaTag.filter({ receita_id: id }, "created_date", 200),
@@ -146,10 +152,16 @@ export default function FichaTecnicaReceita() {
     return map;
   }, [medidasCaseiras]);
 
+  const perCapitaUsuario = useMemo(() => {
+    const nome = String(receita?.nome || "").trim().toLocaleLowerCase("pt-BR");
+    const registro = perCapitasUsuario.find((item) => String(item.prep_nome || "").trim().toLocaleLowerCase("pt-BR") === nome);
+    return Number(registro?.per_capita_g) || 0;
+  }, [receita?.nome, perCapitasUsuario]);
+
   const ficha = useMemo(() => {
     if (!receita) return null;
-    return montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita, esquecidos });
-  }, [receita, itens, ingMap, receitasBasicasMap, insumosReceita, esquecidos]);
+    return montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita, esquecidos, perCapitaUsuario });
+  }, [receita, itens, ingMap, receitasBasicasMap, insumosReceita, esquecidos, perCapitaUsuario]);
 
   const medidaDisplayMap = useMemo(() => {
     const map = {};
@@ -175,7 +187,8 @@ export default function FichaTecnicaReceita() {
 
   const passos = formatarModoPreparo(receita.modo_preparo);
   const dataEmissao = new Date().toLocaleDateString("pt-BR");
-  const formatCurrency = (v) => `R$ ${(v || 0).toFixed(2).replace(".", ",")}`;
+  const formatCurrency = (v) => v == null ? "—" : `R$ ${(Number(v) || 0).toFixed(2).replace(".", ",")}`;
+  const formatPorcoes = (v) => v > 0 ? Number(v).toLocaleString("pt-BR", { maximumFractionDigits: 2 }) : "—";
   const formatKg = (g) => `${((g || 0) / 1000).toFixed(2).replace(".", ",")} kg`;
   const formatFator = (v) => v == null ? "—" : Number(v).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 
@@ -239,23 +252,33 @@ export default function FichaTecnicaReceita() {
 
           <div className="grid grid-cols-4 gap-3">
             <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
-              <p className="text-[10px] uppercase text-muted-foreground tracking-wide">PC Recomendado</p>
-              <p className="text-lg font-bold mt-1">{ficha.pcRecomendado} g/porção</p>
+              <p className="text-[10px] uppercase text-muted-foreground tracking-wide">PC</p>
+              <p className="text-lg font-bold mt-1">{ficha.pcStatus === "a_validar" ? "A validar" : `${ficha.pcRecomendado} g/porção`}</p>
+              <p className="text-xs text-muted-foreground">{ficha.pcOrigem === "personalizado" ? "personalizado" : ficha.pcOrigem === "sugerido" ? `sugestão: ${ficha.pcSugerido} g` : "cadastrado"}</p>
             </div>
             <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
-              <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Rendimento PDP</p>
+              <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Quantidade total (PDP)</p>
               <p className="text-lg font-bold mt-1">{formatKg(ficha.rendimentoTotal)}</p>
-              <p className="text-xs text-muted-foreground">{ficha.nPorcoes} porções</p>
+              <p className="text-xs text-muted-foreground">{formatPorcoes(ficha.nPorcoes)} porções</p>
             </div>
             <div className="p-3 rounded-lg border border-border bg-muted/30 text-center">
               <p className="text-[10px] uppercase text-muted-foreground tracking-wide">Custo Total</p>
               <p className="text-lg font-bold mt-1">{formatCurrency(ficha.custoTotal)}</p>
+              {!ficha.custoCompleto && <p className="text-xs text-amber-700">parcial</p>}
             </div>
             <div className="p-3 rounded-lg border-2 border-primary bg-primary/10 text-center">
               <p className="text-[10px] uppercase text-primary tracking-wide font-semibold">Custo por Porção</p>
               <p className="text-lg font-bold mt-1 text-primary">{formatCurrency(ficha.custoPorPorcao)}</p>
             </div>
           </div>
+
+          {(ficha.pcStatus !== "valido" || !ficha.custoCompleto) && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              {ficha.pcStatus === "a_validar" && <p><strong>PC a validar:</strong> o valor legado coincide com o rendimento e não será usado no custo por porção.</p>}
+              {ficha.pcStatus === "pendente" && <p><strong>PC pendente:</strong> a sugestão é apenas referência e não será usada no custo por porção.</p>}
+              {!ficha.custoCompleto && <p><strong>Custo incompleto:</strong> {ficha.itensSemPreco || "há"} item(ns) sem preço válido. O custo por porção fica suspenso.</p>}
+            </div>
+          )}
 
           <div>
             <h3 className="font-display text-base font-bold mb-2">Ingredientes</h3>

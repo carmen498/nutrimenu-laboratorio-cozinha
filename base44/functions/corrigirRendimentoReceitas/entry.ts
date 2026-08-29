@@ -16,15 +16,33 @@ const positivo = (v: unknown) => {
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
+const quaseIgual = (a: unknown, b: unknown) => {
+  const aa = positivo(a);
+  const bb = positivo(b);
+  return aa > 0 && bb > 0 && Math.abs(aa - bb) / Math.max(aa, bb) <= 0.001;
+};
+
+async function listarTudo(entity: any, sort: string, pageSize = 500) {
+  const todos: any[] = [];
+  for (let skip = 0; ; skip += pageSize) {
+    const pagina = await entity.list(sort, pageSize, skip);
+    todos.push(...(pagina || []));
+    if (!pagina || pagina.length < pageSize) return todos;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const { dry_run: dryRun = false } = await req.json().catch(() => ({}));
 
-    const receitas = await base44.asServiceRole.entities.Receita.list('-nome', 2000);
-    const itens = await base44.asServiceRole.entities.IngredienteReceita.list('-created_date', 5000);
+    const [receitas, itens] = await Promise.all([
+      listarTudo(base44.asServiceRole.entities.Receita, '-nome'),
+      listarTudo(base44.asServiceRole.entities.IngredienteReceita, '-created_date'),
+    ]);
 
     const itensPorReceita: Record<string, any[]> = {};
     for (const item of itens || []) {
@@ -34,6 +52,7 @@ Deno.serve(async (req) => {
     }
 
     const updates: any[] = [];
+    let totalLegadoSuspeito = 0;
 
     for (const r of receitas || []) {
       const receitaItens = itensPorReceita[r.id] || [];
@@ -51,17 +70,30 @@ Deno.serve(async (req) => {
       const pdpCanonico = positivo(r.peso_pos_preparo_total);
       const pdpLegado = positivo(r.rendimento_total);
       const pdp = pdpCanonico || pdpLegado;
+      const legadoSuspeito = !pdpCanonico
+        && pdpLegado > 0
+        && quaseIgual(pdpLegado, r.per_capita_g)
+        && (
+          (!r.rendimento_origem && !r.rendimento_status)
+          || (r.rendimento_origem === 'legado' && r.rendimento_status === 'a_validar')
+        );
 
       const update: Record<string, unknown> = {
         id: r.id,
         peso_pre_preparo_total: pesoPre,
       };
 
-      if (pdp > 0) {
+      if (legadoSuspeito) {
+        // Preserva os números originais e não promove o legado a PDP canônico.
+        // Apenas marca a necessidade de revisão humana.
+        totalLegadoSuspeito++;
+        update.rendimento_origem = 'legado';
+        update.rendimento_status = 'a_validar';
+      } else if (pdp > 0) {
         update.peso_pos_preparo_total = pdp;
         update.rendimento_total = pdp; // compatibilidade
         update.rendimento_origem = r.rendimento_origem || (pdpCanonico ? 'medido' : 'legado');
-        update.rendimento_status = r.rendimento_status || (pdpCanonico ? 'a_validar' : 'a_validar');
+        update.rendimento_status = r.rendimento_status || 'a_validar';
       } else {
         update.rendimento_origem = r.rendimento_origem || 'estimado';
         update.rendimento_status = 'pendente';
@@ -69,19 +101,21 @@ Deno.serve(async (req) => {
 
       const mudou =
         Number(r.peso_pre_preparo_total || 0) !== Number(update.peso_pre_preparo_total || 0) ||
-        (pdp > 0 && Number(r.peso_pos_preparo_total || 0) !== Number(update.peso_pos_preparo_total || 0)) ||
+        (!legadoSuspeito && pdp > 0 && Number(r.peso_pos_preparo_total || 0) !== Number(update.peso_pos_preparo_total || 0)) ||
         (update.rendimento_origem && r.rendimento_origem !== update.rendimento_origem) ||
         r.rendimento_status !== update.rendimento_status;
 
       if (mudou) updates.push(update);
     }
 
-    for (let i = 0; i < updates.length; i += 500) {
-      await base44.asServiceRole.entities.Receita.bulkUpdate(updates.slice(i, i + 500));
+    if (!dryRun) {
+      for (let i = 0; i < updates.length; i += 500) {
+        await base44.asServiceRole.entities.Receita.bulkUpdate(updates.slice(i, i + 500));
+      }
     }
 
     let receitasInvalidadas = 0;
-    if (updates.length > 0) {
+    if (updates.length > 0 && !dryRun) {
       const invalidacao = await invalidarCustosPorDependencias({
         entities: base44.asServiceRole.entities,
         receitaIds: updates.map((u: any) => u.id),
@@ -95,8 +129,10 @@ Deno.serve(async (req) => {
       total_processado: receitas.length,
       total_normalizado: updates.length,
       receitas_invalidadas: receitasInvalidadas,
+      dry_run: dryRun,
       total_corrigido: 0,
-      observacao: 'Nenhum PDP foi substituído pela soma dos ingredientes.',
+      total_legado_suspeito: totalLegadoSuspeito,
+      observacao: 'Nenhum PDP foi substituído pela soma dos ingredientes; legados iguais ao PC foram apenas marcados para revisão.',
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

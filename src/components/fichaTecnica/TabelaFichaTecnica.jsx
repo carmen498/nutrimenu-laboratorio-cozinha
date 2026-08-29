@@ -7,7 +7,7 @@ function formatWeight(g, unit) {
 
 function formatCusto(item) {
   if (item.isSubreceita) return "—";
-  if (!item.ing || !item.ing.preco_por_g_rs) return "R$ 0,00";
+  if (!item.ing || !(Number(item.ing.preco_por_g_rs) > 0)) return "Sem preço";
   if (item.custo > 0 && item.custo < 0.01) return `R$ ${item.custo.toFixed(4).replace(".", ",")}`;
   return `R$ ${item.custo.toFixed(2).replace(".", ",")}`;
 }
