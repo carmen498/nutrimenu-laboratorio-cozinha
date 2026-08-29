@@ -51,7 +51,8 @@ assert(/export const IS_PRODUCTION = (true|false);/.test(mpConfig), "modo Mercad
 assert(mpConfig.includes("SANDBOX_PUBLIC_KEY") && mpConfig.includes("PROD_PUBLIC_KEY"), "public keys por ambiente ausentes");
 
 assert(criarPagamento.includes("await base44.auth.me()"), "checkout backend não exige autenticação");
-assert(criarPagamento.includes('const PLANOS_VALIDOS = ["mensal", "anual", "renovacao"]'), "escopo de planos pagos inesperado");
+assert(criarPagamento.includes('const PLANOS_VALIDOS') && criarPagamento.includes('"renovacao"'), "checkout backend precisa aceitar Renovação");
+assert(criarPagamento.includes('"custos_mensal"') && criarPagamento.includes('"custos_anual"'), "checkout backend precisa aceitar os planos pagos do Laboratório de Custos");
 assert(criarPagamento.includes("avaliarElegibilidadeRenovacao(user)"), "checkout backend não revalida elegibilidade da Renovação");
 assert(criarPagamento.includes('code: "parcelamento_invalido"'), "checkout backend não bloqueia parcelamento inválido");
 assert(criarPagamento.includes("ConfiguracaoPlano.filter"), "preço não vem da configuração server-side");
@@ -62,6 +63,7 @@ assert(criarPagamento.includes('"X-Idempotency-Key"'), "header de idempotência 
 assert(!criarPagamento.includes("cardNumber"), "backend recebe número bruto de cartão");
 assert(criarPagamento.includes('identification: { type: "CPF", number: cpfLimpo }'), "CPF do titular não acompanha o payer do cartão");
 assert(criarPagamento.includes("const orientacao = codigoRecusa.includes"), "backend não traduz recusa para orientação segura");
+assert(criarPagamento.includes('"test@testuser.com"'), "checkout sandbox não usa o e-mail oficial de comprador de teste da Orders API");
 assert(!criarPagamento.includes("JSON.stringify(mpData)"), "resposta bruta do Mercado Pago voltou a logs ou diagnóstico");
 
 assert(webhook.includes("validarAssinatura(req, dataId)"), "webhook sem validação HMAC");
