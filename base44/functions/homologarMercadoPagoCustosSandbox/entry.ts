@@ -26,7 +26,7 @@ async function criarCardToken() {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      card_number: "5031433215406351",
+      card_number: "5480832801033311",
       expiration_month: 11,
       expiration_year: 2030,
       security_code: "123",
