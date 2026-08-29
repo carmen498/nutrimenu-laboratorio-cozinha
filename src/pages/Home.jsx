@@ -32,30 +32,12 @@ export default function Home() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Receitas recentes apenas para o fallback da vitrine (quando nenhuma
-  // receita está marcada como destaque). Query leve, limite 10.
-  const { data: receitasRecentes = [] } = useQuery({
-    queryKey: ["receitas-recentes-home"],
-    queryFn: () => base44.entities.Receita.list("-updated_date", 10),
-  });
-
   const carregandoIndicadores = carregandoContagens;
-
-  // Vitrine "Fichas Técnicas em Destaque": usa as marcadas manualmente (campo `destaque`),
-  // as 3 últimas marcadas. Sem nenhuma marcada, cai no fallback: as 3 receitas mais
-  // recentemente atualizadas que tenham foto cadastrada.
-  const { data: receitasDestaqueRaw = [] } = useQuery({
-    queryKey: ["receitas-destaque-home"],
-    queryFn: () => base44.entities.Receita.filter({ destaque: true }, "-updated_date", 10),
-  });
-  const receitasComFoto = receitasRecentes.filter((r) => r.foto_url).slice(0, 3);
-  const receitasVitrine = receitasDestaqueRaw.length > 0 ? receitasDestaqueRaw.slice(0, 3) : receitasComFoto;
-
-  const { data: receitasRevisar = [] } = useQuery({
-    queryKey: ["receitas-revisar-home"],
-    queryFn: () => base44.entities.Receita.filter({ revisar: true }, "-updated_date", 100),
-    staleTime: 5 * 60 * 1000,
-  });
+  const receitasRecentes = contagens?.receitasRecentes ?? [];
+  const receitasDestaque = contagens?.receitasDestaque ?? [];
+  const receitasComFoto = receitasRecentes.filter((receita) => receita.foto_url).slice(0, 3);
+  const receitasVitrine = receitasDestaque.length > 0 ? receitasDestaque.slice(0, 3) : receitasComFoto;
+  const receitasRevisarCount = contagens?.receitasRevisarCount ?? 0;
 
   return (
     <div className="space-y-8 pb-24 md:pb-8" style={{ background: "linear-gradient(180deg, #F9F6F0 0%, #FFFFFF 40%)", margin: "-1.5rem -1rem 0", padding: "0.25rem 1rem 0" }}>
@@ -112,7 +94,7 @@ export default function Home() {
       />
 
       {/* Receitas a revisar — destaque */}
-      {receitasRevisar.length > 0 && (
+      {receitasRevisarCount > 0 && (
         <div>
           <h2 className="font-display text-xl font-bold mb-4" style={{ color: CORES.verdeEscuro }}>
             Acesso rápido
@@ -125,7 +107,7 @@ export default function Home() {
                 </div>
                 <div>
                   <p className="font-semibold" style={{ color: "#7A5D00" }}>
-                    {receitasRevisar.length} {receitasRevisar.length === 1 ? "receita" : "receitas"} aguardando revisão
+                    {receitasRevisarCount} {receitasRevisarCount === 1 ? "receita" : "receitas"} aguardando revisão
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Receitas importadas por IA que precisam da sua conferência

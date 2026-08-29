@@ -19,12 +19,28 @@ export default async function(req) {
       (receita) => receita.updated_date && new Date(receita.updated_date) >= ha30Dias,
     ).length;
 
+    const resumirReceita = (receita) => ({
+      id: receita.id,
+      nome: receita.nome,
+      categorias: receita.categorias || [],
+      foto_url: receita.foto_url || '',
+    });
+    const receitasRecentes = receitas.slice(0, 10).map(resumirReceita);
+    const receitasDestaque = receitas
+      .filter((receita) => receita.destaque)
+      .slice(0, 10)
+      .map(resumirReceita);
+    const receitasRevisarCount = receitas.filter((receita) => receita.revisar).length;
+
     return Response.json({
       totalReceitas: receitas.length,
       totalIngredientes: ingredientes.length,
       totalCardapios: cardapios.length,
       minhasReceitas: minhasReceitas.length,
       receitasAtualizadas30d,
+      receitasRecentes,
+      receitasDestaque,
+      receitasRevisarCount,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
