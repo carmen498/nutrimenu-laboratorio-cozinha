@@ -192,7 +192,7 @@ export default function Planos() {
       {carregandoPlanos ? (
         <div className="flex justify-center py-10"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-start">
           {configPorId.trial && (
             <PlanoCard
               planoId="trial"
@@ -212,7 +212,7 @@ export default function Planos() {
               bloqueado={planoAtual !== "trial" && jaPossuiHistoricoPlano}
               mensagemBloqueio="Teste grátis disponível apenas para novas contas"
               complemento={complementoCard("trial")}
-              complementoActionLabel={planoAtual === "trial" && !acessoCustosAtual && preflightTrialCustos?.elegivel ? "Começar 7 dias grátis do Custos" : ""}
+              complementoActionLabel={planoAtual === "trial" && !acessoCustosAtual && preflightTrialCustos?.elegivel ? "Ativar trial do Custos" : ""}
               onComplementoAction={handleTrialCustos}
               complementoActionDisabled={loadingTrialCustos}
             />
@@ -233,7 +233,7 @@ export default function Planos() {
               validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
               complemento={complementoCard("mensal")}
-              complementoActionLabel={planoAtual === "mensal" && !acessoCustosAtual ? (preflightTrialCustos?.elegivel ? "Começar 7 dias grátis do Custos" : "Adicionar Laboratório de Custos") : ""}
+              complementoActionLabel={planoAtual === "mensal" && !acessoCustosAtual ? (preflightTrialCustos?.elegivel ? "Ativar trial do Custos" : "Adicionar Lab. de Custos") : ""}
               onComplementoAction={() => handleAdicionarCustosPlanoAtual("mensal")}
               complementoActionDisabled={loadingTrialCustos}
             />
@@ -254,7 +254,7 @@ export default function Planos() {
               validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
               complemento={complementoCard("anual")}
-              complementoActionLabel={planoAtual === "anual" && !acessoCustosAtual ? (preflightTrialCustos?.elegivel ? "Começar 7 dias grátis do Custos" : "Adicionar Laboratório de Custos") : ""}
+              complementoActionLabel={planoAtual === "anual" && !acessoCustosAtual ? (preflightTrialCustos?.elegivel ? "Ativar trial do Custos" : "Adicionar Lab. de Custos") : ""}
               onComplementoAction={() => handleAdicionarCustosPlanoAtual("anual")}
               complementoActionDisabled={loadingTrialCustos}
             />
