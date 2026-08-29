@@ -21,7 +21,7 @@ total_base_kg = (homens×PC_h + mulheres×PC_m + criancas×PC_c) / 1000
 total_com_margem_kg = total_base_kg × (1 + margem_seguranca_pct/100)
 kg_prato = pessoas × PC_prato_g × (1 + margem_evento_pct/100) / 1000
 ```
-1. Defaults: 600 g/homem, 400 g/mulher, 300 g/criança, editáveis.
+1. Defaults: 600 g/homem, 400 g/mulher, 300 g/criança e margem de segurança de 20%, todos editáveis.
 2. Margem geral e margem de prato não são aplicadas duas vezes ao mesmo valor.
 
 ## 5.3 Orçamento

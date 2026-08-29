@@ -20,11 +20,14 @@ PB_item = PL_item × FC_efetivo
 custo_item = PB_item × preco_por_g_efetivo
 custo_total = Σ ingredientes + Σ insumos_escalados + Σ esquecidos_válidos
 custo_por_porcao = custo_total / porcoes_efetivas
+custo_por_kg_pronto = (custo_total / PDP_efetivo) × 1000
 ```
 1. Grupos e marcadores de sub-receita não são itens atômicos.
 2. Sub-receitas são resolvidas sem somar marcador e cache simultaneamente.
-3. Insumos obedecem `por_lote`, `proporcional` ou `por_unidade`.
+3. Insumos obedecem `por_lote`, `proporcional` ou `por_unidade`; insumo legado sem comportamento explícito permanece `por_lote` por segurança (não escala com o fator).
 4. Referência/preço ausente ou nome/ID divergente torna o cálculo incompleto.
+5. Resolução de `porcoes_efetivas`, em ordem: `unidades_finais` informadas → `PDP_efetivo / per_capita` (ambos positivos) → `porcoes_base × fator`.
+6. Ingrediente esquecido usa `ingrediente_id` como identidade (o campo `nome` é descrição de uso, não identidade); esquecido resolvido por cache/unitário legado impede o resultado de ser considerado completo.
 
 ## 4.3 Comportamento
 1. `comprado`: usa PB e preço; entra em custo/compras.
