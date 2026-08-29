@@ -5,7 +5,7 @@ import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
 const NONCE = "hml-custos-20260829-6f7d7f8b-21f8-46d6-b23d-a9cfd1c2d6ee";
 const USER_ID = "6a8ee59b65972cf2635543cf";
 const APP_VERSION = "sandbox-custos-hml-v1-2026-08-29";
-const TEST_BUYER_EMAIL = "TEST_USER_360639484@testuser.com";
+const TEST_BUYER_EMAIL = "test@testuser.com";
 
 async function mpJson(url: string, options: RequestInit, accessToken: string) {
   const res = await fetch(url, {
