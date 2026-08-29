@@ -2,17 +2,22 @@
 // Modelo: fator = (porções desejadas × PC recomendado) ÷ rendimento_total da receita.
 // Cada ingrediente é resolvido pelo ingrediente_id gravado em IngredienteReceita.
 // O FC efetivo respeita o override da receita antes do FC padrão do ingrediente.
-import { sugerirPerCapita } from "@/lib/perCapitaData";
+import { calcularMetricasReceita } from "@/lib/motorReceita";
 import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 
 export function montarListaComprasReceita({ receita, itens, ingMap, porcoesDesejadas }) {
   const porcoesBase = receita?.porcoes_base || 1;
   const temOrdemManual = itens.some((i) => (i.ordem || 0) > 0);
 
-  const cat = (receita?.categorias || []).length > 0 ? receita.categorias[0] : (receita?.categoria || "");
-  const pcRecomendado = receita?.per_capita_g || sugerirPerCapita(receita?.nome, cat) || 0;
-  const rendimentoTotal = receita?.rendimento_total || 0;
-  const fator = rendimentoTotal > 0 ? (porcoesDesejadas * pcRecomendado) / rendimentoTotal : 0;
+  const metricas = calcularMetricasReceita({
+    receita,
+    itens,
+    porcoesAlvo: porcoesDesejadas,
+    permitirPerCapitaSugerido: true,
+  });
+  const pcRecomendado = metricas.pc || metricas.perCapita.valorExibicao;
+  const rendimentoTotal = metricas.rendimentoBase;
+  const fator = metricas.fator;
 
   const ordenados = [...itens].sort((a, b) => {
     if (temOrdemManual) return (a.ordem || 0) - (b.ordem || 0);
@@ -73,7 +78,7 @@ export function montarListaComprasReceita({ receita, itens, ingMap, porcoesDesej
     pcRecomendado,
     rendimentoTotal,
     fator,
-    quantidadeTotalG: porcoesDesejadas * pcRecomendado,
+    quantidadeTotalG: metricas.pesoPosPreparo,
     itensLista,
   };
 }

@@ -4,6 +4,7 @@
 // ingrediente no contexto do usuário. Receita.custo_* permanece apenas como
 // cache global de referência/compatibilidade e nunca representa preço pessoal.
 import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
+import { calcularMetricasReceita } from "@/lib/motorReceita";
 import { calcularItemIngredienteReceita } from "@/lib/ingredienteReceitaCalc";
 import { criarEscalaReceitaCanonica, calcularInsumosReceitaEscalados } from "@/lib/escalonamentoCustos";
 
@@ -129,14 +130,13 @@ export function calcularCustoReceitaCanonico(/** @type {any} */ {
     }
   }
 
-  const rendimentoBase = rendimentoEfetivo(receita, ingredientesReceita);
-  const rendimento = rendimentoBase * fatorSeguro;
-  const perCapita = numero(receita?.per_capita_g);
-  const porcoesEfetivas = numero(unidadesFinais) > 0
+  const metricas = calcularMetricasReceita({ receita, itens: ingredientesReceita, fator: fatorSeguro });
+  const rendimentoBase = metricas.rendimentoBase;
+  const rendimento = metricas.pesoPosPreparo;
+  const perCapita = metricas.pc;
+  const porcoesEfetivas = metricas.porcoes || (numero(unidadesFinais) > 0
     ? numero(unidadesFinais)
-    : (perCapita > 0 && rendimento > 0
-      ? rendimento / perCapita
-      : porcoesBase * fatorSeguro);
+    : porcoesBase * fatorSeguro);
   const escala = criarEscalaReceitaCanonica({
     fator: fatorSeguro,
     rendimentoBase,

@@ -2,12 +2,11 @@
 // Fase 5: PB permanece conceito de compra/custo; o rendimento técnico compara
 // peso líquido pré-preparo com PDP (peso pós-preparo).
 import { calcularModoPreparoComposto } from "@/lib/modoPreparoComposto";
-import { resolverPerCapitaReceita } from "@/lib/perCapitaReceita";
+import { calcularMetricasReceita } from "@/lib/motorReceita";
 import {
   calcularItemIngredienteReceita,
   resolverUnidadeQuantidade,
 } from "@/lib/ingredienteReceitaCalc";
-import { resolverRendimentoReceita } from "@/lib/rendimentoReceita";
 import { calcularCustoReceitaCanonico } from "@/lib/custoReceita";
 
 export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap, insumosReceita = [], esquecidos = [], perCapitaUsuario = 0 }) {
@@ -107,18 +106,14 @@ export function montarFichaTecnica({ receita, itens, ingMap, receitasBasicasMap,
     return sum + (item.qtdNova || 0);
   }, 0);
 
-  const rendimento = resolverRendimentoReceita(receita, itens);
+  const metricas = calcularMetricasReceita({ receita, itens, perCapitaUsuario });
+  const rendimento = metricas.rendimento;
+  const perCapita = metricas.perCapita;
   const pesoPrePreparo = rendimento.pesoPrePreparo;
-  const rendimentoTotal = rendimento.pesoPosPreparoEfetivo;
-
-  const perCapita = resolverPerCapitaReceita(receita, perCapitaUsuario);
+  const rendimentoTotal = metricas.pesoPosPreparo;
   const pcRecomendado = perCapita.valorExibicao;
-  const pcCalculo = perCapita.valorCalculo;
-  // PDP e PC são as duas fontes canônicas. Mantemos precisão integral no cálculo;
-  // arredondamento pertence somente à apresentação.
-  const nPorcoes = pcCalculo > 0 && rendimentoTotal > 0
-    ? rendimentoTotal / pcCalculo
-    : 0;
+  const pcCalculo = metricas.pc;
+  const nPorcoes = metricas.porcoes;
 
   // Fase 11.1: a ficha usa o MESMO motor da tela de receita/cardápio.
   // Em especial, custo_total persistido em InsumoReceita é apenas cache da

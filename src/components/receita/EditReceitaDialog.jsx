@@ -19,6 +19,7 @@ import { formatarModoPreparo, juntarPassos } from "@/lib/formatarModoPreparo";
 import { registrarHistorico } from "@/lib/registrarHistorico";
 import { garantirReceitaEditavel } from "@/lib/forkReceita";
 import { calcularPesoPrePreparo, formatarStatusRendimento } from "@/lib/rendimentoReceita";
+import { calcularMetricasReceita } from "@/lib/motorReceita";
 import { useAuth } from "@/lib/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { uploadImagemSeguro } from "@/lib/securityHardening";
@@ -47,6 +48,7 @@ function valuesEqual(a, b) {
 }
 
 export default function EditReceitaDialog({ open, onClose, receita, itens = [] }) {
+  const campoRendimentoAlteradoRef = useRef(null);
   const [form, setForm] = useState({
     ...receita,
     peso_pos_preparo_total: receita?.peso_pos_preparo_total || receita?.rendimento_total || 0,
@@ -59,11 +61,21 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
   const navigate = useNavigate();
 
   useEffect(() => {
+    const pdp = receita?.peso_pos_preparo_total || receita?.rendimento_total || 0;
+    const metricas = calcularMetricasReceita({
+      receita,
+      itens,
+      perCapitaAlvo: receita?.per_capita_g || 0,
+      pesoPosPreparoAlvo: pdp,
+    });
+    campoRendimentoAlteradoRef.current = null;
     setForm({
       ...receita,
-      peso_pos_preparo_total: receita?.peso_pos_preparo_total || receita?.rendimento_total || 0,
+      peso_pos_preparo_total: pdp,
+      rendimento_total: pdp,
+      porcoes_base: metricas.porcoes || receita?.porcoes_base || 1,
     });
-  }, [receita?.id, open]);
+  }, [receita?.id, open, itens]);
 
   useEffect(() => {
     if (!receita?.id || !open) return;
@@ -82,12 +94,13 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
   const qc = useQueryClient();
 
   const forkedIdRef = useRef(null);
+  const forkedMapItemIdRef = useRef((x) => x);
   const tagsRef = useRef(receitaTags);
   useEffect(() => { tagsRef.current = receitaTags; }, [receitaTags]);
 
   const ensureFork = async () => {
-    if (isAdmin || receita.is_base === false) return { rid: receita.id, mapTagId: (x) => x };
-    if (forkedIdRef.current) return { rid: forkedIdRef.current, mapTagId: (x) => x };
+    if (isAdmin || receita.is_base === false) return { rid: receita.id, mapTagId: (x) => x, mapItemId: (x) => x };
+    if (forkedIdRef.current) return { rid: forkedIdRef.current, mapTagId: (x) => x, mapItemId: forkedMapItemIdRef.current };
     const result = await garantirReceitaEditavel({
       receita,
       itens,
@@ -97,10 +110,34 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
     });
     if (result.forked) {
       forkedIdRef.current = result.receitaId;
+      forkedMapItemIdRef.current = result.mapItemId || ((x) => x);
       const rt = await base44.entities.ReceitaTag.filter({ receita_id: result.receitaId }, "created_date", 200);
       setReceitaTags(rt || []);
     }
-    return { rid: result.receitaId, mapTagId: result.mapTagId || ((x) => x) };
+    return {
+      rid: result.receitaId,
+      mapTagId: result.mapTagId || ((x) => x),
+      mapItemId: result.mapItemId || ((x) => x),
+    };
+  };
+
+  const atualizarParametroRendimento = (campo, valor) => {
+    campoRendimentoAlteradoRef.current = campo;
+    setForm((atual) => {
+      const proximo = { ...atual, [campo]: valor };
+      const pc = Number(proximo.per_capita_g) || 0;
+      const metricas = calcularMetricasReceita({
+        receita: proximo,
+        itens,
+        perCapitaAlvo: pc,
+        porcoesAlvo: campo === "porcoes_base" ? valor : 0,
+        pesoPosPreparoAlvo: campo === "porcoes_base" ? 0 : proximo.peso_pos_preparo_total,
+      });
+      proximo.porcoes_base = metricas.porcoes || Number(proximo.porcoes_base) || 0;
+      proximo.peso_pos_preparo_total = metricas.pesoPosPreparo;
+      proximo.rendimento_total = metricas.pesoPosPreparo;
+      return proximo;
+    });
   };
 
   const handleSave = async () => {
@@ -116,8 +153,10 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
 
-      // Fase 5 — rendimento técnico canônico.
-      const pesoPre = calcularPesoPrePreparo(rest, itens);
+      // PC ou PDP alterados mudam a quantidade de porções, sem mudar o lote.
+      // Alterar porções diretamente representa uma nova escala do lote.
+      const preservarLote = campoRendimentoAlteradoRef.current !== "porcoes_base";
+      const pesoPre = calcularPesoPrePreparo(preservarLote ? receita : rest, itens);
       const pdp = Number(rest.peso_pos_preparo_total) || 0;
       const pdpOriginal = Number(receita?.peso_pos_preparo_total || receita?.rendimento_total) || 0;
       const pdpFoiAlterado = Math.abs(pdp - pdpOriginal) > 0.001;
@@ -138,8 +177,19 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
         rest.rendimento_status = "pendente";
       }
 
-      const { rid: receitaId } = await ensureFork();
+      const { rid: receitaId, mapItemId } = await ensureFork();
       const forked = receitaId !== receita.id;
+      const porcoesAnteriores = Number(receita?.porcoes_base) || 1;
+      const novasPorcoes = Number(rest.porcoes_base) || porcoesAnteriores;
+      if (preservarLote && novasPorcoes > 0 && Math.abs(novasPorcoes - porcoesAnteriores) > 0.0001) {
+        const updates = itens
+          .filter((item) => item.tipo !== "grupo")
+          .map((item) => ({
+            id: mapItemId(item.id),
+            quantidade_por_porcao: (Number(item.quantidade_por_porcao) || 0) * porcoesAnteriores / novasPorcoes,
+          }));
+        if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
+      }
       await base44.entities.Receita.update(receitaId, rest);
       const camposCusto = ["porcoes_base", "peso_pos_preparo_total", "rendimento_total", "per_capita_g", "unidade_base"];
       const custoMudou = forked || camposCusto.some((campo) => !valuesEqual(rest[campo], receita?.[campo]));
@@ -267,7 +317,7 @@ ${form.modo_preparo}`,
             </div>
             <div>
               <Label>Porções base</Label>
-              <Input type="number" min={1} value={form.porcoes_base || ""} onChange={(e) => setForm({ ...form, porcoes_base: parseInt(e.target.value) || 1 })} />
+              <Input type="number" min={0.01} step="0.01" value={form.porcoes_base || ""} onChange={(e) => atualizarParametroRendimento("porcoes_base", parseFloat(e.target.value) || 0)} />
             </div>
           </div>
 
@@ -292,7 +342,7 @@ ${form.modo_preparo}`,
                   type="number"
                   min={0}
                   value={form.peso_pos_preparo_total || ""}
-                  onChange={(e) => setForm({ ...form, peso_pos_preparo_total: parseFloat(e.target.value) || 0 })}
+                  onChange={(e) => atualizarParametroRendimento("peso_pos_preparo_total", parseFloat(e.target.value) || 0)}
                   placeholder="Pesar depois de pronto"
                 />
               </div>
@@ -314,7 +364,7 @@ ${form.modo_preparo}`,
           </div>
           <div>
             <Label>PC recomendado (g/porção)</Label>
-            <Input type="number" min={1} value={form.per_capita_g || ""} onChange={(e) => setForm({ ...form, per_capita_g: parseFloat(e.target.value) || null })} placeholder="Ex: 150" />
+            <Input type="number" min={1} value={form.per_capita_g || ""} onChange={(e) => atualizarParametroRendimento("per_capita_g", parseFloat(e.target.value) || 0)} placeholder="Ex: 150" />
           </div>
           <div>
             <div className="flex items-center justify-between mb-1">

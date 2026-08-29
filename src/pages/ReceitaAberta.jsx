@@ -59,6 +59,7 @@ import {
   resolverMedidaCaseiraItem,
 } from "@/lib/ingredienteReceitaCalc";
 import { camposRendimentoMedido, resolverRendimentoReceita } from "@/lib/rendimentoReceita";
+import { calcularMetricasReceita } from "@/lib/motorReceita";
 import { calcularCustoReceitaCanonico } from "@/lib/custoReceita";
 import { consoleErrorSeguro, uploadImagemSeguro } from "@/lib/securityHardening";
 import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
@@ -251,17 +252,24 @@ export default function ReceitaAberta() {
 
   const handleSavePDP = async (val) => {
     if (!isNaN(val) && val > 0) {
-      const { receitaId } = await ensureEditavel();
-      const campos = camposRendimentoMedido({
-        pesoPosPreparo: val,
-        pesoPrePreparo: rendimentoInfo.pesoPrePreparo,
-      });
-      await base44.entities.Receita.update(receitaId, campos);
+      const metricas = calcularMetricasReceita({ receita, itens, perCapitaAlvo: pcLocal || 0, pesoPosPreparoAlvo: val });
+      const { receitaId, mapItemId } = await ensureEditavel();
+      const porcoesAnteriores = Number(receita?.porcoes_base) || 1;
+      if (metricas.porcoes > 0 && Math.abs(metricas.porcoes - porcoesAnteriores) > 0.0001) {
+        const updates = itens.filter((item) => item.tipo !== "grupo").map((item) => ({
+          id: mapItemId(item.id),
+          quantidade_por_porcao: (Number(item.quantidade_por_porcao) || 0) * porcoesAnteriores / metricas.porcoes,
+        }));
+        if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
+      }
+      const campos = camposRendimentoMedido({ pesoPosPreparo: val, pesoPrePreparo: rendimentoInfo.pesoPrePreparo });
+      await base44.entities.Receita.update(receitaId, { ...campos, porcoes_base: metricas.porcoes || porcoesAnteriores });
       await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "rendimento_pdp_alterado", origem: "receita" });
-      registrarHistorico(receitaId, receita?.nome, ["Rendimento"]);
+      registrarHistorico(receitaId, receita?.nome, ["Rendimento", "Nº de Porções"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
-      setQuantidadeTotal(val);
-      setPorcoes(pcLocal > 0 ? +(val / pcLocal).toFixed(2) : null);
+      qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
+      setQuantidadeTotal(metricas.pesoPosPreparo);
+      setPorcoes(metricas.porcoes || null);
       toast.success("PDP medido e rendimento confirmados!");
     }
   };
@@ -286,15 +294,17 @@ export default function ReceitaAberta() {
 
   const estadoInicialEscala = useMemo(() => {
     if (!receita) return null;
-    const pcInit = receita.per_capita_g || perCapitaSugerido?.g || 0;
-    const totalInit = rendimentoInfo.pesoPosPreparoEfetivo > 0
-      ? Math.round(rendimentoInfo.pesoPosPreparoEfetivo)
-      : Math.round(somaIngredientesRaw);
-    const porcoesInit = pcInit > 0 && totalInit > 0
-      ? +(totalInit / pcInit).toFixed(2)
-      : null;
-    return { pc: pcInit, quantidadeTotal: totalInit, porcoes: porcoesInit };
-  }, [receita, perCapitaSugerido, somaIngredientesRaw, rendimentoInfo.pesoPosPreparoEfetivo]);
+    const metricas = calcularMetricasReceita({
+      receita,
+      itens,
+      perCapitaAlvo: receita.per_capita_g || perCapitaSugerido?.g || 0,
+    });
+    return {
+      pc: metricas.pc || metricas.perCapita.valorExibicao,
+      quantidadeTotal: metricas.pesoPosPreparo,
+      porcoes: metricas.porcoes || null,
+    };
+  }, [receita, itens, perCapitaSugerido]);
 
   useEffect(() => {
     if (estadoInicialEscala && pcLocal === null) {
@@ -388,12 +398,20 @@ export default function ReceitaAberta() {
 
   const commitPC = async (newPC) => {
     const val = Math.max(1, Math.round(newPC));
+    const metricas = calcularMetricasReceita({ receita, itens, perCapitaAlvo: val, pesoPosPreparoAlvo: quantidadeTotal || 0 });
     setPcLocal(val);
-    const total = quantidadeTotal || 0;
-    if (val > 0 && total > 0) setPorcoes(+(total / val).toFixed(2));
+    setPorcoes(metricas.porcoes || null);
     try {
-      const { receitaId } = await ensureEditavel();
-      await base44.entities.Receita.update(receitaId, { per_capita_g: val });
+      const { receitaId, mapItemId } = await ensureEditavel();
+      const porcoesAnteriores = Number(receita?.porcoes_base) || 1;
+      if (metricas.porcoes > 0 && Math.abs(metricas.porcoes - porcoesAnteriores) > 0.0001) {
+        const updates = itens.filter((item) => item.tipo !== "grupo").map((item) => ({
+          id: mapItemId(item.id),
+          quantidade_por_porcao: (Number(item.quantidade_por_porcao) || 0) * porcoesAnteriores / metricas.porcoes,
+        }));
+        if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
+      }
+      await base44.entities.Receita.update(receitaId, { per_capita_g: val, porcoes_base: metricas.porcoes || porcoesAnteriores });
       await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "per_capita_alterado", origem: "receita" });
       registrarHistorico(receitaId, receita?.nome, ["Per capita"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
@@ -403,42 +421,39 @@ export default function ReceitaAberta() {
   };
 
   const commitPorcoes = (newPorcoes) => {
-    const val = Math.max(1, Math.round(newPorcoes));
-    setPorcoes(val);
-    const pc = pcLocal || 0;
-    if (pc > 0) setQuantidadeTotal(Math.round(val * pc));
+    const val = Math.max(0.01, Number(newPorcoes) || 0);
+    const metricas = calcularMetricasReceita({ receita, itens, perCapitaAlvo: pcLocal || 0, porcoesAlvo: val });
+    setPorcoes(metricas.porcoes || null);
+    setQuantidadeTotal(metricas.pesoPosPreparo || 0);
   };
 
   const commitTotalGrams = async (grams) => {
     const g = Math.max(0, Math.round(grams));
     const pc = pcLocal || 0;
     const baseTotal = quantidadeTotal || 0;
+    const metricas = calcularMetricasReceita({ receita, itens, perCapitaAlvo: pc, pesoPosPreparoAlvo: g });
     setQuantidadeTotal(g);
-    setPorcoes(pc > 0 ? Math.max(0, Math.floor(g / pc)) : null);
+    setPorcoes(metricas.porcoes || null);
     const temIngredientes = itens.some((i) => i.tipo !== "grupo");
     if ((baseTotal <= 0 && !temIngredientes) || g === baseTotal) return;
     try {
-      const { receitaId, mapItemId } = await ensureEditavel();
+      const { receitaId } = await ensureEditavel();
       const fatorRescale = baseTotal > 0 ? g / baseTotal : 1;
-      const updates = itens
-        .filter((i) => i.tipo !== "grupo")
-        .map((i) => ({ id: mapItemId(i.id), quantidade_por_porcao: (i.quantidade_por_porcao || 0) * fatorRescale }));
-      if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
-
       const tinhaPDP = rendimentoInfo.pesoPosPreparoInformado > 0;
-      const pdpEscalado = tinhaPDP ? g : 0;
+      const pdpEscalado = g;
       await base44.entities.Receita.update(receitaId, {
+        porcoes_base: metricas.porcoes || receita?.porcoes_base || 1,
         peso_pre_preparo_total: (rendimentoInfo.pesoPrePreparo || 0) * fatorRescale,
         peso_pos_preparo_total: pdpEscalado,
         rendimento_total: pdpEscalado,
         rendimento_origem: tinhaPDP ? (receita.rendimento_origem || "legado") : "estimado",
-        rendimento_status: tinhaPDP ? (receita.rendimento_status || "a_validar") : "pendente",
+        rendimento_status: tinhaPDP ? (receita.rendimento_status || "a_validar") : "estimado",
       });
       await invalidarCustosDependentesSeguro({ receitaIds: [receitaId], motivo: "composicao_e_rendimento_escalados", origem: "receita" });
       registrarHistorico(receitaId, receita?.nome, ["Ingredientes", "Rendimento"]);
       qc.invalidateQueries({ queryKey: ["receita", receitaId] });
       qc.invalidateQueries({ queryKey: ["itens-receita", receitaId] });
-      toast.success("Peso total ajustado — ingredientes recalculados!");
+      toast.success("Peso total, porções e custos recalculados!");
     } catch (err) {
       toast.error("Erro ao ajustar peso total: " + (err.message || ""));
     }
@@ -509,8 +524,13 @@ export default function ReceitaAberta() {
     return converterGramasParaMedida(item.qtdNova, mc, ute);
   };
 
-  const rendimentoBase = rendimentoInfo.pesoPosPreparoEfetivo || 0;
-  const fator = receita && rendimentoBase > 0 && quantidadeTotal > 0 ? quantidadeTotal / rendimentoBase : 1;
+  const metricasEscalaAtual = calcularMetricasReceita({
+    receita,
+    itens,
+    perCapitaAlvo: pcLocal || 0,
+    pesoPosPreparoAlvo: quantidadeTotal || 0,
+  });
+  const fator = metricasEscalaAtual.fator;
 
   const temOrdemManual = useMemo(() => itens.some(i => (i.ordem || 0) > 0), [itens]);
 
@@ -662,7 +682,7 @@ export default function ReceitaAberta() {
   const custoInsumos = custoCanonico.custoInsumos;
   const custoEsquecidos = custoCanonico.custoEsquecidos;
   const custoTotal = custoCanonico.custoTotal;
-  const custoPorcao = (porcoes || 1) > 0 ? custoTotal / (porcoes || 1) : 0;
+  const custoPorcao = custoCanonico.custoPorPorcao;
   // Fase 10.4: a tela calcula custos ao vivo, mas NÃO certifica o cache persistido.
   // Somente o backend, que enxerga toda a árvore de sub-receitas e o contexto
   // comercial canônico, pode gravar uma assinatura com status `valida`.
