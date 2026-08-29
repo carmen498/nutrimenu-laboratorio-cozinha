@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 const INTERVALO_POLLING_MS = 4000;
 const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
-export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos = false }) {
+export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false }) {
   const [cpf, setCpf] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -61,6 +61,8 @@ export default function PixForm({ plano, email, onClose, onSuccess, aceiteTermos
       if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
+        ...(addonPlanoId ? { addon_plano_id: addonPlanoId } : {}),
+        somente_addon: somenteAddon,
         tentativa_id: tentativaPagamentoRef.current,
         forma_pagamento: "pix",
         aceite_termos: true,
