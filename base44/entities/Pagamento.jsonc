@@ -12,9 +12,39 @@
         "diario",
         "mensal",
         "anual",
-        "renovacao"
+        "renovacao",
+        "custos_mensal",
+        "custos_anual"
       ],
-      "description": "Plano contratado nesta tentativa de pagamento"
+      "description": "Plano principal da tentativa. Para compra somente do Laborat\u00f3rio de Custos usa custos_mensal ou custos_anual."
+    },
+    "produto_compra": {
+      "type": "string",
+      "enum": [
+        "laboratorio_cozinha",
+        "laboratorio_custos",
+        "cozinha_mais_custos"
+      ],
+      "default": "laboratorio_cozinha",
+      "description": "Escopo comercial do pagamento: produto-base, complemento isolado ou compra combinada."
+    },
+    "addon_plano_id": {
+      "type": "string",
+      "enum": [
+        "custos_mensal",
+        "custos_anual"
+      ],
+      "description": "Plano do Laborat\u00f3rio de Custos inclu\u00eddo na compra, quando houver."
+    },
+    "valor_cozinha": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Parcela do valor total atribu\u00edda ao Laborat\u00f3rio de Cozinha."
+    },
+    "valor_custos": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Parcela do valor total atribu\u00edda ao Laborat\u00f3rio de Custos."
     },
     "forma_pagamento": {
       "type": "string",
@@ -26,7 +56,7 @@
     },
     "valor": {
       "type": "number",
-      "description": "Valor cobrado em R$ (bruto), definido pelo servidor a partir de ConfiguracaoPlano"
+      "description": "Valor total cobrado em R$ (bruto), definido pelo servidor."
     },
     "valor_liquido": {
       "type": "number",
@@ -47,7 +77,7 @@
         "estornado"
       ],
       "default": "pending",
-      "description": "Status do pagamento. 'cancelled' = abortado antes de completar (ex: PIX expirado). 'estornado' = pagamento aprovado e depois reembolsado."
+      "description": "Status do pagamento."
     },
     "mercadopago_order_id": {
       "type": "string",
@@ -55,41 +85,41 @@
     },
     "idempotency_key": {
       "type": "string",
-      "description": "Chave de idempot\u00eancia derivada no servidor para identificar de forma est\u00e1vel uma tentativa de checkout"
+      "description": "Chave de idempot\u00eancia derivada no servidor para identificar uma tentativa de checkout"
     },
     "termos_aceitos_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora server-side do aceite expl\u00edcito dos documentos legais para esta contrata\u00e7\u00e3o"
+      "description": "Data/hora server-side do aceite expl\u00edcito dos documentos legais"
     },
     "termos_versao_aceita": {
       "type": "string",
-      "description": "Vers\u00e3o dos Termos de Uso vigente e aceita nesta contrata\u00e7\u00e3o"
+      "description": "Vers\u00e3o dos Termos de Uso aceita"
     },
     "privacidade_versao_aceita": {
       "type": "string",
-      "description": "Vers\u00e3o da Pol\u00edtica de Privacidade vigente e aceita nesta contrata\u00e7\u00e3o"
+      "description": "Vers\u00e3o da Pol\u00edtica de Privacidade aceita"
     },
     "qr_code": {
       "type": "string",
-      "description": "C\u00f3digo copia-e-cola do PIX (quando forma_pagamento=pix)"
+      "description": "C\u00f3digo copia-e-cola do PIX"
     },
     "qr_code_base64": {
       "type": "string",
-      "description": "QR code em base64 do PIX (quando forma_pagamento=pix)"
+      "description": "QR code em base64 do PIX"
     },
     "detalhe_erro": {
       "type": "string",
-      "description": "Resumo t\u00e9cnico sanitizado da falha. Dados transit\u00f3rios s\u00e3o removidos pela pol\u00edtica de reten\u00e7\u00e3o."
+      "description": "Resumo t\u00e9cnico sanitizado da falha."
     },
     "dados_transitorios_limpos_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora em que QR PIX, detalhe de erro e chave de idempot\u00eancia foram removidos pela pol\u00edtica de minimiza\u00e7\u00e3o"
+      "description": "Data/hora em que dados transit\u00f3rios foram removidos"
     },
     "versao_codigo": {
       "type": "string",
-      "description": "Identificador da vers\u00e3o do c\u00f3digo da function que processou esta tentativa (para confirmar se o deploy mais recente est\u00e1 ativo)"
+      "description": "Identificador da vers\u00e3o do c\u00f3digo da function que processou esta tentativa"
     },
     "nota_fiscal_url": {
       "type": "string",
@@ -98,7 +128,7 @@
     "lembrete_pendencia_enviado": {
       "type": "boolean",
       "default": false,
-      "description": "true quando o lembrete de pagamento pendente (e-mail/WhatsApp) j\u00e1 foi disparado para este pagamento, evitando reenvios di\u00e1rios"
+      "description": "true quando o lembrete de pagamento pendente j\u00e1 foi disparado"
     }
   },
   "required": [
