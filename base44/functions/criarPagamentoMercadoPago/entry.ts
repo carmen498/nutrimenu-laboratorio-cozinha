@@ -250,9 +250,9 @@ export default async function(req: Request): Promise<Response> {
     // Em sandbox, o Mercado Pago só aceita e-mails de comprador de teste
     // (terminados em @testuser.com). Como o e-mail real do usuário logado
     // não serve para isso, usamos um comprador de teste fixo nesse ambiente.
-    const payerEmail = ambiente === "producao" || payer.email.endsWith("@testuser.com")
+    const payerEmail = ambiente === "producao"
       ? payer.email
-      : "TEST_USER_360639484@testuser.com";
+      : "test@testuser.com";
 
     if (!accessToken) {
       return Response.json({ error: "Credencial do Mercado Pago não configurada para o ambiente atual" }, { status: 500 });
