@@ -77,7 +77,7 @@ export default function HelpPanel({ screenName = "", open: openProp, onOpenChang
       {/* Slide-in panel */}
       <div
         className={`fixed top-0 right-0 h-full z-40 bg-card shadow-2xl border-l border-border transition-transform duration-300 flex flex-col ${
-          open ? "translate-x-0" : "translate-x-full"
+          open ? "translate-x-0 visible" : "translate-x-full invisible pointer-events-none"
         }`}
         style={{ width: "360px", maxWidth: "100vw" }}
       >

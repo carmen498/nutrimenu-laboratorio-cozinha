@@ -203,16 +203,16 @@ export default function FichaTecnicaReceita() {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
-      <div className="flex items-center gap-2 no-print">
+      <div className="flex flex-wrap items-center gap-2 no-print">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="font-display text-xl font-bold flex-1">Ficha Técnica</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => printarElementoIsolado("ficha-tecnica-print-area", "@page { margin: 16mm 12mm; }")}>
+        <h1 className="font-display text-xl font-bold flex-1 min-w-[12rem]">Ficha Técnica</h1>
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+          <Button className="min-w-0 px-2 text-xs sm:px-4 sm:text-sm" onClick={() => printarElementoIsolado("ficha-tecnica-print-area", "@page { margin: 16mm 12mm; }")}>
             <Printer className="w-4 h-4 mr-1" /> ↓ Exportar PDF
           </Button>
-          <Button variant="outline" onClick={handleShare}>
+          <Button className="min-w-0 px-2 text-xs sm:px-4 sm:text-sm" variant="outline" onClick={handleShare}>
             <Share2 className="w-4 h-4 mr-1" /> Compartilhar
           </Button>
         </div>
