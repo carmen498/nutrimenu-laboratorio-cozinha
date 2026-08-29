@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { carregarMercadoPagoDeviceId, carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
 
-export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTermos = false }) {
+export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false }) {
   const parcelasOpcoes = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => i + 1);
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
@@ -70,6 +70,8 @@ export default function CartaoForm({ plano, email, onClose, onSuccess, aceiteTer
       if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
       const res = await base44.functions.invoke("criarPagamentoMercadoPago", {
         plano,
+        ...(addonPlanoId ? { addon_plano_id: addonPlanoId } : {}),
+        somente_addon: somenteAddon,
         tentativa_id: tentativaPagamentoRef.current,
         forma_pagamento: "cartao",
         aceite_termos: true,
