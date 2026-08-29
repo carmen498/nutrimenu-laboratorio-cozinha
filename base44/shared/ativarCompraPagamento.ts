@@ -40,6 +40,17 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
   const fim = new Date(inicio.getTime() + diasCustos(planoId) * 24 * 60 * 60 * 1000);
   const oferta = (await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: planoId, produto: "laboratorio_custos" }))?.[0] || null;
 
+  // Um pagamento aprovado substitui qualquer acesso anterior ainda ativo (ex.: trial),
+  // preservando-o no histórico sem manter dois entitlements simultaneamente ativos.
+  for (const anterior of existentes || []) {
+    if (anterior.status !== "ativo" || anterior.referencia_pagamento_id === pagamento.id) continue;
+    await base44.asServiceRole.entities.AcessoLaboratorioCustosUsuario.update(anterior.id, {
+      status: "cancelado",
+      cancelado_em: inicio.toISOString(),
+      observacao: `${anterior.observacao || ""} Substituído por plano pago aprovado (${pagamento.id}).`.trim(),
+    });
+  }
+
   await base44.asServiceRole.entities.AcessoLaboratorioCustosUsuario.create({
     user_id: pagamento.usuario_id,
     modulo: MODULO,
