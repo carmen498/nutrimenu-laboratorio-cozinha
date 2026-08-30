@@ -1,6 +1,6 @@
 export const LANDING_IMAGES = {
   casa: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/2f82504a0_montagem_casa.png",
-  venda: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/6cd06e963_montagem_casa-Copia.png",
+  venda: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/897b1f200_montagem_venda.png",
   festa: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/5e128a8d3_montagem_festa.png",
 };
 
