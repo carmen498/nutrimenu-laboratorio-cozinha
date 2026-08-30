@@ -33,7 +33,7 @@ export default function Landing() {
     document.title = "Laboratório de Cozinha | Planeje, calcule e produza com método";
     description.setAttribute(
       "content",
-      "Organize receitas, cardápios, custos, per capita e listas de compras em um só lugar. Experimente o Laboratório de Cozinha por 7 dias grátis."
+      "Organize receitas, cardápios, custos, per capita e listas de compras em um só lugar. Experimente Cozinha + Custos por 7 dias de uso grátis, disponíveis por até 30 dias."
     );
 
     return () => {
