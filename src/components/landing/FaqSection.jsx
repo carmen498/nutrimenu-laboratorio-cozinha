@@ -10,7 +10,7 @@ const FAQ = [
   { q: "O app tem conteúdo de apoio, além das ferramentas?", a: "Sim. Você conta com uma Central de Ajuda dentro da plataforma e com as Dicas da Carmen — orientações práticas de cozinha profissional, direto na tela, no momento em que você mais precisa." },
   { q: "Como funciona o cancelamento?", a: "Não existe assinatura recorrente para cancelar. Cada plano vale pelo período contratado (30 dias ou anual) e não renova sozinho — você decide quando (e se) quer continuar, sem precisar cancelar nada." },
   { q: "Quanto custa renovar depois do 1º ano?", a: "A renovação do plano anual está prevista em R$ 99,00 à vista (ou em até 6x de R$ 16,50) — metade do valor do 1º ano, como benefício de fidelidade, e o compromisso está registrado nos nossos Termos de Uso. Ela fica disponível para contratação a partir do 2º ano de uso contínuo, e continua sem renovação automática: você escolhe se quer renovar." },
-  { q: "Tem período de teste?", a: "Sim — 7 dias de acesso completo, sem pedir cartão de crédito." },
+  { q: "Tem período de teste?", a: "Sim — o trial inclui Laboratório de Cozinha + Laboratório de Custos por 7 dias distintos de uso, disponíveis dentro de uma janela máxima de 30 dias, sem pedir cartão de crédito." },
   { q: "Como funciona o pagamento?", a: "Você pode pagar com cartão de crédito ou PIX, processado com segurança pelo Mercado Pago." },
   { q: "Posso usar o app pelo celular?", a: "Sim. O Laboratório de Cozinha funciona direto no navegador do celular, sem precisar instalar nada." },
   { q: "Se eu tiver dúvida, como falo com vocês?", a: "Direto pelo WhatsApp de suporte, com resposta de quem realmente conhece a plataforma." },
