@@ -25,7 +25,7 @@ export default function HeroSection() {
           {HERO_PORTALS.map((portal, index) => <HeroPortalCard key={portal.key} portal={portal} image={LANDING_IMAGES[portal.key]} priority={index === 0} />)}
         </div>
         <div className="lc-hero-seals lc-seals" aria-label="Condições do teste">
-          <span className="lc-seal">7 dias grátis</span>
+          <span className="lc-seal">7 dias de uso em até 30 dias</span>
           <span className="lc-seal">Sem cartão no teste</span>
           <span className="lc-seal">Sem renovação automática</span>
         </div>
