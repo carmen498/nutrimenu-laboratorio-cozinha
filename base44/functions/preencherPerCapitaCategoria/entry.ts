@@ -2,25 +2,31 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
 // PC padrão (g) por categoria principal (primeira categoria cadastrada na receita).
 const PC_POR_CATEGORIA = {
-  "Carnes": 150,
-  "Peixes e Frutos do Mar": 150,
+  "Carnes Bovinas e Suínos": 150,
   "Aves": 150,
-  "Acompanhamento": 120,
+  "Peixes e Frutos do Mar": 150,
+  "Ovos": 120,
   "Massas, Pastelão e Quiches": 120,
-  "Arroz e Risoto": 120,
-  "Entradas": 80,
-  "Petiscos": 80,
+  "Arroz e Risotos": 120,
+  "Sopas e Caldos": 400,
+  "Leguminosas": 120,
+  "Salgadinhos": 80,
+  "Pães e Bolos": 80,
   "Sobremesas": 100,
   "Molhos": 50,
-  "Sopas e Caldos": 400,
+  "Acompanhamentos": 120,
+  "Pratos Principais": 250,
+  "Entradas": 80,
+  "Lanche": 150,
 };
 
-Deno.serve(async (req) => {
+export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const { dry_run: dryRun = false } = await req.json().catch(() => ({}));
 
     const receitas = await base44.asServiceRole.entities.Receita.list('nome', 5000);
 
@@ -52,7 +58,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (updates.length > 0) {
+    if (updates.length > 0 && !dryRun) {
       await base44.asServiceRole.entities.Receita.bulkUpdate(updates);
     }
 
@@ -64,7 +70,7 @@ Deno.serve(async (req) => {
     }
     const resumoPorCategoria = Array.from(resumoMap.values()).sort((a, b) => a.categoria.localeCompare(b.categoria));
 
-    const log = await base44.asServiceRole.entities.PreenchimentoPerCapitaLog.create({
+    const log = dryRun ? null : await base44.asServiceRole.entities.PreenchimentoPerCapitaLog.create({
       data_execucao: new Date().toISOString(),
       total_processado: semPC.length,
       total_aplicado: aplicados.length,
@@ -75,7 +81,8 @@ Deno.serve(async (req) => {
     });
 
     return Response.json({
-      log_id: log.id,
+      log_id: log?.id || null,
+      dry_run: dryRun,
       total_processado: semPC.length,
       total_aplicado: aplicados.length,
       total_sem_categoria_definida: semCategoriaDefinida.length,
@@ -86,4 +93,4 @@ Deno.serve(async (req) => {
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
-});
+}

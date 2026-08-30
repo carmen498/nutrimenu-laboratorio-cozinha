@@ -16,6 +16,7 @@ import ImportarLoteReport from "@/components/receita/ImportarLoteReport";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { uploadArquivoSeguro, validarDocumentoReceitaUpload } from "@/lib/securityHardening";
 import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
+import { confirmarPorcoesBase } from "@/lib/porcoesBase";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -454,6 +455,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           receitaId = newReceita.id;
           created++;
         }
+        await confirmarPorcoesBase(base44.entities.Receita, receitaId, payload.porcoes_base);
 
         const ingredientes = item.ingredientes || [];
 

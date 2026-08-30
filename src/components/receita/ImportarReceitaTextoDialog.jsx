@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 import ImportarReceitaTextoItemDetail from "@/components/receita/ImportarReceitaTextoItemDetail";
 import { fetchAllPages } from "@/lib/fetchAllPages";
+import { confirmarPorcoesBase } from "@/lib/porcoesBase";
 
 const PLACEHOLDER = `RECEITA: CONSOMÊ DE CARNE
 CATEGORIA: Sopas e Caldos
@@ -73,6 +74,7 @@ async function criarReceitaDoItem(item, ingredientesById) {
     custo_total: custoTotalRounded,
     custo_por_porcao: custoPorPorcaoRounded,
   });
+  await confirmarPorcoesBase(base44.entities.Receita, receita.id, 1);
 
   for (let i = 0; i < resolvidos.length; i++) {
     const ing = resolvidos[i];

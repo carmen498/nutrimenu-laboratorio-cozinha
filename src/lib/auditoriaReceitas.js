@@ -2,12 +2,16 @@
 // Nenhuma função aqui grava dados; apenas deriva uma lista de problemas por receita.
 
 import { normalizarNome } from "@/lib/normalizarNome";
+import { CATEGORIAS } from "@/components/receita/CategoriaPicker";
 
 export const TIPOS_PROBLEMA = [
   { tipo: "vazia", label: "Vazia" },
   { tipo: "quase_vazia", label: "Quase vazia" },
   { tipo: "sem_rendimento", label: "Sem rendimento" },
+  { tipo: "rendimento_contaminado", label: "Rendimento suspeito" },
   { tipo: "sem_pc", label: "Sem PC" },
+  { tipo: "categoria_nao_mapeada", label: "Categoria não mapeada" },
+  { tipo: "porcoes_base_invalida", label: "Porções base inválidas" },
   { tipo: "custo_zero", label: "Custo zero" },
   { tipo: "ingrediente_quebrado", label: "Ingrediente quebrado" },
   { tipo: "nome_ingredientes", label: "Nome × ingredientes" },
@@ -84,9 +88,28 @@ export function auditarReceitas(receitas, itens, ingredientes, sinonimos) {
       problemas.push({ tipo: "sem_rendimento", label: "Sem rendimento_total" });
     }
 
+    const rendimentoIgualAoPc = Number(r.rendimento_total) > 0
+      && Number(r.per_capita_g) > 0
+      && Math.abs(Number(r.rendimento_total) - Number(r.per_capita_g)) / Math.max(Number(r.rendimento_total), Number(r.per_capita_g)) <= 0.001;
+    if (rendimentoIgualAoPc && !(Number(r.peso_pos_preparo_total) > 0) && (!r.rendimento_status || r.rendimento_status === "a_validar")) {
+      problemas.push({ tipo: "rendimento_contaminado", label: "Rendimento legado igual ao PC — revisar PDP" });
+    }
+
     // 4. SEM PC
     if (!(Number(r.per_capita_g) > 0)) {
       problemas.push({ tipo: "sem_pc", label: "Sem per_capita_g" });
+    }
+
+    const categorias = Array.isArray(r.categorias) ? r.categorias : [];
+    const categoriasInvalidas = categorias.filter((categoria) => !CATEGORIAS.includes(categoria));
+    if (categorias.length === 0 || categoriasInvalidas.length > 0) {
+      problemas.push({
+        tipo: "categoria_nao_mapeada",
+        label: categorias.length === 0 ? "Sem categoria mapeada" : `Categoria inválida: ${categoriasInvalidas.join(", ")}`,
+      });
+    }
+    if (!(Number(r.porcoes_base) > 0)) {
+      problemas.push({ tipo: "porcoes_base_invalida", label: "Porções base ausentes ou zeradas" });
     }
 
     // 5. CUSTO ZERO

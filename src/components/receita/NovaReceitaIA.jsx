@@ -20,6 +20,7 @@ import { buscarFuzzy, buscarIngredientesRanqueado, removerMarca } from "@/lib/no
 import { converterMedida, gerarTabelaPrompt } from "@/lib/conversorMedidas";
 import { sugerirUnidadeCompra } from "@/lib/sugerirUnidadeCompra";
 import { toSentenceCaseName } from "@/lib/textCase";
+import { confirmarPorcoesBase, normalizarPorcoesBase } from "@/lib/porcoesBase";
 
 // ── Auto-category from ingredients ──
 const categorizarPorIngredientes = (ingredientesNomes) => {
@@ -340,7 +341,7 @@ IMPORTANTE:
       const ingNomes = (p.ingredientes || []).filter(i => i.tipo !== "grupo").map(i => i.nome_banco || i.nome_original);
       const catAuto = p.categorias?.length > 0 ? p.categorias : categorizarPorIngredientes(ingNomes);
       
-      const porcoes = p.porcoes_base || 0;
+      const porcoes = normalizarPorcoesBase(p.porcoes_base, 0);
       const semCategoria = !catAuto || catAuto.length === 0;
       
       const receita = await criarReceitaSegura({
@@ -354,6 +355,7 @@ IMPORTANTE:
         custo_total: 0,
         custo_por_porcao: 0,
       });
+      await confirmarPorcoesBase(base44.entities.Receita, receita.id, porcoes);
 
       // Save tags
       for (const tagId of selectedTagIds) {
