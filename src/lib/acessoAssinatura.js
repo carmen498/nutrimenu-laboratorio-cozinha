@@ -40,6 +40,14 @@ export function avaliarAcessoAssinatura(user, agora = new Date()) {
     return { temAcesso: false, motivo: status || "sem_status" };
   }
 
+  if (status === "trial" && user?.trial_modelo === "7_em_30") {
+    const hoje = hojeSaoPauloISO(agora);
+    const diasUso = [...new Set((Array.isArray(user?.trial_dias_uso) ? user.trial_dias_uso : []).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(String(d))))];
+    if (diasUso.length >= 7 && !diasUso.includes(hoje)) {
+      return { temAcesso: false, motivo: "trial_dias_esgotados", diasUsados: diasUso.length };
+    }
+  }
+
   const dataExpiracao = user.data_expiracao;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataExpiracao || "")) {
     return { temAcesso: false, motivo: "sem_data_expiracao" };
@@ -49,7 +57,10 @@ export function avaliarAcessoAssinatura(user, agora = new Date()) {
     return { temAcesso: false, motivo: "expirado" };
   }
 
-  return { temAcesso: true, motivo: status, dataExpiracao };
+  const diasUso = status === "trial" && user?.trial_modelo === "7_em_30"
+    ? [...new Set(Array.isArray(user?.trial_dias_uso) ? user.trial_dias_uso : [])].length
+    : null;
+  return { temAcesso: true, motivo: status, dataExpiracao, diasUsados: diasUso, diasRestantesUso: diasUso == null ? null : Math.max(0, 7 - diasUso) };
 }
 
 // Janela de carência para recém-cadastrados: se a conta foi criada há poucos
