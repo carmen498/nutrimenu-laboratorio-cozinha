@@ -82,6 +82,9 @@ export default function Planos() {
   const acessoAssinatura = avaliarAcessoAssinatura(user);
   const assinaturaVencida = user?.role !== "admin" && !acessoAssinatura.temAcesso && ["expirado", "vencido", "cancelado", "sem_data_expiracao"].includes(acessoAssinatura.motivo);
   const diasRestantesTrial = statusAssinatura === "trial" && user?.data_expiracao ? diasEntreHoje(user.data_expiracao) : null;
+  const diasUsoTrial = user?.trial_modelo === "7_em_30"
+    ? [...new Set(Array.isArray(user?.trial_dias_uso) ? user.trial_dias_uso : [])].length
+    : null;
 
   const scrollToPlano = (planoId) => document.getElementById(`plano-${planoId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
 
@@ -214,9 +217,10 @@ export default function Planos() {
               loading={loadingTrial}
               onClick={handleTestarGratis}
               isCurrentPlan={planoAtual === "trial"}
-              validadeLabel="Válido até"
+              validadeLabel="Janela até"
               validadeData={formatarData(user?.data_expiracao)}
               diasRestantes={planoAtual === "trial" ? diasRestantesTrial : null}
+              usoTrialLabel={planoAtual === "trial" && diasUsoTrial != null ? `${diasUsoTrial} de 7 dias utilizados` : ""}
               bloqueado={planoAtual !== "trial" && jaPossuiHistoricoPlano}
               mensagemBloqueio="Teste grátis disponível apenas para novas contas"
               complemento={complementoCard("trial")}
