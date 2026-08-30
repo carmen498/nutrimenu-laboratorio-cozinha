@@ -9,7 +9,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
-import { revogarAcessoEstorno } from "../../shared/revogarAcessoEstorno.ts";
+import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
@@ -35,7 +35,7 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "Pagamento sem mercadopago_order_id" }, { status: 400 });
     }
 
-    const ambiente = secrets.get("AMBIENTE");
+    const ambiente = String(secrets.get("AMBIENTE") || "").trim().toLowerCase();
     const accessToken = ambiente === "producao"
       ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
       : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
@@ -59,7 +59,8 @@ export default async function(req: Request): Promise<Response> {
     }
 
     await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "estornado" });
-    const revogacao = await revogarAcessoEstorno(base44, pagamento);
+    const revogacao = await revogarCompraEstorno(base44, pagamento);
+    const revogacaoPrincipal = revogacao.cozinha || revogacao.custos || { revogado: false, motivo: "nenhum_acesso_aplicavel" };
 
     const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
 
@@ -101,8 +102,9 @@ export default async function(req: Request): Promise<Response> {
       pagamentoId: pagamento.id,
       status_pagamento_mp: paymentStatus,
       novo_status_pagamento: "estornado",
-      acesso_revogado: revogacao.revogado,
-      acesso_revogacao_motivo: revogacao.motivo,
+      acesso_revogado: revogacaoPrincipal.revogado,
+      acesso_revogacao_motivo: revogacaoPrincipal.motivo,
+      acessos_revogados: revogacao,
       email_disparado: emailDisparado,
       email_motivo_nao_disparo: emailMotivoNaoDisparo,
     });

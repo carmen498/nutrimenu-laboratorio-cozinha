@@ -23,7 +23,8 @@
         "pagamento_interno_nao_encontrado",
         "status_nao_final",
         "processado",
-        "tipo_nao_mapeado"
+        "tipo_nao_mapeado",
+        "erro_processamento"
       ],
       "description": "Em qual ponto o processamento parou (ou terminou com sucesso)"
     },
@@ -45,7 +46,7 @@
     },
     "diagnostico_resumo": {
       "type": "string",
-      "description": "Resumo n\u00e3o sens\u00edvel do diagn\u00f3stico de assinatura, quando inv\u00e1lida"
+      "description": "Resumo n\u00e3o sens\u00edvel do diagn\u00f3stico de assinatura ou processamento"
     }
   },
   "required": [

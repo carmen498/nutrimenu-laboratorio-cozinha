@@ -17,14 +17,17 @@ import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
 import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
-import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { registrarLogEmail, resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from "../../shared/statusMercadoPago.ts";
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v6-2026-08-30-data-id-normalizado";
+const VERSAO_CODIGO = "webhook-v7-2026-08-30-monitoramento-erros";
 
 export default async function(req: Request): Promise<Response> {
+  let dataIdContexto: string | null = null;
+  let tipoContexto: string | null = null;
+  let acaoContexto: string | null = null;
   try {
     console.log(`webhookMercadoPago rodando versão: ${VERSAO_CODIGO}`);
     const url = new URL(req.url);
@@ -34,6 +37,9 @@ export default async function(req: Request): Promise<Response> {
     const dataId = dataIdBruto == null ? null : String(dataIdBruto).trim();
     const tipoNotificacao = body?.type || body?.topic || url.searchParams.get("type") || null;
     const acaoNotificacao = typeof body?.action === "string" ? body.action : null;
+    dataIdContexto = dataId;
+    tipoContexto = tipoNotificacao;
+    acaoContexto = acaoNotificacao;
 
     // Log estruturado e mínimo: IDs técnicos e resultado do processamento.
     // Não persiste corpo bruto, assinatura, request-id, e2e_id ou payload do provedor.
@@ -220,7 +226,23 @@ export default async function(req: Request): Promise<Response> {
 
     return Response.json({ received: true, status: novoStatus });
   } catch (error) {
-    console.log("Erro ao processar notificação do Mercado Pago:", error.message);
-    return Response.json({ error: error.message }, { status: 500 });
+    const detalheSeguro = resumirErroOperacional(error?.message || "Falha inesperada no webhook").slice(0, 500);
+    console.log("Erro ao processar notificação do Mercado Pago:", detalheSeguro);
+    try {
+      const base44Erro = createClientFromRequest(req);
+      await base44Erro.asServiceRole.entities.LogWebhookMercadoPago.create({
+        data_id: dataIdContexto || "",
+        tipo_notificacao: tipoContexto,
+        acao_notificacao: acaoContexto,
+        versao_codigo: VERSAO_CODIGO,
+        resultado: "erro_processamento",
+        diagnostico_resumo: detalheSeguro,
+      });
+    } catch (logError) {
+      console.log("Falha ao registrar erro do webhook:", logError?.message || "erro desconhecido");
+    }
+    // Confirma o recebimento para impedir uma tempestade de novas tentativas 5xx.
+    // A conciliação administrativa reconsulta a order e repara o estado com segurança.
+    return Response.json({ received: true, error: "processing_failed" });
   }
 }
