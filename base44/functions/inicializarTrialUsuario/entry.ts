@@ -7,8 +7,8 @@ import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
 
 const ASSUNTO_PADRAO = "Bem-vindo(a) ao Laboratório de Cozinha";
-const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) ao Laboratório de Cozinha!</p>
-<p>Seu período de teste gratuito já começou. Explore receitas, cardápios e a gestão de custos da sua cozinha.</p>`;
+const CORPO_PADRAO = `<p>Olá {{nome}}, seja bem-vindo(a) à Plataforma ZR!</p>
+<p>Seu trial inclui Laboratório de Cozinha + Laboratório de Custos, com 7 dias distintos de uso dentro de uma janela máxima de 30 dias.</p>`;
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -51,15 +51,38 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const dataInicio = hojeSaoPauloISO();
-    const dataExpiracao = calcularExpiracaoInclusiva(dataInicio, 7);
+    const dataExpiracao = calcularExpiracaoInclusiva(dataInicio, 30);
 
     await base44.asServiceRole.entities.User.update(user.id, {
       plano_atual: "trial",
       status_assinatura: "trial",
       data_inicio: dataInicio,
       data_expiracao: dataExpiracao,
+      trial_modelo: "7_em_30",
+      trial_dias_uso: [],
       ciclo_renovacao: 0
     });
+
+    // O trial da Plataforma ZR libera Cozinha + Custos automaticamente.
+    const acessosCustos = await base44.asServiceRole.entities.AcessoLaboratorioCustosUsuario.filter({
+      user_id: user.id,
+      modulo: "laboratorio_custos",
+    });
+    if (!(acessosCustos || []).some((a: any) => a.status === "ativo")) {
+      await base44.asServiceRole.entities.AcessoLaboratorioCustosUsuario.create({
+        user_id: user.id,
+        modulo: "laboratorio_custos",
+        status: "ativo",
+        modalidade: "trial",
+        plano_id: "custos_trial",
+        origem: "trial",
+        inicio_em: new Date(`${dataInicio}T00:00:00-03:00`).toISOString(),
+        fim_em: new Date(`${dataExpiracao}T23:59:59.999-03:00`).toISOString(),
+        trial_ativado_em: new Date().toISOString(),
+        oferta_versao: "trial-plataforma-7-em-30-v1",
+        observacao: "Trial automático compartilhado Cozinha + Custos: 7 dias de uso em até 30 dias.",
+      });
+    }
 
     // Envia o e-mail de boas-vindas via Resend (este é o momento real de criação
     // da conta — a entidade User embutida não suporta automação de "create").
