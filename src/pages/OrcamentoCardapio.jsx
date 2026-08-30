@@ -40,7 +40,7 @@ export default function OrcamentoCardapio() {
     const c = await base44.entities.Cardapio.get(id);
     setCardapio(c);
     setObsComercial(c.observacoes_orcamento || "");
-    setPrecoFinal(c.preco_final_orcamento != null ? String(c.preco_final_orcamento) : "");
+    setPrecoFinal(c.preco_final_orcamento != null ? Number(c.preco_final_orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
 
     const [recs, ins, todasRec] = await Promise.all([
       base44.entities.CardapioReceita.filter({ cardapio_id: id }, "ordem", 200),
@@ -107,7 +107,6 @@ export default function OrcamentoCardapio() {
   const savePrecoFinal = async (value) => {
     const numFinal = Math.max(0, Number(String(value).replace(",", ".")) || 0);
     await base44.entities.Cardapio.update(cardapio.id, { preco_final_orcamento: numFinal });
-    setPrecoFinal(String(numFinal));
     setCardapio((atual) => ({ ...atual, preco_final_orcamento: numFinal }));
   };
 
@@ -245,6 +244,9 @@ export default function OrcamentoCardapio() {
                 onChange={(e) => setPrecoFinal(e.target.value)}
                 onBlur={(e) => savePrecoFinal(e.target.value)}
               />
+              <Button type="button" size="sm" className="no-print" onClick={() => savePrecoFinal(precoFinal === "" ? totalCalculado : precoFinal)}>
+                Salvar preço
+              </Button>
               <p className="font-display text-lg font-bold text-primary hidden print:block">{orc.totalFmt}</p>
             </div>
             <p className="font-display text-base font-semibold text-primary mt-1">

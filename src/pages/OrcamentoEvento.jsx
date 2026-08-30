@@ -32,7 +32,7 @@ export default function OrcamentoEvento() {
     setObsComercial(p.observacoes_orcamento || "");
     const totalPessoas = Number(p.total_pessoas) || (Number(p.qtd_homens) || 0) + (Number(p.qtd_mulheres) || 0) + (Number(p.qtd_criancas) || 0);
     const totalLegado = p.preco_pessoa_orcamento != null ? Number(p.preco_pessoa_orcamento) * totalPessoas : null;
-    setPrecoFinal(p.preco_final_orcamento != null ? String(p.preco_final_orcamento) : totalLegado != null ? String(totalLegado) : "");
+    setPrecoFinal(p.preco_final_orcamento != null ? Number(p.preco_final_orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : totalLegado != null ? totalLegado.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
     const d = await carregarDadosRelatorios(p);
     setDados(d);
     setLoading(false);
@@ -177,6 +177,9 @@ export default function OrcamentoEvento() {
                 onChange={(e) => setPrecoFinal(e.target.value)}
                 onBlur={(e) => savePrecoFinal(e.target.value)}
               />
+              <Button type="button" size="sm" className="no-print" onClick={() => savePrecoFinal(precoFinal)}>
+                Salvar preço
+              </Button>
               <p className="font-display text-lg font-bold text-primary hidden print:block">{orc.totalFmt}</p>
             </div>
             <p className="font-display text-base font-semibold text-primary">

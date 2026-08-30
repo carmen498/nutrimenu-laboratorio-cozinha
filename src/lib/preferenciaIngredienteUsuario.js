@@ -76,7 +76,7 @@ export function aplicarPreferenciasIngredientes(
       favorito,
       _preferencia_ingrediente_id: preferencia?.id || null,
       _dados_comerciais_pessoais: Object.keys(comerciais).length > 0,
-      _preco_estimado: !(Number(comerciais.preco_por_g_rs) > 0) && Number(ingrediente.preco_por_g_rs) > 0,
+      _preco_estimado: !ingrediente._preco_personalizado && !(Number(comerciais.preco_por_g_rs) > 0) && Number(ingrediente.preco_por_g_rs) > 0,
     };
   });
 }
