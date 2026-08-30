@@ -21,6 +21,14 @@ export default function EditItemDialog({ open, onClose, item, porcoesBase, fator
     queryFn: () => base44.entities.Ingrediente.list("-nome", 500),
   });
 
+  const ingredienteId = item?.ingrediente_id || item?.ing?.id;
+  const { data: ingredienteCarregado = null } = useQuery({
+    queryKey: ["ingrediente", "atalho-edicao", ingredienteId],
+    queryFn: () => base44.entities.Ingrediente.get(ingredienteId),
+    enabled: open && !!ingredienteId && !item?.ing,
+  });
+  const ingredienteAtual = item?.ing || ingredienteCarregado;
+
   useEffect(() => {
     if (item) {
       setQtd(String(Math.round(item.qtdNova || 0)));
@@ -59,19 +67,19 @@ export default function EditItemDialog({ open, onClose, item, porcoesBase, fator
           <DialogTitle className="font-display">Editar — {isSubreceita ? item.subreceita_nome : (item.ingrediente_nome || item.ing?.nome)}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
-          {isIngrediente && item.ing && !novoIng && (
+          {isIngrediente && ingredienteAtual && !novoIng && (
             <div className="p-2.5 bg-muted/50 rounded-lg flex items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
                 Preço atual: <span className="font-medium text-foreground">
-                  {item.ing.preco_por_g_rs > 0 ? `R$ ${item.ing.preco_por_g_rs.toFixed(4).replace(".", ",")}/g` : "não cadastrado"}
+                  {ingredienteAtual.preco_por_g_rs > 0 ? `R$ ${ingredienteAtual.preco_por_g_rs.toFixed(4).replace(".", ",")}/g` : "não cadastrado"}
                 </span>
               </p>
               <div className="flex items-center gap-1 shrink-0">
-                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onEditPrice(item.ing)}>
+                <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => onEditPrice(ingredienteAtual)}>
                   <DollarSign className="w-3.5 h-3.5 mr-1" /> Editar cadastro do ingrediente
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar preço do ingrediente no catálogo" asChild>
-                  <Link to={`/ingrediente/${item.ing.id}?editar=1`}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Abrir cadastro completo do ingrediente" asChild>
+                  <Link to={`/ingrediente/${ingredienteId}?editar=1`}>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </Link>
                 </Button>

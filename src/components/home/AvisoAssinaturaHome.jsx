@@ -1,21 +1,15 @@
 import { Link } from "react-router-dom";
 import { AlertTriangle, Clock } from "lucide-react";
-import { statusAssinaturaEfetivo } from "@/lib/acessoAssinatura";
+import { hojeSaoPauloISO, statusAssinaturaEfetivo } from "@/lib/acessoAssinatura";
+import { formatarDataBrasilia } from "@/lib/fusoBrasilia";
 
-const formatarData = (dataStr) => {
-  if (!dataStr) return null;
-  const data = new Date(`${dataStr}T00:00:00`);
-  if (isNaN(data.getTime())) return null;
-  return data.toLocaleDateString("pt-BR");
-};
+const formatarData = (dataStr) => formatarDataBrasilia(dataStr);
 
 const diasEntreHoje = (dataStr) => {
-  if (!dataStr) return null;
-  const data = new Date(`${dataStr}T00:00:00`);
-  if (isNaN(data.getTime())) return null;
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  return Math.round((data.getTime() - hoje.getTime()) / 86400000);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataStr || "")) return null;
+  const [ano, mes, dia] = dataStr.split("-").map(Number);
+  const [anoHoje, mesHoje, diaHoje] = hojeSaoPauloISO().split("-").map(Number);
+  return Math.round((Date.UTC(ano, mes - 1, dia) - Date.UTC(anoHoje, mesHoje - 1, diaHoje)) / 86400000);
 };
 
 export default function AvisoAssinaturaHome({ user }) {
@@ -24,8 +18,11 @@ export default function AvisoAssinaturaHome({ user }) {
   if (user?.role === "admin") return null;
 
   const status = statusAssinaturaEfetivo(user);
+  const diasParaExpiracao = diasEntreHoje(user?.data_expiracao);
 
-  if (status === "vencido") {
+  // Um status atrasado não pode anunciar como vencida uma assinatura cuja
+  // data final ainda está no futuro; isso afeta somente o aviso visual.
+  if (status === "vencido" && diasParaExpiracao != null && diasParaExpiracao < 0) {
     return (
       <div className="mb-4 flex flex-col sm:flex-row items-center gap-3 justify-between rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3">
         <div className="flex items-center gap-2 text-destructive text-sm font-medium">
@@ -46,7 +43,7 @@ export default function AvisoAssinaturaHome({ user }) {
   }
 
   if (status === "trial") {
-    const diasRestantes = diasEntreHoje(user?.data_expiracao);
+    const diasRestantes = diasParaExpiracao;
     if (diasRestantes != null && diasRestantes <= 3) {
       return (
         <Link
