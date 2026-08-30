@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Search, ArrowLeftRight, X, DollarSign, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import IngredientSearchGroups from "@/components/receita/IngredientSearchGroups";
 import { buscarIngredientesRanqueado } from "@/lib/normalizarNome";
 
 export default function EditItemDialog({ open, onClose, item, porcoesBase, fator, onSave, saving, onEditPrice }) {
@@ -121,16 +122,11 @@ export default function EditItemDialog({ open, onClose, item, porcoesBase, fator
                       {filteredIng.length === 0 ? (
                         <p className="text-center text-sm text-muted-foreground py-3">Nenhum ingrediente encontrado</p>
                       ) : (
-                        filteredIng.map((ing) => (
-                          <button
-                            key={ing.id}
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors flex justify-between items-center"
-                            onClick={() => { setNovoIng(ing); setShowSearch(false); setBusca(""); }}
-                          >
-                            <span className="font-medium">{ing.nome}</span>
-                            <span className="text-xs text-muted-foreground">{ing.categoria}</span>
-                          </button>
-                        ))
+                        <IngredientSearchGroups
+                          ingredients={filteredIng}
+                          compact
+                          onSelect={(ing) => { setNovoIng(ing); setShowSearch(false); setBusca(""); }}
+                        />
                       )}
                     </div>
                   )}

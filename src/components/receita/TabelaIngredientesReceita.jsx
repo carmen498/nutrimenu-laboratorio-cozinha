@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { ChefHat, Pencil, Trash2, ArrowUp, ArrowDown, Check, X, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import DraggableRow from "@/components/receita/DraggableRow";
+import IngredientSearchGroups from "@/components/receita/IngredientSearchGroups";
 
 function buildGridTemplate(mostrarFC, mostrarMedidaCaseira) {
   const cols = ["minmax(160px,18fr)", "minmax(90px,11fr)", "minmax(70px,8fr)"];
@@ -201,12 +202,11 @@ export default function TabelaIngredientesReceita({
                     </div>
                     {ingSearch && (
                       <div className="absolute top-full left-0 right-0 z-50 bg-white border rounded-md shadow-lg max-h-40 overflow-y-auto mt-1">
-                        {ingredientesDB.filter(ing => ing.nome.toLowerCase().includes(ingSearch.toLowerCase())).slice(0, 20).map(ing => (
-                          <button key={`ing-${ing.id}`} className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors"
-                            onClick={() => replaceIngMut.mutate({ itemId: item.id, newIngredienteId: ing.id, newIngredienteNome: ing.nome })}>
-                            {ing.nome}
-                          </button>
-                        ))}
+                        <IngredientSearchGroups
+                          ingredients={ingredientesDB.filter(ing => ing.nome.toLowerCase().includes(ingSearch.toLowerCase())).slice(0, 20)}
+                          compact
+                          onSelect={(ing) => replaceIngMut.mutate({ itemId: item.id, newIngredienteId: ing.id, newIngredienteNome: ing.nome })}
+                        />
                         {receitasBasicas.filter(r => r.nome.toUpperCase().includes(ingSearch.toUpperCase())).slice(0, 10).map(r => (
                           <button key={`rec-${r.id}`} className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors flex items-center justify-between"
                             onClick={() => replaceWithSubreceitaMut.mutate({ itemId: item.id, receitaId: r.id, receitaNome: r.nome })}>

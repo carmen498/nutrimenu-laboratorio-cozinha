@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Plus, ChefHat, Star } from "lucide-react";
 import { toast } from "sonner";
 import NovoIngredienteRapido from "@/components/receita/NovoIngredienteRapido";
+import IngredientSearchGroups from "@/components/receita/IngredientSearchGroups";
 import { buscarIngredientesRanqueado, buscarReceitasMultiPalavra } from "@/lib/normalizarNome";
 import { explodeSubreceita } from "@/lib/subreceitaUtils";
 import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
@@ -213,16 +214,10 @@ export default function AddIngredienteDialog({ open, onClose, receitaId, receita
                     <div className="border-t border-border mx-3 my-1" />
                   </>
                 )}
-                {(busca ? filteredIng : outros).slice(0, 20).map((ing) => (
-                  <button
-                    key={`ing-${ing.id}`}
-                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-accent text-sm flex justify-between items-center"
-                    onClick={() => { setSelected(ing); setSelectedType("ingrediente"); setMedidaSel(unidadeCanonica); }}
-                  >
-                    <span className="font-medium">{ing.nome}</span>
-                    <span className="text-xs text-muted-foreground">{ing.categoria}</span>
-                  </button>
-                ))}
+                <IngredientSearchGroups
+                  ingredients={(busca ? filteredIng : outros).slice(0, 20)}
+                  onSelect={(ing) => { setSelected(ing); setSelectedType("ingrediente"); setMedidaSel(unidadeCanonica); }}
+                />
                 {filteredRec.length > 0 && (
                   <>
                     <p className="text-[10px] font-semibold uppercase text-muted-foreground px-3 pt-2 pb-0.5 tracking-wide flex items-center gap-1">
