@@ -109,7 +109,8 @@ export default function Conta() {
   }
 
   const planoLabel = PLANO_LABEL[displayUser?.plano_atual] || "—";
-  const isPlanoAtivo = displayUser?.status_assinatura === "ativo";
+  const isContaAdmin = displayUser?.role === "admin";
+  const isPlanoAtivo = isContaAdmin || displayUser?.status_assinatura === "ativo";
 
   return (
     <div className="max-w-lg mx-auto space-y-4 pb-12">
@@ -137,11 +138,15 @@ export default function Conta() {
       {/* Bloco de plano */}
       <Card className={`p-4 space-y-2 ${isPlanoAtivo ? "bg-green-50 border-green-200" : ""}`}>
         <p className="text-sm font-semibold">
-          Plano {planoLabel} · {isPlanoAtivo ? "ativo até" : "válido até"} {formatarData(displayUser?.data_expiracao) || "—"}
+          {isContaAdmin
+            ? "Acesso administrativo ativo · sem vencimento"
+            : `Plano ${planoLabel} · ${isPlanoAtivo ? "ativo até" : "válido até"} ${formatarData(displayUser?.data_expiracao) || "—"}`}
         </p>
-        <p className="text-xs text-muted-foreground">
-          Este plano não possui renovação automática. Para continuar usando após o vencimento, é necessário adquirir novamente.
-        </p>
+        {!isContaAdmin && (
+          <p className="text-xs text-muted-foreground">
+            Este plano não possui renovação automática. Para continuar usando após o vencimento, é necessário adquirir novamente.
+          </p>
+        )}
         {!isAdminViewingOther && (
           <Button variant="outline" size="sm" onClick={() => navigate("/planos")}>
             Renovar plano

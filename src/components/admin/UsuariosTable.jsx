@@ -80,7 +80,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                   </TableCell>
                   <TableCell className="font-medium">{u.nome_completo || u.full_name || "—"}</TableCell>
                   <TableCell>{PLANO_LABEL[u.plano_atual] || "—"}</TableCell>
-                  <TableCell>{formatarData(u.data_expiracao) || "—"}</TableCell>
+                  <TableCell>{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</TableCell>
                   <TableCell><Badge variant="outline">{statusCustos}</Badge></TableCell>
                   <TableCell>
                     {ultimoPagamento ? (
