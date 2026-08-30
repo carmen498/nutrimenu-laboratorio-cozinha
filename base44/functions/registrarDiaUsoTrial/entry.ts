@@ -47,7 +47,9 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     let user = await base44.auth.me();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-    if (user.role === "admin" || user.status_assinatura !== "trial" || user.plano_atual !== "trial") {
+    const trialNovoAtivo = user.plano_atual === "trial" && user.status_assinatura === "trial";
+    const trialLegadoMigravel = user.plano_atual === "trial" && user.trial_modelo !== "7_em_30" && ["trial", "vencido"].includes(user.status_assinatura);
+    if (user.role === "admin" || (!trialNovoAtivo && !trialLegadoMigravel)) {
       return Response.json({ success: true, aplicavel: false });
     }
 
