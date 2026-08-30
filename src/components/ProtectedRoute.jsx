@@ -26,7 +26,9 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
   useEffect(() => {
     if (!isAuthenticated || !user || user.role === 'admin') return;
     if (!termosAtuaisAceitos(user)) return;
-    if (user.plano_atual !== 'trial' || user.status_assinatura !== 'trial') return;
+    const trialNovoAtivo = user.plano_atual === 'trial' && user.status_assinatura === 'trial';
+    const trialLegadoMigravel = user.plano_atual === 'trial' && user.trial_modelo !== '7_em_30' && ['trial', 'vencido'].includes(user.status_assinatura);
+    if (!trialNovoAtivo && !trialLegadoMigravel) return;
     if (rotaLiberadaSemAssinatura(location.pathname)) return;
 
     let cancelado = false;
