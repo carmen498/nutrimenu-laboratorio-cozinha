@@ -4,7 +4,7 @@ import { secrets } from "base44:runtime";
 const NONCE = "hml-webhook-e2e-20260829-6e8cf845-c6f5-4a93-a83b-454fe118a30e";
 const USER_ID = "6a8ee59b65972cf2635543cf";
 const PUBLIC_KEY = "APP_USR-d5eb6ba4-9921-4c6c-bd65-f0edbd382ae2";
-const WEBHOOK = "https://laborat-rio-de-cozinha.base44.app/functions/webhookMercadoPago";
+const WEBHOOK = "https://app.laboratoriodecozinha.com.br/api/apps/6a2b263c4c1cb1e47d54d8b7/functions/webhookMercadoPago";
 
 async function j(res: Response) { return await res.json().catch(() => null); }
 async function mp(url: string, opts: RequestInit, token: string) {
@@ -36,7 +36,7 @@ async function sendWebhook(orderId: string, action: string, requestId?: string, 
   const body = { action, api_version: "v1", date_created: new Date().toISOString(), id: crypto.randomUUID(), live_mode: false, type: "order", user_id: "sandbox", data: { id: orderId } };
   const res = await fetch(`${WEBHOOK}?data.id=${encodeURIComponent(orderId)}&type=order`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-request-id": reqId, "x-signature": `ts=${timestamp},v1=${signature}` },
+    headers: { "Content-Type": "application/json", "Base44-Functions-Version": "preview", "x-request-id": reqId, "x-signature": `ts=${timestamp},v1=${signature}` },
     body: JSON.stringify(body),
   });
   return { status: res.status, data: await j(res), request_id: reqId, ts: timestamp };
