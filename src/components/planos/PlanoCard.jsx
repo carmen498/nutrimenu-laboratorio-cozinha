@@ -17,6 +17,7 @@ export default function PlanoCard({
   validadeLabel,
   validadeData,
   diasRestantes = null,
+  usoTrialLabel = "",
   bloqueado = false,
   mensagemBloqueio = "",
   complemento = null,
@@ -78,6 +79,9 @@ export default function PlanoCard({
               <p className="text-xs text-muted-foreground">
                 {validadeLabel} {validadeData}
               </p>
+            )}
+            {usoTrialLabel && (
+              <p className="text-xs font-medium text-primary">{usoTrialLabel}</p>
             )}
             {complementoActionLabel && (
               <Button
