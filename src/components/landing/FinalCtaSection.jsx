@@ -13,7 +13,7 @@ export default function FinalCtaSection() {
             Feito por quem viveu a cozinha de dentro — e nunca parou de aprender.
           </p>
           <a className="lc-btn lc-btn--primary lc-btn--lg" href={isAuthenticated ? APP_SITE_URLS.appHome : APP_SITE_URLS.register}>
-            {isAuthenticated ? "Entrar no app" : "Começar meus 7 dias grátis"}
+            {isAuthenticated ? "Entrar no app" : "Começar meu teste grátis"}
           </a>
           {!isAuthenticated && (
             <p className="lc-final-note">
@@ -21,7 +21,7 @@ export default function FinalCtaSection() {
             </p>
           )}
           <div className="lc-seals lc-final-seals">
-            <span className="lc-seal">7 dias grátis</span>
+            <span className="lc-seal">7 dias de uso em até 30 dias</span>
             <span className="lc-seal">Sem cartão no teste</span>
             <span className="lc-seal">Sem renovação automática</span>
           </div>
