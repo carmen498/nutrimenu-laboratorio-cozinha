@@ -77,6 +77,13 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ ok: out.status >= 200 && out.status < 300, ...out });
     }
 
+    if (acao === "inspect_order") {
+      const orderId = String(body?.order_id || "");
+      if (!orderId) return Response.json({ error: "order_id_required" }, { status: 400 });
+      const { res, data } = await mp(`https://api.mercadopago.com/v1/orders/${orderId}`, { method: "GET" }, token);
+      return Response.json({ ok: res.ok, http_status: res.status, order_id: orderId, mp_status: data?.status || null, external_reference: data?.external_reference || null, errors: data?.errors || data?.message || data?.error || null });
+    }
+
     if (acao === "refund") {
       const pagamento = await base44.asServiceRole.entities.Pagamento.get(String(body?.pagamento_id || "")).catch(() => null);
       if (!pagamento?.mercadopago_order_id) return Response.json({ error: "pagamento_order_missing" }, { status: 400 });
