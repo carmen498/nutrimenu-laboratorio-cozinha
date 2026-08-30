@@ -39,14 +39,16 @@ export const AuthProvider = ({ children }) => {
       });
       
       try {
+        // Configuração pública e sessão são independentes. Iniciá-las juntas
+        // remove uma espera de rede inteira da entrada no aplicativo.
+        const authPromise = appParams.token ? checkUserAuth() : null;
         const publicSettings = await withAuthTimeout(
           appClient.get(`/prod/public-settings/by-id/${appParams.appId}`)
         );
         setAppPublicSettings(publicSettings);
-        
-        // If we got the app public settings successfully, check if user is authenticated
-        if (appParams.token) {
-          await checkUserAuth();
+
+        if (authPromise) {
+          await authPromise;
         } else {
           setIsLoadingAuth(false);
           setIsAuthenticated(false);

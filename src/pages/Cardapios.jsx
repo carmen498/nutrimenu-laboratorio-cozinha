@@ -3,6 +3,7 @@ import { criarCardapioSeguro } from '@/lib/secureRootEntities';
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -45,16 +46,13 @@ const LABEL_UNIDADE = {
 
 export default function Cardapios() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
-  const [cardapios, setCardapios] = useState([]);
-  const [meusCardapiosCount, setMeusCardapiosCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtroTipo, setFiltroTipo] = useState("todos"); // todos | favoritos | tipo_key
   const [tagFilterIds, setTagFilterIds] = useState([]);
   const [showTagPainel, setShowTagPainel] = useState(false);
-  const [tags, setTags] = useState([]);
   const [cardapioTags, setCardapioTags] = useState([]);
   const [showNovo, setShowNovo] = useState(false);
   const [form, setForm] = useState({ nome: "", tipo: "", data: "", observacoes: "" });
@@ -64,27 +62,22 @@ export default function Cardapios() {
   // partir do Assistente do Evento e voltou), reabre direto na aba Eventos.
   const [aba, setAba] = useState(() => (lerRascunhoEvento() ? "planejamentos" : "cardapios"));
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [lista, todasTags] = await Promise.all([
-        fetchAllPages(base44.entities.Cardapio, "-created_date", 500),
-        base44.entities.Tag.list("nome", 200),
-      ]);
-      setCardapios(lista || []);
-      setTags(todasTags || []);
-    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
-    setLoading(false);
-  };
+  const { data: cardapios = [], isLoading: loading } = useQuery({
+    queryKey: ["cardapios"],
+    queryFn: () => fetchAllPages(base44.entities.Cardapio, "-created_date", 500),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => { load(); }, []);
+  const { data: tags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: () => base44.entities.Tag.list("nome", 200),
+    staleTime: 10 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (!user?.id) return;
-    fetchAllFilteredPages(base44.entities.Cardapio, { usuario_dono_id: user.id }, "", 500)
-      .then((lista) => setMeusCardapiosCount((lista || []).length))
-      .catch((e) => consoleErrorSeguro("Erro em cardápios", e));
-  }, [user?.id]);
+  const meusCardapiosCount = useMemo(
+    () => cardapios.filter((c) => c.usuario_dono_id === user?.id).length,
+    [cardapios, user?.id]
+  );
 
   // Load cardapio tags when filter is active
   useEffect(() => {
@@ -135,7 +128,7 @@ export default function Cardapios() {
       });
       setForm({ nome: "", tipo: "", data: "", observacoes: "" });
       setShowNovo(false);
-      load();
+      qc.invalidateQueries({ queryKey: ["cardapios"] });
       navigate(`/cardapio/${c.id}`);
     } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
     setSalvando(false);
@@ -148,7 +141,7 @@ export default function Cardapios() {
     setFavPending(p => ({ ...p, [c.id]: true }));
     try {
       await base44.entities.Cardapio.update(c.id, { favorito: !c.favorito });
-      setCardapios(prev => prev.map(x => x.id === c.id ? { ...x, favorito: !c.favorito } : x));
+      qc.setQueryData(["cardapios"], (prev = []) => prev.map(x => x.id === c.id ? { ...x, favorito: !c.favorito } : x));
     } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
     setFavPending(p => ({ ...p, [c.id]: false }));
   };
@@ -156,7 +149,7 @@ export default function Cardapios() {
   const handleDelete = async (id) => {
     if (!confirm("Excluir este cardápio?")) return;
     await base44.entities.Cardapio.delete(id);
-    load();
+    qc.invalidateQueries({ queryKey: ["cardapios"] });
   };
 
   const handleDuplicate = async (c) => {
@@ -198,7 +191,7 @@ export default function Cardapios() {
           custo_total: i.custo_total,
         });
       }
-      load();
+      qc.invalidateQueries({ queryKey: ["cardapios"] });
       navigate(`/cardapio/${novo.id}`);
     } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
   };

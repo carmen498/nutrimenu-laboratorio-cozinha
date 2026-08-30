@@ -107,8 +107,7 @@ export default function Receitas() {
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["receitas"],
     queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
-    staleTime: 0,
-    refetchOnMount: "always",
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: tags = [] } = useQuery({
@@ -120,20 +119,31 @@ export default function Receitas() {
   const { data: allReceitaTags = [] } = useQuery({
     queryKey: ["all-receita-tags"],
     queryFn: () => fetchAllFilteredPages(base44.entities.ReceitaTag, {}, "", 500),
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
   });
 
+  // A composição completa é pesada e só é necessária quando a busca contém texto.
   const { data: allItensReceita = [] } = useQuery({
     queryKey: ["all-itens-receita"],
     queryFn: () => fetchAllPages(base44.entities.IngredienteReceita, "-created_date"),
-    staleTime: 60 * 1000,
+    enabled: busca.trim().length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const { data: minhasReceitasList = [] } = useQuery({
-    queryKey: ["minhas-receitas-count", user?.id],
-    queryFn: () => fetchAllFilteredPages(base44.entities.Receita, { usuario_dono_id: user.id }, "", 500),
-    enabled: !!user?.id,
-  });
+  const minhasReceitasCount = useMemo(
+    () => receitas.filter((r) => r.usuario_dono_id === user?.id).length,
+    [receitas, user?.id]
+  );
+
+  const receitaTagsPorReceita = useMemo(() => {
+    const mapa = new Map();
+    allReceitaTags.forEach((rt) => {
+      const atuais = mapa.get(rt.receita_id) || [];
+      atuais.push(rt);
+      mapa.set(rt.receita_id, atuais);
+    });
+    return mapa;
+  }, [allReceitaTags]);
 
   // Catálogo compartilhado (is_base=true) com as cópias pessoais (forks) do
   // usuário atual ocupando o lugar da receita original correspondente —
@@ -152,11 +162,20 @@ export default function Receitas() {
       .map((r) => forkPorBase[r.id] || r);
   }, [receitas, isAdmin, user]);
 
+  const receitasPorCategoria = useMemo(() => {
+    const mapa = {};
+    CATEGORIAS_RECEITA.forEach((cat) => {
+      mapa[cat] = receitasExibidas.filter((r) => hasCategoria(r, cat));
+    });
+    return mapa;
+  }, [receitasExibidas]);
+
+  const tagPorId = useMemo(() => new Map(tags.map((tag) => [tag.id, tag])), [tags]);
   const totalReceitas = receitasExibidas.length;
-  const [visibleCount, setVisibleCount] = useState(100);
+  const [visibleCount, setVisibleCount] = useState(40);
 
   useEffect(() => {
-    setVisibleCount(100);
+    setVisibleCount(40);
   }, [busca, categoriaSelecionada, showRevisar, showFavoritas, tagFilterIds]);
 
   const duplicarMut = useMutationAny({
@@ -227,7 +246,7 @@ export default function Receitas() {
     const matchBusca = matchNome || matchIngrediente;
     const matchCat = !categoriaSelecionada || hasCategoria(r, categoriaSelecionada);
     if (tagFilterIds.length > 0) {
-      const tagsForReceita = allReceitaTags.filter(rt => rt.receita_id === r.id);
+      const tagsForReceita = receitaTagsPorReceita.get(r.id) || [];
       const matchTags = tagFilterIds.some(tid => tagsForReceita.some(rt => rt.tag_id === tid));
       if (!matchTags) return false;
     }
@@ -376,9 +395,9 @@ export default function Receitas() {
       </button>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "8px" }}>
-        <MinhasReceitasCard count={minhasReceitasList.length} />
-        {CATEGORIAS_RECEITA.filter(cat => receitasExibidas.filter(r => hasCategoria(r, cat)).length > 0).map(cat => {
-          const receitasCategoria = receitasExibidas.filter(r => hasCategoria(r, cat));
+        <MinhasReceitasCard count={minhasReceitasCount} />
+        {CATEGORIAS_RECEITA.filter(cat => receitasPorCategoria[cat]?.length > 0).map(cat => {
+          const receitasCategoria = receitasPorCategoria[cat];
           const count = receitasCategoria.length;
           const selecionada = categoriaSelecionada === cat;
           const icone = ICONE_CATEGORIA[cat] || "📋";
@@ -604,10 +623,10 @@ export default function Receitas() {
                   {getCategorias(r).length > 0 && (
                     <span className="text-[11px] text-muted-foreground shrink-0">{getCategorias(r)[0]}</span>
                   )}
-                  {allReceitaTags.filter(rt => rt.receita_id === r.id).length > 0 && (
+                  {(receitaTagsPorReceita.get(r.id) || []).length > 0 && (
                     <div className="flex flex-wrap gap-1 shrink-0">
-                      {allReceitaTags.filter(rt => rt.receita_id === r.id).map(rt => {
-                        const tag = tags.find(t => t.id === rt.tag_id);
+                      {(receitaTagsPorReceita.get(r.id) || []).map(rt => {
+                        const tag = tagPorId.get(rt.tag_id);
                         if (!tag) return null;
                         return <TagBadge key={rt.id} nome={tag.nome} cor={tag.cor} grupo={tag.grupo} />;
                       })}
@@ -656,7 +675,7 @@ export default function Receitas() {
           ))}
           {filtered.length > visibleCount && (
             <div className="flex justify-center pt-2">
-              <Button variant="outline" onClick={() => setVisibleCount((v) => v + 100)}>
+              <Button variant="outline" onClick={() => setVisibleCount((v) => v + 40)}>
                 Carregar mais ({filtered.length - visibleCount} restantes)
               </Button>
             </div>
