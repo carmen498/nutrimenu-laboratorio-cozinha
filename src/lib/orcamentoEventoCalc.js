@@ -7,7 +7,7 @@ function fmtRs(v) {
   return "R$ " + (v || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function montarOrcamentoEvento({ planejamento, dados, precoPorPessoa, validadeDias = 10 }) {
+export function montarOrcamentoEvento({ planejamento, dados, precoFinal, validadeDias = 10 }) {
   const { config, receitaMap } = dados;
   const totalPessoas = planejamento.total_pessoas ||
     (planejamento.qtd_homens || 0) + (planejamento.qtd_mulheres || 0) + (planejamento.qtd_criancas || 0);
@@ -32,8 +32,8 @@ export function montarOrcamentoEvento({ planejamento, dados, precoPorPessoa, val
     planejamento.duracao_horas ? `${planejamento.duracao_horas}h de duração` : null,
   ].filter(Boolean).join(" · ");
 
-  const preco = precoPorPessoa || 0;
-  const total = preco * totalPessoas;
+  const total = Math.max(0, Number(precoFinal) || 0);
+  const preco = totalPessoas > 0 ? total / totalPessoas : 0;
 
   return {
     nome: planejamento.nome || "",
@@ -45,6 +45,7 @@ export function montarOrcamentoEvento({ planejamento, dados, precoPorPessoa, val
     temBebidas: !!bebidasLinha,
     bebidasLinha,
     observacoesComerciais: planejamento.observacoes_orcamento || "",
+    precoPorPessoa: preco,
     precoPorPessoaFmt: fmtRs(preco),
     totalFmt: fmtRs(total),
     total,

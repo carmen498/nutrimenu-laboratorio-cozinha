@@ -38,13 +38,19 @@ export function aplicarPrecosPersonalizados(ingredientes, precosMap) {
   if (!precosMap || Object.keys(precosMap).length === 0) return ingredientes;
   return ingredientes.map((ing) => {
     const override = precosMap[ing.id];
-    if (!override) return ing;
-    const precoPorG = override.preco_por_g_rs || 0;
+    const precoPorG = Number(override?.preco_por_g_rs) || 0;
+    if (precoPorG <= 0) {
+      return {
+        ...ing,
+        _preco_estimado: Number(ing.preco_por_g_rs) > 0,
+      };
+    }
     return {
       ...ing,
       preco_por_g_rs: precoPorG,
       preco_embalagem_rs: parseFloat((precoPorG * (ing.peso_embalagem_g || 0)).toFixed(4)),
       _preco_personalizado: true,
+      _preco_estimado: false,
     };
   });
 }

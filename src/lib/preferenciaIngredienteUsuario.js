@@ -64,7 +64,9 @@ export function aplicarPreferenciasIngredientes(
     const comerciais = {};
     if (preferencia) {
       for (const campo of CAMPOS_COMERCIAIS) {
-        if (temCampo(preferencia, campo)) comerciais[campo] = preferencia[campo];
+        if (!temCampo(preferencia, campo)) continue;
+        if (["preco_por_g_rs", "preco_embalagem_rs"].includes(campo) && Number(preferencia[campo]) <= 0) continue;
+        comerciais[campo] = preferencia[campo];
       }
     }
 
@@ -74,6 +76,7 @@ export function aplicarPreferenciasIngredientes(
       favorito,
       _preferencia_ingrediente_id: preferencia?.id || null,
       _dados_comerciais_pessoais: Object.keys(comerciais).length > 0,
+      _preco_estimado: !(Number(comerciais.preco_por_g_rs) > 0) && Number(ingrediente.preco_por_g_rs) > 0,
     };
   });
 }

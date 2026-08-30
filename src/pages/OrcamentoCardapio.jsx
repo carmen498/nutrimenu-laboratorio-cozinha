@@ -32,6 +32,7 @@ export default function OrcamentoCardapio() {
   const [esquecidosPorReceita, setEsquecidosPorReceita] = useState({});
   const [loading, setLoading] = useState(true);
   const [obsComercial, setObsComercial] = useState("");
+  const [precoFinal, setPrecoFinal] = useState("");
   const [validadeDias, setValidadeDias] = useState(10);
 
   const load = useCallback(async () => {
@@ -39,6 +40,7 @@ export default function OrcamentoCardapio() {
     const c = await base44.entities.Cardapio.get(id);
     setCardapio(c);
     setObsComercial(c.observacoes_orcamento || "");
+    setPrecoFinal(c.preco_final_orcamento != null ? String(c.preco_final_orcamento) : "");
 
     const [recs, ins, todasRec] = await Promise.all([
       base44.entities.CardapioReceita.filter({ cardapio_id: id }, "ordem", 200),
@@ -81,6 +83,9 @@ export default function OrcamentoCardapio() {
     });
   }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, markup, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
+  const totalCalculado = calcs ? calcs.precoVenda * num : 0;
+  const precoFinalNum = precoFinal === "" ? totalCalculado : Math.max(0, Number(String(precoFinal).replace(",", ".")) || 0);
+
   const orc = useMemo(() => {
     if (!cardapio || !calcs) return null;
     return montarOrcamento({
@@ -88,15 +93,22 @@ export default function OrcamentoCardapio() {
       num,
       receitasView: calcs.receitasView,
       receitaMap,
-      precoPorUnidade: calcs.precoVenda,
-      totalVenda: calcs.precoVenda * num,
+      precoPorUnidade: num > 0 ? precoFinalNum / num : 0,
+      totalVenda: precoFinalNum,
       validadeDias,
     });
-  }, [cardapio, calcs, num, receitaMap, validadeDias]);
+  }, [cardapio, calcs, num, receitaMap, precoFinalNum, validadeDias]);
 
   const saveObs = async (value) => {
     setObsComercial(value);
     await base44.entities.Cardapio.update(cardapio.id, { observacoes_orcamento: value });
+  };
+
+  const savePrecoFinal = async (value) => {
+    const numFinal = Math.max(0, Number(String(value).replace(",", ".")) || 0);
+    await base44.entities.Cardapio.update(cardapio.id, { preco_final_orcamento: numFinal });
+    setPrecoFinal(String(numFinal));
+    setCardapio((atual) => ({ ...atual, preco_final_orcamento: numFinal }));
   };
 
   if (loading || !cardapio) {
@@ -124,8 +136,8 @@ export default function OrcamentoCardapio() {
       num,
       receitasView: calcs.receitasView,
       receitaMap,
-      precoPorUnidade: calcs.precoVenda,
-      totalVenda: calcs.precoVenda * num,
+      precoPorUnidade: num > 0 ? precoFinalNum / num : 0,
+      totalVenda: precoFinalNum,
       validadeDias,
     });
   };
@@ -222,9 +234,21 @@ export default function OrcamentoCardapio() {
 
           {/* Bloco de preço em destaque */}
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <p className="font-display text-lg font-bold text-primary">Preço por pessoa {orc.precoPorPessoaFmt}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-display text-lg font-bold text-primary">Preço final R$</p>
+              <Input
+                type="text"
+                inputMode="decimal"
+                className="w-32 h-9 bg-white no-print"
+                placeholder="0,00"
+                value={precoFinal === "" ? String(Number(totalCalculado.toFixed(2))) : precoFinal}
+                onChange={(e) => setPrecoFinal(e.target.value)}
+                onBlur={(e) => savePrecoFinal(e.target.value)}
+              />
+              <p className="font-display text-lg font-bold text-primary hidden print:block">{orc.totalFmt}</p>
+            </div>
             <p className="font-display text-base font-semibold text-primary mt-1">
-              Total · {orc.numPessoas} {orc.unidadeLabel} {orc.totalFmt}
+              Equivale a {orc.precoPorPessoaFmt} por {orc.unidadeLabel === "kg" ? "kg" : "pessoa"} · {orc.numPessoas} {orc.unidadeLabel}
             </p>
             <p className="text-xs text-muted-foreground mt-2">
               Condições de pagamento a combinar · confirmação mediante aprovação deste orçamento.

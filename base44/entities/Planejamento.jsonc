@@ -9,11 +9,11 @@
     "tipo_planejamento": {
       "type": "string",
       "enum": [
-        "Almoço",
+        "Almo\u00e7o",
         "Jantar",
         "Coquetel",
         "Data Comemorativa",
-        "Confraternização",
+        "Confraterniza\u00e7\u00e3o",
         "Outro"
       ],
       "description": "Tipo do planejamento"
@@ -21,22 +21,22 @@
     "tipo_servico": {
       "type": "string",
       "enum": [
-        "Bufê",
+        "Buf\u00ea",
         "Empratado",
-        "À La Carte",
-        "Refeição Familiar",
+        "\u00c0 La Carte",
+        "Refei\u00e7\u00e3o Familiar",
         "Self-Service",
         "Outro"
       ],
-      "description": "Tipo de serviço"
+      "description": "Tipo de servi\u00e7o"
     },
     "horario_inicio": {
       "type": "string",
-      "description": "Horário de início (HH:MM)"
+      "description": "Hor\u00e1rio de in\u00edcio (HH:MM)"
     },
     "duracao_horas": {
       "type": "number",
-      "description": "Duração estimada em horas"
+      "description": "Dura\u00e7\u00e3o estimada em horas"
     },
     "qtd_homens": {
       "type": "number",
@@ -51,7 +51,7 @@
     "qtd_criancas": {
       "type": "number",
       "default": 0,
-      "description": "Quantidade de crianças"
+      "description": "Quantidade de crian\u00e7as"
     },
     "per_capita_homens_g": {
       "type": "number",
@@ -66,12 +66,12 @@
     "per_capita_criancas_g": {
       "type": "number",
       "default": 300,
-      "description": "Per capita crianças em gramas"
+      "description": "Per capita crian\u00e7as em gramas"
     },
     "margem_seguranca_pct": {
       "type": "number",
       "default": 20,
-      "description": "Margem de segurança em percentual"
+      "description": "Margem de seguran\u00e7a em percentual"
     },
     "total_base_kg": {
       "type": "number",
@@ -87,20 +87,25 @@
     },
     "cardapio_config": {
       "type": "string",
-      "description": "Configuração do cardápio (JSON: grupos, itens e receitas)"
+      "description": "Configura\u00e7\u00e3o do card\u00e1pio (JSON: grupos, itens e receitas)"
     },
     "margem_seguranca_evento_pct": {
       "type": "number",
       "default": 0,
-      "description": "Margem de segurança única do cardápio do evento (Etapa 3), em percentual. Cálculo: kg do prato = pessoas × PC × (1 + margem%)"
+      "description": "Margem de seguran\u00e7a \u00fanica do card\u00e1pio do evento (Etapa 3), em percentual. C\u00e1lculo: kg do prato = pessoas \u00d7 PC \u00d7 (1 + margem%)"
     },
     "observacoes_orcamento": {
       "type": "string",
-      "description": "Observações comerciais do Orçamento do evento (documento do cliente) — distintas das observações de produção"
+      "description": "Observa\u00e7\u00f5es comerciais do Or\u00e7amento do evento (documento do cliente) \u2014 distintas das observa\u00e7\u00f5es de produ\u00e7\u00e3o"
     },
     "preco_pessoa_orcamento": {
       "type": "number",
-      "description": "Preço por pessoa digitado na geração do Orçamento do evento (usado quando não há mecanismo de markup ativo)"
+      "description": "LEGADO: pre\u00e7o por pessoa usado em or\u00e7amentos anteriores"
+    },
+    "preco_final_orcamento": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Pre\u00e7o final total cobrado do cliente, persistido no or\u00e7amento do evento"
     }
   },
   "required": [
@@ -111,26 +116,52 @@
   "rls": {
     "create": {
       "$or": [
-        { "user_condition": { "role": "user" } },
-        { "user_condition": { "role": "admin" } }
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     },
     "read": {
       "$or": [
-        { "created_by_id": "{{user.id}}" },
-        { "user_condition": { "role": "admin" } }
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     },
     "update": {
       "$or": [
-        { "created_by_id": "{{user.id}}" },
-        { "user_condition": { "role": "admin" } }
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     },
     "delete": {
       "$or": [
-        { "created_by_id": "{{user.id}}" },
-        { "user_condition": { "role": "admin" } }
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
       ]
     }
   }

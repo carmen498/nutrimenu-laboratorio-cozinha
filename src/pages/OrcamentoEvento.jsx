@@ -22,7 +22,7 @@ export default function OrcamentoEvento() {
   const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(true);
   const [obsComercial, setObsComercial] = useState("");
-  const [precoPessoa, setPrecoPessoa] = useState("");
+  const [precoFinal, setPrecoFinal] = useState("");
   const [validadeDias, setValidadeDias] = useState(10);
 
   const load = useCallback(async () => {
@@ -30,7 +30,9 @@ export default function OrcamentoEvento() {
     const p = await base44.entities.Planejamento.get(id);
     setPlanejamento(p);
     setObsComercial(p.observacoes_orcamento || "");
-    setPrecoPessoa(p.preco_pessoa_orcamento != null ? String(p.preco_pessoa_orcamento) : "");
+    const totalPessoas = Number(p.total_pessoas) || (Number(p.qtd_homens) || 0) + (Number(p.qtd_mulheres) || 0) + (Number(p.qtd_criancas) || 0);
+    const totalLegado = p.preco_pessoa_orcamento != null ? Number(p.preco_pessoa_orcamento) * totalPessoas : null;
+    setPrecoFinal(p.preco_final_orcamento != null ? String(p.preco_final_orcamento) : totalLegado != null ? String(totalLegado) : "");
     const d = await carregarDadosRelatorios(p);
     setDados(d);
     setLoading(false);
@@ -38,21 +40,22 @@ export default function OrcamentoEvento() {
 
   useEffect(() => { load(); }, [load]);
 
-  const precoNum = Number(String(precoPessoa).replace(",", ".")) || 0;
+  const precoFinalNum = Number(String(precoFinal).replace(",", ".")) || 0;
 
   const orc = useMemo(() => {
     if (!planejamento || !dados) return null;
-    return montarOrcamentoEvento({ planejamento, dados, precoPorPessoa: precoNum, validadeDias });
-  }, [planejamento, dados, precoNum, validadeDias]);
+    return montarOrcamentoEvento({ planejamento, dados, precoFinal: precoFinalNum, validadeDias });
+  }, [planejamento, dados, precoFinalNum, validadeDias]);
 
   const saveObs = async (value) => {
     setObsComercial(value);
     await base44.entities.Planejamento.update(planejamento.id, { observacoes_orcamento: value });
   };
 
-  const savePreco = async (value) => {
-    const num = Number(String(value).replace(",", ".")) || 0;
-    await base44.entities.Planejamento.update(planejamento.id, { preco_pessoa_orcamento: num });
+  const savePrecoFinal = async (value) => {
+    const num = Math.max(0, Number(String(value).replace(",", ".")) || 0);
+    await base44.entities.Planejamento.update(planejamento.id, { preco_final_orcamento: num });
+    setPlanejamento((atual) => ({ ...atual, preco_final_orcamento: num }));
   };
 
   if (loading || !planejamento || !orc) {
@@ -63,7 +66,7 @@ export default function OrcamentoEvento() {
     gerarOrcamentoEventoPDF({
       planejamento: { ...planejamento, observacoes_orcamento: obsComercial },
       dados,
-      precoPorPessoa: precoNum,
+      precoPorPessoa: orc.precoPorPessoa,
       validadeDias,
     });
   };
@@ -164,20 +167,20 @@ export default function OrcamentoEvento() {
           {/* Bloco de preço em destaque */}
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-display text-lg font-bold text-primary">Preço por pessoa R$</p>
+              <p className="font-display text-lg font-bold text-primary">Preço final R$</p>
               <Input
                 type="text"
                 inputMode="decimal"
-                className="w-28 h-9 bg-white no-print"
+                className="w-32 h-9 bg-white no-print"
                 placeholder="0,00"
-                value={precoPessoa}
-                onChange={(e) => setPrecoPessoa(e.target.value)}
-                onBlur={(e) => savePreco(e.target.value)}
+                value={precoFinal}
+                onChange={(e) => setPrecoFinal(e.target.value)}
+                onBlur={(e) => savePrecoFinal(e.target.value)}
               />
-              <p className="font-display text-lg font-bold text-primary hidden print:block">{orc.precoPorPessoaFmt}</p>
+              <p className="font-display text-lg font-bold text-primary hidden print:block">{orc.totalFmt}</p>
             </div>
             <p className="font-display text-base font-semibold text-primary">
-              Total · {orc.numPessoas} pessoas {orc.totalFmt}
+              Equivale a {orc.precoPorPessoaFmt} por pessoa · {orc.numPessoas} pessoas
             </p>
             <p className="text-xs text-muted-foreground pt-1">
               Condições de pagamento a combinar · confirmação mediante aprovação deste orçamento.

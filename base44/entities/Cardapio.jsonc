@@ -59,6 +59,11 @@
       "type": "number",
       "description": "Pre\u00e7o de venda sugerido"
     },
+    "preco_final_orcamento": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Pre\u00e7o final total cobrado do cliente, persistido no or\u00e7amento"
+    },
     "is_base": {
       "type": "boolean",
       "default": false,
