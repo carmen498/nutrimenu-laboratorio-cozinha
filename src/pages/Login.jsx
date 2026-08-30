@@ -9,6 +9,7 @@ import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { APP_SITE_URLS, buildAppLoginUrl, isPublicSiteHost } from "@/lib/publicUrls";
+import { withAuthTimeout } from "@/lib/authTimeout";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const emailInputRef = useRef(null);
   // Captured once on mount, before the URL is cleaned up below — used for the
   // post-login redirect instead of re-reading window.location later.
@@ -55,7 +57,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const response = await base44.auth.loginViaEmailPassword(email, password);
+      const response = await withAuthTimeout(base44.auth.loginViaEmailPassword(email, password));
       base44.auth.setToken(response.access_token);
       window.location.href = returnTo;
     } catch (err) {
@@ -66,12 +68,15 @@ export default function Login() {
   };
 
   const handleGoogle = async () => {
+    if (googleLoading) return;
     setError("");
+    setGoogleLoading(true);
     try {
       const destinoOAuth = new URL(returnTo, window.location.origin).toString();
-      await base44.auth.loginWithProvider("google", destinoOAuth);
+      await withAuthTimeout(base44.auth.loginWithProvider("google", destinoOAuth));
     } catch (err) {
       setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");
+      setGoogleLoading(false);
     }
   };
 
@@ -93,9 +98,10 @@ export default function Login() {
         variant="outline"
         className="w-full h-12 text-sm font-medium mb-6"
         onClick={handleGoogle}
+        disabled={googleLoading || loading}
       >
-        <GoogleIcon className="w-5 h-5 mr-2" />
-        Continuar com Google
+        {googleLoading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <GoogleIcon className="w-5 h-5 mr-2" />}
+        {googleLoading ? "Conectando..." : "Continuar com Google"}
       </Button>
 
       <div className="relative mb-6">

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { withAuthTimeout } from "@/lib/authTimeout";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -16,10 +17,9 @@ export default function ForgotPassword() {
     e.preventDefault();
     setLoading(true);
     try {
-      await Promise.race([
-        base44.auth.resetPasswordRequest(email.trim().toLowerCase()),
-        new Promise((_, reject) => window.setTimeout(() => reject(new Error("timeout")), 15000)),
-      ]);
+      await withAuthTimeout(
+        base44.auth.resetPasswordRequest(email.trim().toLowerCase())
+      );
     } catch {
       // Always show success regardless
     } finally {

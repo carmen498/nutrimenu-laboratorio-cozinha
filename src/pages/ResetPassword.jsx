@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { withAuthTimeout } from "@/lib/authTimeout";
 
 function tokenResetInvalidoOuExpirado(err) {
   const status = err?.response?.status ?? err?.status;
@@ -47,7 +48,7 @@ export default function ResetPassword() {
     }
     setLoading(true);
     try {
-      await base44.auth.resetPassword({ resetToken, newPassword });
+      await withAuthTimeout(base44.auth.resetPassword({ resetToken, newPassword }));
       try { sessionStorage.removeItem("base44_pending_password_reset_token"); } catch {}
       window.location.href = "/login";
     } catch (err) {

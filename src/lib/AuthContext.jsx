@@ -5,6 +5,7 @@ import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 import { consoleErrorSeguro } from '@/lib/securityHardening';
 import { termosAtuaisAceitos } from '@/lib/termosVersao';
 import { APP_SITE_URLS, buildAppLoginUrl, currentInternalPath } from '@/lib/publicUrls';
+import { withAuthTimeout } from '@/lib/authTimeout';
 
 const AuthContext = createContext(null);
 
@@ -38,7 +39,9 @@ export const AuthProvider = ({ children }) => {
       });
       
       try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
+        const publicSettings = await withAuthTimeout(
+          appClient.get(`/prod/public-settings/by-id/${appParams.appId}`)
+        );
         setAppPublicSettings(publicSettings);
         
         // If we got the app public settings successfully, check if user is authenticated
@@ -96,7 +99,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
-      let currentUser = await base44.auth.me();
+      let currentUser = await withAuthTimeout(base44.auth.me());
 
       // No cadastro via Google, a checkbox de Termos é confirmada antes do redirect
       // e deixa apenas um marcador efêmero nesta aba. O aceite real é persistido
@@ -110,7 +113,7 @@ export const AuthProvider = ({ children }) => {
               aceitou_termos: true,
               aceitou_privacidade: true,
             });
-            currentUser = await base44.auth.me();
+            currentUser = await withAuthTimeout(base44.auth.me());
           }
           sessionStorage.removeItem('base44_pending_terms_acceptance');
         } catch (termsError) {
@@ -125,7 +128,7 @@ export const AuthProvider = ({ children }) => {
         try {
           await base44.auth.updateMe(JSON.parse(perfilPendente));
           sessionStorage.removeItem('base44_pending_registration_profile');
-          currentUser = await base44.auth.me();
+          currentUser = await withAuthTimeout(base44.auth.me());
         } catch (profileError) {
           consoleErrorSeguro('Registration profile recovery failed', profileError);
         }
@@ -149,13 +152,13 @@ export const AuthProvider = ({ children }) => {
       if (semHistoricoDePlano && termosAtuaisAceitos(currentUser)) {
         try {
           await base44.functions.invoke('inicializarTrialUsuario', {});
-          currentUser = await base44.auth.me();
+          currentUser = await withAuthTimeout(base44.auth.me());
         } catch (trialError) {
           // 409 significa que outra aba/requisição já inicializou o trial.
           // Recarrega o usuário e segue; demais erros são registrados, mas não
           // transformam uma falha transitória de e-mail em falha de login.
           if (trialError?.response?.status === 409 || trialError?.status === 409) {
-            currentUser = await base44.auth.me();
+            currentUser = await withAuthTimeout(base44.auth.me());
           } else {
             consoleErrorSeguro('Trial initialization after auth failed', trialError);
           }
