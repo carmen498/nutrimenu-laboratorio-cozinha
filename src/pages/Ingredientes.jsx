@@ -24,6 +24,7 @@ import RelatorioLotePrecosDialog from "@/components/ingrediente/RelatorioLotePre
 import AutoUpdateToggle from "@/components/ingrediente/AutoUpdateToggle";
 import IngredienteFormDialog from "@/components/ingrediente/IngredienteFormDialog";
 import MeusIngredientesCard from "@/components/ingrediente/MeusIngredientesCard";
+import PrecosZeroView from "@/components/ingrediente/PrecosZeroView";
 import { useSalvarIngrediente } from "@/lib/useSalvarIngrediente";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { useAuth } from "@/lib/AuthContext";
@@ -66,6 +67,7 @@ export default function Ingredientes() {
   const [showImportSinonimos, setShowImportSinonimos] = useState(false);
   const [showRevisar, setShowRevisar] = useState(false);
   const [showDesatualizados, setShowDesatualizados] = useState(false);
+  const [showPrecoZero, setShowPrecoZero] = useState(false);
   const [showFavoritos, setShowFavoritos] = useState(false);
   const [showAtualizarPrecos, setShowAtualizarPrecos] = useState(false);
   const [showHistorico, setShowHistorico] = useState(false);
@@ -227,6 +229,7 @@ export default function Ingredientes() {
   };
 
   const filtered = useMemo(() => {
+    if (showPrecoZero) return ingredientes.filter(i => Number(i.preco_por_g_rs || 0) <= 0);
     if (showDesatualizados) return ingredientes.filter(i => isDesatualizado(i));
     if (showRevisar) return ingredientes.filter(i => i.revisar === true);
     if (showFavoritos) return ingredientes.filter(i => i.favorito === true);
@@ -239,8 +242,9 @@ export default function Ingredientes() {
       result = result.filter(i => getGrupoFromCategoria(i.categoria) === accordionAberto);
     }
     return result;
-  }, [ingredientes, showDesatualizados, showRevisar, showFavoritos, busca, accordionAberto]);
+  }, [ingredientes, showPrecoZero, showDesatualizados, showRevisar, showFavoritos, busca, accordionAberto]);
 
+  const countPrecoZero = useMemo(() => ingredientes.filter(i => Number(i.preco_por_g_rs || 0) <= 0).length, [ingredientes]);
   const countDesatualizados = useMemo(() => ingredientes.filter(i => isDesatualizado(i)).length, [ingredientes]);
 
   const formatPrice = (v) => v != null ? `R$ ${v.toFixed(2).replace(".", ",")}` : "—";
@@ -283,7 +287,7 @@ export default function Ingredientes() {
     () => ingredientes.filter((i) => i._dados_comerciais_pessoais === true).length,
     [ingredientes]
   );
-  const nenhumFiltroAtivo = !accordionAberto && !showDesatualizados && !showRevisar && !showFavoritos;
+  const nenhumFiltroAtivo = !accordionAberto && !showPrecoZero && !showDesatualizados && !showRevisar && !showFavoritos;
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
@@ -311,16 +315,24 @@ export default function Ingredientes() {
         <Button
           variant={showFavoritos ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowFavoritos(!showFavoritos); setShowRevisar(false); setShowDesatualizados(false); setAccordionAberto(null); setBusca(""); }}
+          onClick={() => { setShowFavoritos(!showFavoritos); setShowRevisar(false); setShowDesatualizados(false); setShowPrecoZero(false); setAccordionAberto(null); setBusca(""); }}
           className={showFavoritos ? "bg-amber-500 hover:bg-amber-600" : ""}
         >
           <Star className={`w-4 h-4 mr-1 ${showFavoritos ? "fill-white" : ""}`} />
           Favoritos
         </Button>
         <Button
+          variant={showPrecoZero ? "default" : "outline"}
+          size="sm"
+          onClick={() => { setShowPrecoZero(!showPrecoZero); setShowDesatualizados(false); setShowRevisar(false); setShowFavoritos(false); setAccordionAberto(null); setBusca(""); }}
+        >
+          <AlertTriangle className="w-4 h-4 mr-1" />
+          Preço zero {countPrecoZero}
+        </Button>
+        <Button
           variant={showDesatualizados ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowDesatualizados(!showDesatualizados); setShowRevisar(false); setShowFavoritos(false); setAccordionAberto(null); setBusca(""); }}
+          onClick={() => { setShowDesatualizados(!showDesatualizados); setShowPrecoZero(false); setShowRevisar(false); setShowFavoritos(false); setAccordionAberto(null); setBusca(""); }}
           className={showDesatualizados ? "bg-red-600 hover:bg-red-700" : ""}
         >
           <Clock className="w-4 h-4 mr-1" />
@@ -329,7 +341,7 @@ export default function Ingredientes() {
         <Button
           variant={showRevisar ? "default" : "outline"}
           size="sm"
-          onClick={() => { setShowRevisar(!showRevisar); setShowDesatualizados(false); setShowFavoritos(false); setAccordionAberto(null); setBusca(""); }}
+          onClick={() => { setShowRevisar(!showRevisar); setShowDesatualizados(false); setShowPrecoZero(false); setShowFavoritos(false); setAccordionAberto(null); setBusca(""); }}
           className={showRevisar ? "bg-amber-600 hover:bg-amber-700" : ""}
         >
           <AlertTriangle className="w-4 h-4 mr-1" />
@@ -424,8 +436,9 @@ export default function Ingredientes() {
         </div>
       ) : (
         <>
+          {!showPrecoZero && <>
           <button
-            onClick={() => { setAccordionAberto(null); setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false); }}
+            onClick={() => { setAccordionAberto(null); setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowPrecoZero(false); setShowFavoritos(false); }}
             className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all border-2 ${
               nenhumFiltroAtivo
                 ? "border-primary bg-primary/10 text-primary"
@@ -458,7 +471,7 @@ export default function Ingredientes() {
                     onClick={() => {
                       setAccordionAberto(selecionada ? null : g.nome);
                       setBuscaInterna("");
-                      setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowFavoritos(false);
+                      setBusca(""); setShowRevisar(false); setShowDesatualizados(false); setShowPrecoZero(false); setShowFavoritos(false);
                     }}
                   >
                     <span className="text-lg">{g.icone}</span>
@@ -478,23 +491,38 @@ export default function Ingredientes() {
               );
             })}
           </div>
+          </>}
 
           {/* Listagem compacta abaixo dos cards */}
-          <ListaIngredientes
-            ingredientes={filtered}
-            accordionAberto={accordionAberto}
-            buscaInterna={buscaInterna}
-            setBuscaInterna={setBuscaInterna}
-            diasDesdeAtualizacao={diasDesdeAtualizacao}
-            formatIngredientPrice={formatIngredientPrice}
-            favoritarMut={favoritarMut}
-            onDeleteComplete={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
-            setEditItem={setEditItem}
-            setShowForm={setShowForm}
-            onAddToCarrinho={handleAddToCarrinho}
-            addingCarrinhoId={addingCarrinhoId}
-            isAdmin={isAdmin}
-          />
+          {showPrecoZero ? (
+            <PrecosZeroView
+              ingredientes={filtered}
+              saving={saveMut.isPending}
+              onSave={(ingrediente, peso, preco) => saveMut.mutate({
+                ...ingrediente,
+                peso_embalagem_g: peso,
+                preco_embalagem_rs: preco,
+                _preco_anterior: ingrediente.preco_embalagem_rs,
+                _peso_anterior: ingrediente.peso_embalagem_g,
+              })}
+            />
+          ) : (
+            <ListaIngredientes
+              ingredientes={filtered}
+              accordionAberto={accordionAberto}
+              buscaInterna={buscaInterna}
+              setBuscaInterna={setBuscaInterna}
+              diasDesdeAtualizacao={diasDesdeAtualizacao}
+              formatIngredientPrice={formatIngredientPrice}
+              favoritarMut={favoritarMut}
+              onDeleteComplete={() => qc.invalidateQueries({ queryKey: ["ingredientes"] })}
+              setEditItem={setEditItem}
+              setShowForm={setShowForm}
+              onAddToCarrinho={handleAddToCarrinho}
+              addingCarrinhoId={addingCarrinhoId}
+              isAdmin={isAdmin}
+            />
+          )}
         </>
       )}
 
