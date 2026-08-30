@@ -67,6 +67,8 @@ assert(criarPagamento.includes('"test@testuser.com"'), "checkout sandbox não us
 assert(!criarPagamento.includes("JSON.stringify(mpData)"), "resposta bruta do Mercado Pago voltou a logs ou diagnóstico");
 
 assert(webhook.includes("validarAssinatura(req, dataId)"), "webhook sem validação HMAC");
+assert(webhook.includes("body?.live_mode === false"), "webhook não reconhece notificação sandbox autenticada");
+assert(webhook.includes("MERCADOPAGO_ACCESS_TOKEN_SANDBOX"), "webhook não possui credencial sandbox para reconsulta homologada");
 assert(webhook.includes("api.mercadopago.com"), "webhook não reconsulta provedor");
 assert(webhook.includes("pagamento.status === novoStatus"), "webhook sem idempotência de estado final");
 assert(webhook.includes("resolverStatusOrderMercadoPago") && webhook.includes("resolverStatusPaymentMercadoPago"), "normalização de status incompleta");
