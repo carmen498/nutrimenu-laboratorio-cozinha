@@ -12,6 +12,11 @@ export function avaliarAcessoLaboratorioCustosServer(
   const base = avaliarAcessoAssinaturaServer(user, agora);
   if (!base.temAcesso) return { temAcesso: false, motivo: "plano_base_inativo", motivoBase: base.motivo };
 
+  // Trial Plataforma ZR: Cozinha + Custos compartilham o mesmo entitlement de uso.
+  if (user?.plano_atual === "trial" && user?.status_assinatura === "trial") {
+    return { temAcesso: true, motivo: "trial_plataforma", estado: "trial_ativo", entitlement };
+  }
+
   const trialControladoAtivo = entitlement?.status === "ativo" && entitlement?.origem === "trial" && entitlement?.trial_ativado_em;
   if (!config?.modulo_habilitado && !trialControladoAtivo) return { temAcesso: false, motivo: "comercial_indisponivel" };
   if (!entitlement) return { temAcesso: false, motivo: "addon_nao_contratado", estado: "nao_contratado" };
