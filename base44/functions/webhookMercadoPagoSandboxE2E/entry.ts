@@ -22,7 +22,7 @@ import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v5-2026-08-29-live-mode-aware";
+const VERSAO_CODIGO = "webhook-sandbox-e2e-v5-2026-08-29";
 
 export default async function(req: Request): Promise<Response> {
   try {
