@@ -89,7 +89,7 @@ export default function Planos() {
     setLoadingTrial(true);
     try {
       await base44.functions.invoke("inicializarTrialUsuario", {});
-      toast({ title: "Trial ativado!", description: "Você tem 7 dias de acesso completo." });
+      toast({ title: "Trial ativado!", description: "Cozinha + Custos: 7 dias de uso grátis dentro de uma janela de 30 dias." });
       navigate("/");
     } catch (err) {
       toast({ title: "Não foi possível ativar o trial", description: err.message || "Tente novamente.", variant: "destructive" });
@@ -120,8 +120,18 @@ export default function Planos() {
     const addon = addonParaPlano(planoId);
     if (!addon) return null;
     const trial = addon.id === "custos_trial";
-    const trialDisponivel = !!preflightTrialCustos?.elegivel;
-    const desabilitado = !!acessoCustosAtual || (trial && !trialDisponivel);
+    if (trial) {
+      return (
+        <div className="flex items-start gap-2 text-left">
+          <input type="checkbox" className="mt-0.5 h-4 w-4" checked readOnly disabled />
+          <span className="min-w-0">
+            <span className="block text-xs font-semibold text-foreground">Laboratório de Custos incluído</span>
+            <span className="block text-[11px] text-muted-foreground mt-0.5">Mesmo trial: 7 dias de uso em até 30 dias</span>
+          </span>
+        </div>
+      );
+    }
+    const desabilitado = !!acessoCustosAtual;
     const ativo = !!acessoCustosAtual;
 
     return (
@@ -135,14 +145,12 @@ export default function Planos() {
         />
         <span className="min-w-0">
           <span className="block text-xs font-semibold text-foreground">
-            {ativo ? "Laboratório de Custos ativo" : trial ? "Experimentar Laboratório de Custos" : "Adicionar Laboratório de Custos"}
+            {ativo ? "Laboratório de Custos ativo" : "Adicionar Laboratório de Custos"}
           </span>
           <span className="block text-[11px] text-muted-foreground mt-0.5">
             {ativo
               ? "Complemento já ativo nesta conta"
-              : trial
-                ? (trialDisponivel ? "7 dias grátis" : trialCustosUsado ? "Trial já utilizado" : "Trial ainda não liberado para esta conta")
-                : `+ R$ ${addon.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${addon.id === "custos_anual" ? "ano" : "30 dias"}`}
+              : `+ R$ ${addon.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${addon.id === "custos_anual" ? "ano" : "30 dias"}`}
           </span>
         </span>
       </label>
@@ -212,9 +220,7 @@ export default function Planos() {
               bloqueado={planoAtual !== "trial" && jaPossuiHistoricoPlano}
               mensagemBloqueio="Teste grátis disponível apenas para novas contas"
               complemento={complementoCard("trial")}
-              complementoActionLabel={planoAtual === "trial" && !acessoCustosAtual && preflightTrialCustos?.elegivel ? "Ativar trial do Custos" : ""}
-              onComplementoAction={handleTrialCustos}
-              complementoActionDisabled={loadingTrialCustos}
+              complementoActionLabel=""
             />
           )}
 
