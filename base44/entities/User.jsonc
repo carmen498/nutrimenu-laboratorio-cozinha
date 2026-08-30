@@ -88,6 +88,35 @@
         }
       }
     },
+    "trial_modelo": {
+      "type": "string",
+      "enum": [
+        "7_em_30"
+      ],
+      "description": "Modelo de trial: 7 dias distintos de uso dentro de uma janela m\u00e1xima de 30 dias.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "trial_dias_uso": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Datas ISO distintas em que o usu\u00e1rio efetivamente utilizou Cozinha ou Custos durante o trial.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "data_proxima_cobranca": {
       "type": "string",
       "format": "date",
