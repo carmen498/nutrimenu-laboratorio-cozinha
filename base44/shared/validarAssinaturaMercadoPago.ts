@@ -4,7 +4,7 @@
 // ser reutilizado por funções de teste/diagnóstico sem duplicar a lógica.
 import { secrets } from "base44:runtime";
 
-export async function validarAssinatura(req: Request, dataId: string | null): Promise<{ valida: boolean; diagnostico: Record<string, unknown> }> {
+export async function validarAssinatura(req: Request, dataId: string | number | null): Promise<{ valida: boolean; diagnostico: Record<string, unknown> }> {
   const secretBruto = secrets.get("MERCADOPAGO_WEBHOOK_SECRET");
   const secret = (secretBruto || "").trim();
 
@@ -36,7 +36,8 @@ export async function validarAssinatura(req: Request, dataId: string | null): Pr
   // IMPORTANTE: o Mercado Pago exige o data.id em minúsculas no manifest — não documentado
   // claramente, mas confirmado tanto por exemplos oficiais (ex: "ORD01JQ..." -> "ord01jq...")
   // quanto por testes reais feitos aqui: sem o toLowerCase() a assinatura nunca bate.
-  const manifest = `id:${(dataId ?? "").toLowerCase()};request-id:${xRequestId ?? ""};ts:${ts};`;
+  const dataIdNormalizado = dataId == null ? "" : String(dataId).trim().toLowerCase();
+  const manifest = `id:${dataIdNormalizado};request-id:${xRequestId ?? ""};ts:${ts};`;
 
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(

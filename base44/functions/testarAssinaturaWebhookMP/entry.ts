@@ -34,10 +34,12 @@ export default async function(req: Request): Promise<Response> {
       : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
     const credencialAmbienteConfigurada = Boolean((accessToken || "").trim());
 
-    const dataIdSimulado = "TESTE_SIMULADO_123";
+    // IDs de notificações de payment chegam como número no JSON real.
+    // O teste usa esse formato para impedir regressão no toLowerCase/normalização.
+    const dataIdSimulado = 123456789012;
     const requestIdSimulado = "req-teste-simulado";
     const tsSimulado = Math.floor(Date.now() / 1000).toString();
-    const manifest = `id:${dataIdSimulado.toLowerCase()};request-id:${requestIdSimulado};ts:${tsSimulado};`;
+    const manifest = `id:${String(dataIdSimulado).toLowerCase()};request-id:${requestIdSimulado};ts:${tsSimulado};`;
 
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -75,6 +77,7 @@ export default async function(req: Request): Promise<Response> {
       ambiente_mercadopago: ambiente,
       configuracao_ambiente_valida: ambienteValido,
       credencial_ambiente_configurada: credencialAmbienteConfigurada,
+      teste_id_numerico_normalizado: resultadoValido.valida,
       teste_assinatura_correta_deveria_ser_valida: resultadoValido.valida,
       teste_assinatura_errada_deveria_ser_invalida: !resultadoInvalido.valida,
     });

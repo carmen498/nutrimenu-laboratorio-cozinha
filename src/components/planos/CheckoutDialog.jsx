@@ -6,11 +6,11 @@ import CartaoForm from "./CartaoForm";
 import PixForm from "./PixForm";
 
 export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, email, planoValor = 0, addon = null, addonCheckoutBloqueado = false, somenteAddon = false }) {
-  const [aprovado, setAprovado] = useState(false);
+  const [resultadoPagamento, setResultadoPagamento] = useState(null);
   const [aceiteContratacao, setAceiteContratacao] = useState(false);
 
   const handleClose = () => {
-    setAprovado(false);
+    setResultadoPagamento(null);
     setAceiteContratacao(false);
     onOpenChange(false);
   };
@@ -48,12 +48,16 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
             <p className="font-semibold">Contratação conjunta em homologação</p>
             <p className="mt-1 text-xs">O Laboratório de Custos já está integrado à decisão de compra nesta tela, mas a cobrança combinada ainda está bloqueada no servidor. Nenhum valor será cobrado enquanto esta etapa não for liberada.</p>
           </div>
-        ) : aprovado ? (
+        ) : resultadoPagamento ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <CheckCircle2 className="w-12 h-12 text-primary" />
-            <p className="font-medium text-foreground">Pagamento em processamento!</p>
+            <p className="font-medium text-foreground">
+              {resultadoPagamento.status === "approved" ? "Pagamento aprovado e plano liberado!" : "Pagamento em processamento!"}
+            </p>
             <p className="text-sm text-muted-foreground">
-              Você será notificado assim que a confirmação chegar do Mercado Pago.
+              {resultadoPagamento.status === "approved"
+                ? "Seu acesso já está ativo."
+                : "Você será notificado assim que a confirmação chegar do Mercado Pago."}
             </p>
           </div>
         ) : (
@@ -81,7 +85,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 somenteAddon={somenteAddon}
                 email={email}
                 onClose={handleClose}
-                onSuccess={() => setAprovado(true)}
+                onSuccess={setResultadoPagamento}
                 aceiteTermos={aceiteContratacao}
               />
             </TabsContent>
@@ -92,7 +96,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 somenteAddon={somenteAddon}
                 email={email}
                 onClose={handleClose}
-                onSuccess={() => setAprovado(true)}
+                onSuccess={setResultadoPagamento}
                 aceiteTermos={aceiteContratacao}
               />
             </TabsContent>

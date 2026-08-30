@@ -38,27 +38,45 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
       const mp = new MercadoPago(MERCADOPAGO_PUBLIC_KEY);
 
       const [mes, ano] = validade.split("/").map((v) => v.trim());
-      const cardNumberLimpo = numero.replace(/\s/g, "");
+      const cardNumberLimpo = numero.replace(/\D/g, "");
       const cpfLimpo = cpf.replace(/\D/g, "");
+      const mesNumero = Number(mes);
+      const anoCompleto = ano?.length === 2 ? `20${ano}` : ano;
+      if (cardNumberLimpo.length < 13 || cardNumberLimpo.length > 19) {
+        throw new Error("Confira o número do cartão.");
+      }
+      if (!mes || !anoCompleto || mesNumero < 1 || mesNumero > 12 || !/^\d{4}$/.test(anoCompleto)) {
+        throw new Error("Informe a validade no formato MM/AA.");
+      }
+      if (!/^\d{3,4}$/.test(cvv)) {
+        throw new Error("Confira o código de segurança do cartão.");
+      }
+      if (!nome.trim()) {
+        throw new Error("Informe o nome impresso no cartão.");
+      }
       if (cpfLimpo.length !== 11) {
         throw new Error("Informe um CPF válido do titular do cartão.");
       }
 
       const metodos = await mp.getPaymentMethods({ bin: cardNumberLimpo.slice(0, 6) });
-      const paymentMethodId = metodos?.results?.[0]?.id;
+      const paymentMethodId = metodos?.results?.[0]?.id || metodos?.[0]?.id;
       if (!paymentMethodId) {
         throw new Error("Não foi possível identificar a bandeira do cartão.");
       }
 
       const cardToken = await mp.createCardToken({
         cardNumber: cardNumberLimpo,
-        cardholderName: nome,
-        cardExpirationMonth: mes,
-        cardExpirationYear: ano?.length === 2 ? `20${ano}` : ano,
+        cardholderName: nome.trim(),
+        cardExpirationMonth: mes.padStart(2, "0"),
+        cardExpirationYear: anoCompleto,
         securityCode: cvv,
         identificationType: "CPF",
         identificationNumber: cpfLimpo,
       });
+
+      if (!cardToken?.id) {
+        throw new Error("Não foi possível proteger os dados do cartão. Preencha novamente.");
+      }
 
       // O Device ID é um sinal antifraude recomendado pelo Mercado Pago e reduz
       // recusas legítimas classificadas como "high_risk".

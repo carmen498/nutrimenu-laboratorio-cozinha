@@ -26,7 +26,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v19-2026-08-29-checkout-multiproduto";
+const VERSAO_CODIGO = "v20-2026-08-30-cartao-e-liberacao-imediata";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -458,7 +458,11 @@ export default async function(req: Request): Promise<Response> {
     // se o webhook chegar depois para esta mesma order, ele vai encontrar o Pagamento
     // já "approved" e pular a reativação (idempotência tratada no webhook).
     if (statusOrder === "approved") {
-      await ativarCompraPagamento(base44, pagamento);
+      await ativarCompraPagamento(base44, {
+        ...pagamento,
+        status: "approved",
+        mercadopago_order_id: mpData?.id,
+      });
     } else if (["rejected", "cancelled", "estornado"].includes(statusOrder)) {
       return Response.json({
         error: statusOrder === "rejected" ? "Pagamento recusado" : "Pagamento não concluído",

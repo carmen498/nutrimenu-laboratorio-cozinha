@@ -22,7 +22,7 @@ import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v5-2026-08-29-live-mode-aware";
+const VERSAO_CODIGO = "webhook-v6-2026-08-30-data-id-normalizado";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -30,7 +30,8 @@ export default async function(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const body = await req.json().catch(() => null);
 
-    const dataId = url.searchParams.get("data.id") || body?.data?.id || null;
+    const dataIdBruto = url.searchParams.get("data.id") ?? body?.data?.id ?? null;
+    const dataId = dataIdBruto == null ? null : String(dataIdBruto).trim();
     const tipoNotificacao = body?.type || body?.topic || url.searchParams.get("type") || null;
     const acaoNotificacao = typeof body?.action === "string" ? body.action : null;
 

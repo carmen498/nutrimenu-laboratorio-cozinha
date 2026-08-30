@@ -8,6 +8,8 @@ import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO }
 import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
@@ -39,6 +41,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [dataFimCustom, setDataFimCustom] = useState("");
   const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [sincronizandoPagamentos, setSincronizandoPagamentos] = useState(false);
 
   const { data: pagamentos = [], isLoading: carregandoPagamentos, isError: erroPagamentos, error: detalheErroPagamentos } = useQuery({
     queryKey: ["admin-pagamentos"],
@@ -138,6 +141,27 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const handleAtivar = () => aplicarStatus("ativo", "Usuários ativados");
   const handleDesativar = () => aplicarStatus("inativo", "Usuários desativados");
 
+  const sincronizarPagamentos = async () => {
+    setSincronizandoPagamentos(true);
+    try {
+      const response = await base44.functions.invoke("reprocessarPagamentoPix", { limite: 50 });
+      const resumo = response.data?.resumo || {};
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-pagamentos"] }),
+        qc.invalidateQueries({ queryKey: ["admin-usuarios"] }),
+        qc.invalidateQueries({ queryKey: ["admin-acessos-laboratorio-custos"] }),
+      ]);
+      toast({
+        title: "Pagamentos sincronizados",
+        description: `${resumo.consultados || 0} consultados · ${resumo.atualizados || 0} atualizados · ${resumo.reparados || 0} acessos reparados`,
+      });
+    } catch (err) {
+      toast({ title: "Erro ao sincronizar pagamentos", description: err.message, variant: "destructive" });
+    } finally {
+      setSincronizandoPagamentos(false);
+    }
+  };
+
   const confirmarExclusao = async () => {
     const ids = Array.from(selecionados);
     if (ids.length === 0) return;
@@ -177,11 +201,17 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         situacaoPagamentoFiltro={situacaoPagamentoFiltro} setSituacaoPagamentoFiltro={setSituacaoPagamentoFiltro}
       />
 
-      <div className="flex items-center gap-2">
-        <Switch id="mostrar-admins" checked={mostrarAdmins} onCheckedChange={setMostrarAdmins} />
-        <Label htmlFor="mostrar-admins" className="text-sm font-normal cursor-pointer">
-          Mostrar contas administradoras
-        </Label>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Switch id="mostrar-admins" checked={mostrarAdmins} onCheckedChange={setMostrarAdmins} />
+          <Label htmlFor="mostrar-admins" className="text-sm font-normal cursor-pointer">
+            Mostrar contas administradoras
+          </Label>
+        </div>
+        <Button variant="outline" size="sm" onClick={sincronizarPagamentos} disabled={sincronizandoPagamentos}>
+          <RefreshCw className={`w-4 h-4 ${sincronizandoPagamentos ? "animate-spin" : ""}`} />
+          {sincronizandoPagamentos ? "Sincronizando..." : "Sincronizar pagamentos"}
+        </Button>
       </div>
 
       <AcoesEmMassa
