@@ -36,7 +36,7 @@ export default function PlansSection() {
           ))}
         </div>
         <p className="lc-plans-note">
-          Quem renova o plano anual a partir do 2º ano tem condição de fidelidade: R$ 99,00 à vista (ou em até 6x de R$ 16,50) — compromisso já registrado nos nossos Termos de Uso.
+          Quem fica, paga menos: a partir do 2º ano, a renovação do plano anual custa R$ 99,00 — metade do valor. Sem renovação automática: você decide se continua.
         </p>
       </div>
     </section>
