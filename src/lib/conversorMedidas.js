@@ -92,6 +92,16 @@ export function converterGramasParaMedida(quantidade_g, medida, utensilio) {
 
   // REGRA 1: calcular n e arredondar para fração amigável
   const n = quantidade_g / refG;
+  if (n > 0 && n < 0.25) {
+    const descUtensilio = utensilio?.descricao_singular || "medida";
+    return {
+      texto: `< ¼ ${descUtensilio} (${formatGramas(quantidade_g)})`,
+      regra: 1,
+      n,
+      gRecalculado: quantidade_g,
+      desvio: 0,
+    };
+  }
   const nArredondado = findClosestFraction(n);
   const gRecalculado = nArredondado * refG;
   const desvio = Math.abs(gRecalculado - quantidade_g) / quantidade_g;

@@ -16,6 +16,7 @@ import TemplateWascriptTab from "@/components/comunicacao/TemplateWascriptTab";
 import ConfiguracoesEmailTab from "@/components/comunicacao/ConfiguracoesEmailTab";
 import PlanosTab from "@/components/comunicacao/PlanosTab";
 import AcessosCustosTab from "@/components/comunicacao/AcessosCustosTab";
+import SaudeOperacionalTab from "@/components/comunicacao/SaudeOperacionalTab";
 
 export default function AdminComunicacao() {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ export default function AdminComunicacao() {
       <Tabs value={aba} onValueChange={setAba}>
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="usuarios">Usuários</TabsTrigger>
+          <TabsTrigger value="saude">Saúde operacional</TabsTrigger>
           <TabsTrigger value="acessos-custos">Acessos Custos</TabsTrigger>
           <TabsTrigger value="planos">Planos</TabsTrigger>
           <TabsTrigger value="transacionais">Transacionais</TabsTrigger>
@@ -81,6 +83,9 @@ export default function AdminComunicacao() {
             setSelecionados={setSelecionados}
             onDispararEmail={() => setAba("campanhas")}
           />
+        </TabsContent>
+        <TabsContent value="saude" className="pt-4">
+          <SaudeOperacionalTab />
         </TabsContent>
         <TabsContent value="acessos-custos" className="pt-4">
           <AcessosCustosTab usuarios={usuarios} />

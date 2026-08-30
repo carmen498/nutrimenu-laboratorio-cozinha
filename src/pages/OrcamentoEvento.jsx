@@ -83,17 +83,17 @@ export default function OrcamentoEvento() {
 
   return (
     <div className="space-y-4 pb-24 md:pb-8 max-w-3xl mx-auto">
-      <div className="flex items-center gap-2 no-print">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+      <div className="flex flex-wrap items-center gap-2 no-print">
+        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => navigate(-1)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="font-display text-xl font-bold flex-1">Orçamento</h1>
-        <div className="flex gap-2">
-          <Button onClick={handleExportar}>
-            <Download className="w-4 h-4 mr-1" /> Exportar PDF
+        <h1 className="font-display text-xl font-bold min-w-0 flex-1">Orçamento</h1>
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+          <Button className="min-w-0 px-3 text-xs sm:text-sm" onClick={handleExportar}>
+            <Download className="w-4 h-4" /> <span className="truncate">Exportar PDF</span>
           </Button>
-          <Button variant="outline" onClick={handleWhatsApp}>
-            <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+          <Button className="min-w-0 px-3 text-xs sm:text-sm" variant="outline" onClick={handleWhatsApp}>
+            <MessageCircle className="w-4 h-4" /> <span className="truncate">WhatsApp</span>
           </Button>
         </div>
       </div>

@@ -546,7 +546,7 @@ export default function CardapioAberto() {
       return false;
     }
     navigate(`/cardapio/${id}/orcamento`);
-    return false;
+    return true;
   };
 
   // === EDITAR CARDÁPIO (nome, categoria, data) ===
@@ -857,7 +857,11 @@ export default function CardapioAberto() {
         }}
         handlers={{
           ficha_cardapio: () => { setShowRelatorios(false); abrirFichaCardapio(); return false; },
-          orcamento: () => { setShowRelatorios(false); abrirOrcamento(); return false; },
+          orcamento: () => {
+            const abriu = abrirOrcamento();
+            if (abriu) setShowRelatorios(false);
+            return false;
+          },
           pre_preparos: () => { setShowRelatorios(false); navigate(`/cardapio/${id}/pre-preparos`); return false; },
           ficha_custos: () => { setShowRelatorios(false); navigate(`/cardapio/${id}/ficha-custos`); return false; },
           receitas_cardapio: () => { setShowRelatorios(false); navigate(`/cardapio/${id}/receitas`); return false; },
