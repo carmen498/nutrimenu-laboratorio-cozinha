@@ -4,9 +4,8 @@ import "@/landing-refined.css";
 import { APP_SITE_URLS } from "@/lib/publicUrls";
 import StickyFooter from "@/components/landing/StickyFooter";
 import HeroSection from "@/components/landing/HeroSection";
+import UseCasesSection from "@/components/landing/UseCasesSection";
 import NumbersSection from "@/components/landing/NumbersSection";
-import PainSection from "@/components/landing/PainSection";
-import AudienceSection from "@/components/landing/AudienceSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import StorySection from "@/components/landing/StorySection";
 import BenefitsSection from "@/components/landing/BenefitsSection";
@@ -14,19 +13,7 @@ import PlansSection from "@/components/landing/PlansSection";
 import GuaranteeSection from "@/components/landing/GuaranteeSection";
 import FaqSection from "@/components/landing/FaqSection";
 import FinalCtaSection from "@/components/landing/FinalCtaSection";
-import heroImg from "@/assets/landing/hero.jpg";
-import painImg from "@/assets/landing/pain.jpg";
-import bakingImg from "@/assets/landing/baking.jpg";
-import coupleImg from "@/assets/landing/couple.jpg";
 import carmenImg from "@/assets/landing/carmen.jpg";
-
-const IMG = {
-  hero: heroImg,
-  pain: painImg,
-  baking: bakingImg,
-  couple: coupleImg,
-  carmen: carmenImg,
-};
 
 export default function Landing() {
   useEffect(() => {
@@ -62,12 +49,11 @@ export default function Landing() {
   return (
     <div className="lc-page">
       <main>
-        <HeroSection heroImage={IMG.hero} />
+        <HeroSection />
+        <UseCasesSection />
         <NumbersSection />
-        <PainSection image={IMG.pain} />
-        <AudienceSection imageBaking={IMG.baking} imageCouple={IMG.couple} />
         <FeaturesSection />
-        <StorySection image={IMG.carmen} />
+        <StorySection image={carmenImg} />
         <BenefitsSection />
         <PlansSection />
         <GuaranteeSection />

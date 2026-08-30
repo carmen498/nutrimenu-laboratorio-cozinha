@@ -222,6 +222,70 @@
   .lc-page .lc-sticky-cta { width: 100%; }
 }
 
+/* Hero de três portas e casos de uso — paleta oficial */
+.lc-page {
+  --lc-official-cream: #FAF7F0;
+  --lc-official-forest: #2A4E3D;
+  --lc-official-gold: #C9A24B;
+  --lc-official-terracotta: #A5643E;
+  --lc-official-green: #4E7C63;
+  --lc-official-sage: #7FA38C;
+}
+.lc-page .lc-doors-hero { padding: 28px 20px 72px; background: var(--lc-official-cream); }
+.lc-page .lc-doors-head { max-width: 850px; text-align: center; }
+.lc-page .lc-doors-head .lc-eyebrow,
+.lc-page .lc-portal-card .lc-eyebrow,
+.lc-page .lc-use-case .lc-eyebrow { color: var(--lc-official-gold); }
+.lc-page .lc-doors-head h1 { margin: 10px 0 16px; font: 700 clamp(3rem, 7vw, 5.2rem)/1.02 'Playfair Display', Georgia, serif; color: var(--lc-official-forest); }
+.lc-page .lc-doors-head > p:last-child { max-width: 720px; margin: 0 auto; color: #5d665f; font-size: 1.08rem; }
+.lc-page .lc-doors-intro { margin: 44px 0 18px; padding-top: 18px; border-top: 1px solid rgba(42,78,61,.18); color: var(--lc-official-forest); font-weight: 700; }
+.lc-page .lc-portal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.lc-page .lc-portal-card { display: flex; flex-direction: column; overflow: hidden; background: #fff; border: 1px solid rgba(42,78,61,.14); border-radius: 12px; }
+.lc-page .lc-portal-image { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.lc-page .lc-portal-body { display: flex; flex: 1; flex-direction: column; padding: 24px; }
+.lc-page .lc-portal-body h2 { margin: 6px 0 10px; font: 600 1.34rem/1.22 'Playfair Display', Georgia, serif; color: var(--lc-official-forest); }
+.lc-page .lc-portal-body > p:not(.lc-eyebrow) { margin: 0 0 22px; color: #5d665f; font-size: .94rem; }
+.lc-page .lc-portal-button { width: 100%; margin-top: auto; background: var(--lc-official-terracotta); color: #fff; text-align: center; }
+.lc-page .lc-portal-button:hover { background: #865033; }
+.lc-page .lc-doors-hero .lc-hero-seals { justify-content: center; margin-top: 26px; }
+.lc-page .lc-use-cases { background: var(--lc-official-cream); padding: 0 20px; }
+.lc-page .lc-use-case { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; padding: 92px 0; scroll-margin-top: 24px; border-top: 1px solid rgba(42,78,61,.14); }
+.lc-page .lc-use-case--reverse .lc-use-case-copy { order: 2; }
+.lc-page .lc-use-case--reverse .lc-use-case-media { order: 1; }
+.lc-page .lc-use-case-copy h2 { margin: 8px 0 20px; font: 600 clamp(2rem,4vw,3rem)/1.1 'Playfair Display', Georgia, serif; color: var(--lc-official-forest); }
+.lc-page .lc-use-case-copy blockquote { margin: 0 0 18px; color: var(--lc-official-forest); font-family: 'Playfair Display', Georgia, serif; font-style: italic; font-size: 1.08rem; line-height: 1.55; }
+.lc-page .lc-use-case-copy > p:not(.lc-eyebrow):not(.lc-use-case-example) { color: #5d665f; }
+.lc-page .lc-use-case-copy ul { display: grid; gap: 10px; margin: 22px 0; padding: 0; list-style: none; }
+.lc-page .lc-use-case-copy li { position: relative; padding-left: 28px; color: var(--lc-official-forest); }
+.lc-page .lc-use-case-copy li::before { content: '✓'; position: absolute; left: 0; color: var(--lc-official-green); font-weight: 800; }
+.lc-page .lc-use-case-example { margin: 0; padding: 20px; border-radius: 10px; background: var(--lc-official-sage); color: var(--lc-official-forest); font-weight: 700; }
+.lc-page .lc-use-case-media { margin: 0; overflow: hidden; border-radius: 12px; }
+.lc-page .lc-use-case-media img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.lc-page .lc-engine { background: var(--lc-official-forest); }
+.lc-page .lc-engine h2 { margin: 0; text-align: center; color: #fff; font: 600 clamp(2rem,4vw,3rem)/1.1 'Playfair Display', Georgia, serif; }
+.lc-page .lc-engine-lead { max-width: 850px; margin: 18px auto 36px; text-align: center; color: #C8D6CC; }
+.lc-page .lc-engine-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 46px; }
+.lc-page .lc-engine-grid article { padding: 24px; border-radius: 10px; background: var(--lc-official-green); }
+.lc-page .lc-engine-grid h3 { margin: 0 0 8px; color: #fff; font: 600 1.14rem/1.25 'Playfair Display', Georgia, serif; }
+.lc-page .lc-engine-grid p { margin: 0; color: #C8D6CC; font-size: .9rem; }
+.lc-page .lc-engine .lc-eyebrow,
+.lc-page .lc-engine .lc-number-figure { color: var(--lc-official-gold); }
+.lc-page .lc-engine .lc-number-label { color: #C8D6CC; }
+
+@media (max-width: 859.99px) {
+  .lc-page .lc-doors-hero { padding: 24px 18px 56px; }
+  .lc-page .lc-doors-head h1 { font-size: clamp(2.7rem, 15vw, 4rem); }
+  .lc-page .lc-portal-grid { grid-template-columns: 1fr; }
+  .lc-page .lc-use-cases { padding: 0 18px; }
+  .lc-page .lc-use-case { grid-template-columns: 1fr; gap: 30px; padding: 64px 0; }
+  .lc-page .lc-use-case .lc-use-case-copy { order: 1; }
+  .lc-page .lc-use-case .lc-use-case-media { order: 2; }
+  .lc-page .lc-engine-grid { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 520px) {
+  .lc-page .lc-engine-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .lc-page .lc-engine-grid article { padding: 18px 14px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .lc-page .lc-btn { transition: none; }
 }
