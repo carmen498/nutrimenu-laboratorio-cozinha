@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { avaliarAcessoAssinatura, rotaLiberadaSemAssinatura, dentroJanelaGracaRecemCadastrado } from '@/lib/acessoAssinatura';
 import { termosAtuaisAceitos } from '@/lib/termosVersao';
+import { base44 } from '@/api/base44Client';
 
 const DefaultFallback = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -14,12 +15,36 @@ const DefaultFallback = () => (
 export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
   const { user, isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
   const location = useLocation();
+  const [trialUsoBloqueado, setTrialUsoBloqueado] = useState(false);
 
   useEffect(() => {
     if (!authChecked && !isLoadingAuth) {
       checkUserAuth();
     }
   }, [authChecked, isLoadingAuth, checkUserAuth]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user || user.role === 'admin') return;
+    if (!termosAtuaisAceitos(user)) return;
+    if (user.plano_atual !== 'trial' || user.status_assinatura !== 'trial') return;
+    if (rotaLiberadaSemAssinatura(location.pathname)) return;
+
+    let cancelado = false;
+    base44.functions.invoke('registrarDiaUsoTrial', {})
+      .then((res) => {
+        if (cancelado) return;
+        setTrialUsoBloqueado(false);
+        if (res?.data?.dia_registrado) checkUserAuth();
+      })
+      .catch((err) => {
+        if (cancelado) return;
+        const code = err?.response?.data?.code;
+        if (code === 'trial_usage_exhausted' || code === 'trial_window_expired') {
+          setTrialUsoBloqueado(true);
+        }
+      });
+    return () => { cancelado = true; };
+  }, [isAuthenticated, user?.id, user?.plano_atual, user?.status_assinatura, location.pathname, checkUserAuth]);
 
   if (isLoadingAuth || !authChecked) {
     return fallback;
@@ -43,7 +68,7 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
   const acesso = avaliarAcessoAssinatura(user);
   const rotaLiberada = rotaLiberadaSemAssinatura(location.pathname);
 
-  if (!acesso.temAcesso && !rotaLiberada) {
+  if ((!acesso.temAcesso || trialUsoBloqueado) && !rotaLiberada) {
     // Recém-cadastrado dentro da janela de carência: o trial pode ainda não
     // ter sido confirmado por uma falha transitória. Liberamos o /app para
     // que ele não seja mandado para /planos nesta primeira sessão.
@@ -56,7 +81,7 @@ export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthe
         replace
         state={{
           acessoBloqueado: true,
-          motivo: acesso.motivo,
+          motivo: trialUsoBloqueado ? 'trial_dias_esgotados' : acesso.motivo,
           from: location.pathname,
         }}
       />
