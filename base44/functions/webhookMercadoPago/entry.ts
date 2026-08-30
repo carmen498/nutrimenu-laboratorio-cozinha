@@ -87,10 +87,19 @@ export default async function(req: Request): Promise<Response> {
 
     const base44 = createClientFromRequest(req);
 
-    const ambiente = secrets.get("AMBIENTE");
-    const accessToken = ambiente === "producao"
-      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
-      : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
+    // A origem já foi autenticada por HMAC acima, então live_mode pode decidir qual
+    // credencial consulta o recurso. Isso permite homologação sandbox sem alterar o
+    // AMBIENTE global do checkout produtivo e mantém produção em live_mode=true.
+    const ambiente = String(secrets.get("AMBIENTE") || "").trim().toLowerCase();
+    const notificacaoSandbox = body?.live_mode === false;
+    const notificacaoProducao = body?.live_mode === true;
+    const accessToken = notificacaoSandbox
+      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX")
+      : notificacaoProducao
+        ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
+        : ambiente === "producao"
+          ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
+          : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
 
     // Busca o recurso na API do Mercado Pago — nunca confia nos dados do corpo da notificação.
     const recursoUrl = recursoTipo === "payment"
