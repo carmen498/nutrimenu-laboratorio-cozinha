@@ -7,6 +7,8 @@
 //
 // Enquanto COMERCIAL_ENABLED=false, nenhum cliente atual do Laboratório de
 // Cozinha depende ou recebe acesso ao novo módulo.
+import { avaliarAcessoAssinatura } from "@/lib/acessoAssinatura";
+
 export const LABORATORIO_CUSTOS_BETA_ENABLED = true;
 
 export function avaliarAcessoLaboratorioCustos(user, config = null, entitlement = null, agora = new Date()) {
@@ -19,6 +21,13 @@ export function avaliarAcessoLaboratorioCustos(user, config = null, entitlement 
   // do estado comercial do complemento.
   if (user.role === "admin") {
     return { temAcesso: true, motivo: "admin_beta" };
+  }
+
+  // O trial da Plataforma ZR é único e compartilhado: Cozinha + Custos nascem juntos.
+  if (user?.plano_atual === "trial" && user?.status_assinatura === "trial") {
+    const base = avaliarAcessoAssinatura(user, agora);
+    if (base.temAcesso) return { temAcesso: true, motivo: "trial_plataforma", estado: "trial_ativo", entitlement };
+    return { temAcesso: false, motivo: base.motivo, estado: "expirado", entitlement };
   }
 
   const trialControladoAtivo = entitlement?.status === "ativo" && entitlement?.origem === "trial" && entitlement?.trial_ativado_em;
