@@ -57,6 +57,9 @@ O módulo está disponível no menu pela rota protegida `/cardapios`.
 - classificação contextual opcional;
 - remoção de itens;
 - ordenação dentro de um dia;
-- movimentação entre dias por arrastar e soltar ou pelos botões alternativos.
+- movimentação entre dias por arrastar e soltar ou pelos botões alternativos;
+- edição do nome e das observações gerais;
+- duplicação integral para outra semana, preservando itens, ordem e classificações;
+- exclusão confirmada do Cardápio e de seus itens, sem alterar os cadastros de origem.
 
 A rota legada de validação `/cardapios-beta` redireciona para o módulo funcional.
