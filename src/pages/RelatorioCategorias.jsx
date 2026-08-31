@@ -23,10 +23,9 @@ const CORES_CATEGORIA = {
   "Sobremesas":                    { bg: "#F3E5F5", texto: "#6A1B9A" },
   "Molhos":                        { bg: "#EDE7F6", texto: "#4527A0" },
   "Acompanhamentos":               { bg: "#F1F8E9", texto: "#558B2F" },
-  "Pratos Principais":             { bg: "#FFEBEE", texto: "#B71C1C" },
-  "Prato Único":                   { bg: "#FFF8E1", texto: "#E65100" },
+  "Saladas":                       { bg: "#E8F5E9", texto: "#2E7D32" },
   "Entradas":                      { bg: "#ECEFF1", texto: "#455A64" },
-  "Lanche":                        { bg: "#F9FBE7", texto: "#827717" },
+  "Lanches":                       { bg: "#F9FBE7", texto: "#827717" },
   "Receitas Base":                 { bg: "#EFEBE9", texto: "#5D4037" },
 };
 
