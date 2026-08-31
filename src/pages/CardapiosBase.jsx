@@ -44,7 +44,7 @@ export default function CardapiosBase() {
           <p className="text-sm text-destructive mt-2">Não foi possível consultar a base técnica.</p>
         ) : (
           <p className="text-sm text-muted-foreground mt-2">
-            Estrutura disponível. {cardapios.length} cardápio{cardapios.length === 1 ? "" : "s"} do período acessível{cardapios.length === 1 ? "" : "eis"} para este usuário.
+            Estrutura disponível. {cardapios.length} {cardapios.length === 1 ? "cardápio do período acessível" : "cardápios do período acessíveis"} para este usuário.
           </p>
         )}
       </div>
