@@ -29,6 +29,7 @@ const ORIGENS = {
 const CLASSIFICACOES = {
   entrada: "Entrada",
   salada: "Salada",
+  refeicao_completa: "Refeição completa",
   prato_principal: "Prato principal",
   segundo_prato: "Segundo prato",
   acompanhamento: "Acompanhamento",
