@@ -77,6 +77,11 @@ export function listarCardapiosPeriodo(sort = "-data_inicio", limit = 100) {
   return base44.entities.CardapioPeriodo.list(sort, limit);
 }
 
+export function obterCardapioPeriodo(id) {
+  if (!id) throw new Error("Cardápio é obrigatório.");
+  return base44.entities.CardapioPeriodo.get(id);
+}
+
 export async function atualizarCardapioPeriodo(id, payload = {}) {
   const atual = await base44.entities.CardapioPeriodo.get(id);
   if (!atual) throw new Error("Cardápio não encontrado.");
