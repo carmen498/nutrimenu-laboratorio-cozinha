@@ -1,0 +1,127 @@
+{
+  "name": "CardapioPeriodoItem",
+  "type": "object",
+  "properties": {
+    "cardapio_periodo_id": {
+      "type": "string",
+      "description": "ID do CardapioPeriodo pai"
+    },
+    "data": {
+      "type": "string",
+      "format": "date",
+      "description": "Data exata em que o item ser\u00e1 servido"
+    },
+    "dia_semana": {
+      "type": "string",
+      "enum": [
+        "segunda",
+        "terca",
+        "quarta",
+        "quinta",
+        "sexta",
+        "sabado",
+        "domingo"
+      ],
+      "description": "Dia da semana correspondente \u00e0 data"
+    },
+    "tipo_origem": {
+      "type": "string",
+      "enum": [
+        "refeicao",
+        "receita",
+        "ingrediente"
+      ],
+      "description": "M\u00f3dulo de origem do item planejado"
+    },
+    "origem_id": {
+      "type": "string",
+      "description": "ID do registro no m\u00f3dulo de origem; refeicao aponta para a entidade legada Cardapio"
+    },
+    "nome_cache": {
+      "type": "string",
+      "description": "Nome apresentado no planejamento, preservado como refer\u00eancia visual"
+    },
+    "ordem": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "Ordem do item dentro do dia"
+    },
+    "classificacao": {
+      "type": "string",
+      "enum": [
+        "entrada",
+        "salada",
+        "prato_principal",
+        "segundo_prato",
+        "acompanhamento",
+        "guarnicao",
+        "sobremesa",
+        "bebida",
+        "outro"
+      ],
+      "description": "Classifica\u00e7\u00e3o opcional do item naquele card\u00e1pio"
+    }
+  },
+  "required": [
+    "cardapio_periodo_id",
+    "data",
+    "dia_semana",
+    "tipo_origem",
+    "origem_id",
+    "nome_cache",
+    "ordem"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
