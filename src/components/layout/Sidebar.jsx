@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import {
   Home, BookOpen, Apple, CalendarDays, Gauge, Utensils, Package,
-  ShoppingCart, History, ClipboardCheck, Settings, HelpCircle, LogOut, X, MessageSquare, Calculator,
+  ShoppingCart, History, ClipboardCheck, ClipboardList, Settings, HelpCircle, LogOut, X, MessageSquare, Calculator,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { getScreenName } from "@/lib/getScreenName";
@@ -9,9 +9,10 @@ import { resolveHelpContent } from "@/lib/resolveHelpContent";
 import { ajudaWidgetContent } from "@/lib/ajudaWidgetContent";
 
 const laboratorioItems = [
-  { path: "/receitas", label: "Receitas", icon: BookOpen },
   { path: "/ingredientes", label: "Ingredientes", icon: Apple },
-  { path: "/cardapios", label: "Cardápios", icon: CalendarDays },
+  { path: "/receitas", label: "Receitas", icon: BookOpen },
+  { path: "/refeicoes", label: "Refeições", icon: CalendarDays },
+  { path: "/eventos", label: "Eventos", icon: ClipboardList },
   { path: "/percapita", label: "Per Capita", icon: Gauge },
   { path: "/medidas-caseiras", label: "Medidas", icon: Utensils },
   { path: "/insumos-embalagens", label: "Insumos", icon: Package },
