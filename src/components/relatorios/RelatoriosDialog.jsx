@@ -9,10 +9,17 @@ import CabecalhoRelatorio from "./CabecalhoRelatorio";
 // Menu unificado de Relatórios — mesmas 5 opções, mesma ordem, em Cardápio e Evento.
 // `handlers` só precisa conter os ids já implementados; os demais mostram "em breve".
 export default function RelatoriosDialog({
-  open, onClose, titulo, cabecalho, handlers = {}, loading = false, emptyMessage = null, extraDefs = [],
+  open, onClose, titulo, cabecalho, handlers = {}, loading = false, emptyMessage = null, extraDefs = [], terminologia = "Cardápio",
 }) {
   const [gerando, setGerando] = useState(null);
-  const defs = [...extraDefs, ...REPORT_DEFS];
+  const reportDefs = terminologia === "Refeição"
+    ? REPORT_DEFS.map((def) => {
+        if (def.id === "ficha_cardapio") return { ...def, titulo: "Ficha da Refeição (produção)" };
+        if (def.id === "receitas_cardapio") return { ...def, titulo: "Receitas da Refeição (imprimir)", descricao: "Lista simples das receitas, na ordem da refeição, para impressão." };
+        return def;
+      })
+    : REPORT_DEFS;
+  const defs = [...extraDefs, ...reportDefs];
 
   const handleClick = async (def) => {
     const handler = handlers[def.id];
