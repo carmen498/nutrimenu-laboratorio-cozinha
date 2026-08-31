@@ -49,10 +49,10 @@ const CORES_CATEGORIA = {
   "Sobremesas":                    { cor: "#F3E5F5", corTexto: "#6A1B9A", corPill: "#E1BEE7", corPillTexto: "#4A148C" },
   "Molhos":                        { cor: "#EDE7F6", corTexto: "#4527A0", corPill: "#D1C4E9", corPillTexto: "#311B92" },
   "Acompanhamentos":               { cor: "#F1F8E9", corTexto: "#558B2F", corPill: "#DCEDC8", corPillTexto: "#33691E" },
-  "Pratos Principais":             { cor: "#FFEBEE", corTexto: "#B71C1C", corPill: "#FFCDD2", corPillTexto: "#8B0000" },
+  "Saladas":                       { cor: "#E8F5E9", corTexto: "#2E7D32", corPill: "#C8E6C9", corPillTexto: "#1B5E20" },
 
   "Entradas":                      { cor: "#ECEFF1", corTexto: "#455A64", corPill: "#CFD8DC", corPillTexto: "#263238" },
-  "Lanche":                        { cor: "#F9FBE7", corTexto: "#827717", corPill: "#F0F4C3", corPillTexto: "#33691E" },
+  "Lanches":                       { cor: "#F9FBE7", corTexto: "#827717", corPill: "#F0F4C3", corPillTexto: "#33691E" },
   "Receitas Base":                 { cor: "#EFEBE9", corTexto: "#5D4037", corPill: "#D7CCC8", corPillTexto: "#4E342E" },
 };
 
