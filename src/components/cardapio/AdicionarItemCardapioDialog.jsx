@@ -4,6 +4,11 @@ import { Apple, BookOpen, Loader2, Search, Utensils } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  CATEGORIAS_RELACIONADAS_RECEITA,
+  CATEGORIAS_RELACIONADAS_BEBIDA,
+  filtrarOpcoesCardapio,
+} from "@/lib/cardapioRegras";
 
 const TIPOS_REFEICAO = [
   ["diario", "Diário"], ["semanal", "Semanal"], ["fim_de_semana", "Fim de semana"],
@@ -17,23 +22,6 @@ const CATEGORIAS_RECEITA = [
   "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos", "Acompanhamentos",
   "Entradas", "Saladas", "Lanches", "Receitas Base",
 ].map((valor) => [valor, valor]);
-
-const CATEGORIAS_RELACIONADAS_RECEITA = {
-  entrada: ["Entradas", "Sopas e Caldos", "Arroz e Risotos"],
-  salada: ["Saladas"],
-  prato_principal: [
-    "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar",
-    "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos",
-  ],
-  segundo_prato: [
-    "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar",
-    "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos",
-  ],
-  acompanhamento: ["Acompanhamentos", "Leguminosas"],
-  sobremesa: ["Sobremesas"],
-};
-
-const CATEGORIAS_RELACIONADAS_BEBIDA = ["Frutas"];
 
 const CATEGORIAS_INGREDIENTE = [
   "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios",
@@ -67,10 +55,6 @@ const CLASSIFICACOES = [
   { value: "sobremesa", label: "Sobremesas" },
   { value: "", label: "Sem classificação" },
 ];
-
-function normalizar(texto = "") {
-  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-}
 
 export default function AdicionarItemCardapioDialog({
   open,
@@ -107,22 +91,16 @@ export default function AdicionarItemCardapioDialog({
     [itensDoDia, tipo],
   );
 
-  const resultados = useMemo(() => {
-    const termos = normalizar(busca).split(/\s+/).filter(Boolean);
-    return opcoes.filter((item) => {
-      const nome = normalizar(item.nome);
-      const correspondeBusca = termos.every((termo) => nome.includes(termo));
-      if (!correspondeBusca) return false;
-      const valor = item[origem.filtroCampo];
-      if (filtro) return Array.isArray(valor) ? valor.includes(filtro) : valor === filtro;
-      if (filtrosRelacionados) {
-        return Array.isArray(valor)
-          ? valor.some((categoria) => filtrosRelacionados.includes(categoria))
-          : filtrosRelacionados.includes(valor);
-      }
-      return true;
-    });
-  }, [opcoes, busca, filtro, origem.filtroCampo, filtrosRelacionados]);
+  const resultados = useMemo(
+    () => filtrarOpcoesCardapio({
+      opcoes,
+      busca,
+      filtro,
+      filtroCampo: origem.filtroCampo,
+      filtrosRelacionados,
+    }),
+    [opcoes, busca, filtro, origem.filtroCampo, filtrosRelacionados],
+  );
 
   const filtradas = resultados.slice(0, 100);
 
