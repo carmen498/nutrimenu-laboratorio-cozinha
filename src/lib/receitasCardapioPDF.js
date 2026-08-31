@@ -30,7 +30,7 @@ export function gerarReceitasCardapioPDF(cardapio, relatorio) {
   doc.setFont("times", "bold");
   doc.setFontSize(16);
   doc.setTextColor(...VERDE_ESCURO);
-  doc.text("Receitas do Cardápio", MARGIN, y);
+  doc.text("Receitas da Refeição", MARGIN, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
