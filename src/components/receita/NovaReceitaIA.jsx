@@ -554,7 +554,7 @@ Para cada variação, retorne:
 - novo_nome: nome completo da receita com o ingrediente trocado. Ex: "PASTELÃO DE FRANGO" → "PASTELÃO DE CARNE MOÍDA", "PASTELÃO DE LEGUMES"
 - indice_ingrediente: índice numérico (0-based) do ingrediente principal a ser trocado na lista acima
 - novo_ingrediente: nome do ingrediente substituto (use nomes que já existam no banco ou nomes comuns de mercado)
-- nova_categoria: uma categoria do sistema que melhor se encaixa (ex: "Carne Bovina", "Aves", "Peixes e Frutos do Mar", "Leguminosas", "Massas, Pastelão e Quiches", "Acompanhamento")`,
+- nova_categoria: uma categoria do sistema que melhor se encaixa (ex: "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar", "Leguminosas", "Massas, Pastelão e Quiches", "Acompanhamentos", "Saladas")`,
         response_json_schema: {
           type: "object",
           properties: {
