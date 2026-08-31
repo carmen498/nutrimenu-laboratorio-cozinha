@@ -4,8 +4,9 @@ export function getScreenName(pathname, search = "") {
   if (p === "/") return "Início";
   if (p.startsWith("/receita/")) return "Receitas";
   if (p === "/receitas") return "Receitas";
-  if (p.startsWith("/cardapio/")) return "Cardápio";
-  if (p === "/cardapios") return "Cardápios";
+  if (p.startsWith("/cardapio/")) return "Refeição";
+  if (p === "/refeicoes" || p === "/minhas-refeicoes" || p === "/cardapios") return "Refeições";
+  if (p === "/eventos" || p.startsWith("/planejamento/")) return "Eventos";
   if (p === "/ingredientes" || p === "/meus-ingredientes") return "Ingredientes";
   if (p === "/lista-compras") return search.includes("planejamento") ? "Lista de Compras" : "Carrinho";
   if (p === "/percapita") return "Per Capita";
