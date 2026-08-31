@@ -4,7 +4,7 @@ import { FolderHeart } from "lucide-react";
 export default function MeusCardapiosCard({ count = 0 }) {
   return (
     <Link
-      to="/meus-cardapios"
+      to="/minhas-refeicoes"
       className="relative rounded-xl overflow-hidden px-3 py-2.5 flex flex-col gap-1 text-white transition-all hover:shadow-md"
       style={{ background: "linear-gradient(135deg, #6B46C1 0%, #553C9A 100%)" }}
     >
@@ -15,11 +15,11 @@ export default function MeusCardapiosCard({ count = 0 }) {
       />
       <div className="flex items-center gap-2">
         <FolderHeart className="w-4 h-4 shrink-0" />
-        <span className="flex-1 text-sm font-bold uppercase tracking-wide truncate">Meus Cardápios</span>
+        <span className="flex-1 text-sm font-bold uppercase tracking-wide truncate">Minhas Refeições</span>
         <span className="text-[10px] font-bold bg-white/20 rounded-full px-1.5 h-5 flex items-center justify-center shrink-0">{count}</span>
       </div>
       <p className="text-xs text-white/80 leading-snug">
-        Seus cardápios personalizados e adaptados para seu dia a dia. →
+        Suas refeições personalizadas e adaptadas para seu dia a dia. →
       </p>
     </Link>
   );
