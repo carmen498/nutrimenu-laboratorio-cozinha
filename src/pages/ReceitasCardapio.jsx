@@ -10,7 +10,7 @@ import { carregarDadosReceitasCardapio, montarReceitasCardapio } from "@/lib/rec
 import { gerarReceitasCardapioPDF } from "@/lib/receitasCardapioPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
-// Tela de pré-visualização do caderno de produção "Receitas do Cardápio" —
+// Tela de pré-visualização do caderno de produção "Receitas da Refeição" —
 // mesmo padrão de tela-primeiro dos demais relatórios. Uma receita por bloco,
 // espelhando a quebra de página do PDF (uma receita por página).
 export default function ReceitasCardapio() {
@@ -42,7 +42,7 @@ export default function ReceitasCardapio() {
   const handleExportar = () => gerarReceitasCardapioPDF(cardapio, relatorio);
 
   const handleShare = () => {
-    let text = `📖 Receitas do Cardápio — ${cardapio.nome}\n${relatorio.numPessoas || ""}\n\n`;
+    let text = `📖 Receitas da Refeição — ${cardapio.nome}\n${relatorio.numPessoas || ""}\n\n`;
     relatorio.sumario.forEach((s) => { text += `• ${s.nome}\n`; });
     if (navigator.share) {
       navigator.share({ text });
@@ -57,7 +57,7 @@ export default function ReceitasCardapio() {
         <Button variant="ghost" size="icon" onClick={() => navigate(`/cardapio/${id}`)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="font-display text-xl font-bold flex-1">Receitas do Cardápio</h1>
+        <h1 className="font-display text-xl font-bold flex-1">Receitas da Refeição</h1>
         <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
           <Checkbox checked={incluirMedidaCaseira} onCheckedChange={(v) => setIncluirMedidaCaseira(!!v)} />
           Incluir medidas caseiras
@@ -71,7 +71,7 @@ export default function ReceitasCardapio() {
       </div>
 
       <CabecalhoRelatorio
-        titulo="Receitas do Cardápio"
+        titulo="Receitas da Refeição"
         nome={cardapio.nome}
         data={relatorio.dataEvento}
         numPessoas={relatorio.numPessoas}
