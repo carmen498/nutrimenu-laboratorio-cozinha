@@ -125,7 +125,7 @@ export async function criarCardapioPeriodoItem(payload = {}) {
   });
 }
 
-export function listarItensCardapioPeriodo(cardapioPeriodoId, limit = 500) {
+export function listarItensCardapioPeriodo(cardapioPeriodoId, limit = 5000) {
   return base44.entities.CardapioPeriodoItem.filter(
     { cardapio_periodo_id: cardapioPeriodoId },
     "data",
