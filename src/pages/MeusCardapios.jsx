@@ -38,7 +38,7 @@ export default function MeusCardapios() {
       try {
         const lista = await base44.entities.Cardapio.filter({ usuario_dono_id: user.id }, "-data_personalizacao", 500);
         setCardapios(lista || []);
-      } catch (e) { consoleErrorSeguro("Erro ao carregar meus cardápios", e); }
+      } catch (e) { consoleErrorSeguro("Erro ao carregar minhas refeições", e); }
       setLoading(false);
     })();
   }, [user?.id]);
@@ -54,10 +54,10 @@ export default function MeusCardapios() {
         </Button>
         <div>
           <h1 className="font-display text-2xl font-bold">
-            Meus Cardápios <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{cardapios.length}</Badge>
+            Minhas Refeições <Badge className="ml-2 text-sm align-middle bg-primary text-primary-foreground px-2 py-0.5">{cardapios.length}</Badge>
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Suas cópias pessoais de cardápios do Laboratório, criadas automaticamente ao editar um cardápio original.
+            Suas cópias pessoais de refeições do Laboratório, criadas automaticamente ao editar uma refeição original.
           </p>
         </div>
       </div>
@@ -67,8 +67,8 @@ export default function MeusCardapios() {
       ) : cardapios.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <ChefHat className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
-          <p className="text-lg font-medium">Nenhum cardápio personalizado ainda</p>
-          <p className="text-sm mt-1">Ao editar um cardápio do catálogo, sua cópia pessoal aparecerá aqui.</p>
+          <p className="text-lg font-medium">Nenhuma refeição personalizada ainda</p>
+          <p className="text-sm mt-1">Ao editar uma refeição do catálogo, sua cópia pessoal aparecerá aqui.</p>
         </div>
       ) : (
         <div className="space-y-3">
