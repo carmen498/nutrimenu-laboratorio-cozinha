@@ -125,7 +125,7 @@ export default function Cardapios() {
       setShowNovo(false);
       qc.invalidateQueries({ queryKey: ["cardapios"] });
       navigate(`/cardapio/${c.id}`);
-    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeições", e); }
     setSalvando(false);
   };
 
@@ -137,7 +137,7 @@ export default function Cardapios() {
     try {
       await base44.entities.Cardapio.update(c.id, { favorito: !c.favorito });
       qc.setQueryData(["cardapios"], (prev = []) => prev.map(x => x.id === c.id ? { ...x, favorito: !c.favorito } : x));
-    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeições", e); }
     setFavPending(p => ({ ...p, [c.id]: false }));
   };
 
