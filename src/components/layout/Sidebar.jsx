@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import {
-  Home, BookOpen, Apple, CalendarDays, Gauge, Utensils, Package,
+  Home, BookOpen, Apple, CalendarDays, CalendarRange, Gauge, Utensils, Package,
   ShoppingCart, History, ClipboardCheck, ClipboardList, Settings, HelpCircle, LogOut, X, MessageSquare, Calculator,
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
@@ -12,6 +12,7 @@ const laboratorioItems = [
   { path: "/ingredientes", label: "Ingredientes", icon: Apple },
   { path: "/receitas", label: "Receitas", icon: BookOpen },
   { path: "/refeicoes", label: "Refeições", icon: CalendarDays },
+  { path: "/cardapios", label: "Cardápios", icon: CalendarRange },
   { path: "/eventos", label: "Eventos", icon: ClipboardList },
   { path: "/percapita", label: "Per Capita", icon: Gauge },
   { path: "/medidas-caseiras", label: "Medidas", icon: Utensils },
@@ -38,7 +39,7 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
   const location = useLocation();
   const { user, logout } = useAuth();
   const isAdmin = user?.role === "admin";
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname === path || (path === "/cardapios" && location.pathname.startsWith("/cardapios/"));
 
   const screenName = getScreenName(location.pathname, location.search);
   const resolvedHelp = resolveHelpContent(screenName);
