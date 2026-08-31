@@ -33,6 +33,8 @@ const CATEGORIAS_RELACIONADAS_RECEITA = {
   sobremesa: ["Sobremesas"],
 };
 
+const CATEGORIAS_RELACIONADAS_BEBIDA = ["Frutas"];
+
 const CATEGORIAS_INGREDIENTE = [
   "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios",
   "Panificação e Cereais", "Açúcares e Doces", "Diversos", "A Revisar",
@@ -87,7 +89,7 @@ export default function AdicionarItemCardapioDialog({
   const filtrosRelacionados = tipo === "receita"
     ? CATEGORIAS_RELACIONADAS_RECEITA[classificacao]
     : tipo === "ingrediente" && classificacao === "bebida"
-      ? ["Frutas"]
+      ? CATEGORIAS_RELACIONADAS_BEBIDA
       : undefined;
   const filtrosDisponiveis = filtrosRelacionados
     ? origem.filtros.filter(([valor]) => filtrosRelacionados.includes(valor))
