@@ -18,6 +18,21 @@ const CATEGORIAS_RECEITA = [
   "Entradas", "Saladas", "Lanches", "Receitas Base",
 ].map((valor) => [valor, valor]);
 
+const CATEGORIAS_RELACIONADAS_RECEITA = {
+  entrada: ["Entradas", "Sopas e Caldos", "Arroz e Risotos"],
+  salada: ["Saladas"],
+  prato_principal: [
+    "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar",
+    "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos",
+  ],
+  segundo_prato: [
+    "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar",
+    "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos",
+  ],
+  acompanhamento: ["Acompanhamentos", "Leguminosas"],
+  sobremesa: ["Sobremesas"],
+};
+
 const CATEGORIAS_INGREDIENTE = [
   "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios",
   "Panificação e Cereais", "Açúcares e Doces", "Diversos", "A Revisar",
@@ -69,6 +84,14 @@ export default function AdicionarItemCardapioDialog({
   const [filtro, setFiltro] = useState("");
   const [classificacao, setClassificacao] = useState("");
   const origem = ORIGENS.find((item) => item.value === tipo);
+  const filtrosRelacionados = tipo === "receita"
+    ? CATEGORIAS_RELACIONADAS_RECEITA[classificacao]
+    : tipo === "ingrediente" && classificacao === "bebida"
+      ? ["Frutas"]
+      : undefined;
+  const filtrosDisponiveis = filtrosRelacionados
+    ? origem.filtros.filter(([valor]) => filtrosRelacionados.includes(valor))
+    : origem.filtros;
 
   const { data: opcoes = [], isLoading, error } = useQuery({
     queryKey: ["cardapio-origens", tipo],
@@ -152,7 +175,10 @@ export default function AdicionarItemCardapioDialog({
             <span className="text-sm font-medium">Classificação <span className="font-normal text-muted-foreground">(opcional)</span></span>
             <select
               value={classificacao}
-              onChange={(evento) => setClassificacao(evento.target.value)}
+              onChange={(evento) => {
+                setClassificacao(evento.target.value);
+                setFiltro("");
+              }}
               className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
               {CLASSIFICACOES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
@@ -177,8 +203,10 @@ export default function AdicionarItemCardapioDialog({
               aria-label={`Filtrar por ${origem.filtroLabel}`}
               className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">Todos por {origem.filtroLabel}</option>
-              {origem.filtros.map(([valor, label]) => (
+              <option value="">
+                {filtrosRelacionados ? `Todas as categorias relacionadas` : `Todos por ${origem.filtroLabel}`}
+              </option>
+              {filtrosDisponiveis.map(([valor, label]) => (
                 <option key={valor} value={valor}>{label}</option>
               ))}
             </select>
