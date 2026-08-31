@@ -59,6 +59,22 @@ export const helpContent = {
     { q: "Existe limite de quantas receitas posso personalizar?", a: "Não, você pode ter quantas cópias pessoais quiser." }
   ]
 },
+  "Refeições": {
+    context: "Refeições reúnem receitas e itens em uma composição pronta para servir. Esta área corresponde ao recurso anteriormente chamado Cardápios; os cadastros e o funcionamento foram preservados.",
+    faqs: [
+      { q: "O que mudou de Cardápios para Refeições?", a: "Mudou a organização e a nomenclatura. Os registros existentes continuam disponíveis e as funções de criar, editar, duplicar, favoritar e excluir permanecem iguais." },
+      { q: "Como crio uma refeição?", a: "Use Nova Refeição, informe nome e tipo e depois inclua as receitas e os demais itens da composição." },
+      { q: "Onde encontro minhas versões personalizadas?", a: "Abra o card Minhas Refeições na tela de Refeições." }
+    ],
+  },
+  "Eventos": {
+    context: "Eventos é o módulo independente para planejar uma ocasião completa: público, quantidades, cardápio do evento, doces, bebidas, compras e produção.",
+    faqs: [
+      { q: "Onde estão os eventos que já existiam?", a: "Todos foram preservados. Agora eles são acessados diretamente pelo item Eventos no menu do Laboratório de Cozinha." },
+      { q: "Como crio um evento?", a: "Abra Eventos e use Novo Evento. O assistente mantém as etapas e os cálculos que já existiam." },
+      { q: "Refeições e Eventos continuam relacionados?", a: "Sim. A separação organiza a navegação; ela não remove os recursos de composição e planejamento usados dentro do evento." }
+    ],
+  },
    "Cardápios e Eventos": {
   context: "Um Cardápio reúne receitas já cadastradas numa proposta completa — para um dia, uma semana, um evento — e calcula sozinho o peso total, o custo, e os relatórios prontos para cada público: a cozinha que vai produzir, o cliente que vai pagar, e você que precisa saber se vale a pena. Um Evento vai além do cardápio: é o planejamento completo de uma ocasião, do perfil de quem vai ser servido até a última garrafa de bebida. Em quatro etapas — Contexto, Clientes, Cardápio e Doces & Bebidas — o app transforma o número de convidados numa previsão realista de quanto produzir, quanto vai custar e quanta margem de segurança você precisa para não faltar nem sobrar.",
   faqs: [
