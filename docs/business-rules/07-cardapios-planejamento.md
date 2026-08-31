@@ -84,16 +84,17 @@ O fechamento técnico inclui:
 
 Ao adicionar um item, a posição inicial no dia é definida pela classificação contextual:
 
-1. Entrada;
-2. Salada;
+1. Entradas;
+2. Saladas;
 3. Refeição completa;
-4. Prato principal;
+4. Pratos principais;
 5. Segundo prato;
-6. Acompanhamento;
-7. Guarnição;
-8. Bebida;
-9. Sobremesa;
-10. Sem classificação ou classificação legada `outro`.
+6. Acompanhamentos;
+7. Bebidas;
+8. Sobremesas;
+9. Sem classificação.
+
+As classificações legadas `guarnicao` e `outro` continuam aceitas para compatibilidade. `guarnicao` usa a mesma prioridade de Acompanhamentos e `outro` fica ao final.
 
 Itens da mesma classificação preservam a ordem de inclusão. A ordenação é aplicada somente na entrada do novo item: a reorganização manual continua disponível e não é desfeita automaticamente.
 
@@ -103,4 +104,26 @@ O seletor combina busca por nome com filtros próprios de cada origem:
 - Receitas: uma das categorias cadastradas, incluindo `Saladas`;
 - Ingredientes: categoria técnica.
 
-A classificação `outro` permanece aceita apenas para compatibilidade com registros legados e não aparece na criação de novos itens.
+As classificações `guarnicao` e `outro` permanecem aceitas apenas para compatibilidade com registros legados e não aparecem na criação de novos itens.
+
+## Etapa 11 — taxonomia relacionada e saneamento de Receitas
+
+As classificações apresentadas no Cardápio foram padronizadas no plural quando aplicável e relacionadas às categorias de Receita:
+
+- Entradas: Entradas, Sopas e Caldos, Arroz e Risotos;
+- Saladas: Saladas;
+- Pratos principais e Segundo prato: Carnes Bovinas e Suínos, Aves, Peixes e Frutos do Mar, Massas/Pastelão/Quiches, Arroz/Risotos e Sopas/Caldos;
+- Acompanhamentos: Acompanhamentos e Leguminosas;
+- Sobremesas: Sobremesas;
+- Bebidas, ao selecionar Ingredientes: Frutas, permitindo refinar a busca por `suco`.
+
+A busca por nome continua combinada com o conjunto relacionado. A pessoa pode selecionar uma categoria específica dentro do grupo sugerido.
+
+Saneamento executado no catálogo:
+
+- 105 receitas reais com `salada` no nome receberam a categoria Saladas;
+- dois molhos para salada foram preservados em Molhos;
+- a categoria Pratos Principais foi removida após realocação dos cinco registros remanescentes;
+- 22 receitas passaram de Lanche para Lanches;
+- um registro com categorias fragmentadas `Massas` e `Pastelão e Quiches` foi consolidado em `Massas, Pastelão e Quiches`;
+- categorias técnicas úteis, como Peixes e Frutos do Mar e Leguminosas, foram preservadas junto de Saladas quando aplicável.
