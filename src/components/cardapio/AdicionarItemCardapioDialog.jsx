@@ -15,7 +15,7 @@ const CATEGORIAS_RECEITA = [
   "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar", "Ovos",
   "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos", "Leguminosas",
   "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos", "Acompanhamentos",
-  "Pratos Principais", "Entradas", "Saladas", "Lanche", "Receitas Base",
+  "Entradas", "Saladas", "Lanches", "Receitas Base",
 ].map((valor) => [valor, valor]);
 
 const CATEGORIAS_INGREDIENTE = [
@@ -40,16 +40,15 @@ const ORIGENS = [
 ];
 
 const CLASSIFICACOES = [
-  { value: "", label: "Sem classificação" },
-  { value: "entrada", label: "Entrada" },
-  { value: "salada", label: "Salada" },
+  { value: "entrada", label: "Entradas" },
+  { value: "salada", label: "Saladas" },
   { value: "refeicao_completa", label: "Refeição completa" },
-  { value: "prato_principal", label: "Prato principal" },
+  { value: "prato_principal", label: "Pratos principais" },
   { value: "segundo_prato", label: "Segundo prato" },
-  { value: "acompanhamento", label: "Acompanhamento" },
-  { value: "guarnicao", label: "Guarnição" },
-  { value: "bebida", label: "Bebida" },
-  { value: "sobremesa", label: "Sobremesa" },
+  { value: "acompanhamento", label: "Acompanhamentos" },
+  { value: "bebida", label: "Bebidas" },
+  { value: "sobremesa", label: "Sobremesas" },
+  { value: "", label: "Sem classificação" },
 ];
 
 function normalizar(texto = "") {
