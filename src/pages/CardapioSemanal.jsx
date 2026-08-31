@@ -3,13 +3,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, CalendarDays,
-  GripVertical, Loader2, Plus, Trash2, Utensils,
+  Copy, GripVertical, Loader2, Pencil, Plus, Trash2, Utensils,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import AdicionarItemCardapioDialog from "@/components/cardapio/AdicionarItemCardapioDialog";
+import GestaoCardapioDialogs from "@/components/cardapio/GestaoCardapioDialogs";
 import {
+  atualizarCardapioPeriodo,
   criarCardapioPeriodoItem,
+  duplicarCardapioPeriodo,
+  excluirCardapioPeriodo,
   listarItensCardapioPeriodo,
   obterCardapioPeriodo,
   reorganizarItensCardapioPeriodo,
@@ -59,6 +63,7 @@ export default function CardapioSemanal() {
   const queryClient = useQueryClient();
   const chaveItens = ["cardapio-periodo-itens", id];
   const [diaSelecionado, setDiaSelecionado] = useState(null);
+  const [modoGestao, setModoGestao] = useState(null);
 
   const { data: cardapio, isLoading, error } = useQuery({
     queryKey: ["cardapio-periodo", id],
@@ -93,6 +98,40 @@ export default function CardapioSemanal() {
       toast.success("Item removido do Cardápio.");
     },
     onError: (erro) => toast.error(erro?.message || "Não foi possível remover o item."),
+  });
+
+  const editarCardapio = useMutation({
+    mutationFn: (/** @type {Record<string, any>} */ dados) => atualizarCardapioPeriodo(id, dados),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cardapio-periodo", id] }),
+        queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] }),
+      ]);
+      setModoGestao(null);
+      toast.success("Cardápio atualizado.");
+    },
+    onError: (erro) => toast.error(erro?.message || "Não foi possível atualizar o Cardápio."),
+  });
+
+  const duplicarCardapio = useMutation({
+    mutationFn: (/** @type {Record<string, any>} */ dados) => duplicarCardapioPeriodo(id, dados),
+    onSuccess: async (novo) => {
+      await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });
+      setModoGestao(null);
+      toast.success("Cardápio semanal duplicado.");
+      navigate(`/cardapios/${novo.id}`);
+    },
+    onError: (erro) => toast.error(erro?.message || "Não foi possível duplicar o Cardápio."),
+  });
+
+  const excluirCardapio = useMutation({
+    mutationFn: () => excluirCardapioPeriodo(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });
+      toast.success("Cardápio excluído.");
+      navigate("/cardapios");
+    },
+    onError: (erro) => toast.error(erro?.message || "Não foi possível excluir o Cardápio."),
   });
 
   const reorganizar = useMutation({
@@ -196,16 +235,30 @@ export default function CardapioSemanal() {
           <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <CalendarDays className="w-5 h-5" />
           </div>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-display font-bold">{cardapio.nome}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {formatarData(cardapio.data_inicio, true)} a {formatarData(cardapio.data_fim, true)}
             </p>
+            {cardapio.observacoes && (
+              <p className="text-sm text-foreground/80 mt-2 whitespace-pre-wrap">{cardapio.observacoes}</p>
+            )}
             <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
               <GripVertical className="w-3.5 h-3.5" /> Arraste os itens para reorganizar ou mudar o dia.
             </p>
           </div>
-          {reorganizar.isPending && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+          <div className="flex flex-wrap justify-end gap-1.5 shrink-0">
+            {reorganizar.isPending && <Loader2 className="w-5 h-5 mr-1 animate-spin text-primary self-center" />}
+            <button type="button" onClick={() => setModoGestao("editar")} className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-muted">
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </button>
+            <button type="button" onClick={() => setModoGestao("duplicar")} className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-muted">
+              <Copy className="w-3.5 h-3.5" /> Duplicar
+            </button>
+            <button type="button" onClick={() => setModoGestao("excluir")} className="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10">
+              <Trash2 className="w-3.5 h-3.5" /> Excluir
+            </button>
+          </div>
         </div>
       </header>
 
@@ -355,6 +408,19 @@ export default function CardapioSemanal() {
           adicionando={adicionar.isPending}
           onClose={() => setDiaSelecionado(null)}
           onAdicionar={(dados) => adicionar.mutate(dados)}
+        />
+      )}
+
+      {modoGestao && (
+        <GestaoCardapioDialogs
+          key={modoGestao}
+          modo={modoGestao}
+          cardapio={cardapio}
+          pending={editarCardapio.isPending || duplicarCardapio.isPending || excluirCardapio.isPending}
+          onClose={() => setModoGestao(null)}
+          onEditar={(dados) => editarCardapio.mutate(dados)}
+          onDuplicar={(dados) => duplicarCardapio.mutate(dados)}
+          onExcluir={() => excluirCardapio.mutate()}
         />
       )}
     </div>
