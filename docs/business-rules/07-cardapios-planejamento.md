@@ -127,3 +127,31 @@ Saneamento executado no catálogo:
 - 22 receitas passaram de Lanche para Lanches;
 - um registro com categorias fragmentadas `Massas` e `Pastelão e Quiches` foi consolidado em `Massas, Pastelão e Quiches`;
 - categorias técnicas úteis, como Peixes e Frutos do Mar e Leguminosas, foram preservadas junto de Saladas quando aplicável.
+
+## Etapa 12 — validação funcional dos filtros e da ordenação
+
+Foi criada uma suíte de regressão executável por `npm run test:cardapio`, ligada às mesmas funções puras usadas pela interface e pelo serviço de inclusão.
+
+A homologação automatizada cobre:
+
+- filtro de Saladas sem incluir molhos que apenas mencionam salada;
+- relações de Entradas, Pratos principais, Segundo prato, Acompanhamentos e Sobremesas;
+- refinamento de categoria e busca por nome, inclusive sem acentos;
+- relação Bebidas → Ingredientes da categoria Frutas;
+- nove prioridades da ordenação;
+- equivalência legada entre Guarnição e Acompanhamentos;
+- inclusão após itens da mesma classificação;
+- inserção antes das classes posteriores;
+- Sem classificação ao final;
+- preservação da ordem manual preexistente.
+
+Resultado: 16 verificações funcionais aprovadas, além de lint, build e integridade do diff.
+
+Conferência no catálogo real de 2.234 receitas:
+
+- 272 opções relacionadas a Entradas;
+- 105 Saladas;
+- 844 opções relacionadas a Pratos principais e Segundo prato;
+- 301 Acompanhamentos;
+- 276 Sobremesas;
+- 72 ingredientes em Frutas, dos quais 8 contêm `suco` no nome.
