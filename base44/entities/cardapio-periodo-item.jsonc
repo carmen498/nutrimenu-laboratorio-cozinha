@@ -52,6 +52,7 @@
       "enum": [
         "entrada",
         "salada",
+        "refeicao_completa",
         "prato_principal",
         "segundo_prato",
         "acompanhamento",
