@@ -27,15 +27,15 @@ const ORIGENS = {
   ingrediente: { label: "Ingrediente", icon: Apple },
 };
 const CLASSIFICACOES = {
-  entrada: "Entrada",
-  salada: "Salada",
+  entrada: "Entradas",
+  salada: "Saladas",
   refeicao_completa: "Refeição completa",
-  prato_principal: "Prato principal",
+  prato_principal: "Pratos principais",
   segundo_prato: "Segundo prato",
-  acompanhamento: "Acompanhamento",
+  acompanhamento: "Acompanhamentos",
   guarnicao: "Guarnição",
-  sobremesa: "Sobremesa",
-  bebida: "Bebida",
+  sobremesa: "Sobremesas",
+  bebida: "Bebidas",
   outro: "Outro",
 };
 
