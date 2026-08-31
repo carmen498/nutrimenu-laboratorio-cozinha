@@ -147,6 +147,38 @@ export async function moverItemCardapioPeriodo(itemId, { data, ordem = 0 }) {
   });
 }
 
+export async function reorganizarItensCardapioPeriodo(cardapioPeriodoId, movimentacoes = []) {
+  if (!cardapioPeriodoId) throw new Error("Cardápio é obrigatório.");
+  if (!Array.isArray(movimentacoes) || movimentacoes.length === 0) return [];
+
+  const cardapio = await base44.entities.CardapioPeriodo.get(cardapioPeriodoId);
+  if (!cardapio) throw new Error("Cardápio não encontrado.");
+
+  const ids = new Set();
+  for (const movimento of movimentacoes) {
+    if (!movimento?.id || ids.has(movimento.id)) throw new Error("Movimentação inválida.");
+    ids.add(movimento.id);
+    validarDataNoPeriodo(movimento.data, cardapio);
+  }
+
+  const itens = await Promise.all(
+    movimentacoes.map((movimento) => base44.entities.CardapioPeriodoItem.get(movimento.id)),
+  );
+  if (itens.some((item) => !item || item.cardapio_periodo_id !== cardapioPeriodoId)) {
+    throw new Error("Um dos itens não pertence a este Cardápio.");
+  }
+
+  const atualizados = [];
+  for (const movimento of movimentacoes) {
+    atualizados.push(await base44.entities.CardapioPeriodoItem.update(movimento.id, {
+      data: movimento.data,
+      dia_semana: diaSemanaDaData(movimento.data),
+      ordem: Math.max(0, Number.parseInt(String(movimento.ordem ?? 0), 10) || 0),
+    }));
+  }
+  return atualizados;
+}
+
 export function removerItemCardapioPeriodo(itemId) {
   return base44.entities.CardapioPeriodoItem.delete(itemId);
 }
