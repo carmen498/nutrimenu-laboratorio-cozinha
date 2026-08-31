@@ -79,3 +79,28 @@ O fechamento técnico inclui:
 - ausência de novos erros de tipo nos arquivos do módulo;
 - smoke test das rotas `/cardapios` e `/cardapios/:id/imprimir` no servidor Vite;
 - confirmação dos schemas e das regras de acesso de `CardapioPeriodo` e `CardapioPeriodoItem`.
+
+## Etapa 10 — ordenação automática e filtros
+
+Ao adicionar um item, a posição inicial no dia é definida pela classificação contextual:
+
+1. Entrada;
+2. Salada;
+3. Refeição completa;
+4. Prato principal;
+5. Segundo prato;
+6. Acompanhamento;
+7. Guarnição;
+8. Bebida;
+9. Sobremesa;
+10. Sem classificação ou classificação legada `outro`.
+
+Itens da mesma classificação preservam a ordem de inclusão. A ordenação é aplicada somente na entrada do novo item: a reorganização manual continua disponível e não é desfeita automaticamente.
+
+O seletor combina busca por nome com filtros próprios de cada origem:
+
+- Refeições: tipo da Refeição;
+- Receitas: uma das categorias cadastradas, incluindo `Saladas`;
+- Ingredientes: categoria técnica.
+
+A classificação `outro` permanece aceita apenas para compatibilidade com registros legados e não aparece na criação de novos itens.
