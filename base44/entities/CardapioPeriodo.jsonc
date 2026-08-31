@@ -1,0 +1,111 @@
+{
+  "name": "CardapioPeriodo",
+  "properties": {
+    "data_fim": {
+      "description": "\u00daltimo dia do per\u00edodo planejado",
+      "format": "date",
+      "type": "string"
+    },
+    "data_inicio": {
+      "description": "Primeiro dia do per\u00edodo planejado",
+      "format": "date",
+      "type": "string"
+    },
+    "identificacao_refeicao": {
+      "default": "refeicao",
+      "description": "Nome da faixa \u00fanica apresentada em cada dia",
+      "enum": [
+        "refeicao",
+        "almoco",
+        "jantar"
+      ],
+      "type": "string"
+    },
+    "nome": {
+      "description": "Nome do card\u00e1pio planejado para o per\u00edodo",
+      "type": "string"
+    },
+    "observacoes": {
+      "description": "Observa\u00e7\u00f5es gerais do planejamento",
+      "type": "string"
+    },
+    "status": {
+      "default": "rascunho",
+      "description": "Estado do card\u00e1pio planejado",
+      "enum": [
+        "rascunho",
+        "ativo",
+        "arquivado"
+      ],
+      "type": "string"
+    },
+    "tipo_periodo": {
+      "default": "semanal",
+      "description": "Unidade temporal do planejamento; inicialmente semanal",
+      "enum": [
+        "semanal"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "nome",
+    "tipo_periodo",
+    "data_inicio",
+    "data_fim",
+    "identificacao_refeicao"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  },
+  "type": "object"
+}
