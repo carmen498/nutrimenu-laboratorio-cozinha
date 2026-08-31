@@ -183,6 +183,53 @@ export function removerItemCardapioPeriodo(itemId) {
   return base44.entities.CardapioPeriodoItem.delete(itemId);
 }
 
+export async function duplicarCardapioPeriodo(id, payload = {}) {
+  const original = await base44.entities.CardapioPeriodo.get(id);
+  if (!original) throw new Error("Cardápio não encontrado.");
+
+  const novaDataInicio = payload.data_inicio;
+  if (dataUtc(novaDataInicio).getUTCDay() !== 1) {
+    throw new Error("O início da nova semana deve ser uma segunda-feira.");
+  }
+
+  const itensOriginais = await listarItensCardapioPeriodo(id);
+  const diferencaDias = Math.round(
+    (dataUtc(novaDataInicio).getTime() - dataUtc(original.data_inicio).getTime()) / 86400000,
+  );
+  const novo = await criarCardapioPeriodo({
+    nome: payload.nome?.trim() || `${original.nome} — cópia`,
+    data_inicio: novaDataInicio,
+    identificacao_refeicao: original.identificacao_refeicao,
+    observacoes: original.observacoes || "",
+    status: "rascunho",
+  });
+
+  const criados = [];
+  try {
+    for (const item of itensOriginais || []) {
+      const novaData = dataUtc(item.data);
+      novaData.setUTCDate(novaData.getUTCDate() + diferencaDias);
+      criados.push(await base44.entities.CardapioPeriodoItem.create({
+        cardapio_periodo_id: novo.id,
+        data: isoData(novaData),
+        dia_semana: diaSemanaDaData(isoData(novaData)),
+        tipo_origem: item.tipo_origem,
+        origem_id: item.origem_id,
+        nome_cache: item.nome_cache,
+        ordem: item.ordem || 0,
+        ...(item.classificacao ? { classificacao: item.classificacao } : {}),
+      }));
+    }
+    return novo;
+  } catch (erro) {
+    for (const item of criados) {
+      await base44.entities.CardapioPeriodoItem.delete(item.id).catch(() => undefined);
+    }
+    await base44.entities.CardapioPeriodo.delete(novo.id).catch(() => undefined);
+    throw erro;
+  }
+}
+
 export async function excluirCardapioPeriodo(id) {
   const cardapio = await base44.entities.CardapioPeriodo.get(id);
   if (!cardapio) throw new Error("Cardápio não encontrado.");
