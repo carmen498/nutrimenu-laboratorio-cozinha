@@ -231,7 +231,7 @@ export default function CardapioSemanal() {
       </button>
 
       <header className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-start gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-3">
           <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <CalendarDays className="w-5 h-5" />
           </div>
@@ -247,7 +247,7 @@ export default function CardapioSemanal() {
               <GripVertical className="w-3.5 h-3.5" /> Arraste os itens para reorganizar ou mudar o dia.
             </p>
           </div>
-          <div className="flex flex-wrap justify-end gap-1.5 shrink-0">
+          <div className="flex flex-wrap gap-1.5 w-full sm:w-auto sm:justify-end shrink-0">
             {reorganizar.isPending && <Loader2 className="w-5 h-5 mr-1 animate-spin text-primary self-center" />}
             <button type="button" onClick={() => navigate(`/cardapios/${id}/imprimir`)} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
               <Printer className="w-3.5 h-3.5" /> Visualizar e imprimir
@@ -334,7 +334,7 @@ export default function CardapioSemanal() {
                                       {item.classificacao && <span>• {CLASSIFICACOES[item.classificacao] || item.classificacao}</span>}
                                     </div>
                                   </div>
-                                  <div className="flex items-center shrink-0">
+                                  <div className="flex items-center shrink-0 max-sm:w-full max-sm:justify-end max-sm:border-t max-sm:border-border/60 max-sm:pt-1.5">
                                     <button
                                       type="button"
                                       disabled={indiceDia === 0 || reorganizar.isPending}
