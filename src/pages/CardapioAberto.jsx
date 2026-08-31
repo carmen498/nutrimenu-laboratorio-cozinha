@@ -204,15 +204,15 @@ export default function CardapioAberto() {
       setInsumosPorReceita(insumosReceitaMap);
       setEsquecidosPorReceita(esquecidosReceitaMap);
       setIngredientesEfetivosCusto(ingredientesEfetivos || []);
-    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
     setLoading(false);
   }, [id, user?.id, isAdmin]);
 
   useEffect(() => { load(); }, [load]);
 
-  // Garante que o usuário pode editar este cardápio diretamente — se for um
-  // cardápio do catálogo compartilhado (is_base=true) e o usuário não for admin,
-  // cria (ou reaproveita) uma cópia pessoal em "Meus Cardápios" antes de aplicar a edição.
+  // Garante que o usuário pode editar este refeição diretamente — se for um
+  // refeição do catálogo compartilhado (is_base=true) e o usuário não for admin,
+  // cria (ou reaproveita) uma cópia pessoal em "Meus Refeições" antes de aplicar a edição.
   const ensureEditavel = async () => {
     if (!cardapio) {
       return { cardapioId: null, receitasAtual: receitas, insumosAtual: insumos, cardapioTagsAtual: cardapioTags, mapReceitaItemId: (x) => x, mapInsumoId: (x) => x, mapTagId: (x) => x, forked: false };
@@ -227,7 +227,7 @@ export default function CardapioAberto() {
       setReceitas(result.novasReceitas);
       setInsumos(result.novosInsumos);
       setCardapioTags(result.novasTags);
-      toast.success("Uma cópia editável deste cardápio foi criada para você.");
+      toast.success("Uma cópia editável deste refeição foi criada para você.");
       navigate(`/cardapio/${result.cardapioId}`, { replace: true });
       return {
         cardapioId: result.cardapioId, receitasAtual: result.novasReceitas, insumosAtual: result.novosInsumos,
@@ -246,7 +246,7 @@ export default function CardapioAberto() {
     const { cardapioId } = await ensureEditavel();
     setCardapio(prev => ({ ...prev, [field]: value }));
     try { await base44.entities.Cardapio.update(cardapioId, { [field]: value }); }
-    catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   // Favorito
@@ -256,7 +256,7 @@ export default function CardapioAberto() {
     try {
       const { cardapioId } = await ensureEditavel();
       await base44.entities.Cardapio.update(cardapioId, { favorito: novo });
-    } catch (e) { setFavLocal(!novo); consoleErrorSeguro("Erro em cardápio aberto", e); }
+    } catch (e) { setFavLocal(!novo); consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   // Duplicar
@@ -315,7 +315,7 @@ export default function CardapioAberto() {
   };
 
   const removeReceita = async (recId) => {
-    if (!confirm("Remover esta receita do cardápio?")) return;
+    if (!confirm("Remover esta receita do refeição?")) return;
     const { mapReceitaItemId } = await ensureEditavel();
     const newId = mapReceitaItemId(recId);
     await base44.entities.CardapioReceita.delete(newId);
@@ -331,7 +331,7 @@ export default function CardapioAberto() {
     const newId = mapReceitaItemId(recId);
     setReceitas(prev => prev.map(r => r.id === newId ? { ...r, ...updates } : r));
     try { await base44.entities.CardapioReceita.update(newId, updates); }
-    catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   const moveReceita = async (recId, dir) => {
@@ -346,7 +346,7 @@ export default function CardapioAberto() {
     try {
       await base44.entities.CardapioReceita.update(upd[ni].id, { ordem: ni + 1 });
       await base44.entities.CardapioReceita.update(upd[idx].id, { ordem: idx + 1 });
-    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   const recalcularCusto = async (cr, receitaId) => {
@@ -369,7 +369,7 @@ export default function CardapioAberto() {
       });
       await base44.entities.CardapioReceita.update(cr.id, { custo_total: custoEsc });
       setReceitas(prev => prev.map(r => r.id === cr.id ? { ...r, custo_total: custoEsc, quantidade_total_g: qt } : r));
-    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   // Persiste quantidade_total_g (usado por outras telas/relatórios) sempre que o
@@ -463,7 +463,7 @@ export default function CardapioAberto() {
 
     setInsumos(prev => prev.map(i => i.id === newId ? { ...i, ...upd } : i));
     try { await base44.entities.CardapioInsumo.update(newId, upd); }
-    catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   const removeInsumo = async (insId) => {
@@ -479,7 +479,7 @@ export default function CardapioAberto() {
     try {
       const { cardapioId } = await ensureEditavel();
       await base44.entities.Cardapio.update(cardapioId, { markup_percentual: val });
-    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
   // === LISTA DE COMPRAS ===
@@ -522,7 +522,7 @@ export default function CardapioAberto() {
             mapa[key].quantidade_g += qtdLiquida;
           }
         }
-      } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+      } catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
     }
     // Agrupar por categoria
     const agrupado = {};
@@ -536,7 +536,7 @@ export default function CardapioAberto() {
     setGerandoLista(false);
   };
 
-  // === Ficha do Cardápio — abre tela de pré-visualização antes do PDF ===
+  // === Ficha do Refeição — abre tela de pré-visualização antes do PDF ===
   const abrirFichaCardapio = () => navigate(`/cardapio/${id}/ficha`);
 
   // === Orçamento — exige markup ativo, senão pede para ativar "Quanto cobrar" ===
@@ -564,7 +564,7 @@ export default function CardapioAberto() {
       await base44.entities.Cardapio.update(cardapioId, upd);
       setCardapio(prev => ({ ...prev, ...upd }));
       setShowEditar(false);
-    } catch (e) { consoleErrorSeguro("Erro em cardápio aberto", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
     setSalvandoEditar(false);
   };
 
@@ -575,7 +575,7 @@ export default function CardapioAberto() {
   }, [receitas, diasDisponiveis]);
 
   if (loading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
-  if (!cardapio) return <div className="text-center py-12 text-muted-foreground">Cardápio não encontrado.</div>;
+  if (!cardapio) return <div className="text-center py-12 text-muted-foreground">Refeição não encontrado.</div>;
 
   const tipo = TIPOS[cardapio.tipo] || TIPOS.diario;
   const TipoIcon = tipo.icon;
@@ -584,8 +584,8 @@ export default function CardapioAberto() {
   return (
     <div className="max-w-4xl mx-auto print:max-w-full">
       <div className="no-print flex items-center justify-between mb-4">
-        <Link to="/cardapios" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
-          <ArrowLeft className="w-4 h-4" /> Cardápios
+        <Link to="/refeicoes" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
+          <ArrowLeft className="w-4 h-4" /> Refeições
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -643,7 +643,7 @@ export default function CardapioAberto() {
               <Textarea
                 className="text-sm mt-2"
                 rows={2}
-                placeholder="Notas sobre o cardápio..."
+                placeholder="Notas sobre o refeição..."
                 value={editObs}
                 onChange={e => setEditObs(e.target.value)}
                 onBlur={() => { saveCardapio("observacoes", editObs); setEditandoObs(false); }}
@@ -778,7 +778,7 @@ export default function CardapioAberto() {
         />
       </div>
 
-      {/* BLOCO 4 — Cores do Cardápio */}
+      {/* BLOCO 4 — Cores do Refeição */}
       {receitas.length > 0 && (
         <div className="mb-4 no-print">
           <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
@@ -844,11 +844,11 @@ export default function CardapioAberto() {
         </Button>
       </div>
 
-      {/* Dialog Relatórios do Cardápio (casca — geradores entram em prompts separados) */}
+      {/* Dialog Relatórios do Refeição (casca — geradores entram em prompts separados) */}
       <RelatoriosDialog
         open={showRelatorios}
         onClose={() => setShowRelatorios(false)}
-        titulo="Relatórios do Cardápio"
+        titulo="Relatórios do Refeição"
         cabecalho={{
           nome: cardapio.nome,
           data: cardapio.data ? cardapio.data.split("-").reverse().join("/") : null,
@@ -940,10 +940,10 @@ export default function CardapioAberto() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog Editar Cardápio */}
+      {/* Dialog Editar Refeição */}
       <Dialog open={showEditar} onOpenChange={setShowEditar}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Editar Cardápio</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Editar Refeição</DialogTitle></DialogHeader>
           <div className="space-y-4 py-2">
             <div>
               <Label htmlFor="edit-nome">Nome *</Label>
@@ -986,13 +986,13 @@ export default function CardapioAberto() {
         </DialogContent>
       </Dialog>
 
-      {/* Aviso: já existe uma cópia pessoal deste cardápio */}
+      {/* Aviso: já existe uma cópia pessoal deste refeição */}
       <AlertDialog open={!!existingCopyWarning} onOpenChange={(open) => !open && setExistingCopyWarning(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Você já tem uma cópia pessoal deste cardápio</AlertDialogTitle>
+            <AlertDialogTitle>Você já tem uma cópia pessoal deste refeição</AlertDialogTitle>
             <AlertDialogDescription>
-              Para evitar cópias duplicadas, continue editando a versão que já está em "Meus Cardápios".
+              Para evitar cópias duplicadas, continue editando a versão que já está em "Meus Refeições".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
