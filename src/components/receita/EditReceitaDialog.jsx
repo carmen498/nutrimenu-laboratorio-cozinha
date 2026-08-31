@@ -190,7 +190,26 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
           }));
         if (updates.length > 0) await base44.entities.IngredienteReceita.bulkUpdate(updates);
       }
+      const receitaAtualizada = {
+        ...receita,
+        ...rest,
+        id: receitaId,
+        is_base: forked ? false : receita.is_base,
+        forked_from_id: forked ? receita.id : receita.forked_from_id,
+        usuario_dono_id: forked ? user?.id : receita.usuario_dono_id,
+        created_by_id: forked ? user?.id : receita.created_by_id,
+      };
       await base44.entities.Receita.update(receitaId, rest);
+
+      // Sincroniza imediatamente a ficha e o catálogo. Apenas invalidar a query
+      // deixava a listagem exibindo a categoria antiga até um novo refetch.
+      qc.setQueryData(["receita", receitaId], [receitaAtualizada]);
+      qc.setQueryData(["receitas"], (atuais = []) => {
+        const indice = atuais.findIndex((item) => item.id === receitaId);
+        if (indice < 0) return [...atuais, receitaAtualizada];
+        return atuais.map((item) => item.id === receitaId ? receitaAtualizada : item);
+      });
+
       const camposCusto = ["porcoes_base", "peso_pos_preparo_total", "rendimento_total", "per_capita_g", "unidade_base"];
       const custoMudou = forked || camposCusto.some((campo) => !valuesEqual(rest[campo], receita?.[campo]));
       if (custoMudou) {
@@ -204,8 +223,9 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
         .filter(([field]) => !valuesEqual(rest[field], receita[field]))
         .map(([, label]) => label);
       if (alterados.length > 0) registrarHistorico(receitaId, rest.nome, alterados);
-      qc.invalidateQueries({ queryKey: ["receita", receitaId] });
-      qc.invalidateQueries({ queryKey: ["receitas"] });
+      await qc.invalidateQueries({ queryKey: ["receita", receitaId] });
+      // O catálogo já foi atualizado com o valor confirmado pelo salvamento.
+      // Mantê-lo no cache evita que uma leitura atrasada restaure a categoria anterior.
       if (forked) {
         toast.success("Uma cópia editável desta receita foi criada para você.");
         onClose();
