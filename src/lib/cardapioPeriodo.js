@@ -58,6 +58,7 @@ async function origemAcessivel(tipoOrigem, origemId) {
 
 export async function criarCardapioPeriodo(payload = {}) {
   const dataInicio = payload.data_inicio;
+  if (dataUtc(dataInicio).getUTCDay() !== 1) throw new Error("O início da semana deve ser uma segunda-feira.");
   const dataFim = calcularDataFimCardapio(dataInicio);
   const identificacao = payload.identificacao_refeicao || "refeicao";
   if (!IDENTIFICACOES.has(identificacao)) throw new Error("Identificação da refeição inválida.");
