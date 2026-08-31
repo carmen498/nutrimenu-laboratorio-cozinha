@@ -120,10 +120,10 @@ export default function OrcamentoCardapio() {
       <div className="max-w-lg mx-auto text-center py-16 space-y-4">
         <p className="text-lg font-display font-semibold">Ative "Quanto cobrar se eu vender?" primeiro</p>
         <p className="text-sm text-muted-foreground">
-          O Orçamento usa o preço de venda calculado no cardápio. Ative o markup na tela do cardápio antes de gerar este documento.
+          O Orçamento usa o preço de venda calculado na refeição. Ative o markup na tela da refeição antes de gerar este documento.
         </p>
         <Button onClick={() => navigate(`/cardapio/${id}`)}>
-          <ArrowLeft className="w-4 h-4 mr-1" /> Voltar ao cardápio
+          <ArrowLeft className="w-4 h-4 mr-1" /> Voltar à refeição
         </Button>
       </div>
     );
@@ -205,7 +205,7 @@ export default function OrcamentoCardapio() {
 
           {/* Cardápio — só nome e descritivo, sem dado técnico */}
           <div>
-            <h3 className="font-display text-base font-bold mb-3">Cardápio</h3>
+            <h3 className="font-display text-base font-bold mb-3">Refeição</h3>
             <div className="space-y-4">
               {orc.pratos.map((prato) => (
                 <div key={prato.id}>
