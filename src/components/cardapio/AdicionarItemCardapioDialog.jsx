@@ -5,23 +5,51 @@ import { base44 } from "@/api/base44Client";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+const TIPOS_REFEICAO = [
+  ["diario", "Diário"], ["semanal", "Semanal"], ["fim_de_semana", "Fim de semana"],
+  ["especial", "Especial"], ["comemoracao", "Comemoração"], ["marmitas", "Marmitas"],
+  ["buffet", "Buffet"], ["happy_hour", "Happy Hour"], ["personalizado", "Personalizado"],
+];
+
+const CATEGORIAS_RECEITA = [
+  "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar", "Ovos",
+  "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos", "Leguminosas",
+  "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos", "Acompanhamentos",
+  "Pratos Principais", "Entradas", "Saladas", "Lanche", "Receitas Base",
+].map((valor) => [valor, valor]);
+
+const CATEGORIAS_INGREDIENTE = [
+  "Carnes e Ovos", "Verduras e Hortaliças", "Temperos", "Laticínios",
+  "Panificação e Cereais", "Açúcares e Doces", "Diversos", "A Revisar",
+  "Peixes e Frutos do Mar", "Frutas", "Óleos e Gorduras",
+].map((valor) => [valor, valor]);
+
 const ORIGENS = [
-  { value: "refeicao", label: "Refeições", singular: "Refeição", icon: Utensils, entity: "Cardapio" },
-  { value: "receita", label: "Receitas", singular: "Receita", icon: BookOpen, entity: "Receita" },
-  { value: "ingrediente", label: "Ingredientes", singular: "Ingrediente", icon: Apple, entity: "Ingrediente" },
+  {
+    value: "refeicao", label: "Refeições", singular: "Refeição", icon: Utensils, entity: "Cardapio",
+    filtroLabel: "tipo", filtroCampo: "tipo", filtros: TIPOS_REFEICAO,
+  },
+  {
+    value: "receita", label: "Receitas", singular: "Receita", icon: BookOpen, entity: "Receita",
+    filtroLabel: "categoria", filtroCampo: "categorias", filtros: CATEGORIAS_RECEITA,
+  },
+  {
+    value: "ingrediente", label: "Ingredientes", singular: "Ingrediente", icon: Apple, entity: "Ingrediente",
+    filtroLabel: "categoria", filtroCampo: "categoria", filtros: CATEGORIAS_INGREDIENTE,
+  },
 ];
 
 const CLASSIFICACOES = [
   { value: "", label: "Sem classificação" },
   { value: "entrada", label: "Entrada" },
   { value: "salada", label: "Salada" },
+  { value: "refeicao_completa", label: "Refeição completa" },
   { value: "prato_principal", label: "Prato principal" },
   { value: "segundo_prato", label: "Segundo prato" },
   { value: "acompanhamento", label: "Acompanhamento" },
   { value: "guarnicao", label: "Guarnição" },
-  { value: "sobremesa", label: "Sobremesa" },
   { value: "bebida", label: "Bebida" },
-  { value: "outro", label: "Outro" },
+  { value: "sobremesa", label: "Sobremesa" },
 ];
 
 function normalizar(texto = "") {
@@ -39,6 +67,7 @@ export default function AdicionarItemCardapioDialog({
 }) {
   const [tipo, setTipo] = useState("refeicao");
   const [busca, setBusca] = useState("");
+  const [filtro, setFiltro] = useState("");
   const [classificacao, setClassificacao] = useState("");
   const origem = ORIGENS.find((item) => item.value === tipo);
 
@@ -54,24 +83,29 @@ export default function AdicionarItemCardapioDialog({
     [itensDoDia, tipo],
   );
 
-  const filtradas = useMemo(() => {
+  const resultados = useMemo(() => {
     const termos = normalizar(busca).split(/\s+/).filter(Boolean);
-    return opcoes
-      .filter((item) => {
-        const nome = normalizar(item.nome);
-        return termos.every((termo) => nome.includes(termo));
-      })
-      .slice(0, 100);
-  }, [opcoes, busca]);
+    return opcoes.filter((item) => {
+      const nome = normalizar(item.nome);
+      const correspondeBusca = termos.every((termo) => nome.includes(termo));
+      if (!correspondeBusca || !filtro) return correspondeBusca;
+      const valor = item[origem.filtroCampo];
+      return Array.isArray(valor) ? valor.includes(filtro) : valor === filtro;
+    });
+  }, [opcoes, busca, filtro, origem.filtroCampo]);
+
+  const filtradas = resultados.slice(0, 100);
 
   function trocarTipo(novoTipo) {
     setTipo(novoTipo);
     setBusca("");
+    setFiltro("");
   }
 
   function fechar() {
     if (adicionando) return;
     setBusca("");
+    setFiltro("");
     setClassificacao("");
     onClose();
   }
@@ -127,16 +161,36 @@ export default function AdicionarItemCardapioDialog({
             <p className="text-xs text-muted-foreground">Vale somente para este item neste Cardápio.</p>
           </label>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              value={busca}
-              onChange={(evento) => setBusca(evento.target.value)}
-              placeholder={`Buscar ${origem.label.toLowerCase()} por nome...`}
-              className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-              autoFocus
-            />
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,0.65fr)]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                value={busca}
+                onChange={(evento) => setBusca(evento.target.value)}
+                placeholder={`Buscar ${origem.label.toLowerCase()} por nome...`}
+                className="w-full h-10 rounded-md border border-input bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                autoFocus
+              />
+            </div>
+            <select
+              value={filtro}
+              onChange={(evento) => setFiltro(evento.target.value)}
+              aria-label={`Filtrar por ${origem.filtroLabel}`}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="">Todos por {origem.filtroLabel}</option>
+              {origem.filtros.map(([valor, label]) => (
+                <option key={valor} value={valor}>{label}</option>
+              ))}
+            </select>
           </div>
+
+          {!isLoading && !error && (
+            <p className="text-xs text-muted-foreground -mt-2">
+              {resultados.length} {resultados.length === 1 ? "resultado" : "resultados"}
+              {resultados.length > 100 ? " — exibindo os 100 primeiros" : ""}
+            </p>
+          )}
 
           <div className="flex-1 min-h-44 overflow-y-auto rounded-lg border border-border p-1">
             {isLoading ? (
