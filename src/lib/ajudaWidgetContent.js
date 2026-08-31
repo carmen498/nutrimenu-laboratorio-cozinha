@@ -3,15 +3,15 @@
 export const ajudaWidgetContent = {
   "Início": {
     titulo: "Ajuda no Laboratório de Cozinha",
-    descricao: "Guias rápidos para começar: receitas, ingredientes e cardápios.",
+    descricao: "Guias rápidos para começar: ingredientes, receitas, refeições e eventos.",
   },
   "Receitas": {
     titulo: "Ajuda com receitas",
     descricao: "Guias sobre fichas técnicas, per capita e escalador.",
   },
   "Cardápios e Eventos": {
-    titulo: "Ajuda com cardápios",
-    descricao: "Guias sobre montagem, eventos e Meus Cardápios.",
+    titulo: "Ajuda com refeições e eventos",
+    descricao: "Guias sobre composição de refeições e planejamento de eventos.",
   },
   "Ingredientes": {
     titulo: "Ajuda com ingredientes",
