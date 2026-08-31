@@ -114,7 +114,7 @@ export async function criarCardapioPeriodoItem(payload = {}) {
     tipo_origem: payload.tipo_origem,
     origem_id: origem.id,
     nome_cache: origem.nome || payload.nome_cache || "Item sem nome",
-    ordem: Math.max(0, Number.parseInt(payload.ordem, 10) || 0),
+    ordem: Math.max(0, Number.parseInt(String(payload.ordem ?? 0), 10) || 0),
     ...(classificacao ? { classificacao } : {}),
   });
 }
@@ -137,7 +137,7 @@ export async function moverItemCardapioPeriodo(itemId, { data, ordem = 0 }) {
   return base44.entities.CardapioPeriodoItem.update(itemId, {
     data,
     dia_semana: diaSemanaDaData(data),
-    ordem: Math.max(0, Number.parseInt(ordem, 10) || 0),
+    ordem: Math.max(0, Number.parseInt(String(ordem ?? 0), 10) || 0),
   });
 }
 
