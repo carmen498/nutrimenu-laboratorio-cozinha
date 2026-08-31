@@ -210,7 +210,7 @@ export default function CardapioAberto() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Garante que o usuário pode editar este refeição diretamente — se for um
+  // Garante que o usuário pode editar esta refeição diretamente — se for um
   // refeição do catálogo compartilhado (is_base=true) e o usuário não for admin,
   // cria (ou reaproveita) uma cópia pessoal em "Minhas Refeições" antes de aplicar a edição.
   const ensureEditavel = async () => {
@@ -227,7 +227,7 @@ export default function CardapioAberto() {
       setReceitas(result.novasReceitas);
       setInsumos(result.novosInsumos);
       setCardapioTags(result.novasTags);
-      toast.success("Uma cópia editável deste refeição foi criada para você.");
+      toast.success("Uma cópia editável desta refeição foi criada para você.");
       navigate(`/cardapio/${result.cardapioId}`, { replace: true });
       return {
         cardapioId: result.cardapioId, receitasAtual: result.novasReceitas, insumosAtual: result.novosInsumos,
@@ -536,7 +536,7 @@ export default function CardapioAberto() {
     setGerandoLista(false);
   };
 
-  // === Ficha do Refeição — abre tela de pré-visualização antes do PDF ===
+  // === Ficha da Refeição — abre tela de pré-visualização antes do PDF ===
   const abrirFichaCardapio = () => navigate(`/cardapio/${id}/ficha`);
 
   // === Orçamento — exige markup ativo, senão pede para ativar "Quanto cobrar" ===
@@ -575,7 +575,7 @@ export default function CardapioAberto() {
   }, [receitas, diasDisponiveis]);
 
   if (loading) return <div className="text-center py-12 text-muted-foreground">Carregando...</div>;
-  if (!cardapio) return <div className="text-center py-12 text-muted-foreground">Refeição não encontrado.</div>;
+  if (!cardapio) return <div className="text-center py-12 text-muted-foreground">Refeição não encontrada.</div>;
 
   const tipo = TIPOS[cardapio.tipo] || TIPOS.diario;
   const TipoIcon = tipo.icon;
@@ -778,7 +778,7 @@ export default function CardapioAberto() {
         />
       </div>
 
-      {/* BLOCO 4 — Cores do Refeição */}
+      {/* BLOCO 4 — Cores da Refeição */}
       {receitas.length > 0 && (
         <div className="mb-4 no-print">
           <BarraCoresCardapio gruposCalc={[{ itens: receitas }]} receitaMap={receitaMap} />
@@ -844,11 +844,12 @@ export default function CardapioAberto() {
         </Button>
       </div>
 
-      {/* Dialog Relatórios do Refeição (casca — geradores entram em prompts separados) */}
+      {/* Dialog Relatórios da Refeição (casca — geradores entram em prompts separados) */}
       <RelatoriosDialog
         open={showRelatorios}
         onClose={() => setShowRelatorios(false)}
-        titulo="Relatórios do Refeição"
+        titulo="Relatórios da Refeição"
+        terminologia="Refeição"
         cabecalho={{
           nome: cardapio.nome,
           data: cardapio.data ? cardapio.data.split("-").reverse().join("/") : null,
@@ -986,11 +987,11 @@ export default function CardapioAberto() {
         </DialogContent>
       </Dialog>
 
-      {/* Aviso: já existe uma cópia pessoal deste refeição */}
+      {/* Aviso: já existe uma cópia pessoal desta refeição */}
       <AlertDialog open={!!existingCopyWarning} onOpenChange={(open) => !open && setExistingCopyWarning(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Você já tem uma cópia pessoal deste refeição</AlertDialogTitle>
+            <AlertDialogTitle>Você já tem uma cópia pessoal desta refeição</AlertDialogTitle>
             <AlertDialogDescription>
               Para evitar cópias duplicadas, continue editando a versão que já está em "Minhas Refeições".
             </AlertDialogDescription>
