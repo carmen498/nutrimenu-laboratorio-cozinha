@@ -66,7 +66,7 @@ export function gerarPrePreparosPDF(planejamento, relatorio, opts = {}) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(80, 80, 80);
-    doc.text("Nenhum pré-preparo encontrado nas receitas deste cardápio.", MARGIN, y);
+    doc.text("Nenhum pré-preparo encontrado nas receitas desta refeição.", MARGIN, y);
     if (opts.doc) return doc;
     doc.save(`pre-preparos-${slugify(planejamento.nome)}.pdf`);
     return;
