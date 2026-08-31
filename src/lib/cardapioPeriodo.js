@@ -3,9 +3,26 @@ import { base44 } from "@/api/base44Client";
 const TIPOS_ORIGEM = new Set(["refeicao", "receita", "ingrediente"]);
 const IDENTIFICACOES = new Set(["refeicao", "almoco", "jantar"]);
 const CLASSIFICACOES = new Set([
-  "entrada", "salada", "prato_principal", "segundo_prato", "acompanhamento",
-  "guarnicao", "sobremesa", "bebida", "outro",
+  "entrada", "salada", "refeicao_completa", "prato_principal", "segundo_prato",
+  "acompanhamento", "guarnicao", "bebida", "sobremesa", "outro",
 ]);
+const ORDEM_CLASSIFICACOES = {
+  entrada: 1,
+  salada: 2,
+  refeicao_completa: 3,
+  prato_principal: 4,
+  segundo_prato: 5,
+  acompanhamento: 6,
+  guarnicao: 7,
+  bebida: 8,
+  sobremesa: 9,
+  outro: 10,
+};
+const ORDEM_SEM_CLASSIFICACAO = 10;
+
+function prioridadeClassificacao(classificacao) {
+  return ORDEM_CLASSIFICACOES[classificacao] || ORDEM_SEM_CLASSIFICACAO;
+}
 const DIAS = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
 
 function dataUtc(data) {
@@ -113,16 +130,41 @@ export async function criarCardapioPeriodoItem(payload = {}) {
   const origem = await origemAcessivel(payload.tipo_origem, payload.origem_id);
   const classificacao = CLASSIFICACOES.has(payload.classificacao) ? payload.classificacao : undefined;
 
-  return base44.entities.CardapioPeriodoItem.create({
-    cardapio_periodo_id: cardapio.id,
-    data: payload.data,
-    dia_semana: diaSemanaDaData(payload.data),
-    tipo_origem: payload.tipo_origem,
-    origem_id: origem.id,
-    nome_cache: origem.nome || payload.nome_cache || "Item sem nome",
-    ordem: Math.max(0, Number.parseInt(String(payload.ordem ?? 0), 10) || 0),
-    ...(classificacao ? { classificacao } : {}),
-  });
+  const itensDoCardapio = await listarItensCardapioPeriodo(cardapio.id);
+  const itensDoDia = (itensDoCardapio || [])
+    .filter((item) => item.data === payload.data)
+    .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+  const prioridadeNova = prioridadeClassificacao(classificacao);
+  const indiceInsercao = itensDoDia.reduce(
+    (indice, item, posicao) => prioridadeClassificacao(item.classificacao) <= prioridadeNova ? posicao + 1 : indice,
+    0,
+  );
+  const afetados = itensDoDia.slice(indiceInsercao);
+
+  try {
+    for (let indice = afetados.length - 1; indice >= 0; indice -= 1) {
+      const item = afetados[indice];
+      await base44.entities.CardapioPeriodoItem.update(item.id, { ordem: indiceInsercao + indice + 1 });
+    }
+
+    return await base44.entities.CardapioPeriodoItem.create({
+      cardapio_periodo_id: cardapio.id,
+      data: payload.data,
+      dia_semana: diaSemanaDaData(payload.data),
+      tipo_origem: payload.tipo_origem,
+      origem_id: origem.id,
+      nome_cache: origem.nome || payload.nome_cache || "Item sem nome",
+      ordem: indiceInsercao,
+      ...(classificacao ? { classificacao } : {}),
+    });
+  } catch (erro) {
+    for (let indice = 0; indice < afetados.length; indice += 1) {
+      await base44.entities.CardapioPeriodoItem
+        .update(afetados[indice].id, { ordem: indiceInsercao + indice })
+        .catch(() => undefined);
+    }
+    throw erro;
+  }
 }
 
 export function listarItensCardapioPeriodo(cardapioPeriodoId, limit = 5000) {
