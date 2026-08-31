@@ -36,6 +36,7 @@ const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
 const ReceitaAberta = lazy(() => import('@/pages/ReceitaAberta'));
 const Refeicoes = lazy(() => import('@/pages/Cardapios'));
 const Eventos = lazy(() => import('@/pages/Eventos'));
+const CardapiosBase = lazy(() => import('@/pages/CardapiosBase'));
 const MeusCardapios = lazy(() => import('@/pages/MeusCardapios'));
 const CardapioAberto = lazy(() => import('@/pages/CardapioAberto'));
 const FichaCardapio = lazy(() => import('@/pages/FichaCardapio'));
@@ -151,6 +152,7 @@ const AuthenticatedApp = () => {
             <Route path="/receita/:id" element={<ReceitaAberta />} />
             <Route path="/refeicoes" element={<Refeicoes />} />
             <Route path="/eventos" element={<Eventos />} />
+            <Route path="/cardapios-beta" element={<CardapiosBase />} />
             <Route path="/cardapios" element={<Navigate to="/refeicoes" replace />} />
             <Route path="/minhas-refeicoes" element={<MeusCardapios />} />
             <Route path="/meus-cardapios" element={<Navigate to="/minhas-refeicoes" replace />} />
