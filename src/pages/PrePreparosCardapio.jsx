@@ -90,12 +90,12 @@ export default function PrePreparosCardapio() {
 
       <div className="bg-white border rounded-xl p-6 space-y-6">
         <div className="text-xs text-muted-foreground space-y-0.5">
-          <p>{relatorio.numReceitas} receita{relatorio.numReceitas !== 1 ? "s" : ""} · quantidades já escaladas para o cardápio</p>
+          <p>{relatorio.numReceitas} receita{relatorio.numReceitas !== 1 ? "s" : ""} · quantidades já escaladas para a refeição</p>
           <p className="italic">{relatorio.diagnosticoTexto}</p>
         </div>
 
         {relatorio.vazio ? (
-          <p className="text-sm text-muted-foreground text-center py-8">Nenhum pré-preparo encontrado nas receitas deste cardápio.</p>
+          <p className="text-sm text-muted-foreground text-center py-8">Nenhum pré-preparo encontrado nas receitas desta refeição.</p>
         ) : (
           <>
             {relatorio.subReceitas.length > 0 && (
