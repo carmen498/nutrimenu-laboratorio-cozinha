@@ -102,7 +102,7 @@ export default function TopBarSearch() {
           setAberto(true);
         }}
         onFocus={() => setAberto(true)}
-        placeholder="Pesquisar receita, ingrediente, cardápio..."
+        placeholder="Pesquisar receita, ingrediente, refeição..."
         className="w-full h-9 pl-9 pr-3 rounded-md border border-transparent bg-white text-sm text-foreground placeholder-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
       />
 
@@ -148,7 +148,7 @@ export default function TopBarSearch() {
               )}
               {cardapiosEncontrados.length > 0 && (
                 <div className="py-1 border-t" style={{ borderColor: "#E8E0D5" }}>
-                  <p className="px-4 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Cardápios</p>
+                  <p className="px-4 pt-2 pb-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Refeições</p>
                   {cardapiosEncontrados.map((c) => (
                     <button
                       key={c.id}
