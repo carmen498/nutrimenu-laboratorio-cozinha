@@ -34,7 +34,8 @@ const Home = lazy(() => import('@/pages/Home'));
 const Receitas = lazy(() => import('@/pages/Receitas'));
 const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
 const ReceitaAberta = lazy(() => import('@/pages/ReceitaAberta'));
-const Cardapios = lazy(() => import('@/pages/Cardapios'));
+const Refeicoes = lazy(() => import('@/pages/Cardapios'));
+const Eventos = lazy(() => import('@/pages/Eventos'));
 const MeusCardapios = lazy(() => import('@/pages/MeusCardapios'));
 const CardapioAberto = lazy(() => import('@/pages/CardapioAberto'));
 const FichaCardapio = lazy(() => import('@/pages/FichaCardapio'));
@@ -148,8 +149,11 @@ const AuthenticatedApp = () => {
             <Route path="/minhas-receitas" element={<MinhasReceitas />} />
             <Route path="/MinhasReceitas" element={<Navigate to="/minhas-receitas" replace />} />
             <Route path="/receita/:id" element={<ReceitaAberta />} />
-            <Route path="/cardapios" element={<Cardapios />} />
-            <Route path="/meus-cardapios" element={<MeusCardapios />} />
+            <Route path="/refeicoes" element={<Refeicoes />} />
+            <Route path="/eventos" element={<Eventos />} />
+            <Route path="/cardapios" element={<Navigate to="/refeicoes" replace />} />
+            <Route path="/minhas-refeicoes" element={<MeusCardapios />} />
+            <Route path="/meus-cardapios" element={<Navigate to="/minhas-refeicoes" replace />} />
             <Route path="/cardapio/:id" element={<CardapioAberto />} />
             <Route path="/cardapio/:id/ficha" element={<FichaCardapio />} />
             <Route path="/cardapio/:id/orcamento" element={<OrcamentoCardapio />} />
