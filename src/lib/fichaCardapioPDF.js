@@ -36,7 +36,7 @@ export function gerarFichaCardapioPDF({ cardapio, num, receitasView, insumos, ta
   doc.setFont("times", "bold");
   doc.setFontSize(16);
   doc.setTextColor(...VERDE_ESCURO);
-  doc.text("Ficha do Cardápio", MARGIN, y);
+  doc.text("Ficha da Refeição", MARGIN, y);
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
