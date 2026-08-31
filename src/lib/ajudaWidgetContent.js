@@ -9,9 +9,17 @@ export const ajudaWidgetContent = {
     titulo: "Ajuda com receitas",
     descricao: "Guias sobre fichas técnicas, per capita e escalador.",
   },
+  "Refeições": {
+    titulo: "Ajuda com refeições",
+    descricao: "Guias sobre composição e personalização de refeições.",
+  },
+  "Eventos": {
+    titulo: "Ajuda com eventos",
+    descricao: "Guias sobre convidados, quantidades, compras e produção.",
+  },
   "Cardápios e Eventos": {
     titulo: "Ajuda com refeições e eventos",
-    descricao: "Guias sobre composição de refeições e planejamento de eventos.",
+    descricao: "Guias preservados da organização anterior.",
   },
   "Ingredientes": {
     titulo: "Ajuda com ingredientes",
