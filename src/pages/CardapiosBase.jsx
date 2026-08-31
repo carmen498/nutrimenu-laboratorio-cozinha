@@ -16,7 +16,10 @@ function dataInicialPadrao() {
   const dia = hoje.getDay();
   const ajuste = dia === 1 ? 0 : (8 - dia) % 7;
   hoje.setDate(hoje.getDate() + ajuste);
-  return hoje.toISOString().slice(0, 10);
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, "0");
+  const data = String(hoje.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${data}`;
 }
 
 function formatarData(data) {
