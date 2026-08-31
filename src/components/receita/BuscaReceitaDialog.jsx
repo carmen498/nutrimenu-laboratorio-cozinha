@@ -7,13 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Search, Plus } from "lucide-react";
 import { fetchAllPages } from "@/lib/fetchAllPages";
-
-const CATS = [
-  "Carnes", "Aves", "Peixes e Frutos do Mar", "Ovos",
-  "Massas, Pastelão e Quiches", "Arroz e Risoto", "Sopas e Caldos",
-  "Leguminosas", "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos",
-  "Acompanhamento", "Prato Principal", "Entradas", "Petiscos", "Lanche", "Receitas Base"
-];
+import { CATEGORIAS as CATS } from "@/components/receita/CategoriaPicker";
 
 export default function BuscaReceitaDialog({
   open, onClose, onSelect, excludeIds = [], title = "Adicionar receita", receitas: propReceitas = null,
