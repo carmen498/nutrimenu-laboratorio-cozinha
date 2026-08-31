@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 const ACOES = [
   { label: "Nova Receita", sub: "Criar do zero", icon: Plus, to: "/receitas?nova=manual", destaque: true },
   { label: "Minhas Receitas", sub: "Ver e editar", icon: BookOpen, to: "/minhas-receitas", key: "minhasReceitas" },
-  { label: "Criar Cardápio", sub: "Organizar refeições", icon: CalendarDays, to: "/cardapios" },
+  { label: "Nova Refeição", sub: "Combinar receitas", icon: CalendarDays, to: "/refeicoes" },
   { label: "Ingredientes", sub: "Gerenciar itens", icon: Apple, to: "/ingredientes" },
   { label: "Calcular Per Capita", sub: "Planejar por pessoa", icon: Gauge, to: "/percapita" },
 ];
