@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { calcularIndiceInsercao } from "@/lib/cardapioRegras";
 
 const TIPOS_ORIGEM = new Set(["refeicao", "receita", "ingrediente"]);
 const IDENTIFICACOES = new Set(["refeicao", "almoco", "jantar"]);
@@ -6,23 +7,6 @@ const CLASSIFICACOES = new Set([
   "entrada", "salada", "refeicao_completa", "prato_principal", "segundo_prato",
   "acompanhamento", "guarnicao", "bebida", "sobremesa", "outro",
 ]);
-const ORDEM_CLASSIFICACOES = {
-  entrada: 1,
-  salada: 2,
-  refeicao_completa: 3,
-  prato_principal: 4,
-  segundo_prato: 5,
-  acompanhamento: 6,
-  guarnicao: 6,
-  bebida: 7,
-  sobremesa: 8,
-  outro: 9,
-};
-const ORDEM_SEM_CLASSIFICACAO = 9;
-
-function prioridadeClassificacao(classificacao) {
-  return ORDEM_CLASSIFICACOES[classificacao] || ORDEM_SEM_CLASSIFICACAO;
-}
 const DIAS = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
 
 function dataUtc(data) {
@@ -134,11 +118,7 @@ export async function criarCardapioPeriodoItem(payload = {}) {
   const itensDoDia = (itensDoCardapio || [])
     .filter((item) => item.data === payload.data)
     .sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
-  const prioridadeNova = prioridadeClassificacao(classificacao);
-  const indiceInsercao = itensDoDia.reduce(
-    (indice, item, posicao) => prioridadeClassificacao(item.classificacao) <= prioridadeNova ? posicao + 1 : indice,
-    0,
-  );
+  const indiceInsercao = calcularIndiceInsercao(itensDoDia, classificacao);
   const afetados = itensDoDia.slice(indiceInsercao);
 
   try {
