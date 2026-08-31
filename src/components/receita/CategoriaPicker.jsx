@@ -9,16 +9,15 @@ export const CATEGORIAS = [
   "Carnes Bovinas e Suínos", "Aves", "Peixes e Frutos do Mar", "Ovos",
   "Massas, Pastelão e Quiches", "Arroz e Risotos", "Sopas e Caldos", "Leguminosas",
   "Salgadinhos", "Pães e Bolos", "Sobremesas", "Molhos",
-  "Acompanhamentos", "Pratos Principais",
-  "Entradas", "Lanche", "Receitas Base"
+  "Acompanhamentos", "Entradas", "Saladas", "Lanches", "Receitas Base"
 ];
 
 export const ICONE_CATEGORIA = {
   "Carnes Bovinas e Suínos": "🥩", "Aves": "🍗", "Peixes e Frutos do Mar": "🐟", "Ovos": "🥚",
   "Massas, Pastelão e Quiches": "🍝", "Arroz e Risotos": "🍚", "Sopas e Caldos": "🥣", "Leguminosas": "🫘",
   "Salgadinhos": "🥟", "Pães e Bolos": "🍞", "Sobremesas": "🍰", "Molhos": "🫙",
-  "Acompanhamentos": "🥗", "Pratos Principais": "🍽️",
-  "Entradas": "🥄", "Lanche": "🥪", "Receitas Base": "📖"
+  "Acompanhamentos": "🥗", "Entradas": "🥄", "Saladas": "🥬",
+  "Lanches": "🥪", "Receitas Base": "📖"
 };
 
 export default function CategoriaPicker({ value = [], onChange }) {
