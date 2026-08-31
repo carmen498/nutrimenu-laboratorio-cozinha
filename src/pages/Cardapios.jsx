@@ -16,9 +16,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Tag, X, LayoutGrid, ChevronDown, ClipboardList, ArrowLeft } from "lucide-react";
-import ListaPlanejamentos from "@/components/planejamento/ListaPlanejamentos";
-import { lerRascunhoEvento } from "@/lib/eventoRascunho";
+import { Plus, Search, Star, MoreHorizontal, Tag, X, ChevronDown, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import MeusCardapiosCard from "@/components/cardapio/MeusCardapiosCard";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
@@ -58,9 +56,6 @@ export default function Cardapios() {
   const [form, setForm] = useState({ nome: "", tipo: "", data: "", observacoes: "" });
   const [salvando, setSalvando] = useState(false);
   const [favPending, setFavPending] = useState({});
-  // Se houver um rascunho de evento pendente (ex: usuário abriu uma receita a
-  // partir do Assistente do Evento e voltou), reabre direto na aba Eventos.
-  const [aba, setAba] = useState(() => (lerRascunhoEvento() ? "planejamentos" : "cardapios"));
 
   const { data: cardapios = [], isLoading: loading } = useQuery({
     queryKey: ["cardapios"],
@@ -147,7 +142,7 @@ export default function Cardapios() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Excluir este cardápio?")) return;
+    if (!confirm("Excluir esta refeição?")) return;
     await base44.entities.Cardapio.delete(id);
     qc.invalidateQueries({ queryKey: ["cardapios"] });
   };
@@ -193,7 +188,7 @@ export default function Cardapios() {
       }
       qc.invalidateQueries({ queryKey: ["cardapios"] });
       navigate(`/cardapio/${novo.id}`);
-    } catch (e) { consoleErrorSeguro("Erro em cardápios", e); }
+    } catch (e) { consoleErrorSeguro("Erro em refeições", e); }
   };
 
   const formatarData = (d) => {
@@ -210,42 +205,21 @@ export default function Cardapios() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-display font-bold text-foreground">Cardápios</h1>
+            <h1 className="text-2xl font-display font-bold text-foreground">Refeições</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {aba === "cardapios"
-                ? `${cardapios.length} cardápio${cardapios.length !== 1 ? "s" : ""}`
-                : "Eventos"}
+              {cardapios.length} refeição{cardapios.length !== 1 ? "ões" : ""}
             </p>
           </div>
         </div>
-        {aba === "cardapios" && (
-          <Button onClick={() => setShowNovo(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> Novo Cardápio
-          </Button>
-        )}
-      </div>
-
-      {/* Toggle Cardápios / Planejamentos */}
-      <div className="flex gap-2 mb-4">
-        <Button variant={aba === "cardapios" ? "default" : "outline"} size="sm"
-          onClick={() => setAba("cardapios")} className="gap-1.5">
-          <LayoutGrid className="w-4 h-4" /> Cardápios
-        </Button>
-        <Button variant={aba === "planejamentos" ? "default" : "outline"} size="sm"
-          onClick={() => setAba("planejamentos")} className="gap-1.5">
-          <ClipboardList className="w-4 h-4" /> Eventos
+        <Button onClick={() => setShowNovo(true)} className="gap-2">
+          <Plus className="w-4 h-4" /> Nova Refeição
         </Button>
       </div>
-
-      {aba === "planejamentos" ? (
-        <ListaPlanejamentos />
-      ) : (
-      <>
       {/* Busca */}
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar cardápio..."
+          placeholder="Buscar refeição..."
           className="pl-10"
           value={busca}
           onChange={e => setBusca(e.target.value)}
@@ -360,7 +334,7 @@ export default function Cardapios() {
         <div className="text-center py-12 text-muted-foreground">Carregando...</div>
       ) : filtrados.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          {busca || filtroTipo !== "todos" || tagFilterIds.length > 0 ? "Nenhum cardápio encontrado." : "Nenhum cardápio criado ainda."}
+          {busca || filtroTipo !== "todos" || tagFilterIds.length > 0 ? "Nenhuma refeição encontrada." : "Nenhuma refeição criada ainda."}
         </div>
       ) : (
         <div className="space-y-3">
@@ -435,12 +409,12 @@ export default function Cardapios() {
         </div>
       )}
 
-      {/* Dialog Novo Cardápio */}
+      {/* Dialog Nova Refeição */}
       <Dialog open={showNovo} onOpenChange={setShowNovo}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Novo Cardápio</DialogTitle>
-            <DialogDescription>Organize receitas por tipo de evento.</DialogDescription>
+            <DialogTitle>Nova Refeição</DialogTitle>
+            <DialogDescription>Combine receitas e itens para formar uma refeição.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
@@ -480,7 +454,7 @@ export default function Cardapios() {
               <Label htmlFor="obs">Observações</Label>
               <Textarea
                 id="obs"
-                placeholder="Notas sobre o cardápio..."
+                placeholder="Notas sobre a refeição..."
                 rows={2}
                 value={form.observacoes}
                 onChange={e => setForm({ ...form, observacoes: e.target.value })}
@@ -490,13 +464,11 @@ export default function Cardapios() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNovo(false)}>Cancelar</Button>
             <Button onClick={handleNovo} disabled={salvando || !form.nome.trim() || !form.tipo}>
-              {salvando ? "Criando..." : "Criar Cardápio"}
+              {salvando ? "Criando..." : "Criar Refeição"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </>
-      )}
     </div>
   );
 }
