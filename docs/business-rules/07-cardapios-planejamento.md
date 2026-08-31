@@ -60,6 +60,8 @@ O módulo está disponível no menu pela rota protegida `/cardapios`.
 - movimentação entre dias por arrastar e soltar ou pelos botões alternativos;
 - edição do nome e das observações gerais;
 - duplicação integral para outra semana, preservando itens, ordem e classificações;
-- exclusão confirmada do Cardápio e de seus itens, sem alterar os cadastros de origem.
+- exclusão confirmada do Cardápio e de seus itens, sem alterar os cadastros de origem;
+- pré-visualização semanal em sete colunas;
+- impressão em A4 horizontal ou salvamento em PDF pelo navegador, com observações, tipos e classificações.
 
 A rota legada de validação `/cardapios-beta` redireciona para o módulo funcional.
