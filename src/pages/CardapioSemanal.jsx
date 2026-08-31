@@ -62,7 +62,7 @@ export default function CardapioSemanal() {
   });
 
   const adicionar = useMutation({
-    mutationFn: (dados) => criarCardapioPeriodoItem({
+    mutationFn: (/** @type {Record<string, any>} */ dados) => criarCardapioPeriodoItem({
       cardapio_periodo_id: id,
       data: diaSelecionado.data,
       ordem: diaSelecionado.itens.length,
