@@ -8,7 +8,7 @@ import { montarFichaCardapio } from "@/lib/fichaCardapioCalc";
 import { gerarFichaCardapioPDF } from "@/lib/fichaCardapioPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
 
-// Tela de pré-visualização da Ficha do Cardápio (produção) — mesmo padrão visual
+// Tela de pré-visualização da Ficha da Refeição (produção) — mesmo padrão visual
 // da tela "Exportar Receita" / "Ficha Técnica". Conteúdo idêntico ao PDF exportado
 // (ambos usam montarFichaCardapio como fonte única de dados).
 export default function FichaCardapio() {
@@ -64,7 +64,7 @@ export default function FichaCardapio() {
   };
 
   const handleShare = () => {
-    let text = `📋 Ficha do Cardápio — ${cardapio.nome}\n${ficha.numPessoas} pessoas\n\n`;
+    let text = `📋 Ficha da Refeição — ${cardapio.nome}\n${ficha.numPessoas} pessoas\n\n`;
     ficha.linhas.forEach((l) => { text += `• ${l.nome} — ${l.kgFmt}\n`; });
     text += `\nTotal de comida: ${ficha.totalKgFmt} (≈ ${ficha.gPorPessoaFmt} por pessoa)\n`;
     if (ficha.insumos.length > 0) {
@@ -86,7 +86,7 @@ export default function FichaCardapio() {
         <Button variant="ghost" size="icon" onClick={() => navigate(`/cardapio/${id}`)}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <h1 className="font-display text-xl font-bold flex-1">Ficha do Cardápio</h1>
+        <h1 className="font-display text-xl font-bold flex-1">Ficha da Refeição</h1>
         <div className="flex gap-2">
           <Button onClick={handleExportar}>
             <Download className="w-4 h-4 mr-1" /> Exportar PDF
