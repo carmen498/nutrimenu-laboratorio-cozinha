@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Apple, ArrowLeft, BookOpen, CalendarDays, Loader2, Plus, Trash2, Utensils } from "lucide-react";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import {
+  Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, CalendarDays,
+  GripVertical, Loader2, Plus, Trash2, Utensils,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import AdicionarItemCardapioDialog from "@/components/cardapio/AdicionarItemCardapioDialog";
@@ -8,6 +12,7 @@ import {
   criarCardapioPeriodoItem,
   listarItensCardapioPeriodo,
   obterCardapioPeriodo,
+  reorganizarItensCardapioPeriodo,
   removerItemCardapioPeriodo,
 } from "@/lib/cardapioPeriodo";
 
@@ -44,10 +49,15 @@ function formatarData(data, completa = false) {
   });
 }
 
+function ordenarItens(lista) {
+  return [...lista].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+}
+
 export default function CardapioSemanal() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const chaveItens = ["cardapio-periodo-itens", id];
   const [diaSelecionado, setDiaSelecionado] = useState(null);
 
   const { data: cardapio, isLoading, error } = useQuery({
@@ -56,7 +66,7 @@ export default function CardapioSemanal() {
     enabled: Boolean(id),
   });
   const { data: itens = [], isLoading: carregandoItens } = useQuery({
-    queryKey: ["cardapio-periodo-itens", id],
+    queryKey: chaveItens,
     queryFn: () => listarItensCardapioPeriodo(id),
     enabled: Boolean(id),
   });
@@ -69,7 +79,7 @@ export default function CardapioSemanal() {
       ...dados,
     }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cardapio-periodo-itens", id] });
+      await queryClient.invalidateQueries({ queryKey: chaveItens });
       toast.success("Item adicionado ao Cardápio.");
       setDiaSelecionado(null);
     },
@@ -79,10 +89,27 @@ export default function CardapioSemanal() {
   const remover = useMutation({
     mutationFn: removerItemCardapioPeriodo,
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["cardapio-periodo-itens", id] });
+      await queryClient.invalidateQueries({ queryKey: chaveItens });
       toast.success("Item removido do Cardápio.");
     },
     onError: (erro) => toast.error(erro?.message || "Não foi possível remover o item."),
+  });
+
+  const reorganizar = useMutation({
+    mutationFn: (/** @type {{ movimentacoes: any[], novosItens: any[] }} */ payload) =>
+      reorganizarItensCardapioPeriodo(id, payload.movimentacoes),
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: chaveItens });
+      const anteriores = queryClient.getQueryData(chaveItens);
+      queryClient.setQueryData(chaveItens, payload.novosItens);
+      return { anteriores };
+    },
+    onError: (erro, _payload, contexto) => {
+      if (contexto?.anteriores) queryClient.setQueryData(chaveItens, contexto.anteriores);
+      toast.error(erro?.message || "Não foi possível reorganizar o Cardápio.");
+    },
+    onSuccess: () => toast.success("Organização atualizada."),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: chaveItens }),
   });
 
   if (isLoading) return <div className="max-w-6xl mx-auto p-8 text-sm text-muted-foreground">Abrindo cardápio...</div>;
@@ -97,9 +124,66 @@ export default function CardapioSemanal() {
     return {
       data,
       nome: NOMES_DIAS[indice],
-      itens: itens.filter((item) => item.data === data).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)),
+      itens: ordenarItens(itens.filter((item) => item.data === data)),
     };
   });
+
+  function executarMovimento(dataOrigem, indiceOrigem, dataDestino, indiceDestino) {
+    if (reorganizar.isPending) return;
+    const origem = ordenarItens(itens.filter((item) => item.data === dataOrigem));
+    const destino = dataOrigem === dataDestino
+      ? origem
+      : ordenarItens(itens.filter((item) => item.data === dataDestino));
+    const itemMovido = origem[indiceOrigem];
+    if (!itemMovido) return;
+
+    let novaOrigem;
+    let novoDestino;
+    if (dataOrigem === dataDestino) {
+      novoDestino = [...origem];
+      novoDestino.splice(indiceOrigem, 1);
+      novoDestino.splice(indiceDestino, 0, itemMovido);
+      novaOrigem = novoDestino;
+    } else {
+      novaOrigem = origem.filter((item) => item.id !== itemMovido.id);
+      novoDestino = [...destino];
+      novoDestino.splice(indiceDestino, 0, { ...itemMovido, data: dataDestino });
+    }
+
+    const afetados = new Map();
+    novaOrigem.forEach((item, ordem) => afetados.set(item.id, { ...item, data: dataOrigem, ordem }));
+    if (dataOrigem !== dataDestino) {
+      novoDestino.forEach((item, ordem) => afetados.set(item.id, { ...item, data: dataDestino, ordem }));
+    }
+
+    const novosItens = itens.map((item) => afetados.get(item.id) || item);
+    const movimentacoes = [...afetados.values()].map((item) => ({
+      id: item.id,
+      data: item.data,
+      ordem: item.ordem,
+    }));
+    reorganizar.mutate({ movimentacoes, novosItens });
+  }
+
+  function aoTerminarArraste(resultado) {
+    const { source, destination } = resultado;
+    if (!destination) return;
+    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    executarMovimento(source.droppableId, source.index, destination.droppableId, destination.index);
+  }
+
+  function moverNaOrdem(dia, indice, deslocamento) {
+    const destino = indice + deslocamento;
+    if (destino < 0 || destino >= dia.itens.length) return;
+    executarMovimento(dia.data, indice, dia.data, destino);
+  }
+
+  function moverEntreDias(dia, indice, deslocamento) {
+    const indiceDia = dias.findIndex((item) => item.data === dia.data);
+    const diaDestino = dias[indiceDia + deslocamento];
+    if (!diaDestino) return;
+    executarMovimento(dia.data, indice, diaDestino.data, diaDestino.itens.length);
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-5">
@@ -112,78 +196,155 @@ export default function CardapioSemanal() {
           <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
             <CalendarDays className="w-5 h-5" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-display font-bold">{cardapio.nome}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {formatarData(cardapio.data_inicio, true)} a {formatarData(cardapio.data_fim, true)}
             </p>
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+              <GripVertical className="w-3.5 h-3.5" /> Arraste os itens para reorganizar ou mudar o dia.
+            </p>
           </div>
+          {reorganizar.isPending && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
         </div>
       </header>
 
-      <div className="grid lg:grid-cols-2 gap-4">
-        {dias.map((dia) => (
-          <section key={dia.data} className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-semibold">{dia.nome}</h2>
-                <p className="text-xs text-muted-foreground">{formatarData(dia.data)}</p>
+      <DragDropContext onDragEnd={aoTerminarArraste}>
+        <div className="grid lg:grid-cols-2 gap-4">
+          {dias.map((dia, indiceDia) => (
+            <section key={dia.data} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold">{dia.nome}</h2>
+                  <p className="text-xs text-muted-foreground">{formatarData(dia.data)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDiaSelecionado(dia)}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Adicionar
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setDiaSelecionado(dia)}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="w-3.5 h-3.5" /> Adicionar
-              </button>
-            </div>
-            <div className="p-4 min-h-32">
-              {carregandoItens ? (
-                <div className="min-h-24 flex items-center justify-center text-muted-foreground">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                </div>
-              ) : dia.itens.length ? (
-                <div className="space-y-2">
-                  {dia.itens.map((item) => {
-                    const origem = ORIGENS[item.tipo_origem] || ORIGENS.receita;
-                    const Icon = origem.icon;
-                    return (
-                      <div key={item.id} className="rounded-lg border border-border px-3 py-2.5 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium truncate">{item.nome_cache}</p>
-                          <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-                            <span>{origem.label}</span>
-                            {item.classificacao && <span>• {CLASSIFICACOES[item.classificacao] || item.classificacao}</span>}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          disabled={remover.isPending}
-                          onClick={() => remover.mutate(item.id)}
-                          title="Remover do Cardápio"
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+
+              <Droppable droppableId={dia.data}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`p-4 min-h-36 transition-colors ${snapshot.isDraggingOver ? "bg-primary/5" : ""}`}
+                  >
+                    {carregandoItens ? (
+                      <div className="min-h-24 flex items-center justify-center text-muted-foreground">
+                        <Loader2 className="w-4 h-4 animate-spin" />
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="min-h-24 flex flex-col items-center justify-center text-center text-muted-foreground">
-                  <p className="text-sm">Nenhum item neste dia.</p>
-                  <button type="button" onClick={() => setDiaSelecionado(dia)} className="text-xs mt-1 text-primary hover:underline">
-                    Adicionar Refeição, Receita ou Ingrediente
-                  </button>
-                </div>
-              )}
-            </div>
-          </section>
-        ))}
-      </div>
+                    ) : dia.itens.length ? (
+                      <div className="space-y-2">
+                        {dia.itens.map((item, indiceItem) => {
+                          const origem = ORIGENS[item.tipo_origem] || ORIGENS.receita;
+                          const Icon = origem.icon;
+                          return (
+                            <Draggable
+                              key={item.id}
+                              draggableId={item.id}
+                              index={indiceItem}
+                              isDragDisabled={reorganizar.isPending}
+                            >
+                              {(dragProvided, dragSnapshot) => (
+                                <div
+                                  ref={dragProvided.innerRef}
+                                  {...dragProvided.draggableProps}
+                                  style={dragProvided.draggableProps.style}
+                                  className={`rounded-lg border bg-card px-2 py-2.5 flex items-center gap-2 transition-shadow ${
+                                    dragSnapshot.isDragging ? "shadow-xl ring-2 ring-primary" : "border-border"
+                                  }`}
+                                >
+                                  <button
+                                    type="button"
+                                    {...dragProvided.dragHandleProps}
+                                    className="p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-primary touch-none"
+                                    title="Arraste para reorganizar ou mudar de dia"
+                                    aria-label={`Mover ${item.nome_cache}`}
+                                  >
+                                    <GripVertical className="w-4 h-4" />
+                                  </button>
+                                  <div className="w-8 h-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <Icon className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium truncate">{item.nome_cache}</p>
+                                    <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                                      <span>{origem.label}</span>
+                                      {item.classificacao && <span>• {CLASSIFICACOES[item.classificacao] || item.classificacao}</span>}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center shrink-0">
+                                    <button
+                                      type="button"
+                                      disabled={indiceDia === 0 || reorganizar.isPending}
+                                      onClick={() => moverEntreDias(dia, indiceItem, -1)}
+                                      className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted disabled:opacity-25"
+                                      title="Mover para o dia anterior"
+                                      aria-label="Mover para o dia anterior"
+                                    ><ArrowLeft className="w-3.5 h-3.5" /></button>
+                                    <button
+                                      type="button"
+                                      disabled={indiceItem === 0 || reorganizar.isPending}
+                                      onClick={() => moverNaOrdem(dia, indiceItem, -1)}
+                                      className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted disabled:opacity-25"
+                                      title="Mover para cima"
+                                      aria-label="Mover para cima"
+                                    ><ArrowUp className="w-3.5 h-3.5" /></button>
+                                    <button
+                                      type="button"
+                                      disabled={indiceItem === dia.itens.length - 1 || reorganizar.isPending}
+                                      onClick={() => moverNaOrdem(dia, indiceItem, 1)}
+                                      className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted disabled:opacity-25"
+                                      title="Mover para baixo"
+                                      aria-label="Mover para baixo"
+                                    ><ArrowDown className="w-3.5 h-3.5" /></button>
+                                    <button
+                                      type="button"
+                                      disabled={indiceDia === dias.length - 1 || reorganizar.isPending}
+                                      onClick={() => moverEntreDias(dia, indiceItem, 1)}
+                                      className="p-1 rounded text-muted-foreground hover:text-primary hover:bg-muted disabled:opacity-25"
+                                      title="Mover para o próximo dia"
+                                      aria-label="Mover para o próximo dia"
+                                    ><ArrowRight className="w-3.5 h-3.5" /></button>
+                                    <button
+                                      type="button"
+                                      disabled={remover.isPending || reorganizar.isPending}
+                                      onClick={() => remover.mutate(item.id)}
+                                      title="Remover do Cardápio"
+                                      className="p-1.5 ml-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                                    ><Trash2 className="w-4 h-4" /></button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className={`min-h-24 rounded-lg border border-dashed flex flex-col items-center justify-center text-center ${
+                        snapshot.isDraggingOver ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+                      }`}>
+                        <p className="text-sm">{snapshot.isDraggingOver ? "Solte o item neste dia" : "Nenhum item neste dia."}</p>
+                        {!snapshot.isDraggingOver && (
+                          <button type="button" onClick={() => setDiaSelecionado(dia)} className="text-xs mt-1 text-primary hover:underline">
+                            Adicionar Refeição, Receita ou Ingrediente
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </section>
+          ))}
+        </div>
+      </DragDropContext>
 
       {diaSelecionado && (
         <AdicionarItemCardapioDialog
