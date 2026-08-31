@@ -272,7 +272,7 @@ export default function EventoListaCompras() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {planejamentoOrigem && (
-            <Button variant="ghost" size="sm" onClick={() => navigate("/cardapios")} className="gap-1">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/eventos")} className="gap-1">
               <ArrowLeft className="w-4 h-4" /> Voltar ao evento
             </Button>
           )}
