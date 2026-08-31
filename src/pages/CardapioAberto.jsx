@@ -212,7 +212,7 @@ export default function CardapioAberto() {
 
   // Garante que o usuário pode editar este refeição diretamente — se for um
   // refeição do catálogo compartilhado (is_base=true) e o usuário não for admin,
-  // cria (ou reaproveita) uma cópia pessoal em "Meus Refeições" antes de aplicar a edição.
+  // cria (ou reaproveita) uma cópia pessoal em "Minhas Refeições" antes de aplicar a edição.
   const ensureEditavel = async () => {
     if (!cardapio) {
       return { cardapioId: null, receitasAtual: receitas, insumosAtual: insumos, cardapioTagsAtual: cardapioTags, mapReceitaItemId: (x) => x, mapInsumoId: (x) => x, mapTagId: (x) => x, forked: false };
@@ -992,7 +992,7 @@ export default function CardapioAberto() {
           <AlertDialogHeader>
             <AlertDialogTitle>Você já tem uma cópia pessoal deste refeição</AlertDialogTitle>
             <AlertDialogDescription>
-              Para evitar cópias duplicadas, continue editando a versão que já está em "Meus Refeições".
+              Para evitar cópias duplicadas, continue editando a versão que já está em "Minhas Refeições".
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
