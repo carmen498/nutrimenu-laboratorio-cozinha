@@ -85,17 +85,18 @@ export default function CardapioSemanalImpressao() {
     printarElementoIsolado(
       "cardapio-semanal-print-area",
       `@page { size: A4 landscape; margin: 9mm; }
-       html, body { background: white !important; color: #17251d !important; }
-       #cardapio-semanal-print-area { width: 100% !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
-       .cardapio-print-grid { display: grid !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important; gap: 5px !important; }
-       .cardapio-print-dia { break-inside: avoid; min-width: 0 !important; }
+       html, body { background: white !important; color: #17251d !important; width: 100% !important; }
+       *, *::before, *::after { box-sizing: border-box !important; }
+       #cardapio-semanal-print-area { width: 100% !important; min-width: 0 !important; max-width: 100% !important; overflow: visible !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; }
+       .cardapio-print-grid { display: grid !important; width: 100% !important; grid-template-columns: repeat(7, minmax(0, 1fr)) !important; gap: 5px !important; }
+       .cardapio-print-dia { break-inside: avoid; min-width: 0 !important; overflow: hidden !important; }
        .cardapio-print-item { break-inside: avoid; }
        .cardapio-print-cabecalho { padding: 12px 16px !important; }
        .cardapio-print-conteudo { padding: 14px !important; }
        .cardapio-print-dia-topo { padding: 7px !important; }
        .cardapio-print-dia-corpo { padding: 6px !important; min-height: 115mm !important; }
        .cardapio-print-item { padding: 6px !important; margin-bottom: 5px !important; }
-       .cardapio-print-item-nome { font-size: 9px !important; line-height: 1.25 !important; }
+       .cardapio-print-item-nome { font-size: 9px !important; line-height: 1.25 !important; overflow-wrap: anywhere !important; }
        .cardapio-print-meta { font-size: 7px !important; line-height: 1.25 !important; }
        .cardapio-print-dia-nome { font-size: 10px !important; }
        .cardapio-print-dia-data { font-size: 8px !important; }
@@ -120,8 +121,8 @@ export default function CardapioSemanalImpressao() {
         Pré-visualização em formato A4 horizontal. O comando de impressão também permite salvar o relatório como PDF.
       </div>
 
-      <div className="overflow-x-auto pb-2">
-        <article id="cardapio-semanal-print-area" className="min-w-[1050px] bg-white text-slate-900 border border-border rounded-xl overflow-hidden shadow-sm">
+      <div className="w-full min-w-0 pb-2">
+        <article id="cardapio-semanal-print-area" className="w-full min-w-0 max-w-full bg-white text-slate-900 border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="cardapio-print-cabecalho bg-primary text-primary-foreground px-6 py-4 flex items-center gap-4">
             <div className="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center shrink-0">
               <CalendarDays className="w-5 h-5" />
