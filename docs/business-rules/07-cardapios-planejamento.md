@@ -65,3 +65,17 @@ O módulo está disponível no menu pela rota protegida `/cardapios`.
 - impressão em A4 horizontal ou salvamento em PDF pelo navegador, com observações, tipos e classificações.
 
 A rota legada de validação `/cardapios-beta` redireciona para o módulo funcional.
+
+## Status do MVP
+
+O Cardápio Mínimo Viável foi encerrado em 31/08/2026 com os fluxos de criação, composição, classificação, reorganização, gestão, duplicação, exclusão e impressão disponíveis.
+
+O fechamento técnico inclui:
+
+- validação de segunda-feira no fuso local brasileiro;
+- limite de leitura ampliado para evitar truncamento de itens semanais;
+- responsividade dos controles de gestão e movimentação;
+- lint e build aprovados;
+- ausência de novos erros de tipo nos arquivos do módulo;
+- smoke test das rotas `/cardapios` e `/cardapios/:id/imprimir` no servidor Vite;
+- confirmação dos schemas e das regras de acesso de `CardapioPeriodo` e `CardapioPeriodoItem`.
