@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import {
   Apple, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookOpen, CalendarDays,
-  Copy, GripVertical, Loader2, Pencil, Plus, Trash2, Utensils,
+  Copy, GripVertical, Loader2, Pencil, Plus, Printer, Trash2, Utensils,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -249,6 +249,9 @@ export default function CardapioSemanal() {
           </div>
           <div className="flex flex-wrap justify-end gap-1.5 shrink-0">
             {reorganizar.isPending && <Loader2 className="w-5 h-5 mr-1 animate-spin text-primary self-center" />}
+            <button type="button" onClick={() => navigate(`/cardapios/${id}/imprimir`)} className="inline-flex items-center gap-1.5 rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90">
+              <Printer className="w-3.5 h-3.5" /> Visualizar e imprimir
+            </button>
             <button type="button" onClick={() => setModoGestao("editar")} className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium hover:bg-muted">
               <Pencil className="w-3.5 h-3.5" /> Editar
             </button>
