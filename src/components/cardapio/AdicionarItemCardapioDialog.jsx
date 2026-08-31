@@ -110,11 +110,17 @@ export default function AdicionarItemCardapioDialog({
     return opcoes.filter((item) => {
       const nome = normalizar(item.nome);
       const correspondeBusca = termos.every((termo) => nome.includes(termo));
-      if (!correspondeBusca || !filtro) return correspondeBusca;
+      if (!correspondeBusca) return false;
       const valor = item[origem.filtroCampo];
-      return Array.isArray(valor) ? valor.includes(filtro) : valor === filtro;
+      if (filtro) return Array.isArray(valor) ? valor.includes(filtro) : valor === filtro;
+      if (filtrosRelacionados) {
+        return Array.isArray(valor)
+          ? valor.some((categoria) => filtrosRelacionados.includes(categoria))
+          : filtrosRelacionados.includes(valor);
+      }
+      return true;
     });
-  }, [opcoes, busca, filtro, origem.filtroCampo]);
+  }, [opcoes, busca, filtro, origem.filtroCampo, filtrosRelacionados]);
 
   const filtradas = resultados.slice(0, 100);
 
