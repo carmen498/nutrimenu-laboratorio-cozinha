@@ -43,11 +43,20 @@ A classificação não modifica a Receita, o Ingrediente ou a Refeição de orig
 - a criação canônica confirma que o cardápio-pai e a origem estão acessíveis;
 - itens fora das datas do período são recusados;
 - dia da semana e nome de referência são derivados pelo sistema;
+- ao reorganizar, o sistema valida a propriedade dos itens e regrava data, dia da semana e ordem dos dias afetados;
 - a exclusão canônica remove primeiro os itens filhos;
 - nenhuma entidade ou registro existente é migrado nesta etapa.
 
-## Exposição
+## Interface funcional
 
-A rota protegida `/cardapios-beta` existe apenas para validação interna da base.
+O módulo está disponível no menu pela rota protegida `/cardapios`.
 
-O módulo não aparece no menu. A rota pública `/cardapios` continua redirecionando para Refeições até que o planejador mínimo esteja funcional e validado.
+- criação e listagem de semanas;
+- visão de segunda-feira a domingo;
+- inclusão de Refeições, Receitas e Ingredientes;
+- classificação contextual opcional;
+- remoção de itens;
+- ordenação dentro de um dia;
+- movimentação entre dias por arrastar e soltar ou pelos botões alternativos.
+
+A rota legada de validação `/cardapios-beta` redireciona para o módulo funcional.
