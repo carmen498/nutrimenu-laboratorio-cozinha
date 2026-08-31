@@ -13,12 +13,12 @@ const ORDEM_CLASSIFICACOES = {
   prato_principal: 4,
   segundo_prato: 5,
   acompanhamento: 6,
-  guarnicao: 7,
-  bebida: 8,
-  sobremesa: 9,
-  outro: 10,
+  guarnicao: 6,
+  bebida: 7,
+  sobremesa: 8,
+  outro: 9,
 };
-const ORDEM_SEM_CLASSIFICACAO = 10;
+const ORDEM_SEM_CLASSIFICACAO = 9;
 
 function prioridadeClassificacao(classificacao) {
   return ORDEM_CLASSIFICACOES[classificacao] || ORDEM_SEM_CLASSIFICACAO;
