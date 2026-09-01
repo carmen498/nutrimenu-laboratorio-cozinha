@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, Scale, ShoppingCart, FileText } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Users, Scale, ShoppingCart, FileText, Copy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,9 +16,13 @@ import NovoPlanejamentoDialog from "./NovoPlanejamentoDialog";
 import RelatoriosPlanejamentoDialog from "./RelatoriosPlanejamentoDialog";
 import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
+import { useAuth } from "@/lib/AuthContext";
+import { toast } from "sonner";
 
 export default function ListaPlanejamentos() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [planejamentos, setPlanejamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -31,6 +35,7 @@ export default function ListaPlanejamentos() {
   );
   const [excluirItem, setExcluirItem] = useState(null);
   const [relatorioItem, setRelatorioItem] = useState(null);
+  const [importandoModelo, setImportandoModelo] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -58,12 +63,46 @@ export default function ListaPlanejamentos() {
     } catch (e) { consoleErrorSeguro("Erro em planejamento", e); }
   };
 
+  const handleUsarModelo = async (modelo) => {
+    if (importandoModelo) return;
+    setImportandoModelo(true);
+    try {
+      const {
+        id, created_date, updated_date, created_by_id, created_by,
+        is_modelo, modelo_origem_id, ...dadosModelo
+      } = modelo;
+      const copia = await base44.entities.Planejamento.create({
+        ...dadosModelo,
+        nome: "NOVO EVENTO — CÓPIA DO MODELO",
+        is_modelo: false,
+        modelo_origem_id: id,
+      });
+      await load();
+      setEdicao(copia);
+      setShowDialog(true);
+      toast.success("Evento Modelo importado para sua conta.");
+    } catch (e) {
+      consoleErrorSeguro("Erro ao importar Evento Modelo", e);
+      toast.error("Não foi possível importar o Evento Modelo.");
+    } finally {
+      setImportandoModelo(false);
+    }
+  };
+
   const handleEdit = (p) => {
+    if (p.is_modelo && !isAdmin) {
+      handleUsarModelo(p);
+      return;
+    }
     setEdicao(p);
     setShowDialog(true);
   };
 
   const handleAbrirCard = (p) => {
+    if (p.is_modelo && !isAdmin) {
+      handleUsarModelo(p);
+      return;
+    }
     setEdicao(p);
     setShowDialog(true);
   };
@@ -116,6 +155,9 @@ export default function ListaPlanejamentos() {
                   {p.cardapio_config && (
                     <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">Cardápio</Badge>
                   )}
+                  {p.is_modelo && (
+                    <Badge variant="outline" className="text-xs border-amber-400 text-amber-700 bg-amber-50">Modelo do sistema</Badge>
+                  )}
                 </div>
               </div>
               <DropdownMenu>
@@ -126,10 +168,16 @@ export default function ListaPlanejamentos() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={e => e.stopPropagation()}>
-                  <DropdownMenuItem onClick={() => handleEdit(p)}>
-                    <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
-                  </DropdownMenuItem>
-                  {p.cardapio_config && (
+                  {p.is_modelo && !isAdmin ? (
+                    <DropdownMenuItem onClick={() => handleUsarModelo(p)} disabled={importandoModelo}>
+                      <Copy className="w-3.5 h-3.5 mr-2" /> Importar Evento Modelo
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onClick={() => handleEdit(p)}>
+                      <Pencil className="w-3.5 h-3.5 mr-2" /> Editar
+                    </DropdownMenuItem>
+                  )}
+                  {!p.is_modelo && p.cardapio_config && (
                     <>
                       <DropdownMenuItem onClick={() => navigate(`/lista-compras?planejamento=${p.id}`)}>
                         <ShoppingCart className="w-3.5 h-3.5 mr-2" /> Lista de Compras
@@ -139,9 +187,11 @@ export default function ListaPlanejamentos() {
                       </DropdownMenuItem>
                     </>
                   )}
-                  <DropdownMenuItem className="text-destructive" onClick={() => setExcluirItem(p)}>
-                    <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
-                  </DropdownMenuItem>
+                  {(!p.is_modelo || isAdmin) && (
+                    <DropdownMenuItem className="text-destructive" onClick={() => setExcluirItem(p)}>
+                      <Trash2 className="w-3.5 h-3.5 mr-2" /> Excluir
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
