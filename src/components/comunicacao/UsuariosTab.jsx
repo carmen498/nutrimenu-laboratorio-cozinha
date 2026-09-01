@@ -6,8 +6,6 @@ import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUs
 import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
 import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
 import { fetchAllFilteredPages, fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
@@ -35,7 +33,6 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [origemFiltro, setOrigemFiltro] = useState("todos");
   const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState("todos");
   const [situacaoPagamentoFiltro, setSituacaoPagamentoFiltro] = useState("todos");
-  const [mostrarAdmins, setMostrarAdmins] = useState(false);
   const [periodoFiltro, setPeriodoFiltro] = useState(PERIODO_PADRAO);
   const [dataInicioCustom, setDataInicioCustom] = useState("");
   const [dataFimCustom, setDataFimCustom] = useState("");
@@ -62,11 +59,12 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const { data: movimentacoes = {}, isLoading: carregandoMovimentacoes, isError: erroMovimentacoes, error: detalheErroMovimentacoes } = useQuery({
     queryKey: ["admin-movimentacao-laboratorio"],
     queryFn: async () => {
+      const carregarOuVazio = (promessa) => promessa.catch(() => []);
       const [receitas, refeicoes, cardapios, eventos] = await Promise.all([
-        fetchAllFilteredPages(base44.entities.Receita, { is_base: false }, "-created_date", 500),
-        fetchAllFilteredPages(base44.entities.Cardapio, { is_base: false }, "-created_date", 500),
-        fetchAllPages(base44.entities.CardapioPeriodo, "-created_date", 500),
-        fetchAllPages(base44.entities.PlanejamentoEvento, "-created_date", 500),
+        carregarOuVazio(fetchAllFilteredPages(base44.entities.Receita, { is_base: false }, "-created_date", 500)),
+        carregarOuVazio(fetchAllFilteredPages(base44.entities.Cardapio, { is_base: false }, "-created_date", 500)),
+        carregarOuVazio(fetchAllPages(base44.entities.CardapioPeriodo, "-created_date", 500)),
+        carregarOuVazio(fetchAllPages(base44.entities.Planejamento, "-created_date", 500)),
       ]);
       return { receitas, refeicoes, cardapios, eventos };
     },
@@ -106,7 +104,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const usuariosFiltrados = useMemo(() => {
     const buscaNorm = busca.trim().toLowerCase();
     return usuarios.filter((u) => {
-      if (!mostrarAdmins && u.role === "admin") return false;
+      if (u.role === "admin") return false;
       if (buscaNorm) {
         const alvo = `${u.nome_completo || u.full_name || ""} ${u.email || ""} ${u.telefone_whatsapp || ""}`.toLowerCase();
         if (!alvo.includes(buscaNorm)) return false;
@@ -122,7 +120,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
       }
       return true;
     });
-  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, mostrarAdmins, pagamentosPorUsuario]);
+  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, pagamentosPorUsuario]);
 
   const pagamentosParaCards = useMemo(() => {
     const ids = new Set(usuariosFiltrados.map((u) => u.id));
@@ -227,13 +225,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         situacaoPagamentoFiltro={situacaoPagamentoFiltro} setSituacaoPagamentoFiltro={setSituacaoPagamentoFiltro}
       />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Switch id="mostrar-admins" checked={mostrarAdmins} onCheckedChange={setMostrarAdmins} />
-          <Label htmlFor="mostrar-admins" className="text-sm font-normal cursor-pointer">
-            Mostrar contas administradoras
-          </Label>
-        </div>
+      <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={sincronizarPagamentos} disabled={sincronizandoPagamentos}>
           <RefreshCw className={`w-4 h-4 ${sincronizandoPagamentos ? "animate-spin" : ""}`} />
           {sincronizandoPagamentos ? "Sincronizando..." : "Sincronizar pagamentos"}
