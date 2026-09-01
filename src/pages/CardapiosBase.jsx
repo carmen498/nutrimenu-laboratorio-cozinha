@@ -62,7 +62,12 @@ export default function CardapiosBase() {
     <div className="max-w-5xl mx-auto space-y-6">
       <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Cardápios</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-display font-bold text-foreground">Cardápios</h1>
+            <span className="inline-flex min-w-7 h-7 items-center justify-center rounded-full bg-primary/10 px-2 text-sm font-bold text-primary">
+              {cardapios.length}
+            </span>
+          </div>
           <p className="text-sm text-muted-foreground mt-1">
             Planeje uma semana inteira, de segunda a domingo.
           </p>
