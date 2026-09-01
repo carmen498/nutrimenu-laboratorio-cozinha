@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ function CampoNF({ rotulo, valor }) {
 }
 
 export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map() }) {
+  const navigate = useNavigate();
   const [expandidos, setExpandidos] = useState(new Set());
   const [usuarioAberto, setUsuarioAberto] = useState(null);
   const [dadosNFAbertos, setDadosNFAbertos] = useState(false);
@@ -183,8 +185,8 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} nome={usuarioAberto.nome_completo || usuarioAberto.full_name} />
-                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setDadosNFAbertos((v) => !v)}>
-                      <FileText className="w-3.5 h-3.5" /> Dados cadastrais para NF
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => navigate(`/conta?userId=${usuarioAberto.id}`)}>
+                      <FileText className="w-3.5 h-3.5" /> Abrir dados cadastrais para NF
                     </Button>
                   </div>
                 </section>
@@ -203,13 +205,17 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       </dl>
                     </div>
 
-                    {(usuarioAberto.cep || usuarioAberto.endereco || usuarioAberto.cidade_uf) && (
+                    {(usuarioAberto.cep || usuarioAberto.logradouro || usuarioAberto.endereco || usuarioAberto.bairro || usuarioAberto.cidade || usuarioAberto.cidade_uf) && (
                       <div className="border-t pt-4">
                         <h3 className="font-semibold mb-3">📌 Endereço</h3>
                         <dl className="grid gap-3 sm:grid-cols-2">
                           <CampoNF rotulo="CEP" valor={usuarioAberto.cep} />
-                          <CampoNF rotulo="Endereço" valor={usuarioAberto.endereco} />
-                          <CampoNF rotulo="Cidade/UF" valor={usuarioAberto.cidade_uf} />
+                          <CampoNF rotulo="Logradouro" valor={usuarioAberto.logradouro || usuarioAberto.endereco} />
+                          <CampoNF rotulo="Número" valor={usuarioAberto.numero} />
+                          <CampoNF rotulo="Complemento" valor={usuarioAberto.complemento} />
+                          <CampoNF rotulo="Bairro" valor={usuarioAberto.bairro} />
+                          <CampoNF rotulo="Cidade" valor={usuarioAberto.cidade || (usuarioAberto.cidade_uf || "").split("/")[0]?.trim()} />
+                          <CampoNF rotulo="Estado" valor={usuarioAberto.estado || (usuarioAberto.cidade_uf || "").split("/")[1]?.trim()} />
                         </dl>
                       </div>
                     )}
