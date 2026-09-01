@@ -7,6 +7,7 @@ import {
   filtrarOpcoesCardapio,
   prioridadeClassificacao,
 } from "../src/lib/cardapioRegras.js";
+import { toSentenceCaseName, toUpperName } from "../src/lib/textCase.js";
 
 const receitas = [
   { id: "salada", nome: "SALADA DE BRÓCOLIS COM TOMATE", categorias: ["Saladas"] },
@@ -112,6 +113,11 @@ assert.equal(
   "A inclusão respeita a posição manual existente sem reordenar itens antigos",
 );
 
+assert.equal(toUpperName("  almoço de domingo  "), "ALMOÇO DE DOMINGO", "Eventos, Refeições e Cardápios ficam em maiúsculas");
+assert.equal(toUpperName("bolo de cenoura"), "BOLO DE CENOURA", "Receitas ficam em maiúsculas");
+assert.equal(toUpperName("molho branco"), "MOLHO BRANCO", "Subtítulos de grupo ficam em maiúsculas");
+assert.equal(toSentenceCaseName("BATATA INGLESA"), "Batata inglesa", "Ingredientes ficam com inicial maiúscula");
+
 const sidebarSource = readFileSync(new URL("../src/components/layout/Sidebar.jsx", import.meta.url), "utf8");
 const ordemMenuComum = [
   'label: "Ingredientes"',
@@ -131,4 +137,4 @@ assert.match(
   "O menu comum não pode depender do perfil administrativo",
 );
 
-console.log("Etapa 12: 18 verificações funcionais aprovadas.");
+console.log("Etapa 12: 22 verificações funcionais aprovadas.");
