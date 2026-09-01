@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { formatarTelefone } from "@/lib/formatarTelefone";
+import { formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import { toast } from "sonner";
 
 function getIniciais(nome) {
@@ -37,6 +38,13 @@ export default function Conta() {
   });
 
   const displayUser = isAdminViewingOther ? fetchedUser : currentUser;
+
+  const { data: pagamentosAprovados = [] } = useQuery({
+    queryKey: ["pagamentos-aprovados-conta", targetUserId],
+    queryFn: () => base44.entities.Pagamento.filter({ usuario_id: targetUserId, status: "approved" }, "-created_date", 50),
+    enabled: !!targetUserId,
+  });
+  const ultimoPagamento = pagamentosAprovados[0] || null;
 
   const [nomeCompleto, setNomeCompleto] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -119,6 +127,11 @@ export default function Conta() {
       ["CPF/CNPJ", cpfCnpj],
       ["E-mail", displayUser?.email],
       ["Telefone/WhatsApp", telefone],
+      "",
+      "PLANO",
+      "",
+      ["Plano", ({ diario: "Passe Diário", custos_mensal: "Custos Mensal", custos_anual: "Custos Anual", ...PLANO_LABEL })[ultimoPagamento?.plano || displayUser?.plano_atual]],
+      ["Data da contratação", formatarData(ultimoPagamento?.created_date || displayUser?.data_inicio)],
       "",
       "ENDEREÇO",
       "",
