@@ -44,8 +44,12 @@ export default function Conta() {
   const [cpfCnpj, setCpfCnpj] = useState("");
   const [razaoSocial, setRazaoSocial] = useState("");
   const [cep, setCep] = useState("");
-  const [cidadeUf, setCidadeUf] = useState("");
-  const [endereco, setEndereco] = useState("");
+  const [logradouro, setLogradouro] = useState("");
+  const [numero, setNumero] = useState("");
+  const [complemento, setComplemento] = useState("");
+  const [bairro, setBairro] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [estado, setEstado] = useState("");
   const [anotacoesAdmin, setAnotacoesAdmin] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -57,8 +61,12 @@ export default function Conta() {
       setCpfCnpj(displayUser.cpf_cnpj || "");
       setRazaoSocial(displayUser.razao_social || "");
       setCep(displayUser.cep || "");
-      setCidadeUf(displayUser.cidade_uf || "");
-      setEndereco(displayUser.endereco || "");
+      setLogradouro(displayUser.logradouro || displayUser.endereco || "");
+      setNumero(displayUser.numero || "");
+      setComplemento(displayUser.complemento || "");
+      setBairro(displayUser.bairro || "");
+      setCidade(displayUser.cidade || (displayUser.cidade_uf || "").split("/")[0]?.trim() || "");
+      setEstado(displayUser.estado || (displayUser.cidade_uf || "").split("/")[1]?.trim() || "");
       setAnotacoesAdmin(displayUser.anotacoes_admin || "");
     }
   }, [displayUser]);
@@ -75,8 +83,15 @@ export default function Conta() {
       cpf_cnpj: cpfCnpj,
       razao_social: razaoSocial,
       cep,
-      cidade_uf: cidadeUf,
-      endereco,
+      logradouro,
+      numero,
+      complemento,
+      bairro,
+      cidade,
+      estado,
+      // Mantidos durante a transição para preservar integrações e cadastros antigos.
+      cidade_uf: [cidade, estado].filter(Boolean).join("/"),
+      endereco: [logradouro, numero, complemento, bairro].filter(Boolean).join(", "),
     };
     try {
       if (isAdminViewingOther) {
@@ -162,28 +177,49 @@ export default function Conta() {
       <Accordion type="single" collapsible>
         <AccordionItem value="nota-fiscal" className="border rounded-lg px-4">
           <AccordionTrigger className="text-sm font-semibold">
-            Dados complementares
+            Dados necessários para gerar NF
           </AccordionTrigger>
           <AccordionContent className="space-y-4 pt-2">
+            <p className="text-xs text-muted-foreground">Preencha os dados usados na emissão da nota fiscal. O complemento deve ser informado somente quando houver.</p>
             <div className="space-y-1.5">
-              <Label>CPF ou CNPJ</Label>
-              <Input value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} placeholder="Opcional" />
+              <Label>CPF ou CNPJ <span className="text-destructive">*</span></Label>
+              <Input value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} placeholder="Informe o CPF ou CNPJ" />
             </div>
             <div className="space-y-1.5">
-              <Label>Razão social (opcional, só PJ)</Label>
-              <Input value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} placeholder="Opcional" />
+              <Label>Razão social (somente PJ)</Label>
+              <Input value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} placeholder="Informe a razão social" />
             </div>
             <div className="space-y-1.5">
-              <Label>CEP</Label>
-              <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="Opcional" />
+              <Label>CEP <span className="text-destructive">*</span></Label>
+              <Input value={cep} onChange={(e) => setCep(e.target.value)} placeholder="00000-000" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+              <div className="space-y-1.5">
+                <Label>Logradouro <span className="text-destructive">*</span></Label>
+                <Input value={logradouro} onChange={(e) => setLogradouro(e.target.value)} placeholder="Rua, avenida..." />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Número <span className="text-destructive">*</span></Label>
+                <Input value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="Número" />
+              </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Cidade/UF</Label>
-              <Input value={cidadeUf} onChange={(e) => setCidadeUf(e.target.value)} placeholder="Opcional" />
+              <Label>Complemento</Label>
+              <Input value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="Apartamento, sala, bloco..." />
             </div>
             <div className="space-y-1.5">
-              <Label>Endereço completo</Label>
-              <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="Opcional" />
+              <Label>Bairro <span className="text-destructive">*</span></Label>
+              <Input value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="Informe o bairro" />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
+              <div className="space-y-1.5">
+                <Label>Cidade <span className="text-destructive">*</span></Label>
+                <Input value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Informe a cidade" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Estado <span className="text-destructive">*</span></Label>
+                <Input value={estado} onChange={(e) => setEstado(e.target.value.toUpperCase().slice(0, 2))} placeholder="UF" maxLength={2} />
+              </div>
             </div>
           </AccordionContent>
         </AccordionItem>
