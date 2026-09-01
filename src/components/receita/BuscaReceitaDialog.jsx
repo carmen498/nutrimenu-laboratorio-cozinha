@@ -17,7 +17,7 @@ export default function BuscaReceitaDialog({
 
   const { data: queryReceitas = [] } = useQuery({
     queryKey: ["receitas-busca"],
-    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "nome"),
     enabled: !propReceitas && open,
   });
   const receitas = propReceitas || queryReceitas;
@@ -34,7 +34,9 @@ export default function BuscaReceitaDialog({
         return terms.every(t => nome.includes(t));
       });
     }
-    return result.slice(0, 100);
+    return [...result]
+      .sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR", { sensitivity: "base" }))
+      .slice(0, 100);
   }, [receitas, busca, categoria]);
 
   const handleClose = () => { setBusca(""); setCategoria("Todas"); onClose(); };
