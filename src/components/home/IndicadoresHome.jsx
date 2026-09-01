@@ -4,7 +4,7 @@ import { BookOpen, Apple, CalendarDays, TrendingUp } from "lucide-react";
 const ITENS = [
   { key: "receitas", label: "Receitas", icon: BookOpen, cor: "#4E7C63" },
   { key: "ingredientes", label: "Ingredientes", icon: Apple, cor: "#A5643E" },
-  { key: "cardapios", label: "Cardápios", icon: CalendarDays, cor: "#7FA38C" },
+  { key: "cardapios", label: "Meus Cardápios", icon: CalendarDays, cor: "#7FA38C" },
   { key: "receitasAtualizadas", label: "Receitas atualizadas recentemente", icon: TrendingUp, cor: "#C9A24B" },
 ];
 
