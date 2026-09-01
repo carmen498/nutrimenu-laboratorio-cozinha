@@ -3,20 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { CATEGORIAS as CATS } from "@/components/receita/CategoriaPicker";
+import { normalizarNome } from "@/lib/normalizarNome";
 
 export default function BuscaReceitaDialog({
   open, onClose, onSelect, excludeIds = [], title = "Adicionar receita", receitas: propReceitas = null,
-  onCreateSection = null,
 }) {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todas");
-  const [novaSecao, setNovaSecao] = useState("");
-  const [secaoCriada, setSecaoCriada] = useState("");
 
   const { data: queryReceitas = [] } = useQuery({
     queryKey: ["receitas-busca"],
@@ -31,23 +28,17 @@ export default function BuscaReceitaDialog({
       result = result.filter(r => (r.categorias || []).includes(categoria));
     }
     if (busca.trim()) {
-      const terms = busca.toLowerCase().split(/\s+/).filter(Boolean);
+      const terms = normalizarNome(busca).split(/\s+/).filter(Boolean);
       result = result.filter(r => {
-        const nome = (r.nome || "").toLowerCase();
+        const nome = normalizarNome(r.nome);
         return terms.every(t => nome.includes(t));
       });
     }
     return result.slice(0, 100);
   }, [receitas, busca, categoria]);
 
-  const handleClose = () => { setBusca(""); setCategoria("Todas"); setNovaSecao(""); setSecaoCriada(""); onClose(); };
-  const handleSelect = (r) => { setBusca(""); setCategoria("Todas"); setSecaoCriada(""); onSelect(r); };
-  const handleCriarSecao = () => {
-    if (!novaSecao.trim()) return;
-    onCreateSection?.(novaSecao.trim());
-    setSecaoCriada(novaSecao.trim());
-    setNovaSecao("");
-  };
+  const handleClose = () => { setBusca(""); setCategoria("Todas"); onClose(); };
+  const handleSelect = (r) => { setBusca(""); setCategoria("Todas"); onSelect(r); };
 
   return (
     <Dialog open={open} onOpenChange={v => !v && handleClose()}>
@@ -73,20 +64,9 @@ export default function BuscaReceitaDialog({
               </button>
             ))}
           </div>
-          {onCreateSection && (
-            <div className="flex items-center gap-2">
-              <Input placeholder="+ Nova seção..." className="h-8 text-xs flex-1" value={novaSecao}
-                onChange={e => setNovaSecao(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleCriarSecao(); } }} />
-              <Button type="button" variant="outline" size="sm" className="h-8 text-xs shrink-0 gap-1"
-                disabled={!novaSecao.trim()} onClick={handleCriarSecao}>
-                <Plus className="w-3.5 h-3.5" /> Criar seção
-              </Button>
-            </div>
-          )}
-          {secaoCriada && (
-            <p className="text-xs text-primary">Seção "{secaoCriada}" será usada para o próximo prato selecionado.</p>
-          )}
+          <p className="text-xs text-muted-foreground px-1">
+            {filtradas.length} {filtradas.length === 1 ? "receita encontrada" : "receitas encontradas"}
+          </p>
           <div className="flex-1 overflow-y-auto space-y-1">
             {filtradas.length === 0 ? (
               <p className="text-center text-sm text-muted-foreground py-4">Nenhuma receita encontrada.</p>
