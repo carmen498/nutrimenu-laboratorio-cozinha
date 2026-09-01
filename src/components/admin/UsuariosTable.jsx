@@ -214,8 +214,8 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                           <CampoNF rotulo="Número" valor={usuarioAberto.numero} />
                           <CampoNF rotulo="Complemento" valor={usuarioAberto.complemento} />
                           <CampoNF rotulo="Bairro" valor={usuarioAberto.bairro} />
-                          <CampoNF rotulo="Cidade" valor={usuarioAberto.cidade || (usuarioAberto.cidade_uf || "").split("/")[0]?.trim()} />
-                          <CampoNF rotulo="Estado" valor={usuarioAberto.estado || (usuarioAberto.cidade_uf || "").split("/")[1]?.trim()} />
+                          <CampoNF rotulo="Cidade" valor={(usuarioAberto.cidade || (usuarioAberto.cidade_uf || "").split("/")[0]?.trim() || "").toUpperCase()} />
+                          <CampoNF rotulo="Estado" valor={(usuarioAberto.estado || (usuarioAberto.cidade_uf || "").split("/")[1]?.trim() || "").toUpperCase()} />
                         </dl>
                       </div>
                     )}
