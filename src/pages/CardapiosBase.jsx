@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, ChevronRight, FileText, Loader2, MoreHorizontal, Plus } from "lucide-react";
+import { CalendarDays, ChevronRight, Copy, FileText, Loader2, MoreHorizontal, Plus, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { criarCardapioPeriodo, listarCardapiosPeriodo } from "@/lib/cardapioPeriodo";
+import { criarCardapioPeriodo, duplicarCardapioPeriodo, excluirCardapioPeriodo, listarCardapiosPeriodo } from "@/lib/cardapioPeriodo";
+import GestaoCardapioDialogs from "@/components/cardapio/GestaoCardapioDialogs";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
   DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
@@ -37,6 +38,7 @@ export default function CardapiosBase() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [criando, setCriando] = useState(false);
+  const [gestaoCardapio, setGestaoCardapio] = useState(null);
   const [form, setForm] = useState({
     nome: "",
     data_inicio: dataInicialPadrao(),
@@ -56,6 +58,27 @@ export default function CardapiosBase() {
       navigate(`/cardapios/${cardapio.id}`);
     },
     onError: (erro) => toast.error(erro?.message || "Não foi possível criar o cardápio."),
+  });
+
+  const duplicar = useMutation({
+    mutationFn: ({ cardapio, dados }) => duplicarCardapioPeriodo(cardapio.id, dados),
+    onSuccess: async (novo) => {
+      await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });
+      setGestaoCardapio(null);
+      toast.success("Cardápio semanal duplicado.");
+      navigate(`/cardapios/${novo.id}`);
+    },
+    onError: (erro) => toast.error(erro?.message || "Não foi possível duplicar o Cardápio."),
+  });
+
+  const excluir = useMutation({
+    mutationFn: (cardapio) => excluirCardapioPeriodo(cardapio.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });
+      setGestaoCardapio(null);
+      toast.success("Cardápio excluído.");
+    },
+    onError: (erro) => toast.error(erro?.message || "Não foi possível excluir o Cardápio."),
   });
 
   function enviar(evento) {
@@ -205,6 +228,15 @@ export default function CardapiosBase() {
                         </DropdownMenuItem>
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
+                    <DropdownMenuItem onClick={() => setGestaoCardapio({ modo: "duplicar", cardapio })}>
+                      <Copy className="w-4 h-4 mr-2" /> Duplicar Cardápio
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setGestaoCardapio({ modo: "excluir", cardapio })}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Excluir Cardápio
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -213,6 +245,18 @@ export default function CardapiosBase() {
           </div>
         )}
       </section>
+
+      {gestaoCardapio && (
+        <GestaoCardapioDialogs
+          key={`${gestaoCardapio.modo}-${gestaoCardapio.cardapio.id}`}
+          modo={gestaoCardapio.modo}
+          cardapio={gestaoCardapio.cardapio}
+          pending={duplicar.isPending || excluir.isPending}
+          onClose={() => setGestaoCardapio(null)}
+          onDuplicar={(dados) => duplicar.mutate({ cardapio: gestaoCardapio.cardapio, dados })}
+          onExcluir={() => excluir.mutate(gestaoCardapio.cardapio)}
+        />
+      )}
     </div>
   );
 }
