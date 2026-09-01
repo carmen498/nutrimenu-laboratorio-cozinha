@@ -114,7 +114,9 @@ export default function CardapioAberto() {
   const [showLista, setShowLista] = useState(false);
   const [listaCompras, setListaCompras] = useState({});
   const [gerandoLista, setGerandoLista] = useState(false);
-  const [showRelatorios, setShowRelatorios] = useState(false);
+  const [showRelatorios, setShowRelatorios] = useState(
+    () => new URLSearchParams(window.location.search).get("relatorios") === "1"
+  );
   const [showEditar, setShowEditar] = useState(false);
   const [editForm, setEditForm] = useState({ nome: "", tipo: "", data: "" });
   const [salvandoEditar, setSalvandoEditar] = useState(false);
