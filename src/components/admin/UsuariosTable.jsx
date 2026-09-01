@@ -112,7 +112,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       </Badge>
                     ) : "—"}
                   </TableCell>
-                  <TableCell><ContatoIcones email={u.email} telefone={u.telefone_whatsapp} /></TableCell>
+                  <TableCell><ContatoIcones email={u.email} telefone={u.telefone_whatsapp} nome={u.nome_completo || u.full_name} /></TableCell>
                   <TableCell className="text-right">
                     <Badge variant="outline" className={status.className}>{status.label}</Badge>
                   </TableCell>
@@ -167,7 +167,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       <p className="text-sm">{usuarioAberto.telefone_whatsapp || "Não cadastrado"}</p>
                     </div>
                   </div>
-                  <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} />
+                  <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} nome={usuarioAberto.nome_completo || usuarioAberto.full_name} />
                 </section>
 
                 <section className="grid gap-3 sm:grid-cols-3">
