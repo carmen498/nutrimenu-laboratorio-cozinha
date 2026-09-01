@@ -37,43 +37,14 @@ export default function Planos() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [loadingTrial, setLoadingTrial] = useState(false);
-  const [loadingTrialCustos, setLoadingTrialCustos] = useState(false);
   const [checkoutPlano, setCheckoutPlano] = useState(null);
-  const [addonSelecionado, setAddonSelecionado] = useState({ trial: false, mensal: false, anual: false, renovacao: false });
 
   const { data: configPlanos = [], isLoading: carregandoPlanos } = useQuery({
     queryKey: ["configuracao-planos-publico"],
     queryFn: () => base44.entities.ConfiguracaoPlano.list("ordem"),
   });
   const configPlanosCozinha = configPlanos.filter((p) => !p.produto || p.produto === "laboratorio_cozinha");
-  const configPlanosCustos = configPlanos.filter((p) => p.produto === "laboratorio_custos");
   const configPorId = Object.fromEntries(configPlanosCozinha.map((p) => [p.plano_id, p]));
-  const custosPorId = Object.fromEntries(configPlanosCustos.map((p) => [p.plano_id, p]));
-
-  const { data: configsCustos = [] } = useQuery({
-    queryKey: ["planos-cozinha-config-custos"],
-    queryFn: () => base44.entities.ConfiguracaoAddonCustos.filter({ chave: "laboratorio_custos" }, "-updated_date", 10),
-    enabled: !!user?.id,
-    staleTime: 0,
-  });
-  const configCustos = configsCustos[0] || null;
-
-  const { data: acessosCustos = [] } = useQuery({
-    queryKey: ["planos-cozinha-acesso-custos", user?.id],
-    queryFn: () => base44.entities.AcessoLaboratorioCustosUsuario.filter({ user_id: user.id, modulo: "laboratorio_custos" }, "-updated_date", 20),
-    enabled: !!user?.id && user?.role !== "admin",
-    staleTime: 0,
-  });
-  const acessoCustosAtual = acessosCustos.find((a) => a.status === "ativo" && (!a.fim_em || new Date(a.fim_em) >= new Date())) || null;
-  const trialCustosUsado = acessosCustos.some((a) => a.modalidade === "trial" || a.origem === "trial" || a.trial_ativado_em);
-
-  const { data: preflightTrialCustos = null } = useQuery({
-    queryKey: ["planos-cozinha-preflight-trial-custos", user?.id],
-    queryFn: async () => (await base44.functions.invoke("preflightTrialLaboratorioCustos", {})).data,
-    enabled: !!user?.id && user?.role !== "admin" && !acessoCustosAtual && !trialCustosUsado,
-    staleTime: 0,
-    retry: false,
-  });
 
   const planoAtual = user?.plano_atual;
   const statusAssinatura = user?.status_assinatura;
@@ -92,7 +63,7 @@ export default function Planos() {
     setLoadingTrial(true);
     try {
       await base44.functions.invoke("inicializarTrialUsuario", {});
-      toast({ title: "Trial ativado!", description: "Cozinha + Custos: 7 dias de uso grátis dentro de uma janela de 30 dias." });
+      toast({ title: "Trial ativado!", description: "Laboratório de Cozinha: 7 dias de uso grátis dentro de uma janela de 30 dias." });
       navigate("/");
     } catch (err) {
       toast({ title: "Não foi possível ativar o trial", description: err.message || "Tente novamente.", variant: "destructive" });
@@ -101,92 +72,8 @@ export default function Planos() {
     }
   };
 
-  const toggleAddon = (planoId) => setAddonSelecionado((atual) => ({ ...atual, [planoId]: !atual[planoId] }));
-
-  const addonParaPlano = (planoId) => {
-    if (planoId === "mensal") {
-      const p = custosPorId.custos_mensal;
-      return p ? { id: "custos_mensal", nome: "30 dias", valor: Number(p.preco_exibido || 8.9) } : null;
-    }
-    if (["anual", "renovacao"].includes(planoId)) {
-      const p = custosPorId.custos_anual;
-      return p ? { id: "custos_anual", nome: "Anual", valor: Number(p.preco_exibido || 87) } : null;
-    }
-    if (planoId === "trial") {
-      const p = custosPorId.custos_trial;
-      return p ? { id: "custos_trial", nome: "7 dias grátis", valor: 0 } : null;
-    }
-    return null;
-  };
-
-  const complementoCard = (planoId) => {
-    const addon = addonParaPlano(planoId);
-    if (!addon) return null;
-    const trial = addon.id === "custos_trial";
-    if (trial) {
-      return (
-        <div className="flex items-start gap-2 text-left">
-          <input type="checkbox" className="mt-0.5 h-4 w-4" checked readOnly disabled />
-          <span className="min-w-0">
-            <span className="block text-xs font-semibold text-foreground">Laboratório de Custos incluído</span>
-            <span className="block text-[11px] text-muted-foreground mt-0.5">Mesmo trial: 7 dias de uso em até 30 dias</span>
-          </span>
-        </div>
-      );
-    }
-    const desabilitado = !!acessoCustosAtual;
-    const ativo = !!acessoCustosAtual;
-
-    return (
-      <label className={`flex items-start gap-2 text-left ${desabilitado ? "opacity-60" : "cursor-pointer"}`}>
-        <input
-          type="checkbox"
-          className="mt-0.5 h-4 w-4"
-          checked={ativo || !!addonSelecionado[planoId]}
-          disabled={desabilitado}
-          onChange={() => toggleAddon(planoId)}
-        />
-        <span className="min-w-0">
-          <span className="block text-xs font-semibold text-foreground">
-            {ativo ? "Laboratório de Custos ativo" : "Adicionar Laboratório de Custos"}
-          </span>
-          <span className="block text-[11px] text-muted-foreground mt-0.5">
-            {ativo
-              ? "Complemento já ativo nesta conta"
-              : `+ R$ ${addon.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${addon.id === "custos_anual" ? "ano" : "30 dias"}`}
-          </span>
-        </span>
-      </label>
-    );
-  };
-
-  const handleTrialCustos = async () => {
-    if (!preflightTrialCustos?.elegivel || loadingTrialCustos) return;
-    setLoadingTrialCustos(true);
-    try {
-      await base44.functions.invoke("inicializarTrialLaboratorioCustos", {});
-      toast({ title: "Laboratório de Custos ativado", description: "Seu teste de 7 dias começou." });
-      navigate("/custos");
-    } catch (err) {
-      toast({ title: "Não foi possível ativar o Laboratório de Custos", description: err?.response?.data?.error || err?.message || "Tente novamente.", variant: "destructive" });
-    } finally {
-      setLoadingTrialCustos(false);
-    }
-  };
-
   const handleAssinar = (planoId, planoNome) => {
-    const addon = addonSelecionado[planoId] ? addonParaPlano(planoId) : null;
-    setCheckoutPlano({ id: planoId, nome: planoNome, addon, somenteAddon: false });
-  };
-
-  const handleAdicionarCustosPlanoAtual = (planoId) => {
-    if (preflightTrialCustos?.elegivel && !trialCustosUsado) {
-      handleTrialCustos();
-      return;
-    }
-    const addon = addonParaPlano(planoId);
-    if (!addon) return;
-    setCheckoutPlano({ id: planoId, nome: configPorId[planoId]?.nome || planoId, addon, somenteAddon: true });
+    setCheckoutPlano({ id: planoId, nome: planoNome });
   };
 
   return (
@@ -197,7 +84,7 @@ export default function Planos() {
 
       <div className="text-center mb-10">
         <h1 className="font-heading text-3xl font-bold text-foreground">Planos</h1>
-        <p className="text-muted-foreground mt-2">Escolha o plano ideal para o seu Laboratório de Cozinha e, se quiser, adicione o Laboratório de Custos.</p>
+        <p className="text-muted-foreground mt-2">Escolha o plano ideal para o seu Laboratório de Cozinha.</p>
       </div>
 
       {carregandoPlanos ? (
