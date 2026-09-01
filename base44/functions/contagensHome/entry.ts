@@ -31,7 +31,7 @@ export default async function(req) {
       .map(resumirReceita);
     const receitasRevisarCount = receitas.filter((receita) => receita.revisar).length;
     const minhasReceitas = receitas.filter((receita) =>
-      receita.is_base === false &&
+      receita.is_base !== true &&
       (receita.usuario_dono_id === user.id || (!receita.usuario_dono_id && receita.created_by_id === user.id))
     );
 
