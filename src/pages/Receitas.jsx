@@ -632,7 +632,7 @@ export default function Receitas() {
                 <div className="min-w-0 flex-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                   <p className="font-medium text-sm">{r.nome}</p>
                   {r.revisar && <Badge variant="outline" className="text-[10px] bg-amber-100 text-amber-800 border-amber-300 shrink-0">A revisar</Badge>}
-                  {busca && receitaIdsPorIngrediente.has(r.id) && !normalizarNome(r.nome).includes(normalizarNome(busca)) && (
+                  {busca && receitaIdsPorIngrediente.has(r.id) && !termosBusca.every((termo) => normalizarNome(r.nome).includes(termo)) && (
                     <span className="text-[11px] text-primary/80 italic shrink-0">encontrado por ingrediente</span>
                   )}
                   {getCategorias(r).length > 0 && (
