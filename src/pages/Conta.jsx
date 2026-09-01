@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Copy, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -109,6 +109,49 @@ export default function Conta() {
     }
   };
 
+  const handleCopiarDadosNF = async () => {
+    const linhas = [
+      "DADOS PARA EMISSÃO DE NOTA FISCAL",
+      "",
+      ["Nome completo", nomeCompleto],
+      ["Empresa/Negócio", empresa],
+      ["Razão social", razaoSocial],
+      ["CPF/CNPJ", cpfCnpj],
+      ["E-mail", displayUser?.email],
+      ["Telefone/WhatsApp", telefone],
+      "",
+      "ENDEREÇO",
+      "",
+      ["CEP", cep],
+      ["Logradouro", logradouro],
+      ["Número", numero],
+      ["Complemento", complemento],
+      ["Bairro", bairro],
+      ["Cidade", cidade],
+      ["Estado", estado],
+    ];
+    const texto = linhas
+      .filter((item) => !Array.isArray(item) || String(item[1] || "").trim())
+      .map((item) => Array.isArray(item) ? `${item[0]}: ${String(item[1]).trim()}` : item)
+      .join("\n");
+
+    try {
+      await navigator.clipboard.writeText(texto);
+      toast.success("Dados para emissão de NF copiados!");
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = texto;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      const copiado = document.execCommand("copy");
+      document.body.removeChild(area);
+      if (copiado) toast.success("Dados para emissão de NF copiados!");
+      else toast.error("Não foi possível copiar os dados.");
+    }
+  };
+
   const handleEnviarLinkRedefinicao = async () => {
     try {
       await base44.auth.resetPasswordRequest(displayUser.email);
@@ -180,7 +223,12 @@ export default function Conta() {
             Dados necessários para gerar NF
           </AccordionTrigger>
           <AccordionContent className="space-y-4 pt-2">
-            <p className="text-xs text-muted-foreground">Preencha os dados usados na emissão da nota fiscal. O complemento deve ser informado somente quando houver.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-muted-foreground">Preencha os dados usados na emissão da nota fiscal. O complemento deve ser informado somente quando houver.</p>
+              <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={handleCopiarDadosNF}>
+                <Copy className="h-4 w-4" /> Copiar dados para emissão de NF
+              </Button>
+            </div>
             <div className="space-y-1.5">
               <Label>CPF ou CNPJ <span className="text-destructive">*</span></Label>
               <Input value={cpfCnpj} onChange={(e) => setCpfCnpj(e.target.value)} placeholder="Informe o CPF ou CNPJ" />
