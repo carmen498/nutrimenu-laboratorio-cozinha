@@ -1,10 +1,10 @@
-// Padronização de caixa de nomes ao salvar (Receitas, Cardápios/Eventos,
-// Sub-títulos de grupo, Ingredientes). Mantém acentos e grafias — apenas a
-// caixa muda.
+// Padronização de caixa de nomes ao salvar (Receitas, Refeições,
+// Cardápios, Eventos, Sub-títulos de grupo e Ingredientes).
+// Campos descritivos, preparos, tags, medidas e utensílios não passam por estas funções.
 
-// Receitas, Cardápios/Eventos e Sub-títulos de grupo: MAIÚSCULAS.
+// Receitas, Refeições, Cardápios, Eventos e Sub-títulos de grupo: MAIÚSCULAS.
 export function toUpperName(str) {
-  return (str || "").toString().toUpperCase();
+  return (str || "").toString().trim().toUpperCase();
 }
 
 // Ingredientes: Inicial maiúscula (ex: "Batata inglesa").
