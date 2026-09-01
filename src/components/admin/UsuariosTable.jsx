@@ -1,20 +1,32 @@
 import { Fragment, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
-import { computeStatusUsuario, formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
+import { computeStatusUsuario, formatarData, formatarDataHora, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import {
   getUltimoPagamento, formatarMoeda, FORMA_PAGAMENTO_LABEL,
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
 } from "@/lib/pagamentosUsuario";
 
+function CampoNF({ rotulo, valor }) {
+  if (valor === undefined || valor === null || valor === "") return null;
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{rotulo}</dt>
+      <dd className="text-sm font-medium break-words">{valor}</dd>
+    </div>
+  );
+}
+
 export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map() }) {
   const [expandidos, setExpandidos] = useState(new Set());
   const [usuarioAberto, setUsuarioAberto] = useState(null);
+  const [dadosNFAbertos, setDadosNFAbertos] = useState(false);
 
   if (usuarios.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-10">Nenhum usuário encontrado.</p>;
@@ -86,7 +98,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                     </button>
                   </TableCell>
                   <TableCell className="font-medium">
-                    <button className="text-left text-primary hover:underline" onClick={() => setUsuarioAberto(u)} title="Abrir conta do usuário">
+                    <button className="text-left text-primary hover:underline" onClick={() => { setUsuarioAberto(u); setDadosNFAbertos(false); }} title="Abrir conta do usuário">
                       {u.nome_completo || u.full_name || "—"}
                     </button>
                   </TableCell>
@@ -139,12 +151,14 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
         </TableBody>
       </Table>
 
-      <Sheet open={!!usuarioAberto} onOpenChange={(open) => !open && setUsuarioAberto(null)}>
+      <Sheet open={!!usuarioAberto} onOpenChange={(open) => { if (!open) { setUsuarioAberto(null); setDadosNFAbertos(false); } }}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
           {usuarioAberto && (() => {
             const movimentacao = movimentacaoPorUsuario.get(usuarioAberto.id) || { receitas: [], refeicoes: [], cardapios: [], eventos: [] };
             const historico = pagamentosPorUsuario.get(usuarioAberto.id) || [];
+            const ultimoPagamento = historico.find((p) => p.status === "approved") || historico[0] || null;
             const status = computeStatusUsuario(usuarioAberto);
+            const periodoPlano = { diario: "1 dia", mensal: "30 dias", anual: "1 ano", renovacao: "1 ano" };
             return (
               <div className="space-y-6">
                 <SheetHeader>
@@ -167,8 +181,54 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       <p className="text-sm">{usuarioAberto.telefone_whatsapp || "Não cadastrado"}</p>
                     </div>
                   </div>
-                  <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} nome={usuarioAberto.nome_completo || usuarioAberto.full_name} />
+                  <div className="flex flex-wrap gap-2">
+                    <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} nome={usuarioAberto.nome_completo || usuarioAberto.full_name} />
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => setDadosNFAbertos((v) => !v)}>
+                      <FileText className="w-3.5 h-3.5" /> Dados cadastrais para NF
+                    </Button>
+                  </div>
                 </section>
+
+                {dadosNFAbertos && (
+                  <section className="rounded-lg border p-4 space-y-5">
+                    <div>
+                      <h3 className="font-semibold mb-3">📌 Dados cadastrais</h3>
+                      <dl className="grid gap-3 sm:grid-cols-2">
+                        <CampoNF rotulo="Nome completo" valor={usuarioAberto.nome_completo || usuarioAberto.full_name} />
+                        <CampoNF rotulo="Razão social" valor={usuarioAberto.razao_social} />
+                        <CampoNF rotulo="CPF/CNPJ" valor={usuarioAberto.cpf_cnpj} />
+                        <CampoNF rotulo="E-mail" valor={usuarioAberto.email} />
+                        <CampoNF rotulo="Celular" valor={usuarioAberto.telefone_whatsapp} />
+                        <CampoNF rotulo="Data e hora de cadastro" valor={formatarDataHora(usuarioAberto.created_date)} />
+                      </dl>
+                    </div>
+
+                    {(usuarioAberto.cep || usuarioAberto.endereco || usuarioAberto.cidade_uf) && (
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-3">📌 Endereço</h3>
+                        <dl className="grid gap-3 sm:grid-cols-2">
+                          <CampoNF rotulo="CEP" valor={usuarioAberto.cep} />
+                          <CampoNF rotulo="Endereço" valor={usuarioAberto.endereco} />
+                          <CampoNF rotulo="Cidade/UF" valor={usuarioAberto.cidade_uf} />
+                        </dl>
+                      </div>
+                    )}
+
+                    {(usuarioAberto.plano_atual || ultimoPagamento) && (
+                      <div className="border-t pt-4">
+                        <h3 className="font-semibold mb-3">📌 Plano</h3>
+                        <dl className="grid gap-3 sm:grid-cols-2">
+                          <CampoNF rotulo="Plano" valor={PLANO_LABEL[ultimoPagamento?.plano || usuarioAberto.plano_atual] || ultimoPagamento?.plano || usuarioAberto.plano_atual} />
+                          <CampoNF rotulo="Data/hora da contratação" valor={formatarDataHora(ultimoPagamento?.created_date)} />
+                          <CampoNF rotulo="Valor" valor={ultimoPagamento ? formatarMoeda(ultimoPagamento.valor) : null} />
+                          <CampoNF rotulo="Período" valor={periodoPlano[ultimoPagamento?.plano || usuarioAberto.plano_atual]} />
+                          <CampoNF rotulo="Situação do pagamento" valor={ultimoPagamento ? (STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status) : null} />
+                          <CampoNF rotulo="Validade" valor={formatarData(usuarioAberto.data_expiracao)} />
+                        </dl>
+                      </div>
+                    )}
+                  </section>
+                )}
 
                 <section className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-lg border p-3">
