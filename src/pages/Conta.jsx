@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { formatarTelefone } from "@/lib/formatarTelefone";
-import { formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import { toast } from "sonner";
 
 function getIniciais(nome) {
@@ -108,10 +107,6 @@ export default function Conta() {
     return <p className="text-sm text-muted-foreground text-center py-12">Carregando conta...</p>;
   }
 
-  const planoLabel = PLANO_LABEL[displayUser?.plano_atual] || "—";
-  const isContaAdmin = displayUser?.role === "admin";
-  const isPlanoAtivo = isContaAdmin || displayUser?.status_assinatura === "ativo";
-
   return (
     <div className="max-w-lg mx-auto space-y-4 pb-12">
       <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -134,25 +129,6 @@ export default function Conta() {
           </Badge>
         )}
       </div>
-
-      {/* Bloco de plano */}
-      <Card className={`p-4 space-y-2 ${isPlanoAtivo ? "bg-green-50 border-green-200" : ""}`}>
-        <p className="text-sm font-semibold">
-          {isContaAdmin
-            ? "Acesso administrativo ativo · sem vencimento"
-            : `Plano ${planoLabel} · ${isPlanoAtivo ? "ativo até" : "válido até"} ${formatarData(displayUser?.data_expiracao) || "—"}`}
-        </p>
-        {!isContaAdmin && (
-          <p className="text-xs text-muted-foreground">
-            Este plano não possui renovação automática. Para continuar usando após o vencimento, é necessário adquirir novamente.
-          </p>
-        )}
-        {!isAdminViewingOther && (
-          <Button variant="outline" size="sm" onClick={() => navigate("/planos")}>
-            Renovar plano
-          </Button>
-        )}
-      </Card>
 
       {/* Dados básicos */}
       <Card className="p-5 space-y-4">
