@@ -353,7 +353,7 @@ ${form.modo_preparo}`,
               <div>
                 <Label className="text-xs text-muted-foreground">Peso pré-preparo</Label>
                 <div className="h-9 flex items-center px-3 rounded-md border bg-muted/50 text-sm font-medium">
-                  {pesoPreAtual.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} {form.unidade_base || "g"}
+                  {pesoPreAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {form.unidade_base || "g"}
                 </div>
               </div>
               <div>
