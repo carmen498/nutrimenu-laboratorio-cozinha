@@ -82,7 +82,6 @@ const CustosCalcular = lazy(() => import('@/pages/CustosCalcular'));
 const CustosFicha = lazy(() => import('@/pages/CustosFicha'));
 const CustosHistorico = lazy(() => import('@/pages/CustosHistorico'));
 const CustosConfiguracoes = lazy(() => import('@/pages/CustosConfiguracoes'));
-const CustosPlanos = lazy(() => import('@/pages/CustosPlanos'));
 const CustosBloqueado = lazy(() => import('@/pages/CustosBloqueado')); 
 
 // Routes reachable without a valid session — these must keep rendering even
@@ -210,7 +209,6 @@ const AuthenticatedApp = () => {
               <Route path="/custos/ficha/:id" element={<CustosFicha />} />
               <Route path="/custos/historico" element={<CustosHistorico />} />
               <Route path="/custos/configuracoes" element={<CustosConfiguracoes />} />
-              <Route path="/custos/planos" element={<CustosPlanos />} />
             </Route>
           </Route>
         </Route>
