@@ -65,8 +65,8 @@ export default function Conta() {
       setNumero(displayUser.numero || "");
       setComplemento(displayUser.complemento || "");
       setBairro(displayUser.bairro || "");
-      setCidade(displayUser.cidade || (displayUser.cidade_uf || "").split("/")[0]?.trim() || "");
-      setEstado(displayUser.estado || (displayUser.cidade_uf || "").split("/")[1]?.trim() || "");
+      setCidade((displayUser.cidade || (displayUser.cidade_uf || "").split("/")[0]?.trim() || "").toUpperCase());
+      setEstado((displayUser.estado || (displayUser.cidade_uf || "").split("/")[1]?.trim() || "").toUpperCase());
       setAnotacoesAdmin(displayUser.anotacoes_admin || "");
     }
   }, [displayUser]);
@@ -87,10 +87,10 @@ export default function Conta() {
       numero,
       complemento,
       bairro,
-      cidade,
-      estado,
+      cidade: cidade.toUpperCase(),
+      estado: estado.toUpperCase(),
       // Mantidos durante a transição para preservar integrações e cadastros antigos.
-      cidade_uf: [cidade, estado].filter(Boolean).join("/"),
+      cidade_uf: [cidade.toUpperCase(), estado.toUpperCase()].filter(Boolean).join("/"),
       endereco: [logradouro, numero, complemento, bairro].filter(Boolean).join(", "),
     };
     try {
@@ -262,7 +262,7 @@ export default function Conta() {
             <div className="grid gap-4 sm:grid-cols-[1fr_9rem]">
               <div className="space-y-1.5">
                 <Label>Cidade <span className="text-destructive">*</span></Label>
-                <Input value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="Informe a cidade" />
+                <Input value={cidade} onChange={(e) => setCidade(e.target.value.toUpperCase())} placeholder="INFORME A CIDADE" />
               </div>
               <div className="space-y-1.5">
                 <Label>Estado <span className="text-destructive">*</span></Label>
