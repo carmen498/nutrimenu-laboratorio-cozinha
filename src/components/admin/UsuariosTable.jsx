@@ -11,7 +11,7 @@ import {
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
 } from "@/lib/pagamentosUsuario";
 
-export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map() }) {
+export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map() }) {
   const [expandidos, setExpandidos] = useState(new Set());
 
   if (usuarios.length === 0) {
@@ -38,6 +38,10 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             </TableHead>
             <TableHead className="w-8" />
             <TableHead>Nome</TableHead>
+            <TableHead className="text-center">Receitas</TableHead>
+            <TableHead className="text-center">Refeições</TableHead>
+            <TableHead className="text-center">Cardápios</TableHead>
+            <TableHead className="text-center">Eventos</TableHead>
             <TableHead>Plano</TableHead>
             <TableHead>Expira em</TableHead>
             <TableHead>Lab. Custos</TableHead>
@@ -54,6 +58,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             const historico = pagamentosPorUsuario.get(u.id) || [];
             const expandido = expandidos.has(u.id);
             const acessoCustos = acessoCustosPorUsuario.get(u.id);
+            const movimentacao = movimentacaoPorUsuario.get(u.id) || { receitas: [], refeicoes: [], cardapios: [], eventos: [] };
             let statusCustos = "Não contratado";
             if (acessoCustos) {
               if (acessoCustos.status === "suspenso") statusCustos = "Suspenso";
@@ -78,7 +83,15 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       {expandido ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </button>
                   </TableCell>
-                  <TableCell className="font-medium">{u.nome_completo || u.full_name || "—"}</TableCell>
+                  <TableCell className="font-medium">
+                    <button className="text-left hover:text-primary hover:underline" onClick={() => toggleExpandir(u.id)} title="Abrir movimentação e histórico">
+                      {u.nome_completo || u.full_name || "—"}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-center">{movimentacao.receitas.length}</TableCell>
+                  <TableCell className="text-center">{movimentacao.refeicoes.length}</TableCell>
+                  <TableCell className="text-center">{movimentacao.cardapios.length}</TableCell>
+                  <TableCell className="text-center">{movimentacao.eventos.length}</TableCell>
                   <TableCell>{PLANO_LABEL[u.plano_atual] || "—"}</TableCell>
                   <TableCell>{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</TableCell>
                   <TableCell><Badge variant="outline">{statusCustos}</Badge></TableCell>
@@ -104,7 +117,16 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 </TableRow>
                 {expandido && (
                   <TableRow>
-                    <TableCell colSpan={10} className="bg-muted/30 p-0">
+                    <TableCell colSpan={14} className="bg-muted/30 p-0">
+                      <div className="px-4 pt-4">
+                        <p className="text-sm font-semibold mb-2">Movimentação no Laboratório de Cozinha</p>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <Badge variant="secondary">{movimentacao.receitas.length} receitas</Badge>
+                          <Badge variant="secondary">{movimentacao.refeicoes.length} refeições</Badge>
+                          <Badge variant="secondary">{movimentacao.cardapios.length} cardápios</Badge>
+                          <Badge variant="secondary">{movimentacao.eventos.length} eventos</Badge>
+                        </div>
+                      </div>
                       <HistoricoPagamentosLinha pagamentos={historico} />
                     </TableCell>
                   </TableRow>
