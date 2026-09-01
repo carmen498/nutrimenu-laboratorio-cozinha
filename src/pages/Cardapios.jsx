@@ -70,7 +70,10 @@ export default function Cardapios() {
   });
 
   const meusCardapiosCount = useMemo(
-    () => cardapios.filter((c) => c.usuario_dono_id === user?.id).length,
+    () => cardapios.filter((c) =>
+      c.is_base === false &&
+      (c.usuario_dono_id === user?.id || (!c.usuario_dono_id && c.created_by_id === user?.id))
+    ).length,
     [cardapios, user?.id]
   );
 
