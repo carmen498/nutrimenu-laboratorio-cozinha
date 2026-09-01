@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 
 function fmtKg(v) { return (v || 0).toFixed(2).replace(".", ",") + " kg"; }
@@ -14,10 +19,12 @@ export default function CardapioPratoLinha({
   temDias, diasOptions = [], refeicoesOptions = [], onUpdateField = (_campo, _valor) => {}, semCusto = false, showTrashInRow = false,
   contexto = null,
 }) {
+  const [confirmarRemocao, setConfirmarRemocao] = useState(false);
   const linkTo = contexto && contexto.nome
     ? `/receita/${rec.receita_id}?ctxPc=${rec.per_capita_g || 0}&ctxPessoas=${contexto.pessoas || 0}&ctxNome=${encodeURIComponent(contexto.nome)}${contexto.cardapioId ? `&ctxCardapioId=${contexto.cardapioId}&ctxCardapioReceitaId=${rec.id}` : ""}`
     : `/receita/${rec.receita_id}`;
   return (
+    <>
     <div
       className={`group transition-colors cursor-pointer ${selected ? "bg-accent" : "hover:bg-secondary/30"}`}
       onClick={() => onSelect(rec.id)}
@@ -68,7 +75,7 @@ export default function CardapioPratoLinha({
           <button
             onClick={e => {
               e.stopPropagation();
-              if (window.confirm("Remover este prato do cardápio? A receita continua existindo.")) onRemove();
+              setConfirmarRemocao(true);
             }}
             title="Remover prato do cardápio"
             className="shrink-0 h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 no-print"
@@ -105,5 +112,28 @@ export default function CardapioPratoLinha({
         </div>
       )}
     </div>
+    <AlertDialog open={confirmarRemocao} onOpenChange={setConfirmarRemocao}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Remover prato do evento?</AlertDialogTitle>
+          <AlertDialogDescription>
+            <strong className="text-foreground">{rec.receita_nome?.toUpperCase?.() || rec.receita_nome}</strong> será retirado somente deste evento. A receita continuará cadastrada e poderá ser adicionada novamente.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => {
+              onRemove();
+              setConfirmarRemocao(false);
+            }}
+          >
+            Remover prato
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
