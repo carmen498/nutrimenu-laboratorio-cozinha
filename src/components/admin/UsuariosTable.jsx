@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
 import { computeStatusUsuario, formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
@@ -13,6 +14,7 @@ import {
 
 export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map() }) {
   const [expandidos, setExpandidos] = useState(new Set());
+  const [usuarioAberto, setUsuarioAberto] = useState(null);
 
   if (usuarios.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-10">Nenhum usuário encontrado.</p>;
@@ -84,7 +86,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                     </button>
                   </TableCell>
                   <TableCell className="font-medium">
-                    <button className="text-left hover:text-primary hover:underline" onClick={() => toggleExpandir(u.id)} title="Abrir movimentação e histórico">
+                    <button className="text-left text-primary hover:underline" onClick={() => setUsuarioAberto(u)} title="Abrir conta do usuário">
                       {u.nome_completo || u.full_name || "—"}
                     </button>
                   </TableCell>
@@ -136,6 +138,74 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
           })}
         </TableBody>
       </Table>
+
+      <Sheet open={!!usuarioAberto} onOpenChange={(open) => !open && setUsuarioAberto(null)}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
+          {usuarioAberto && (() => {
+            const movimentacao = movimentacaoPorUsuario.get(usuarioAberto.id) || { receitas: [], refeicoes: [], cardapios: [], eventos: [] };
+            const historico = pagamentosPorUsuario.get(usuarioAberto.id) || [];
+            const status = computeStatusUsuario(usuarioAberto);
+            return (
+              <div className="space-y-6">
+                <SheetHeader>
+                  <SheetTitle>Conta do usuário</SheetTitle>
+                  <SheetDescription>Cadastro, movimentação e histórico de compras.</SheetDescription>
+                </SheetHeader>
+
+                <section className="rounded-lg border p-4 space-y-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Nome</p>
+                    <p className="font-semibold">{usuarioAberto.nome_completo || usuarioAberto.full_name || "—"}</p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground">E-mail</p>
+                      <p className="text-sm break-all">{usuarioAberto.email || "Não cadastrado"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">WhatsApp</p>
+                      <p className="text-sm">{usuarioAberto.telefone_whatsapp || "Não cadastrado"}</p>
+                    </div>
+                  </div>
+                  <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} />
+                </section>
+
+                <section className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Plano</p>
+                    <p className="font-medium">{PLANO_LABEL[usuarioAberto.plano_atual] || "—"}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Expira em</p>
+                    <p className="font-medium">{formatarData(usuarioAberto.data_expiracao) || "—"}</p>
+                  </div>
+                  <div className="rounded-lg border p-3">
+                    <p className="text-xs text-muted-foreground">Status da conta</p>
+                    <Badge variant="outline" className={status.className}>{status.label}</Badge>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="font-semibold mb-3">Movimentação no Laboratório de Cozinha</h3>
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.receitas.length}</strong><p className="text-xs">Receitas</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.refeicoes.length}</strong><p className="text-xs">Refeições</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.cardapios.length}</strong><p className="text-xs">Cardápios</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.eventos.length}</strong><p className="text-xs">Eventos</p></div>
+                  </div>
+                </section>
+
+                <section>
+                  <h3 className="font-semibold px-3">Histórico de compras</h3>
+                  <div className="overflow-x-auto">
+                    <HistoricoPagamentosLinha pagamentos={historico} />
+                  </div>
+                </section>
+              </div>
+            );
+          })()}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
