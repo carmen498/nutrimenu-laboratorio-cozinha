@@ -12,6 +12,7 @@ import { CATEGORIAS as CATEGORIAS_RECEITA, ICONE_CATEGORIA } from "@/components/
 import { getCategorias, hasCategoria } from "@/lib/categoriasHelper";
 import { normalizarNome } from "@/lib/normalizarNome";
 import { getCorHex } from "@/lib/coresReceita";
+import { deduplicarReceitas, isReceitaPessoalDoUsuario } from "@/lib/receitaPessoal";
 
 export default function MinhasReceitas() {
   const { user } = useAuth();
@@ -21,7 +22,14 @@ export default function MinhasReceitas() {
 
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ["minhas-receitas", user?.id],
-    queryFn: () => base44.entities.Receita.filter({ usuario_dono_id: user.id }, "-data_personalizacao", 500),
+    queryFn: async () => {
+      const [porProprietario, porCriador] = await Promise.all([
+        base44.entities.Receita.filter({ usuario_dono_id: user.id }, "-data_personalizacao", 500),
+        base44.entities.Receita.filter({ created_by_id: user.id }, "-data_personalizacao", 500),
+      ]);
+      return deduplicarReceitas([...porProprietario, ...porCriador])
+        .filter((receita) => isReceitaPessoalDoUsuario(receita, user.id));
+    },
     enabled: !!user?.id,
     staleTime: 0,
     refetchOnMount: "always",
