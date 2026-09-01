@@ -41,8 +41,18 @@ export default function ListaPlanejamentos() {
   const load = async () => {
     setLoading(true);
     try {
-      const lista = await base44.entities.Planejamento.list("-created_date", 200);
-      setPlanejamentos(lista || []);
+      const [lista, respostaModelo] = await Promise.all([
+        base44.entities.Planejamento.list("-created_date", 200),
+        base44.functions.invoke("obterEventoModelo", {}).catch(() => ({ data: { modelo: null } })),
+      ]);
+      const modelo = respostaModelo?.data?.modelo;
+      const porId = new Map((lista || []).map(item => [item.id, item]));
+      if (modelo?.id) porId.set(modelo.id, modelo);
+      setPlanejamentos(
+        Array.from(porId.values()).sort((a, b) =>
+          new Date(b.created_date || 0) - new Date(a.created_date || 0)
+        )
+      );
     } catch (e) { consoleErrorSeguro("Erro em planejamento", e); }
     setLoading(false);
   };
