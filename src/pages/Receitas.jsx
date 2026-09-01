@@ -226,13 +226,15 @@ export default function Receitas() {
     },
   });
 
-  // Recipes whose ingredients (not the recipe name) match the search text
+  const termosBusca = normalizarNome(busca).split(/\s+/).filter(Boolean);
+
+  // Receitas cujos ingredientes (e não o nome da receita) contêm todos os termos pesquisados.
   const receitaIdsPorIngrediente = (() => {
-    const termo = normalizarNome(busca);
-    if (!termo) return new Set();
+    if (termosBusca.length === 0) return new Set();
     const ids = new Set();
     allItensReceita.forEach((item) => {
-      if (item.ingrediente_nome && normalizarNome(item.ingrediente_nome).includes(termo)) {
+      const nomeIngrediente = normalizarNome(item.ingrediente_nome);
+      if (nomeIngrediente && termosBusca.every((termo) => nomeIngrediente.includes(termo))) {
         ids.add(item.receita_id);
       }
     });
@@ -242,7 +244,8 @@ export default function Receitas() {
   const filtered = receitasExibidas.filter((r) => {
     if (showRevisar) return r.revisar === true;
     if (showFavoritas) return r.favorita === true;
-    const matchNome = !busca || normalizarNome(r.nome).includes(normalizarNome(busca));
+    const nomeNormalizado = normalizarNome(r.nome);
+    const matchNome = termosBusca.length === 0 || termosBusca.every((termo) => nomeNormalizado.includes(termo));
     const matchIngrediente = !matchNome && receitaIdsPorIngrediente.has(r.id);
     const matchBusca = matchNome || matchIngrediente;
     const matchCat = !categoriaSelecionada || hasCategoria(r, categoriaSelecionada);
@@ -252,6 +255,17 @@ export default function Receitas() {
       if (!matchTags) return false;
     }
     return matchBusca && matchCat;
+  });
+
+  // Em uma busca por "contendo", resultados pelo nome vêm antes dos encontrados
+  // apenas na composição; dentro de cada grupo, a ordem permanece A–Z.
+  const resultadosOrdenados = [...filtered].sort((a, b) => {
+    if (termosBusca.length > 0) {
+      const aPorNome = termosBusca.every((termo) => normalizarNome(a.nome).includes(termo));
+      const bPorNome = termosBusca.every((termo) => normalizarNome(b.nome).includes(termo));
+      if (aPorNome !== bPorNome) return aPorNome ? -1 : 1;
+    }
+    return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR", { sensitivity: "base" });
   });
 
   const toggleSelect = (recId) => {
@@ -595,7 +609,7 @@ export default function Receitas() {
         </div>
       ) : (
         <div className="space-y-1.5">
-          {filtered.sort((a, b) => a.nome?.localeCompare(b.nome)).slice(0, visibleCount).map((r) => (
+          {resultadosOrdenados.slice(0, visibleCount).map((r) => (
             <Link
               key={r.id}
               to={`/receita/${r.id}`}
