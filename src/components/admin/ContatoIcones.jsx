@@ -1,26 +1,31 @@
 import { Mail, MessageCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { whatsappHref } from "@/lib/statusAssinaturaUsuario";
 
 export default function ContatoIcones({ email, telefone }) {
   const wpp = whatsappHref(telefone);
   return (
-    <div className="flex items-center gap-2.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {email && (
-        <a href={`mailto:${email}`} title="Enviar e-mail" className="text-muted-foreground hover:text-primary transition-colors">
-          <Mail className="w-4 h-4" />
-        </a>
+        <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" asChild>
+          <a href={`mailto:${email}`} title={`Enviar e-mail para ${email}`}>
+            <Mail className="w-3.5 h-3.5" /> E-mail
+          </a>
+        </Button>
       )}
       {wpp && (
-        <a
-          href={wpp}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Abrir WhatsApp"
-          className="text-muted-foreground hover:text-green-600 transition-colors"
-        >
-          <MessageCircle className="w-4 h-4" />
-        </a>
+        <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5 text-green-700 hover:text-green-800" asChild>
+          <a
+            href={wpp}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={`Abrir WhatsApp ${telefone || ""}`}
+          >
+            <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+          </a>
+        </Button>
       )}
+      {!email && !wpp && <span className="text-sm text-muted-foreground">—</span>}
     </div>
   );
 }
