@@ -232,6 +232,9 @@ export default function TabelaIngredientesReceita({
                       value={editingQtdValue}
                       onChange={(e) => setEditingQtdValue(e.target.value)}
                       onKeyDown={(e) => { if (e.key === "Enter") handleConfirmQtd(item.id); if (e.key === "Escape") setEditingQtdId(null); }}
+                      onBlur={(e) => {
+                        if (!e.currentTarget.parentElement?.contains(e.relatedTarget)) handleConfirmQtd(item.id);
+                      }}
                       autoFocus
                     />
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleConfirmQtd(item.id)}><Check className="w-3 h-3 text-green-600" /></Button>
