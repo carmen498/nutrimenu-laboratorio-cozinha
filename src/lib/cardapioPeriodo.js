@@ -1,5 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { calcularIndiceInsercao } from "@/lib/cardapioRegras";
+import { toUpperName } from "@/lib/textCase";
 
 const TIPOS_ORIGEM = new Set(["refeicao", "receita", "ingrediente"]);
 const IDENTIFICACOES = new Set(["refeicao", "almoco", "jantar"]);
@@ -65,7 +66,7 @@ export async function criarCardapioPeriodo(payload = {}) {
   if (!IDENTIFICACOES.has(identificacao)) throw new Error("Identificação da refeição inválida.");
 
   return base44.entities.CardapioPeriodo.create({
-    nome: payload.nome?.trim() || formatarPeriodo(dataInicio, dataFim),
+    nome: toUpperName(payload.nome || formatarPeriodo(dataInicio, dataFim)),
     tipo_periodo: "semanal",
     data_inicio: dataInicio,
     data_fim: dataFim,
@@ -89,7 +90,7 @@ export async function atualizarCardapioPeriodo(id, payload = {}) {
   if (!atual) throw new Error("Cardápio não encontrado.");
 
   const dados = {};
-  if (payload.nome !== undefined) dados.nome = payload.nome.trim() || atual.nome;
+  if (payload.nome !== undefined) dados.nome = toUpperName(payload.nome) || atual.nome;
   if (payload.observacoes !== undefined) dados.observacoes = payload.observacoes.trim();
   if (payload.identificacao_refeicao !== undefined) {
     if (!IDENTIFICACOES.has(payload.identificacao_refeicao)) throw new Error("Identificação da refeição inválida.");
