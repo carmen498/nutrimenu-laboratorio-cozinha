@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { salvarPrecoPersonalizado } from "@/lib/precoIngredienteCliente";
 import { salvarDadosComerciaisIngrediente } from "@/lib/preferenciaIngredienteUsuario";
 import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
+import { toSentenceCaseName } from "@/lib/textCase";
 
 // Hook compartilhado de salvamento de Ingrediente.
 // Segurança/arquitetura:
@@ -15,7 +16,11 @@ export function useSalvarIngrediente(onSaved, { isAdmin = true, userId = null } 
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (/** @type {any} */ rawData) => {
-      const { _novos_sinonimos, ...data } = rawData;
+      const { _novos_sinonimos, ...dadosRecebidos } = rawData;
+      const data = {
+        ...dadosRecebidos,
+        ...(dadosRecebidos.nome !== undefined ? { nome: toSentenceCaseName(dadosRecebidos.nome) } : {}),
+      };
       const preco_por_g = data.peso_embalagem_g > 0
         ? data.preco_embalagem_rs / data.peso_embalagem_g
         : 0;
