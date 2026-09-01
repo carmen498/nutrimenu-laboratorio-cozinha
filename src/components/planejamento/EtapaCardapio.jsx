@@ -10,6 +10,8 @@ import BarraCoresCardapio from "@/components/planejamento/BarraCoresCardapio";
 import EtapaCardapioTabela from "@/components/planejamento/EtapaCardapioTabela";
 import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import { custoPorKgPronto } from "@/lib/custoReceita";
+import { carregarIngredientesEfetivosCusto } from "@/lib/custoContexto";
+import { useAuth } from "@/lib/AuthContext";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -42,6 +44,8 @@ export default function EtapaCardapio({
   const [avisoExpandido, setAvisoExpandido] = useState(false);
 
   const margem = margemEvento || 0;
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
@@ -54,19 +58,51 @@ export default function EtapaCardapio({
     return map;
   }, [receitas]);
 
+  const receitaIdsEvento = useMemo(() => Array.from(new Set(
+    grupos.flatMap((grupo) => grupo.itens.map((item) => item.receita_id).filter(Boolean))
+  )).sort(), [grupos]);
+
+  // Consulta apenas a composição das receitas presentes no evento. A listagem
+  // global limitada a 2.000 vínculos deixava receitas antigas sem custo aqui.
   const { data: todosIngredientesReceita = [] } = useQuery({
-    queryKey: ["ingredientesReceitaTodos"],
-    queryFn: () => base44.entities.IngredienteReceita.list("-created_date", 2000),
+    queryKey: ["ingredientesReceitaEvento", receitaIdsEvento.join(",")],
+    queryFn: async () => (await Promise.all(
+      receitaIdsEvento.map((receitaId) => base44.entities.IngredienteReceita.filter({ receita_id: receitaId }))
+    )).flat(),
+    enabled: receitaIdsEvento.length > 0,
   });
 
-  const ingredientesPorReceita = useMemo(() => {
-    const map = {};
-    todosIngredientesReceita.forEach(i => {
-      if (!map[i.receita_id]) map[i.receita_id] = [];
-      map[i.receita_id].push(i);
-    });
+  const { data: todosInsumosReceita = [] } = useQuery({
+    queryKey: ["insumosReceitaEvento", receitaIdsEvento.join(",")],
+    queryFn: async () => (await Promise.all(
+      receitaIdsEvento.map((receitaId) => base44.entities.InsumoReceita.filter({ receita_id: receitaId }))
+    )).flat(),
+    enabled: receitaIdsEvento.length > 0,
+  });
+
+  const { data: todosEsquecidosReceita = [] } = useQuery({
+    queryKey: ["esquecidosReceitaEvento", receitaIdsEvento.join(",")],
+    queryFn: async () => (await Promise.all(
+      receitaIdsEvento.map((receitaId) => base44.entities.IngredienteEsquecidoReceita.filter({ receita_id: receitaId }))
+    )).flat(),
+    enabled: receitaIdsEvento.length > 0,
+  });
+
+  const { data: ingredientesEfetivos = [] } = useQuery({
+    queryKey: ["ingredientes", "custo-efetivo", user?.id, isAdmin],
+    queryFn: () => carregarIngredientesEfetivosCusto({ userId: user?.id, isAdmin }),
+    enabled: isAdmin || !!user?.id,
+  });
+
+  const agruparPorReceita = (itens) => itens.reduce((map, item) => {
+    if (!map[item.receita_id]) map[item.receita_id] = [];
+    map[item.receita_id].push(item);
     return map;
-  }, [todosIngredientesReceita]);
+  }, {});
+  const ingredientesPorReceita = useMemo(() => agruparPorReceita(todosIngredientesReceita), [todosIngredientesReceita]);
+  const insumosPorReceita = useMemo(() => agruparPorReceita(todosInsumosReceita), [todosInsumosReceita]);
+  const esquecidosPorReceita = useMemo(() => agruparPorReceita(todosEsquecidosReceita), [todosEsquecidosReceita]);
+  const ingredienteMap = useMemo(() => Object.fromEntries(ingredientesEfetivos.map((item) => [item.id, item])), [ingredientesEfetivos]);
 
   // Cálculo de produção: kg do prato = pessoas × PC × (1 + margem%), soma direta (sem distribuição por seção)
   const gruposCalc = useMemo(() => {
@@ -77,14 +113,18 @@ export default function EtapaCardapio({
         const autoKg = (totalPessoas * pc_g * (1 + margem / 100)) / 1000;
         const qtd_kg = item.qtd_kg_manual != null ? item.qtd_kg_manual : autoKg;
         const porcoes = pc_g > 0 ? Math.round((qtd_kg * 1000) / pc_g) : 0;
-        const custoKg = custoPorKgPronto(rec, ingredientesPorReceita[item.receita_id]);
+        const custoKg = custoPorKgPronto(rec, ingredientesPorReceita[item.receita_id], {
+          ingredienteMap,
+          insumosReceita: insumosPorReceita[item.receita_id] || [],
+          esquecidos: esquecidosPorReceita[item.receita_id] || [],
+        });
         const custo = custoKg * qtd_kg;
         return { ...item, qtd_kg, pc_g, porcoes, custo, custo_kg: custoKg, sem_custo: custoKg === 0 };
       });
       const actualKg = itens.reduce((s, i) => s + i.qtd_kg, 0);
       return { ...g, actualKg, itens };
     });
-  }, [grupos, totalPessoas, margem, receitaMap, ingredientesPorReceita]);
+  }, [grupos, totalPessoas, margem, receitaMap, ingredientesPorReceita, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
   // Push grupos config para o parent (necessário para salvar na Etapa 4, e também
   // como snapshot do rascunho quando o Salvar Evento é usado a partir das Etapas 1/2)
