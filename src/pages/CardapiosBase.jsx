@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, ChevronRight, Loader2, Plus } from "lucide-react";
+import { CalendarDays, ChevronRight, FileText, Loader2, MoreHorizontal, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { criarCardapioPeriodo, listarCardapiosPeriodo } from "@/lib/cardapioPeriodo";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const IDENTIFICACOES = [
   { value: "refeicao", label: "Refeição" },
@@ -149,11 +153,15 @@ export default function CardapiosBase() {
         ) : (
           <div className="grid gap-3">
             {cardapios.map((cardapio) => (
-              <button
+              <div
                 key={cardapio.id}
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={() => navigate(`/cardapios/${cardapio.id}`)}
-                className="w-full rounded-xl border border-border bg-card p-4 text-left hover:border-primary/40 hover:shadow-sm transition flex items-center gap-4"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") navigate(`/cardapios/${cardapio.id}`);
+                }}
+                className="w-full rounded-xl border border-border bg-card p-4 text-left hover:border-primary/40 hover:shadow-sm transition flex items-center gap-4 cursor-pointer"
               >
                 <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <CalendarDays className="w-5 h-5" />
@@ -167,8 +175,26 @@ export default function CardapiosBase() {
                 <span className="hidden sm:inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize">
                   {cardapio.identificacao_refeicao === "almoco" ? "Almoço" : cardapio.identificacao_refeicao === "jantar" ? "Jantar" : "Refeição"}
                 </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Ações do cardápio ${cardapio.nome}`}
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir`)}>
+                      <FileText className="w-4 h-4 mr-2" /> Relatórios
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </button>
+              </div>
             ))}
           </div>
         )}
