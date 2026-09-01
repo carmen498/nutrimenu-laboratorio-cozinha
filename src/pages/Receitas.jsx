@@ -669,6 +669,19 @@ export default function Receitas() {
                     <DropdownMenuItem onClick={() => navigate(`/receita/${r.id}`)}>
                       <BookOpen className="w-4 h-4 mr-2" /> Abrir
                     </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FileText className="w-4 h-4 mr-2" /> Relatórios
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => navigate(`/ficha-tecnica/${r.id}`)}>
+                          Ficha Técnica
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/ficha-custos-receita/${r.id}`)}>
+                          Ficha de Custos
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                     <DropdownMenuItem onClick={() => duplicarMut.mutate(r)}>
                       <Copy className="w-4 h-4 mr-2" /> Duplicar
                     </DropdownMenuItem>
