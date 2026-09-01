@@ -194,7 +194,7 @@ export default function CardapiosBase() {
                         <FileText className="w-4 h-4 mr-2" /> Relatórios
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent>
-                        <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir?tipo=diario&data=${cardapio.data_inicio}`)}>
+                        <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir?tipo=diario`)}>
                           Cardápio diário
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir?tipo=semanal`)}>
