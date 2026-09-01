@@ -66,11 +66,10 @@ function SidebarContent({ onNavigate, onHelpFaqsClick }) {
         </div>
 
         <div className="pt-4 mt-4 border-t border-sidebar-border">
-          <div className="px-3 pb-1 flex items-center justify-between gap-2">
+          <div className="px-3 pb-1">
             <p className="text-[11px] font-bold tracking-wider uppercase" style={{ color: "#C9A24B" }}>
               Laboratório de Custos
             </p>
-            <span className="text-[10px] font-semibold text-amber-300">Breve</span>
           </div>
           <NavLink to="/custos" icon={Calculator} label="Laboratório de Custos" active={location.pathname.startsWith("/custos")} onClick={onNavigate} />
         </div>
