@@ -192,10 +192,11 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 periodoPlano[plano] && `Período: ${periodoPlano[plano]}`,
                 ultimoPagamento && `Situação do pagamento: ${STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}`,
                 usuarioAberto.data_expiracao && `Validade: ${formatarData(usuarioAberto.data_expiracao)}`,
-              ].filter((linha) => linha !== null && linha !== undefined && linha !== false);
+              ];
+              const textoNF = linhas.filter(Boolean).join("\n").replace(/\n📌/g, "\n\n📌");
 
               try {
-                await navigator.clipboard.writeText(linhas.join("\n"));
+                await navigator.clipboard.writeText(textoNF);
                 toast.success("Dados para emissão de NF copiados");
               } catch {
                 toast.error("Não foi possível copiar os dados");
