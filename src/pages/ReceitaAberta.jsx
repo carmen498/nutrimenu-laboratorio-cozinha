@@ -352,8 +352,9 @@ export default function ReceitaAberta() {
   const ensureEditavel = async () => {
     const result = await garantirReceitaEditavel({ receita, itens, receitaTags, isAdmin, userId: user?.id });
     if (result.blocked) {
-      setExistingCopyWarning({ existingCopyId: result.existingCopyId });
-      throw new Error("EXISTING_COPY_BLOCKED");
+      toast.info("Abrindo sua versão pessoal desta receita.");
+      navigate(`/receita/${result.existingCopyId}`, { replace: true });
+      throw new Error("EXISTING_COPY_REDIRECTED");
     }
     if (result.forked) {
       let novaUrl = `/receita/${result.receitaId}`;
@@ -386,6 +387,10 @@ export default function ReceitaAberta() {
           cardapioRewireOk = false;
         }
       }
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["receitas"] }),
+        qc.invalidateQueries({ queryKey: ["contagens-home"] }),
+      ]);
       if (cardapioRewireOk) {
         toast.success("Uma cópia editável desta receita foi criada para você.");
       } else {
