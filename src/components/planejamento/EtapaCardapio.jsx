@@ -12,6 +12,8 @@ import CardapioSeletorDia from "@/components/cardapio/CardapioSeletorDia";
 import { custoPorKgPronto } from "@/lib/custoReceita";
 import { carregarIngredientesEfetivosCusto } from "@/lib/custoContexto";
 import { useAuth } from "@/lib/AuthContext";
+import { fetchAllPages } from "@/lib/fetchAllPages";
+import { isReceitaPessoalDoUsuario } from "@/lib/receitaPessoal";
 
 const DIAS = [
   { key: "segunda", label: "Seg" }, { key: "terca", label: "Ter" },
@@ -39,7 +41,6 @@ export default function EtapaCardapio({
 }) {
   const setGrupos = onGruposUpdate;
   const [buscaAberta, setBuscaAberta] = useState(false);
-  const [secaoPendente, setSecaoPendente] = useState(null);
   const [filtroDia, setFiltroDia] = useState("todos");
   const [avisoExpandido, setAvisoExpandido] = useState(false);
 
@@ -49,8 +50,22 @@ export default function EtapaCardapio({
 
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas"],
-    queryFn: () => base44.entities.Receita.list("-nome", 500),
+    queryFn: () => fetchAllPages(base44.entities.Receita, "-nome"),
+    staleTime: 5 * 60 * 1000,
   });
+
+  const receitasDisponiveis = useMemo(() => {
+    if (isAdmin) return receitas.filter((receita) => receita.is_base === true);
+    const pessoais = receitas.filter((receita) => isReceitaPessoalDoUsuario(receita, user?.id));
+    const forkPorBase = Object.fromEntries(
+      pessoais.filter((receita) => receita.forked_from_id).map((receita) => [receita.forked_from_id, receita])
+    );
+    const catalogo = receitas
+      .filter((receita) => receita.is_base === true)
+      .map((receita) => forkPorBase[receita.id] || receita);
+    const autorais = pessoais.filter((receita) => !receita.forked_from_id);
+    return [...catalogo, ...autorais];
+  }, [receitas, isAdmin, user?.id]);
 
   const receitaMap = useMemo(() => {
     const map = {};
@@ -167,7 +182,7 @@ export default function EtapaCardapio({
   // Handlers
   const addItem = (receita) => {
     const pc = pcSugeridoReceita(receita);
-    const secaoAlvo = secaoPendente || secaoSugeridaReceita(receita);
+    const secaoAlvo = secaoSugeridaReceita(receita);
     setGrupos(prev => {
       let idx = prev.findIndex(g => g.nome === secaoAlvo);
       let next = prev;
@@ -179,7 +194,6 @@ export default function EtapaCardapio({
         ? { ...g, itens: [...g.itens, { receita_id: receita.id, receita_nome: receita.nome, pc_g: pc, qtd_kg_manual: null }] }
         : g);
     });
-    setSecaoPendente(null);
     setBuscaAberta(false);
   };
 
@@ -323,16 +337,13 @@ export default function EtapaCardapio({
         </div>
       </div>
 
-      {/* Dialog de busca de receitas — abre direto, sem menu prévio de seção.
-          A seção é atribuída automaticamente pela categoria da receita; o
-          usuário pode opcionalmente criar uma nova seção dentro do próprio seletor. */}
+      {/* A seção do prato é atribuída automaticamente pela categoria da receita. */}
       <BuscaReceitaDialog
         open={buscaAberta}
-        onClose={() => { setBuscaAberta(false); setSecaoPendente(null); }}
+        onClose={() => setBuscaAberta(false)}
         onSelect={addItem}
-        receitas={receitas}
+        receitas={receitasDisponiveis}
         title="Adicionar prato"
-        onCreateSection={(nomeSecao) => setSecaoPendente(nomeSecao)}
       />
     </div>
   );
