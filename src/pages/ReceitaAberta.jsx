@@ -389,6 +389,7 @@ export default function ReceitaAberta() {
       }
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["receitas"] }),
+        qc.invalidateQueries({ queryKey: ["minhas-receitas"] }),
         qc.invalidateQueries({ queryKey: ["contagens-home"] }),
       ]);
       if (cardapioRewireOk) {
@@ -1169,10 +1170,18 @@ REGRAS:
 
   const handleConfirmQtd = (itemId) => {
     const val = parseFloat(editingQtdValue);
-    if (!isNaN(val) && val >= 0) {
-      const baseTotal = (receita?.porcoes_base || 1) * fator;
-      updateQtdMut.mutate({ itemId, quantidade_por_porcao: baseTotal > 0 ? val / baseTotal : val });
-    }
+    if (isNaN(val) || val < 0) return;
+    setEditingQtdId(null);
+    const baseTotal = (receita?.porcoes_base || 1) * fator;
+    updateQtdMut.mutate(
+      { itemId, quantidade_por_porcao: baseTotal > 0 ? val / baseTotal : val },
+      {
+        onError: () => {
+          setEditingQtdId(itemId);
+          setEditingQtdValue(String(val));
+        },
+      }
+    );
   };
 
   const formatCurrency = (v) => `R$ ${v.toFixed(2).replace(".", ",")}`;
