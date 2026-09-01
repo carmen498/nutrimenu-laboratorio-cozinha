@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUsuario";
 import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
 import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
-import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
+import { fetchAllFilteredPages, fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,32 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
     queryFn: () => fetchAllPages(base44.entities.AcessoLaboratorioCustosUsuario, "-updated_date", 500),
     retry: false,
   });
+
+  const { data: movimentacoes = {}, isLoading: carregandoMovimentacoes, isError: erroMovimentacoes, error: detalheErroMovimentacoes } = useQuery({
+    queryKey: ["admin-movimentacao-laboratorio"],
+    queryFn: async () => {
+      const [receitas, refeicoes, cardapios, eventos] = await Promise.all([
+        fetchAllFilteredPages(base44.entities.Receita, { is_base: false }, "-created_date", 500),
+        fetchAllFilteredPages(base44.entities.Cardapio, { is_base: false }, "-created_date", 500),
+        fetchAllPages(base44.entities.CardapioPeriodo, "-created_date", 500),
+        fetchAllPages(base44.entities.PlanejamentoEvento, "-created_date", 500),
+      ]);
+      return { receitas, refeicoes, cardapios, eventos };
+    },
+    retry: false,
+  });
+
+  const movimentacaoPorUsuario = useMemo(() => {
+    const map = new Map();
+    const registrar = (tipo, item) => {
+      const userId = item.usuario_dono_id || item.created_by_id;
+      if (!userId) return;
+      if (!map.has(userId)) map.set(userId, { receitas: [], refeicoes: [], cardapios: [], eventos: [] });
+      map.get(userId)[tipo].push(item);
+    };
+    Object.entries(movimentacoes).forEach(([tipo, itens]) => (itens || []).forEach((item) => registrar(tipo, item)));
+    return map;
+  }, [movimentacoes]);
 
   const acessoCustosPorUsuario = useMemo(() => {
     const map = new Map();
@@ -223,11 +249,11 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         onExcluir={() => setConfirmExcluirOpen(true)}
       />
 
-      {isLoading || carregandoPagamentos || carregandoAcessosCustos ? (
+      {isLoading || carregandoPagamentos || carregandoAcessosCustos || carregandoMovimentacoes ? (
         <p role="status" className="text-sm text-muted-foreground">Carregando usuários e pagamentos...</p>
-      ) : isError || erroPagamentos ? (
+      ) : isError || erroPagamentos || erroMovimentacoes ? (
         <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
-          {error?.message || detalheErroPagamentos?.message || "Não foi possível carregar os dados administrativos."}
+          {error?.message || detalheErroPagamentos?.message || detalheErroMovimentacoes?.message || "Não foi possível carregar os dados administrativos."}
         </div>
       ) : (
         <UsuariosTable
@@ -238,6 +264,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
           pagamentosPorUsuario={pagamentosPorUsuario}
           pagamentosPorUsuarioPeriodo={pagamentosPorUsuarioPeriodo}
           acessoCustosPorUsuario={acessoCustosPorUsuario}
+          movimentacaoPorUsuario={movimentacaoPorUsuario}
         />
       )}
 
