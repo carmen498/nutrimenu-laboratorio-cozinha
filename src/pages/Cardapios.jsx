@@ -16,7 +16,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Star, MoreHorizontal, Tag, X, ChevronDown, ArrowLeft } from "lucide-react";
+import { Plus, Search, Star, MoreHorizontal, Tag, X, ChevronDown, ArrowLeft, FileText } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import MeusCardapiosCard from "@/components/cardapio/MeusCardapiosCard";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
@@ -393,6 +393,9 @@ export default function Cardapios() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/cardapio/${c.id}?relatorios=1`); }}>
+                          <FileText className="w-4 h-4 mr-2" /> Relatórios
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={e => { e.preventDefault(); handleDuplicate(c); }}>
                           📋 Duplicar
                         </DropdownMenuItem>
