@@ -26,26 +26,44 @@ const RECIPE_EXTRACTION_PROMPT = `
 
 Analise o conteúdo e extraia SOMENTE as receitas que estão explicitamente nele.
 
-O conteúdo pode vir de uma tabela Word convertida para texto corrido com este padrão:
+O conteúdo pode vir de tabela, texto livre ou receita copiada de site/documento. Exemplos válidos:
 
 Nome da receita: [NOME]
 Ingredientes Pré-preparo Qtd. 1 porção
 [ingrediente] [pré-preparo opcional] [número]
-[ingrediente] [número]
 Modo de preparo:
 1. [passo]
-2. [passo]
-Nome da receita: [PRÓXIMA]
+
+ou:
+
+[NOME DA RECEITA]
+Categoria: [CATEGORIA]
+Ingredientes
+2 xícaras (chá) de [ingrediente]
+½ [ingrediente] em fatias finas
+3 colheres (sopa) de [ingrediente]
+Modo de preparo
+1. [passo]
 
 REGRAS DE EXTRAÇÃO:
 
-1. SEPARADOR DE RECEITAS: cada "Nome da receita:" inicia uma nova receita. Tudo até o próximo "Nome da receita:" pertence a essa receita.
+1. NOME E SEPARAÇÃO:
+   - Se houver "Nome da receita:", cada ocorrência inicia uma receita.
+   - Se não houver esse rótulo, considere a primeira linha textual antes de "Categoria:", "Ingredientes" ou "Modo de preparo" como o nome da receita.
+   - Aceite cabeçalhos com ou sem dois-pontos.
+   - Não exija um formato rígido para reconhecer uma receita válida.
 
 2. CABEÇALHOS A IGNORAR: linhas como "Ingredientes", "Pré-preparo", "Qtd.", "Qtd. 1 porção", "Ingredientes Pré-preparo Qtd. 1 porção" são cabeçalhos de tabela — NÃO são ingredientes.
 
 3. SUB-TÍTULOS: linhas em CAIXA ALTA isoladas, linhas terminadas em ":", ou linhas curtas sem número no final e sem ser o nome da receita — tratar como sub-título de grupo (tipo: "grupo").
 
-4. LINHA DE INGREDIENTE: extraia SOMENTE os ingredientes explicitamente listados no texto. NUNCA adicione, invente ou infira ingredientes que não estejam no conteúdo original. Linha com número no final = ingrediente. O número é a quantidade em gramas (substitua vírgula por ponto). O texto antes é o nome + pré-preparo opcional. Ex: "Farinha de trigo 250,00" → nome="Farinha de trigo", quantidade_g=250. Ex: "Cebola picada 150,00" → nome="Cebola", pre_preparo="picada", quantidade_g=150.
+4. LINHA DE INGREDIENTE: extraia SOMENTE os ingredientes explicitamente listados no texto. NUNCA adicione, invente ou infira ingredientes que não estejam no conteúdo original.
+   - Aceite quantidade no começo ou no fim da linha.
+   - Aceite gramas e medidas caseiras: xícara, colher, unidade, dente, fatia, pitada, ½, ¼, ¾ etc.
+   - Converta medidas caseiras para uma estimativa coerente em gramas no campo quantidade_g; não descarte a receita por não trazer gramas.
+   - Separe expressões como "picado", "em fatias", "escorrido" e "cozido" no campo pre_preparo.
+   - Ex.: "Farinha de trigo 250,00" → nome="Farinha de trigo", quantidade_g=250.
+   - Ex.: "½ cebola roxa em fatias finas" → nome="Cebola roxa", pre_preparo="em fatias finas", quantidade_g estimada.
 
 5. MODO DE PREPARO: tudo após "Modo de preparo:" até o próximo "Nome da receita:" ou fim do conteúdo. Reescreva no padrão: lista numerada, UM verbo de ação por item no INFINITIVO (Derreter, Bater, Acrescentar, nunca Derreta/Bata/Acrescente), NENHUM texto narrativo/dicas/comentários, NENHUMA especificação de equipamento ou marca, Cada passo deve ser AUTOSSUFICIENTE: inclua o verbo de ação + objeto breve para que faça sentido lido isoladamente. Nunca omita o ingrediente para evitar repetição entre passos.
 
@@ -357,8 +375,11 @@ ${RECIPE_EXTRACTION_PROMPT}`,
 
       // Verify extracted text actually looks like recipes
       const temIndiciosReceita = /modo de preparo|ingredientes|nome da receita|porções|rendimento/i.test(conteudo);
-      // Also check for recipe-like structure (lines with quantities, numbered steps)
-      const temEstruturaReceita = /\d+[.,]\d{2}/.test(conteudo) || /^\d+\.\s/.test(conteudo);
+      // Also accept free-form recipes with household measures, fractions or numbered steps.
+      const temEstruturaReceita =
+        /\d+[.,]\d{2}/.test(conteudo) ||
+        /^\s*\d+\.\s/m.test(conteudo) ||
+        /(?:^|\n)\s*(?:\d+(?:[.,]\d+)?|[½¼¾⅓⅔⅛])\s*(?:xícaras?|colheres?|unidades?|dentes?|fatias?|pitadas?|g\b|kg\b)/i.test(conteudo);
 
       if (!temIndiciosReceita && !temEstruturaReceita) {
         setError(true);
@@ -373,7 +394,14 @@ ${RECIPE_EXTRACTION_PROMPT}`,
         response_json_schema: responseSchema
       });
 
-      const receitasExtraidas = (llmResult.receitas || []).filter(r => (r.nome || "").trim());
+      const respostaReceitas = Array.isArray(llmResult)
+        ? llmResult
+        : Array.isArray(llmResult?.receitas)
+          ? llmResult.receitas
+          : llmResult?.receita
+            ? [llmResult.receita]
+            : [];
+      const receitasExtraidas = respostaReceitas.filter(r => (r?.nome || "").trim());
 
       if (receitasExtraidas.length === 0) {
         setError(true);
