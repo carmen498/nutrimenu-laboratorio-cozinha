@@ -110,8 +110,6 @@ export default function Planos() {
               usoTrialLabel={planoAtual === "trial" && diasUsoTrial != null ? `${diasUsoTrial} de 7 dias utilizados` : ""}
               bloqueado={planoAtual !== "trial" && jaPossuiHistoricoPlano}
               mensagemBloqueio="Teste grátis disponível apenas para novas contas"
-              complemento={complementoCard("trial")}
-              complementoActionLabel=""
             />
           )}
 
@@ -129,10 +127,6 @@ export default function Planos() {
               isCurrentPlan={planoAtual === "mensal"}
               validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
-              complemento={complementoCard("mensal")}
-              complementoActionLabel={planoAtual === "mensal" && !acessoCustosAtual ? (preflightTrialCustos?.elegivel ? "Ativar trial do Custos" : "Adicionar Lab. de Custos") : ""}
-              onComplementoAction={() => handleAdicionarCustosPlanoAtual("mensal")}
-              complementoActionDisabled={loadingTrialCustos}
             />
           )}
 
@@ -150,10 +144,6 @@ export default function Planos() {
               isCurrentPlan={planoAtual === "anual"}
               validadeLabel="Válido até"
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
-              complemento={complementoCard("anual")}
-              complementoActionLabel={planoAtual === "anual" && !acessoCustosAtual ? (preflightTrialCustos?.elegivel ? "Ativar trial do Custos" : "Adicionar Lab. de Custos") : ""}
-              onComplementoAction={() => handleAdicionarCustosPlanoAtual("anual")}
-              complementoActionDisabled={loadingTrialCustos}
             />
           )}
 
@@ -173,7 +163,6 @@ export default function Planos() {
               validadeData={formatarData(user?.data_proxima_cobranca || user?.data_expiracao)}
               bloqueado={!elegibilidadeRenovacao.elegivel}
               mensagemBloqueio={elegibilidadeRenovacao.motivo === "ciclo_insuficiente" ? "Disponível a partir do 2º ano" : elegibilidadeRenovacao.motivo === "fora_janela" ? "Disponível nos 30 dias anteriores ao vencimento" : "Renovação indisponível neste momento"}
-              complemento={complementoCard("renovacao")}
             />
           )}
         </div>
@@ -192,9 +181,6 @@ export default function Planos() {
         planoNome={checkoutPlano?.nome}
         planoValor={Number(configPorId[checkoutPlano?.id]?.valor_cobranca || 0)}
         email={user?.email}
-        addon={checkoutPlano?.addon}
-        somenteAddon={!!checkoutPlano?.somenteAddon}
-        addonCheckoutBloqueado={!!checkoutPlano?.addon && !configCustos?.venda_habilitada}
       />
     </div>
   );
