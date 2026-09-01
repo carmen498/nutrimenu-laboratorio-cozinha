@@ -131,7 +131,10 @@ export default function Receitas() {
   });
 
   const minhasReceitasCount = useMemo(
-    () => receitas.filter((r) => r.usuario_dono_id === user?.id).length,
+    () => receitas.filter((r) =>
+      r.is_base === false &&
+      (r.usuario_dono_id === user?.id || (!r.usuario_dono_id && r.created_by_id === user?.id))
+    ).length,
     [receitas, user?.id]
   );
 
