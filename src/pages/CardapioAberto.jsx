@@ -219,14 +219,19 @@ export default function CardapioAberto() {
     }
     const result = await garantirCardapioEditavel({ cardapio, receitas, insumos, cardapioTags, isAdmin, userId: user?.id });
     if (result.blocked) {
-      setExistingCopyWarning({ existingCopyId: result.existingCopyId });
-      throw new Error("EXISTING_COPY_BLOCKED");
+      toast.info("Abrindo sua versão pessoal desta refeição.");
+      navigate(`/cardapio/${result.existingCopyId}`, { replace: true });
+      throw new Error("EXISTING_COPY_REDIRECTED");
     }
     if (result.forked) {
       setCardapio(result.novoCardapio);
       setReceitas(result.novasReceitas);
       setInsumos(result.novosInsumos);
       setCardapioTags(result.novasTags);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["cardapios"] }),
+        qc.invalidateQueries({ queryKey: ["contagens-home"] }),
+      ]);
       toast.success("Uma cópia editável desta refeição foi criada para você.");
       navigate(`/cardapio/${result.cardapioId}`, { replace: true });
       return {
