@@ -87,6 +87,7 @@ export default function EtapaCardapioTabela({
                 kg={item.qtd_kg}
                 pct={pct}
                 semCusto={item.sem_custo}
+                showTrashInRow
                 selected={selectedKey === key}
                 onSelect={handleSelect}
                 onUpdatePC={(val) => onUpdateItem(grupoIdx, ii, { pc_g: val })}
