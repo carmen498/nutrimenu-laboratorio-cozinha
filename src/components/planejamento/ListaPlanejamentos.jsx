@@ -18,6 +18,7 @@ import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
+import { toUpperName } from "@/lib/textCase";
 
 export default function ListaPlanejamentos() {
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ export default function ListaPlanejamentos() {
       } = modelo;
       const copia = await base44.entities.Planejamento.create({
         ...dadosModelo,
-        nome: "NOVO EVENTO — CÓPIA DO MODELO",
+        nome: toUpperName("NOVO EVENTO — CÓPIA DO MODELO"),
         is_modelo: false,
         modelo_origem_id: id,
       });
