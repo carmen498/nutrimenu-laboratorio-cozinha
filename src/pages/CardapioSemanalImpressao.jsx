@@ -85,7 +85,6 @@ export default function CardapioSemanalImpressao() {
     enabled: Boolean(id),
   });
 
-  const dataReferencia = searchParams.get("data") || cardapio?.data_inicio || "";
   const mesReferencia = searchParams.get("mes") || (cardapio?.data_inicio || "").slice(0, 7);
 
   const { data: dadosMensais, isLoading: carregandoMes, error: erroMes } = useQuery({
@@ -122,12 +121,9 @@ export default function CardapioSemanalImpressao() {
   let titulo = "Cardápio semanal";
 
   if (tipo === "diario") {
-    const dataValida = dataReferencia >= cardapio.data_inicio && dataReferencia <= cardapio.data_fim
-      ? dataReferencia
-      : cardapio.data_inicio;
-    datas = [dataValida];
-    periodo = formatarData(dataValida, true);
-    titulo = "Cardápio diário";
+    datas = Array.from({ length: 7 }, (_, indice) => adicionarDias(cardapio.data_inicio, indice));
+    periodo = `${formatarData(cardapio.data_inicio, true)} a ${formatarData(cardapio.data_fim, true)}`;
+    titulo = "Cardápios diários da semana";
   } else if (tipo === "mensal") {
     const { inicio, totalDias } = intervaloMes(mesReferencia);
     datas = Array.from({ length: totalDias }, (_, indice) => adicionarDias(inicio, indice));
@@ -175,16 +171,6 @@ export default function CardapioSemanalImpressao() {
         </button>
         <div className="flex-1" />
         <div className="flex flex-wrap items-center gap-2">
-          {tipo === "diario" && (
-            <input
-              type="date"
-              min={cardapio.data_inicio}
-              max={cardapio.data_fim}
-              value={dataReferencia >= cardapio.data_inicio && dataReferencia <= cardapio.data_fim ? dataReferencia : cardapio.data_inicio}
-              onChange={(e) => atualizarParametro("data", e.target.value)}
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-            />
-          )}
           {tipo === "mensal" && (
             <input
               type="month"
