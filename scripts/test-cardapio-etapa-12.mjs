@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   CATEGORIAS_RELACIONADAS_RECEITA,
   CATEGORIAS_RELACIONADAS_BEBIDA,
@@ -111,4 +112,23 @@ assert.equal(
   "A inclusão respeita a posição manual existente sem reordenar itens antigos",
 );
 
-console.log("Etapa 12: 16 verificações funcionais aprovadas.");
+const sidebarSource = readFileSync(new URL("../src/components/layout/Sidebar.jsx", import.meta.url), "utf8");
+const ordemMenuComum = [
+  'label: "Ingredientes"',
+  'label: "Receitas"',
+  'label: "Refeições"',
+  'label: "Cardápios"',
+  'label: "Eventos"',
+];
+const posicoesMenu = ordemMenuComum.map((label) => sidebarSource.indexOf(label));
+assert.ok(
+  posicoesMenu.every((posicao) => posicao >= 0) && posicoesMenu.every((posicao, indice) => indice === 0 || posicao > posicoesMenu[indice - 1]),
+  "USER e ADMIN devem compartilhar a ordem Ingredientes → Receitas → Refeições → Cardápios → Eventos",
+);
+assert.match(
+  sidebarSource,
+  /\{laboratorioItems\.map\(\(item\) => \(/,
+  "O menu comum não pode depender do perfil administrativo",
+);
+
+console.log("Etapa 12: 18 verificações funcionais aprovadas.");
