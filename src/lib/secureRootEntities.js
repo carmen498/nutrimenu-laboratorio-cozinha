@@ -3,6 +3,7 @@ import {
   construirLinhagemRaiz,
   removerMetadadosLinhagem,
 } from '@/lib/receitaLineage';
+import { toUpperName } from '@/lib/textCase';
 
 async function usuarioAtual() {
   const user = await base44.auth.me();
@@ -25,7 +26,10 @@ export async function criarReceitaSegura(payload = {}) {
   const user = await usuarioAtual();
   const isAdmin = user.role === 'admin';
   const isBase = isAdmin ? (payload.is_base ?? true) : false;
-  const dados = removerMetadadosLinhagem(payload);
+  const dados = removerMetadadosLinhagem({
+    ...payload,
+    ...(payload.nome !== undefined ? { nome: toUpperName(payload.nome) } : {}),
+  });
   const linhagem = payload.__linhagem || construirLinhagemRaiz({ isBase });
 
   const dadosCriacao = {
@@ -54,14 +58,18 @@ export async function criarReceitaSegura(payload = {}) {
 
 export async function criarCardapioSeguro(payload = {}) {
   const user = await usuarioAtual();
+  const dadosNormalizados = {
+    ...payload,
+    ...(payload.nome !== undefined ? { nome: toUpperName(payload.nome) } : {}),
+  };
   if (user.role === 'admin') {
     return base44.entities.Cardapio.create({
-      ...payload,
+      ...dadosNormalizados,
       is_base: payload.is_base ?? true,
     });
   }
 
-  const { is_base: _ignorado, ...dadosPessoais } = payload;
+  const { is_base: _ignorado, ...dadosPessoais } = dadosNormalizados;
   return base44.entities.Cardapio.create({
     ...dadosPessoais,
     usuario_dono_id: user.id,
