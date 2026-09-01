@@ -34,6 +34,7 @@ import { fetchAllFilteredPages, fetchAllPages } from "@/lib/fetchAllPages";
 import { normalizarNome } from "@/lib/normalizarNome";
 import MinhasReceitasCard from "@/components/home/MinhasReceitasCard";
 import { uploadArquivoSeguro, validarCsvUpload } from "@/lib/securityHardening";
+import { isReceitaPessoalDoUsuario } from "@/lib/receitaPessoal";
 
 const CORES_CATEGORIA = {
   "Carnes Bovinas e Suínos":       { cor: "#FFEBEE", corTexto: "#C62828", corPill: "#FFCDD2", corPillTexto: "#B71C1C" },
@@ -131,10 +132,7 @@ export default function Receitas() {
   });
 
   const minhasReceitasCount = useMemo(
-    () => receitas.filter((r) =>
-      r.is_base === false &&
-      (r.usuario_dono_id === user?.id || (!r.usuario_dono_id && r.created_by_id === user?.id))
-    ).length,
+    () => receitas.filter((r) => isReceitaPessoalDoUsuario(r, user?.id)).length,
     [receitas, user?.id]
   );
 
@@ -156,7 +154,7 @@ export default function Receitas() {
     if (isAdmin) return receitas.filter((r) => r.is_base !== false);
     const forkPorBase = {};
     receitas.forEach((r) => {
-      if (r.is_base === false && r.forked_from_id && r.created_by_id === user?.id) {
+      if (isReceitaPessoalDoUsuario(r, user?.id) && r.forked_from_id) {
         forkPorBase[r.forked_from_id] = r;
       }
     });
