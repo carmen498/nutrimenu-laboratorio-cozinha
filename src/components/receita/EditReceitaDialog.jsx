@@ -51,6 +51,7 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
   const campoRendimentoAlteradoRef = useRef(null);
   const [form, setForm] = useState({
     ...receita,
+    nome: receita?.nome?.toUpperCase() || "",
     peso_pos_preparo_total: receita?.peso_pos_preparo_total || receita?.rendimento_total || 0,
   });
   const [saving, setSaving] = useState(false);
@@ -71,6 +72,7 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
     campoRendimentoAlteradoRef.current = null;
     setForm({
       ...receita,
+      nome: receita?.nome?.toUpperCase() || "",
       peso_pos_preparo_total: pdp,
       rendimento_total: pdp,
       porcoes_base: metricas.porcoes || receita?.porcoes_base || 1,
@@ -328,7 +330,7 @@ ${form.modo_preparo}`,
         <div className="space-y-4">
           <div>
             <Label>Nome</Label>
-            <Input value={form.nome || ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
+            <Input value={form.nome || ""} onChange={(e) => setForm({ ...form, nome: e.target.value.toUpperCase() })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
