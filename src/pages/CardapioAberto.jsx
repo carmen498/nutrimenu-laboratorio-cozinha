@@ -35,6 +35,7 @@ import { ESCALONAMENTO_CUSTO_MODELO_VERSAO, escalarInsumoCardapio, normalizarCom
 import { carregarIngredientesEfetivosCusto, mapearIngredientesPorId } from "@/lib/custoContexto";
 import { calcularItemIngredienteReceita, itemParticipaCompra } from "@/lib/ingredienteReceitaCalc";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
+import { toUpperName } from "@/lib/textCase";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
@@ -249,8 +250,9 @@ export default function CardapioAberto() {
   const saveCardapio = async (field, value) => {
     if (!cardapio) return;
     const { cardapioId } = await ensureEditavel();
-    setCardapio(prev => ({ ...prev, [field]: value }));
-    try { await base44.entities.Cardapio.update(cardapioId, { [field]: value }); }
+    const valorNormalizado = field === "nome" ? toUpperName(value) : value;
+    setCardapio(prev => ({ ...prev, [field]: valorNormalizado }));
+    try { await base44.entities.Cardapio.update(cardapioId, { [field]: valorNormalizado }); }
     catch (e) { consoleErrorSeguro("Erro em refeição aberto", e); }
   };
 
