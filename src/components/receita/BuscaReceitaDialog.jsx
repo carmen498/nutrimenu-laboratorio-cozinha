@@ -65,7 +65,7 @@ export default function BuscaReceitaDialog({
             ))}
           </div>
           <p className="text-xs text-muted-foreground px-1">
-            {filtradas.length} {filtradas.length === 1 ? "receita encontrada" : "receitas encontradas"}
+            {filtradas.length === 100 ? "Exibindo os primeiros 100 resultados" : `${filtradas.length} ${filtradas.length === 1 ? "receita encontrada" : "receitas encontradas"}`}
           </p>
           <div className="flex-1 overflow-y-auto space-y-1">
             {filtradas.length === 0 ? (
