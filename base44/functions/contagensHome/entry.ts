@@ -12,9 +12,13 @@ export default async function(req) {
       base44.entities.CardapioPeriodo.list("-created_date", 5000),
     ]);
 
+    // O indicador público representa o catálogo compartilhado. Cópias pessoais
+    // não aumentam este total, pois substituem a versão-base apenas para o dono.
+    const receitasCatalogo = receitas.filter((receita) => receita.is_base === true);
+
     const ha30Dias = new Date();
     ha30Dias.setDate(ha30Dias.getDate() - 30);
-    const receitasAtualizadas30d = receitas.filter(
+    const receitasAtualizadas30d = receitasCatalogo.filter(
       (receita) => receita.updated_date && new Date(receita.updated_date) >= ha30Dias,
     ).length;
 
@@ -24,19 +28,19 @@ export default async function(req) {
       categorias: receita.categorias || [],
       foto_url: receita.foto_url || '',
     });
-    const receitasRecentes = receitas.slice(0, 10).map(resumirReceita);
-    const receitasDestaque = receitas
+    const receitasRecentes = receitasCatalogo.slice(0, 10).map(resumirReceita);
+    const receitasDestaque = receitasCatalogo
       .filter((receita) => receita.destaque)
       .slice(0, 10)
       .map(resumirReceita);
-    const receitasRevisarCount = receitas.filter((receita) => receita.revisar).length;
+    const receitasRevisarCount = receitasCatalogo.filter((receita) => receita.revisar).length;
     const minhasReceitas = receitas.filter((receita) =>
       receita.is_base !== true &&
       (receita.usuario_dono_id === user.id || (!receita.usuario_dono_id && receita.created_by_id === user.id))
     );
 
     return Response.json({
-      totalReceitas: receitas.length,
+      totalReceitas: receitasCatalogo.length,
       totalIngredientes: ingredientes.length,
       totalCardapios: cardapiosPeriodo.length,
       minhasReceitas: minhasReceitas.length,
