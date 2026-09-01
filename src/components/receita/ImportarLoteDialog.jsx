@@ -17,6 +17,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { uploadArquivoSeguro, validarDocumentoReceitaUpload } from "@/lib/securityHardening";
 import { invalidarCustosDependentesSeguro } from "@/lib/invalidacaoCusto";
 import { confirmarPorcoesBase } from "@/lib/porcoesBase";
+import { toSentenceCaseName, toUpperName } from "@/lib/textCase";
 
 const TABS = { PASTE: "paste", FILE: "file" };
 
@@ -428,7 +429,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
           substituicoesCategoria.push({ receita: nome.toUpperCase(), original: item.categoria, usada: categoriaFinal });
         }
         const payload = {
-          nome: nome.toUpperCase(),
+          nome: toUpperName(nome),
           categorias: [categoriaFinal],
           porcoes_base: 1,
           per_capita_g: item.per_capita_g || null,
@@ -515,7 +516,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
               ingrediente_id: "",
               ingrediente_nome: "",
               tipo: "grupo",
-              titulo_grupo: ing.nome || "",
+              titulo_grupo: toUpperName(ing.nome),
               ordem: ordem++,
               quantidade_por_porcao: 0,
             });
@@ -534,7 +535,7 @@ ${RECIPE_EXTRACTION_PROMPT}`,
 
           // Normalize ingredient name
           const normalized = normalizeIngredienteNome(ingNome);
-          const ingNomeFinal = normalized.nome;
+          const ingNomeFinal = toSentenceCaseName(normalized.nome);
           const ingPrePreparoFinal = normalized.pre_preparo || ing.pre_preparo || "";
           const ingCategoria = autoCategoria(ingNomeFinal);
 
