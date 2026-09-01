@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { criarCardapioPeriodo, listarCardapiosPeriodo } from "@/lib/cardapioPeriodo";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
@@ -188,9 +189,22 @@ export default function CardapiosBase() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir`)}>
-                      <FileText className="w-4 h-4 mr-2" /> Relatórios
-                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <FileText className="w-4 h-4 mr-2" /> Relatórios
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir?tipo=diario&data=${cardapio.data_inicio}`)}>
+                          Cardápio diário
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir?tipo=semanal`)}>
+                          Cardápio semanal
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate(`/cardapios/${cardapio.id}/imprimir?tipo=mensal&mes=${cardapio.data_inicio.slice(0, 7)}`)}>
+                          Cardápio mensal
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
