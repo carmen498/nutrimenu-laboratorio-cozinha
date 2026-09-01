@@ -1,10 +1,11 @@
 import { Fragment, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, FileText } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
@@ -161,6 +162,45 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             const ultimoPagamento = historico.find((p) => p.status === "approved") || historico[0] || null;
             const status = computeStatusUsuario(usuarioAberto);
             const periodoPlano = { diario: "1 dia", mensal: "30 dias", anual: "1 ano", renovacao: "1 ano" };
+            const copiarDadosNF = async () => {
+              const nome = usuarioAberto.nome_completo || usuarioAberto.full_name;
+              const cidade = (usuarioAberto.cidade || (usuarioAberto.cidade_uf || "").split("/")[0]?.trim() || "").toUpperCase();
+              const estado = (usuarioAberto.estado || (usuarioAberto.cidade_uf || "").split("/")[1]?.trim() || "").toUpperCase();
+              const plano = ultimoPagamento?.plano || usuarioAberto.plano_atual;
+              const linhas = [
+                "📌 DADOS CADASTRAIS",
+                nome && `Nome completo: ${nome}`,
+                usuarioAberto.razao_social && `Razão social: ${usuarioAberto.razao_social}`,
+                usuarioAberto.cpf_cnpj && `CPF/CNPJ: ${usuarioAberto.cpf_cnpj}`,
+                usuarioAberto.email && `E-mail: ${usuarioAberto.email}`,
+                usuarioAberto.telefone_whatsapp && `Celular: ${usuarioAberto.telefone_whatsapp}`,
+                usuarioAberto.created_date && `Data e hora de cadastro: ${formatarDataHora(usuarioAberto.created_date)}`,
+                "",
+                "📌 ENDEREÇO",
+                usuarioAberto.cep && `CEP: ${usuarioAberto.cep}`,
+                (usuarioAberto.logradouro || usuarioAberto.endereco) && `Logradouro: ${usuarioAberto.logradouro || usuarioAberto.endereco}`,
+                usuarioAberto.numero && `Número: ${usuarioAberto.numero}`,
+                usuarioAberto.complemento && `Complemento: ${usuarioAberto.complemento}`,
+                usuarioAberto.bairro && `Bairro: ${usuarioAberto.bairro}`,
+                cidade && `Cidade: ${cidade}`,
+                estado && `Estado: ${estado}`,
+                plano ? "" : null,
+                plano ? "📌 PLANO" : null,
+                plano && `Plano: ${PLANO_LABEL[plano] || plano}`,
+                ultimoPagamento?.created_date && `Data/hora da contratação: ${formatarDataHora(ultimoPagamento.created_date)}`,
+                ultimoPagamento && `Valor: ${formatarMoeda(ultimoPagamento.valor)}`,
+                periodoPlano[plano] && `Período: ${periodoPlano[plano]}`,
+                ultimoPagamento && `Situação do pagamento: ${STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}`,
+                usuarioAberto.data_expiracao && `Validade: ${formatarData(usuarioAberto.data_expiracao)}`,
+              ].filter((linha) => linha !== null && linha !== undefined && linha !== false);
+
+              try {
+                await navigator.clipboard.writeText(linhas.join("\n"));
+                toast.success("Dados para emissão de NF copiados");
+              } catch {
+                toast.error("Não foi possível copiar os dados");
+              }
+            };
             return (
               <div className="space-y-6">
                 <SheetHeader>
@@ -187,6 +227,9 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                     <ContatoIcones email={usuarioAberto.email} telefone={usuarioAberto.telefone_whatsapp} nome={usuarioAberto.nome_completo || usuarioAberto.full_name} />
                     <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={() => navigate(`/conta?userId=${usuarioAberto.id}`)}>
                       <FileText className="w-3.5 h-3.5" /> Abrir dados cadastrais para NF
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-8 gap-1.5" onClick={copiarDadosNF}>
+                      <Copy className="w-3.5 h-3.5" /> Copiar dados para emissão de NF
                     </Button>
                   </div>
                 </section>
