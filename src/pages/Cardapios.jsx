@@ -426,7 +426,7 @@ export default function Cardapios() {
                 id="nome"
                 placeholder="ex: Almoço de domingo"
                 value={form.nome}
-                onChange={e => setForm({ ...form, nome: e.target.value })}
+                onChange={e => setForm({ ...form, nome: e.target.value.toLocaleUpperCase("pt-BR") })}
                 autoComplete="off"
                 autoFocus
               />
