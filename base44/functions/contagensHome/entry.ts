@@ -6,11 +6,10 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const [receitas, ingredientes, cardapios, minhasReceitas] = await Promise.all([
+    const [receitas, ingredientes, cardapiosPeriodo] = await Promise.all([
       base44.entities.Receita.list("-updated_date", 5000),
       base44.entities.Ingrediente.list("-updated_date", 5000),
-      base44.entities.Cardapio.list("-updated_date", 5000),
-      base44.entities.Receita.filter({ usuario_dono_id: user.id }, "-updated_date", 5000),
+      base44.entities.CardapioPeriodo.list("-created_date", 5000),
     ]);
 
     const ha30Dias = new Date();
@@ -31,11 +30,15 @@ export default async function(req) {
       .slice(0, 10)
       .map(resumirReceita);
     const receitasRevisarCount = receitas.filter((receita) => receita.revisar).length;
+    const minhasReceitas = receitas.filter((receita) =>
+      receita.is_base === false &&
+      (receita.usuario_dono_id === user.id || (!receita.usuario_dono_id && receita.created_by_id === user.id))
+    );
 
     return Response.json({
       totalReceitas: receitas.length,
       totalIngredientes: ingredientes.length,
-      totalCardapios: cardapios.length,
+      totalCardapios: cardapiosPeriodo.length,
       minhasReceitas: minhasReceitas.length,
       receitasAtualizadas30d,
       receitasRecentes,
