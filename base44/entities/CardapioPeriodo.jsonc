@@ -11,6 +11,11 @@
       "format": "date",
       "type": "string"
     },
+    "exibir_datas": {
+      "default": true,
+      "description": "Define se o per\u00edodo e as datas dos dias devem ser exibidos",
+      "type": "boolean"
+    },
     "identificacao_refeicao": {
       "default": "refeicao",
       "description": "Nome da faixa \u00fanica apresentada em cada dia",
