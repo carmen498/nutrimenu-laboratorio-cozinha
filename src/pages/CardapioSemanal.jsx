@@ -239,6 +239,9 @@ export default function CardapioSemanal() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-display font-bold">{cardapio.nome}</h1>
+            {cardapio.nome_refeicao && (
+              <p className="text-sm font-medium text-primary mt-1">{cardapio.nome_refeicao}</p>
+            )}
             {cardapio.exibir_datas !== false && (
               <p className="text-sm text-muted-foreground mt-1">
                 {formatarData(cardapio.data_inicio, true)} a {formatarData(cardapio.data_fim, true)}
