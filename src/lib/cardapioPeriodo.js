@@ -67,6 +67,7 @@ export async function criarCardapioPeriodo(payload = {}) {
 
   return base44.entities.CardapioPeriodo.create({
     nome: toUpperName(payload.nome || formatarPeriodo(dataInicio, dataFim)),
+    nome_refeicao: payload.nome_refeicao?.trim() || "",
     tipo_periodo: "semanal",
     data_inicio: dataInicio,
     data_fim: dataFim,
@@ -92,6 +93,7 @@ export async function atualizarCardapioPeriodo(id, payload = {}) {
 
   const dados = {};
   if (payload.nome !== undefined) dados.nome = toUpperName(payload.nome) || atual.nome;
+  if (payload.nome_refeicao !== undefined) dados.nome_refeicao = payload.nome_refeicao.trim();
   if (payload.observacoes !== undefined) dados.observacoes = payload.observacoes.trim();
   if (payload.exibir_datas !== undefined) dados.exibir_datas = Boolean(payload.exibir_datas);
 
@@ -247,6 +249,7 @@ export async function duplicarCardapioPeriodo(id, payload = {}) {
   );
   const novo = await criarCardapioPeriodo({
     nome: payload.nome?.trim() || `${original.nome} — cópia`,
+    nome_refeicao: original.nome_refeicao || "",
     data_inicio: novaDataInicio,
     identificacao_refeicao: original.identificacao_refeicao,
     observacoes: original.observacoes || "",
