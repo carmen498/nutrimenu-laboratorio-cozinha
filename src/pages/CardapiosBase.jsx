@@ -192,9 +192,13 @@ export default function CardapiosBase() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold truncate">{cardapio.nome}</p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {formatarData(cardapio.data_inicio)} a {formatarData(cardapio.data_fim)}
-                  </p>
+                  {cardapio.exibir_datas !== false ? (
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {formatarData(cardapio.data_inicio)} a {formatarData(cardapio.data_fim)}
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground mt-0.5">Sem data definida</p>
+                  )}
                 </div>
                 <span className="hidden sm:inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize">
                   {cardapio.identificacao_refeicao === "almoco" ? "Almoço" : cardapio.identificacao_refeicao === "jantar" ? "Jantar" : "Refeição"}
