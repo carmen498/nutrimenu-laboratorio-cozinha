@@ -9,6 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import AdicionarItemCardapioDialog from "@/components/cardapio/AdicionarItemCardapioDialog";
 import GestaoCardapioDialogs from "@/components/cardapio/GestaoCardapioDialogs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   atualizarCardapioPeriodo,
   criarCardapioPeriodoItem,
@@ -329,7 +330,16 @@ export default function CardapioSemanal() {
                                     <Icon className="w-4 h-4" />
                                   </div>
                                   <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-medium truncate">{item.nome_cache}</p>
+                                    <TooltipProvider delayDuration={250}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <p className="text-sm font-medium truncate cursor-help">{item.nome_cache}</p>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-sm">
+                                          <p>{item.nome_cache}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                     <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
                                       <span>{origem.label}</span>
                                       {item.classificacao && <span>• {CLASSIFICACOES[item.classificacao] || item.classificacao}</span>}
