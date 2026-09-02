@@ -289,3 +289,146 @@
 @media (prefers-reduced-motion: reduce) {
   .lc-page .lc-btn { transition: none; }
 }
+
+/* ---------- Destaque: planejamento semanal de cardápios ---------- */
+
+.lc-page .lc-portal-badge {
+  align-self: flex-start;
+  margin: 0 0 10px;
+  padding: 5px 9px;
+  border-radius: 5px;
+  background: rgba(201, 162, 75, .18);
+  color: var(--lc-official-forest);
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.lc-page .lc-menu-planning {
+  margin: 0;
+  padding: 72px 48px;
+  border-radius: 16px;
+  background: var(--lc-official-forest);
+  color: #fff;
+}
+
+.lc-page .lc-menu-planning-head {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 56px;
+  align-items: end;
+  margin-bottom: 38px;
+}
+
+.lc-page .lc-menu-planning .lc-eyebrow {
+  margin: 0 0 10px;
+  color: var(--lc-official-gold);
+}
+
+.lc-page .lc-menu-planning h2 {
+  margin: 0;
+  max-width: 18ch;
+  color: #fff;
+  font: 600 clamp(2rem, 4vw, 3rem)/1.08 'Playfair Display', Georgia, serif;
+}
+
+.lc-page .lc-menu-planning-head > p {
+  margin: 0;
+  max-width: 58ch;
+  color: #d9e4dc;
+  line-height: 1.7;
+}
+
+.lc-page .lc-menu-planning-gallery {
+  position: relative;
+  min-height: 570px;
+  margin-bottom: 42px;
+}
+
+.lc-page .lc-menu-planning-gallery figure {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 28px 70px -38px rgba(0, 0, 0, .75);
+}
+
+.lc-page .lc-menu-planning-gallery img {
+  width: 100%;
+  height: auto;
+}
+
+.lc-page .lc-menu-planning-gallery figcaption {
+  padding: 12px 16px;
+  background: #fff;
+  color: #435047;
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.lc-page .lc-menu-planning-primary {
+  width: 82%;
+}
+
+.lc-page .lc-menu-planning-secondary {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 54%;
+}
+
+.lc-page .lc-menu-planning-footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 36px;
+  align-items: center;
+}
+
+.lc-page .lc-menu-planning-footer ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-page .lc-menu-planning-footer li {
+  position: relative;
+  padding-left: 20px;
+  color: #e5ede7;
+  font-size: .9rem;
+}
+
+.lc-page .lc-menu-planning-footer li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--lc-official-gold);
+  font-weight: 800;
+}
+
+.lc-page .lc-menu-planning .lc-btn--primary {
+  background: var(--lc-official-gold);
+  color: #283c31;
+  white-space: nowrap;
+}
+
+.lc-page .lc-menu-planning .lc-btn--primary:hover {
+  background: #dfbc6c;
+}
+
+@media (max-width: 859.99px) {
+  .lc-page .lc-menu-planning { padding: 54px 24px; }
+  .lc-page .lc-menu-planning-head { grid-template-columns: 1fr; gap: 20px; }
+  .lc-page .lc-menu-planning-gallery { display: grid; gap: 18px; min-height: 0; }
+  .lc-page .lc-menu-planning-primary,
+  .lc-page .lc-menu-planning-secondary {
+    position: static;
+    width: 100%;
+  }
+  .lc-page .lc-menu-planning-footer { grid-template-columns: 1fr; }
+  .lc-page .lc-menu-planning-footer .lc-btn { width: 100%; white-space: normal; }
+}
