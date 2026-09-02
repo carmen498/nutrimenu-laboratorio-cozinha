@@ -103,21 +103,20 @@ export default function GestaoCardapioDialogs({
               />
             </label>
             <label className="block space-y-1.5">
-              <span className="text-sm font-medium">Segunda-feira inicial</span>
+              <span className="text-sm font-medium">Segunda-feira inicial <span className="font-normal text-muted-foreground">(opcional)</span></span>
               <input
-                required
                 type="date"
                 value={dataCopia}
                 onChange={(evento) => setDataCopia(evento.target.value)}
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
-              <p className="text-xs text-muted-foreground">A data precisa ser uma segunda-feira.</p>
+              <p className="text-xs text-muted-foreground">Apague a data para manter o mesmo período do Cardápio original. Se informar outra data, ela deve ser uma segunda-feira.</p>
             </label>
             <DialogFooter>
               <button type="button" onClick={onClose} disabled={pending} className="px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted disabled:opacity-50">
                 Cancelar
               </button>
-              <button disabled={pending || !nomeCopia.trim() || !dataCopia} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              <button disabled={pending || !nomeCopia.trim()} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
                 {pending && <Loader2 className="w-4 h-4 animate-spin" />} Duplicar semana
               </button>
             </DialogFooter>
