@@ -5,7 +5,7 @@ export const LANDING_IMAGES = {
 };
 
 export const HERO_PORTALS = [
-  { key: "casa", label: "Cozinha da casa", title: "Sua cozinheira chega e o cardápio da semana ainda não está definido?", text: "Chega de decidir todo dia o que vai ter, comprar no improviso e jogar comida fora.", button: "Montar o cardápio da minha semana", href: "#secao-casa" },
+  { key: "casa", label: "Cozinha da casa", badge: "Novo · planejamento semanal", title: "Sua cozinheira chega e o cardápio da semana ainda não está definido?", text: "Chega de decidir todo dia o que vai ter, comprar no improviso e jogar comida fora.", button: "Montar o cardápio da minha semana", href: "#secao-casa" },
   { key: "venda", label: "Produção para vender", title: "Você sabe quanto custa cada marmita que sai da sua cozinha?", text: "Vender sem conhecer o custo real é trabalhar sem saber se sobra lucro.", button: "Calcular meu preço de venda", href: "#secao-venda" },
   { key: "festa", label: "Festas e eventos", title: "Quantos quilos de comida para 50 pessoas?", text: "Nem sobrar por medo de faltar, nem faltar por não saber calcular.", button: "Calcular a comida da minha festa", href: "#secao-festa" },
 ];
