@@ -210,9 +210,9 @@ export async function duplicarCardapioPeriodo(id, payload = {}) {
   const original = await base44.entities.CardapioPeriodo.get(id);
   if (!original) throw new Error("Cardápio não encontrado.");
 
-  const novaDataInicio = payload.data_inicio;
+  const novaDataInicio = payload.data_inicio?.trim() || original.data_inicio;
   if (dataUtc(novaDataInicio).getUTCDay() !== 1) {
-    throw new Error("O início da nova semana deve ser uma segunda-feira.");
+    throw new Error("Quando informada, a data inicial deve ser uma segunda-feira.");
   }
 
   const itensOriginais = await listarItensCardapioPeriodo(id);
