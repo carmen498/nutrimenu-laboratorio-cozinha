@@ -13,6 +13,7 @@ export default function HeroPortalCard({ portal, image, priority = false }) {
         {...(priority ? { fetchpriority: "high" } : {})}
       />
       <div className="lc-portal-body">
+        {portal.badge && <p className="lc-portal-badge">{portal.badge}</p>}
         <p className="lc-eyebrow">{portal.label}</p>
         <h2>{portal.title}</h2>
         <p>{portal.text}</p>
