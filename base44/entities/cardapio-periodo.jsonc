@@ -24,6 +24,11 @@
       "format": "date",
       "description": "\u00daltimo dia do per\u00edodo planejado"
     },
+    "exibir_datas": {
+      "type": "boolean",
+      "default": true,
+      "description": "Define se o per\u00edodo e as datas dos dias devem ser exibidos"
+    },
     "identificacao_refeicao": {
       "type": "string",
       "enum": [
