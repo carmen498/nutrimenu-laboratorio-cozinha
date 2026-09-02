@@ -25,6 +25,8 @@ export default function GestaoCardapioDialogs({
 }) {
   const [nomeEdicao, setNomeEdicao] = useState(cardapio.nome || "");
   const [observacoes, setObservacoes] = useState(cardapio.observacoes || "");
+  const [dataEdicao, setDataEdicao] = useState(cardapio.data_inicio || "");
+  const [semData, setSemData] = useState(cardapio.exibir_datas === false);
   const [nomeCopia, setNomeCopia] = useState(`${cardapio.nome} — cópia`);
   const [dataCopia, setDataCopia] = useState(somarDias(cardapio.data_inicio, 7));
 
@@ -40,7 +42,12 @@ export default function GestaoCardapioDialogs({
             className="space-y-4"
             onSubmit={(evento) => {
               evento.preventDefault();
-              onEditar({ nome: nomeEdicao, observacoes });
+              onEditar({
+                nome: nomeEdicao,
+                observacoes,
+                data_inicio: semData ? undefined : dataEdicao,
+                exibir_datas: !semData,
+              });
             }}
           >
             <label className="block space-y-1.5">
@@ -52,6 +59,30 @@ export default function GestaoCardapioDialogs({
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </label>
+            <div className="space-y-2">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium">Segunda-feira inicial</span>
+                <input
+                  type="date"
+                  value={semData ? "" : dataEdicao}
+                  disabled={semData}
+                  onChange={(evento) => setDataEdicao(evento.target.value)}
+                  className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:bg-muted disabled:text-muted-foreground"
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={semData}
+                  onChange={(evento) => setSemData(evento.target.checked)}
+                  className="h-4 w-4 rounded border-input"
+                />
+                <span>Cardápio sem data</span>
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Ao alterar a data, os sete dias e todos os itens serão deslocados juntos. Marque “Cardápio sem data” para ocultar o período.
+              </p>
+            </div>
             <label className="block space-y-1.5">
               <span className="text-sm font-medium">Observações</span>
               <textarea
@@ -66,7 +97,7 @@ export default function GestaoCardapioDialogs({
               <button type="button" onClick={onClose} disabled={pending} className="px-4 py-2 rounded-md border text-sm font-medium hover:bg-muted disabled:opacity-50">
                 Cancelar
               </button>
-              <button disabled={pending || !nomeEdicao.trim()} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
+              <button disabled={pending || !nomeEdicao.trim() || (!semData && !dataEdicao)} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-semibold disabled:opacity-50">
                 {pending && <Loader2 className="w-4 h-4 animate-spin" />} Salvar alterações
               </button>
             </DialogFooter>
