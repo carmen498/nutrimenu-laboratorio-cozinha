@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Nome do card\u00e1pio planejado para o per\u00edodo"
     },
+    "nome_refeicao": {
+      "type": "string",
+      "description": "Nome livre e opcional da refei\u00e7\u00e3o exibida no Card\u00e1pio"
+    },
     "tipo_periodo": {
       "type": "string",
       "enum": [
