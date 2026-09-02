@@ -25,6 +25,7 @@ export default function GestaoCardapioDialogs({
 }) {
   const [nomeEdicao, setNomeEdicao] = useState(cardapio.nome || "");
   const [observacoes, setObservacoes] = useState(cardapio.observacoes || "");
+  const [nomeRefeicao, setNomeRefeicao] = useState(cardapio.nome_refeicao || "");
   const [dataEdicao, setDataEdicao] = useState(cardapio.data_inicio || "");
   const [semData, setSemData] = useState(cardapio.exibir_datas === false);
   const [nomeCopia, setNomeCopia] = useState(`${cardapio.nome} — cópia`);
@@ -45,6 +46,7 @@ export default function GestaoCardapioDialogs({
               onEditar({
                 nome: nomeEdicao,
                 observacoes,
+                nome_refeicao: nomeRefeicao,
                 data_inicio: semData ? undefined : dataEdicao,
                 exibir_datas: !semData,
               });
@@ -58,6 +60,25 @@ export default function GestaoCardapioDialogs({
                 onChange={(evento) => setNomeEdicao(evento.target.value)}
                 className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium">Qual é a refeição? <span className="font-normal text-muted-foreground">(opcional)</span></span>
+              <input
+                list="tipos-refeicao-cardapio"
+                value={nomeRefeicao}
+                onChange={(evento) => setNomeRefeicao(evento.target.value)}
+                placeholder="Ex.: Almoço, Jantar, Café da manhã..."
+                className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              />
+              <datalist id="tipos-refeicao-cardapio">
+                <option value="Café da manhã" />
+                <option value="Almoço" />
+                <option value="Jantar" />
+                <option value="Lanche" />
+                <option value="Ceia" />
+                <option value="Brunch" />
+              </datalist>
+              <p className="text-xs text-muted-foreground">Escolha uma sugestão ou digite livremente outro nome.</p>
             </label>
             <div className="space-y-2">
               <label className="block space-y-1.5">
