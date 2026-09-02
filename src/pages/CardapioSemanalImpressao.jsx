@@ -96,7 +96,7 @@ export default function CardapioSemanalImpressao() {
       const cardapios = todos.filter((item) => item.data_inicio <= fim && item.data_fim >= inicio);
       const listas = await Promise.all(cardapios.map(async (item) => {
         const itens = await listarItensCardapioPeriodo(item.id);
-        const faixa = identificacaoFaixa(item.identificacao_refeicao);
+        const faixa = item.nome_refeicao?.trim() || identificacaoFaixa(item.identificacao_refeicao);
         return itens.map((registro) => ({
           ...registro,
           faixa,
@@ -114,7 +114,7 @@ export default function CardapioSemanalImpressao() {
     return <div className="max-w-3xl mx-auto rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-sm text-destructive">Não foi possível preparar o relatório do Cardápio.</div>;
   }
 
-  const faixa = identificacaoFaixa(cardapio.identificacao_refeicao);
+  const faixa = cardapio.nome_refeicao?.trim() || identificacaoFaixa(cardapio.identificacao_refeicao);
   let datas = [];
   let itensRelatorio = itensSemana.map((item) => ({ ...item, faixa, cardapioNome: cardapio.nome }));
   let periodo = "";
