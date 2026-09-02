@@ -70,6 +70,7 @@ export async function criarCardapioPeriodo(payload = {}) {
     tipo_periodo: "semanal",
     data_inicio: dataInicio,
     data_fim: dataFim,
+    exibir_datas: payload.exibir_datas !== false,
     identificacao_refeicao: identificacao,
     observacoes: payload.observacoes?.trim() || "",
     status: payload.status === "ativo" ? "ativo" : "rascunho",
@@ -92,6 +93,31 @@ export async function atualizarCardapioPeriodo(id, payload = {}) {
   const dados = {};
   if (payload.nome !== undefined) dados.nome = toUpperName(payload.nome) || atual.nome;
   if (payload.observacoes !== undefined) dados.observacoes = payload.observacoes.trim();
+  if (payload.exibir_datas !== undefined) dados.exibir_datas = Boolean(payload.exibir_datas);
+
+  if (payload.data_inicio) {
+    if (dataUtc(payload.data_inicio).getUTCDay() !== 1) {
+      throw new Error("A data inicial deve ser uma segunda-feira.");
+    }
+    const diferencaDias = Math.round(
+      (dataUtc(payload.data_inicio).getTime() - dataUtc(atual.data_inicio).getTime()) / 86400000,
+    );
+    if (diferencaDias !== 0) {
+      const itens = await listarItensCardapioPeriodo(id);
+      for (const item of itens || []) {
+        const novaData = dataUtc(item.data);
+        novaData.setUTCDate(novaData.getUTCDate() + diferencaDias);
+        const data = isoData(novaData);
+        await base44.entities.CardapioPeriodoItem.update(item.id, {
+          data,
+          dia_semana: diaSemanaDaData(data),
+        });
+      }
+    }
+    dados.data_inicio = payload.data_inicio;
+    dados.data_fim = calcularDataFimCardapio(payload.data_inicio);
+  }
+
   if (payload.identificacao_refeicao !== undefined) {
     if (!IDENTIFICACOES.has(payload.identificacao_refeicao)) throw new Error("Identificação da refeição inválida.");
     dados.identificacao_refeicao = payload.identificacao_refeicao;
@@ -225,6 +251,7 @@ export async function duplicarCardapioPeriodo(id, payload = {}) {
     identificacao_refeicao: original.identificacao_refeicao,
     observacoes: original.observacoes || "",
     status: "rascunho",
+    exibir_datas: Boolean(payload.data_inicio?.trim()),
   });
 
   const criados = [];
