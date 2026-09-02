@@ -239,9 +239,11 @@ export default function CardapioSemanal() {
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-display font-bold">{cardapio.nome}</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {formatarData(cardapio.data_inicio, true)} a {formatarData(cardapio.data_fim, true)}
-            </p>
+            {cardapio.exibir_datas !== false && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {formatarData(cardapio.data_inicio, true)} a {formatarData(cardapio.data_fim, true)}
+              </p>
+            )}
             {cardapio.observacoes && (
               <p className="text-sm text-foreground/80 mt-2 whitespace-pre-wrap">{cardapio.observacoes}</p>
             )}
@@ -274,7 +276,9 @@ export default function CardapioSemanal() {
               <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-semibold">{dia.nome}</h2>
-                  <p className="text-xs text-muted-foreground">{formatarData(dia.data)}</p>
+                  {cardapio.exibir_datas !== false && (
+                    <p className="text-xs text-muted-foreground">{formatarData(dia.data)}</p>
+                  )}
                 </div>
                 <button
                   type="button"
