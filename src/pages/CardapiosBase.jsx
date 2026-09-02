@@ -41,6 +41,7 @@ export default function CardapiosBase() {
   const [gestaoCardapio, setGestaoCardapio] = useState(null);
   const [form, setForm] = useState({
     nome: "",
+    nome_refeicao: "",
     data_inicio: dataInicialPadrao(),
     identificacao_refeicao: "refeicao",
   });
@@ -117,7 +118,7 @@ export default function CardapiosBase() {
               Informe a segunda-feira inicial. Os sete dias serão criados automaticamente.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
             <label className="space-y-1.5 text-sm">
               <span className="font-medium">Nome <span className="text-muted-foreground font-normal">(opcional)</span></span>
               <input
@@ -138,7 +139,25 @@ export default function CardapiosBase() {
               />
             </label>
             <label className="space-y-1.5 text-sm">
-              <span className="font-medium">Identificação</span>
+              <span className="font-medium">Qual é a refeição? <span className="text-muted-foreground font-normal">(opcional)</span></span>
+              <input
+                list="tipos-refeicao-novo-cardapio"
+                value={form.nome_refeicao}
+                onChange={(e) => setForm({ ...form, nome_refeicao: e.target.value })}
+                placeholder="Ex.: Almoço, Jantar..."
+                className="w-full h-10 rounded-md border border-input bg-background px-3 outline-none focus:ring-2 focus:ring-ring"
+              />
+              <datalist id="tipos-refeicao-novo-cardapio">
+                <option value="Café da manhã" />
+                <option value="Almoço" />
+                <option value="Jantar" />
+                <option value="Lanche" />
+                <option value="Ceia" />
+                <option value="Brunch" />
+              </datalist>
+            </label>
+            <label className="space-y-1.5 text-sm">
+              <span className="font-medium">Classificação interna</span>
               <select
                 value={form.identificacao_refeicao}
                 onChange={(e) => setForm({ ...form, identificacao_refeicao: e.target.value })}
@@ -201,7 +220,7 @@ export default function CardapiosBase() {
                   )}
                 </div>
                 <span className="hidden sm:inline-flex rounded-full bg-muted px-2.5 py-1 text-xs font-medium capitalize">
-                  {cardapio.identificacao_refeicao === "almoco" ? "Almoço" : cardapio.identificacao_refeicao === "jantar" ? "Jantar" : "Refeição"}
+                  {cardapio.nome_refeicao || (cardapio.identificacao_refeicao === "almoco" ? "Almoço" : cardapio.identificacao_refeicao === "jantar" ? "Jantar" : "Refeição")}
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
