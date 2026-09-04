@@ -201,3 +201,27 @@ assert.deepEqual(
   ],
   "Uma Sub-receita deve poder mudar de posição dentro do Sub-título sem separar seus filhos",
 );
+
+const ingredientesComItemComum = [
+  { id: "massa", isGrupo: true },
+  { id: "farinha" },
+  { id: "molho", isSubreceita: true },
+  { id: "tomate-cache", subreceita_parent_id: "molho" },
+  { id: "ovos" },
+];
+
+assert.deepEqual(
+  planejarReordenacaoIngredientes({
+    itens: ingredientesComItemComum,
+    indiceOrigem: 1,
+    indiceDestino: 3,
+  }),
+  [
+    { id: "massa", ordem: 0 },
+    { id: "molho", ordem: 10 },
+    { id: "tomate-cache", ordem: 20 },
+    { id: "farinha", ordem: 30 },
+    { id: "ovos", ordem: 40 },
+  ],
+  "Mover um Ingrediente comum deve persistir a nova ordem sem dividir uma Sub-receita",
+);
