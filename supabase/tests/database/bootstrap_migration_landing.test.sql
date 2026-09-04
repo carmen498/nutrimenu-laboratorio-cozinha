@@ -292,7 +292,6 @@ select ok(
 );
 
 set local role postgres;
-select diag(format('default ACL probe owner: %s', current_user));
 
 create table labcozinha_migration.default_acl_probe (
   id bigint generated always as identity primary key
