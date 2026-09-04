@@ -40,7 +40,7 @@ TRUNCATE_AT = 300
 
 
 def format_output(result, full=False):
-    """Format results for Claude consumption (token-optimized)"""
+    """Format results for agent consumption (token-optimized)."""
     if "error" in result:
         return f"Error: {result['error']}"
 
@@ -54,6 +54,19 @@ def format_output(result, full=False):
         domain_note += ")"
     output.append(f"**Domain:** {domain_note} | **Query:** {result['query']}")
     output.append(f"**Source:** {result['file']} | **Found:** {result['count']} results\n")
+
+    if result['domain'] == 'icons':
+        output.append(
+            "**Nutrimenu implementation:** use the catalog for semantic lookup, "
+            "then map the concept to the existing `lucide-react` library. "
+            "Phosphor/Heroicons imports are upstream examples, not dependencies to copy.\n"
+        )
+    elif result['domain'] in {'typography', 'google-fonts'}:
+        output.append(
+            "**Nutrimenu implementation:** preserve the current type roles "
+            "(Plus Jakarta Sans, Playfair Display, and Great Vibes) unless the user "
+            "explicitly authorizes a typography redesign.\n"
+        )
 
     if result['count'] == 0:
         redirect = result.get("redirect")

@@ -13,6 +13,17 @@ metadata:
 
 Searchable local UI/UX guidance: 79 searchable styles (50 active), 192 product palettes and exact reasoning profiles, 74 font pairings, 119 UX guidelines, 105 curated icons, 17 GSAP presets, and 25 chart types.
 
+## Nutrimenu Authority
+
+Extend the product's current system before proposing a new one. Inspect the target layer and treat these repository files as authoritative:
+
+- `src/index.css` and `tailwind.config.js`: semantic HSL tokens plus the current type roles (`Plus Jakarta Sans` for body/UI, `Playfair Display` for headings/display, and `Great Vibes` for script accents);
+- `components.json`: shadcn `new-york`, CSS variables, and Lucide as the icon library;
+- existing Radix primitives and shared components: interaction behavior and composition;
+- scoped `.lc-page` / `--lc-*` styles: the landing-page visual layer, which is intentionally distinct from the authenticated app.
+
+Treat a new route inside Nutrimenu as an extension of the applicable layer. Use a generated design system only for a separately requested standalone concept or an explicitly authorized system-wide direction.
+
 ## When to Apply
 
 Use this Skill when the task involves **UI structure, visual design decisions, interaction patterns, or user experience quality control**: designing new pages, creating/refactoring UI components, choosing color/typography/spacing/layout systems, reviewing UI for UX/accessibility/consistency, implementing navigation/animation/responsive behavior, or improving perceived quality and usability.
@@ -52,12 +63,13 @@ The scripts require Python 3 and use only the standard library. If `python3` is 
 
 ## Workflow
 
-## Query Contract
+### Query Contract
 
 Choose the smallest search mode that fits the request:
 
-1. **New project/page or system-wide visual direction** → use `--design-system`.
-2. **Targeted concern or component bug** → use one explicit `--domain`.
+1. **Existing Nutrimenu surface, including a new route in the current product** → inspect its tokens/components, then use one explicit `--domain` for the unresolved design question.
+2. **Separately requested standalone concept or approved system-wide visual direction** → use `--design-system`.
+3. **Targeted concern or component bug** → use one explicit `--domain`.
 
 Build each query around **one dominant intent**, using **2–5 meaningful terms** and one useful constraint such as product, platform, or interaction. Verify the returned domain/category, top result identity, and fit for the user's product and platform before applying it. **Retry once** with a narrower rewrite or explicit domain when output is empty or off-topic. If that retry fails, state that no verified match was found and label any general guidance as a fallback. **Do not persist unverified output.**
 
@@ -75,9 +87,9 @@ Extract from the user request:
 - **Style keywords**: playful, vibrant, minimal, dark mode, content-first, immersive, etc.
 - **Platform**: distinguish web, native mobile, and desktop before applying interaction or accessibility guidance. Use the repository's own framework/version guidance for code decisions.
 
-### Step 2: Generate Design System (REQUIRED for new pages/projects)
+### Step 2: Generate an Exploratory Design System
 
-Use `--design-system` when the task needs a coherent product-wide visual direction:
+Use `--design-system` only when the user requested a standalone concept or authorized a new product-wide visual direction. Do not use it merely because an existing Nutrimenu route is new:
 
 ```bash
 python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<product_type> <industry> <keywords>" --design-system [-p "Project Name"]
@@ -156,6 +168,8 @@ python3 .agents/skills/ui-ux-pro-max/scripts/search.py "<keyword>" --domain <dom
 | GSAP animation presets | `gsap` | `"scroll reveal stagger" --domain gsap` |
 | App/native interface guidelines | `web` | `"accessibilityLabel touch safe-areas" --domain web` |
 
+The icon catalog retains upstream Phosphor/Heroicons names and import snippets for semantic lookup. Nutrimenu uses `lucide-react`: map the chosen concept to the existing Lucide library and shared components. Do not copy an upstream import or add an icon dependency without an explicitly authorized implementation need.
+
 Domain is auto-detected from the query if `--domain` is omitted — but auto-detection can misroute overlapping terms (e.g. "font" matches both `typography` and `google-fonts`). If results look off-topic, pass `--domain` explicitly.
 
 ## If a search returns 0 results
@@ -188,7 +202,7 @@ Then synthesize the design system + detailed searches and implement.
 
 - Keep one dominant intent and 2–5 meaningful terms per query: `"keyboard focus modal"`, not a full audit checklist
 - Retry once with a narrower phrase or explicit domain; do not cycle through unrelated keywords
-- Use `--design-system` for a new project/page and `--domain` for a focused concern
+- Use `--design-system` for an authorized new visual direction and `--domain` for an existing Nutrimenu surface or focused concern
 
 | Problem | What to Do |
 |---------|------------|
@@ -200,6 +214,6 @@ Then synthesize the design system + detailed searches and implement.
 | Layout breaks on small screens | `references/quick-reference.md` §5: `mobile-first` + `breakpoint-consistency` |
 | Performance / jank | `references/quick-reference.md` §3: `virtualize-lists` + `main-thread-budget` + `debounce-throttle` |
 
-## Before Delivering App UI
+## Before Delivering UI
 
-Read `references/pro-rules.md` and run through its canonical Pre-Delivery Checklist. It covers icon/visual-element discipline, interaction feedback, light/dark contrast, safe-area layout, and accessibility — scoped to native/mobile app UI (iOS/Android/React Native/Flutter).
+For Nutrimenu web UI, read the relevant sections of `references/quick-reference.md` and verify against the current repository tokens and components. Read `references/pro-rules.md` only for native/mobile work; its touch, safe-area, and platform checks target iOS/Android/React Native/Flutter rather than desktop web.
