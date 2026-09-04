@@ -1,6 +1,7 @@
 import { Check, Circle } from "lucide-react";
 
 export default function PasswordRequirements({ password }) {
+  /** @type {Array<[boolean, string]>} */
   const items = [
     [password.length >= 8, "Pelo menos 8 caracteres"],
     [/[a-z]/.test(password) && /[A-Z]/.test(password), "Letras maiúsculas e minúsculas"],

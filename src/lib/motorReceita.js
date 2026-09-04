@@ -6,16 +6,27 @@ const positivo = (valor) => {
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
-export function calcularMetricasReceita({
-  receita,
-  itens = [],
-  perCapitaUsuario = 0,
-  perCapitaAlvo = 0,
-  permitirPerCapitaSugerido = false,
-  pesoPosPreparoAlvo = 0,
-  porcoesAlvo = 0,
-  fator = 0,
-} = {}) {
+export function calcularMetricasReceita(
+  /** @type {{
+   * receita?: any,
+   * itens?: any[],
+   * perCapitaUsuario?: number,
+   * perCapitaAlvo?: number,
+   * permitirPerCapitaSugerido?: boolean,
+   * pesoPosPreparoAlvo?: number,
+   * porcoesAlvo?: number,
+   * fator?: number,
+   * }} */ {
+    receita,
+    itens = [],
+    perCapitaUsuario = 0,
+    perCapitaAlvo = 0,
+    permitirPerCapitaSugerido = false,
+    pesoPosPreparoAlvo = 0,
+    porcoesAlvo = 0,
+    fator = 0,
+  } = {},
+) {
   const rendimento = resolverRendimentoReceita(receita, itens);
   const perCapita = resolverPerCapitaReceita(receita, perCapitaUsuario);
   const pc = positivo(perCapitaAlvo)

@@ -19,7 +19,7 @@ export default function GestaoCardapioDialogs({
   cardapio,
   pending = false,
   onClose,
-  onEditar,
+  onEditar = (_dados) => undefined,
   onDuplicar,
   onExcluir,
 }) {

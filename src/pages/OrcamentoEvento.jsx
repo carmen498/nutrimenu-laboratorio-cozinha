@@ -66,7 +66,7 @@ export default function OrcamentoEvento() {
     gerarOrcamentoEventoPDF({
       planejamento: { ...planejamento, observacoes_orcamento: obsComercial },
       dados,
-      precoPorPessoa: orc.precoPorPessoa,
+      precoFinal: orc.total,
       validadeDias,
     });
   };
