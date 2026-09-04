@@ -781,11 +781,11 @@ for all
 to authenticated
 using (
   (select auth.uid()) = user_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (select auth.uid()) = user_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy products_authenticated_read
@@ -794,7 +794,7 @@ for select
 to authenticated
 using (
   active
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy plans_authenticated_read
@@ -811,7 +811,7 @@ using (
         and product.active
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy user_entitlements_owner_read
@@ -820,7 +820,7 @@ for select
 to authenticated
 using (
   (select auth.uid()) = user_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy payments_owner_read
@@ -829,7 +829,7 @@ for select
 to authenticated
 using (
   (select auth.uid()) = user_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy ingredients_authenticated_read
@@ -838,7 +838,7 @@ for select
 to authenticated
 using (
   active
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy user_ingredients_owner_access
@@ -847,7 +847,7 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -861,7 +861,7 @@ with check (
       )
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy household_measures_authenticated_read
@@ -870,7 +870,7 @@ for select
 to authenticated
 using (
   active
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy ingredient_synonyms_authenticated_read
@@ -883,7 +883,7 @@ using (
     from public.ingredients as ingredient
     where ingredient.id = ingredient_synonyms.ingredient_id
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy tags_authenticated_read
@@ -892,7 +892,7 @@ for select
 to authenticated
 using (
   active
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy standard_utensils_authenticated_read
@@ -901,7 +901,7 @@ for select
 to authenticated
 using (
   active
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy event_references_authenticated_read
@@ -910,7 +910,7 @@ for select
 to authenticated
 using (
   active
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy supplies_visible_read
@@ -920,7 +920,7 @@ to authenticated
 using (
   is_base
   or (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy supplies_owner_write
@@ -929,11 +929,11 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   ((select auth.uid()) = owner_id and not is_base)
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipes_visible_read
@@ -943,7 +943,7 @@ to authenticated
 using (
   is_base
   or (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipes_owner_write
@@ -952,11 +952,11 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   ((select auth.uid()) = owner_id and not is_base)
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_items_visible_read
@@ -970,7 +970,7 @@ using (
     where recipe.id = recipe_items.recipe_id
       and (recipe.is_base or recipe.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_items_owner_write
@@ -984,7 +984,7 @@ using (
     where recipe.id = recipe_items.recipe_id
       and recipe.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1023,7 +1023,7 @@ with check (
       )
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_supplies_visible_read
@@ -1037,7 +1037,7 @@ using (
     where recipe.id = recipe_supplies.recipe_id
       and (recipe.is_base or recipe.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_supplies_owner_write
@@ -1051,7 +1051,7 @@ using (
     where recipe.id = recipe_supplies.recipe_id
       and recipe.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1068,7 +1068,7 @@ with check (
         and (supply.is_base or supply.owner_id = (select auth.uid()))
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_tags_visible_read
@@ -1082,7 +1082,7 @@ using (
     where recipe.id = recipe_tags.recipe_id
       and (recipe.is_base or recipe.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_tags_owner_write
@@ -1096,7 +1096,7 @@ using (
     where recipe.id = recipe_tags.recipe_id
       and recipe.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1112,7 +1112,7 @@ with check (
       where tag.id = recipe_tags.tag_id
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_forgotten_visible_read
@@ -1126,7 +1126,7 @@ using (
     where recipe.id = recipe_forgotten_ingredients.recipe_id
       and (recipe.is_base or recipe.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy recipe_forgotten_owner_write
@@ -1140,7 +1140,7 @@ using (
     where recipe.id = recipe_forgotten_ingredients.recipe_id
       and recipe.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   exists (
@@ -1149,7 +1149,7 @@ with check (
     where recipe.id = recipe_forgotten_ingredients.recipe_id
       and recipe.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menus_visible_read
@@ -1159,7 +1159,7 @@ to authenticated
 using (
   is_base
   or (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menus_owner_write
@@ -1168,11 +1168,11 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   ((select auth.uid()) = owner_id and not is_base)
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_recipes_visible_read
@@ -1186,7 +1186,7 @@ using (
     where menu.id = menu_recipes.menu_id
       and (menu.is_base or menu.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_recipes_owner_write
@@ -1200,7 +1200,7 @@ using (
     where menu.id = menu_recipes.menu_id
       and menu.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1217,7 +1217,7 @@ with check (
         and (recipe.is_base or recipe.owner_id = (select auth.uid()))
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_supplies_visible_read
@@ -1231,7 +1231,7 @@ using (
     where menu.id = menu_supplies.menu_id
       and (menu.is_base or menu.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_supplies_owner_write
@@ -1245,7 +1245,7 @@ using (
     where menu.id = menu_supplies.menu_id
       and menu.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1262,7 +1262,7 @@ with check (
         and (supply.is_base or supply.owner_id = (select auth.uid()))
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_tags_visible_read
@@ -1276,7 +1276,7 @@ using (
     where menu.id = menu_tags.menu_id
       and (menu.is_base or menu.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_tags_owner_write
@@ -1290,7 +1290,7 @@ using (
     where menu.id = menu_tags.menu_id
       and menu.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1306,7 +1306,7 @@ with check (
       where tag.id = menu_tags.tag_id
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_periods_visible_read
@@ -1320,7 +1320,7 @@ using (
     where menu.id = menu_periods.menu_id
       and (menu.is_base or menu.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_periods_owner_write
@@ -1334,7 +1334,7 @@ using (
     where menu.id = menu_periods.menu_id
       and menu.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   exists (
@@ -1343,7 +1343,7 @@ with check (
     where menu.id = menu_periods.menu_id
       and menu.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_period_items_visible_read
@@ -1358,7 +1358,7 @@ using (
     where period.id = menu_period_items.menu_period_id
       and (menu.is_base or menu.owner_id = (select auth.uid()))
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy menu_period_items_owner_write
@@ -1373,7 +1373,7 @@ using (
     where period.id = menu_period_items.menu_period_id
       and menu.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1391,7 +1391,7 @@ with check (
         and (recipe.is_base or recipe.owner_id = (select auth.uid()))
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy event_plans_owner_access
@@ -1400,7 +1400,7 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1415,7 +1415,7 @@ with check (
       )
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy shopping_lists_owner_access
@@ -1424,7 +1424,7 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1439,7 +1439,7 @@ with check (
       )
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy shopping_list_items_owner_access
@@ -1453,7 +1453,7 @@ using (
     where shopping_list.id = shopping_list_items.shopping_list_id
       and shopping_list.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1473,7 +1473,7 @@ with check (
       )
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy cart_items_owner_access
@@ -1482,7 +1482,7 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (
@@ -1517,7 +1517,7 @@ with check (
       )
     )
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy cost_user_settings_owner_access
@@ -1526,11 +1526,11 @@ for all
 to authenticated
 using (
   (select auth.uid()) = user_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (select auth.uid()) = user_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy cost_expenses_owner_access
@@ -1539,11 +1539,11 @@ for all
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 )
 with check (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy cost_calculations_owner_read
@@ -1552,7 +1552,7 @@ for select
 to authenticated
 using (
   (select auth.uid()) = owner_id
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 create policy cost_calculation_items_owner_read
@@ -1566,7 +1566,7 @@ using (
     where calculation.id = cost_calculation_items.calculation_id
       and calculation.owner_id = (select auth.uid())
   )
-  or ((select auth.jwt()) -> 'app_metadata' ->> 'role') = 'admin'
+  or (current_setting('request.jwt.claims', true)::jsonb -> 'app_metadata' ->> 'role') = 'admin'
 );
 
 grant usage on schema public to authenticated, service_role;
