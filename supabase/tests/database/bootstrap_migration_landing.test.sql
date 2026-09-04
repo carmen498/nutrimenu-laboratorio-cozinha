@@ -1,6 +1,6 @@
 begin;
 
-select plan(28);
+select plan(30);
 
 select has_schema(
   'labcozinha_migration',
@@ -332,14 +332,22 @@ select ok(
 select ok(
   not has_function_privilege(
     'anon', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
-  )
-  and not has_function_privilege(
+  ),
+  'future functions are not executable by anon by default'
+);
+
+select ok(
+  not has_function_privilege(
     'authenticated', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
-  )
-  and not has_function_privilege(
+  ),
+  'future functions are not executable by authenticated by default'
+);
+
+select ok(
+  not has_function_privilege(
     'service_role', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
   ),
-  'future functions are not executable by client or service roles by default'
+  'future functions are not executable by service_role by default'
 );
 
 select * from finish();
