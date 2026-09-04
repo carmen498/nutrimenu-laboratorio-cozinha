@@ -8,13 +8,16 @@ compras.
 ## Laboratório de Custos
 
 Área do produto que calcula o custo e o preço sugerido de uma receita a partir
-de ingredientes, insumos, mão de obra, despesas, perdas, impostos e margem.
+do custo técnico, insumos da receita, ingredientes esquecidos, entradas
+adicionais, rateio do negócio, custo de comercialização e margem. O modelo
+vigente não calcula custo-hora por receita.
 
 ## Catálogo
 
 Registro de referência mantido pela aplicação e compartilhado em modo de
-leitura com usuários autenticados. Receitas, cardápios e insumos de catálogo
-são identificados por `is_base = true` e não pertencem a um usuário.
+leitura com usuários autenticados. Receitas e cardápios de catálogo são
+identificados por `is_base = true` e não pertencem a um usuário. Insumos
+pertencem sempre ao usuário que os cadastrou.
 
 ## Registro pessoal
 
@@ -28,8 +31,7 @@ o Laboratório de Cozinha ou o Laboratório de Custos.
 
 ## Plano
 
-Condição comercial de um produto, com preço, periodicidade, período de teste e
-limites próprios.
+Condição comercial versionada de um produto, com preço e duração fixa em dias.
 
 ## Autorização de acesso
 
@@ -49,4 +51,10 @@ Criação de uma nova ficha de custo. Uma ficha existente nunca é sobrescrita.
 
 Identificador do registro no Base44, preservado em `legacy_id` para
 reconciliação durante a futura importação, sem ser usado como chave primária do
-modelo operacional.
+modelo operacional. Apenas o backend de migração pode preenchê-lo ou alterá-lo;
+o cliente autenticado não pode reservar identificadores legados.
+
+## Flags do Laboratório de Custos
+
+Chaves operacionais independentes para módulo, trial, vendas e checkout. Todas
+nascem desligadas e só podem ser alteradas pelo backend após homologação.

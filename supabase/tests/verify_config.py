@@ -38,6 +38,20 @@ assert not re.search(
     operational_migration,
     flags=re.IGNORECASE,
 ), "the operational schema migration must not import data"
+assert not re.search(
+    r"\bfor\s+all\b",
+    operational_migration,
+    flags=re.IGNORECASE,
+), "RLS policies must be explicit per operation"
+assert "private.protect_legacy_id" in operational_migration
+assert "hourly_labor_cost_cents" not in operational_migration
+for feature_flag in (
+    "costs_module_enabled",
+    "costs_trial_enabled",
+    "costs_sales_enabled",
+    "costs_checkout_enabled",
+):
+    assert feature_flag in operational_migration
 
 seed_path = config_path.parent / "seed.sql"
 seed_statements = [

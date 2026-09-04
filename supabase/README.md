@@ -39,8 +39,13 @@ scope until their respective migration phases are reviewed.
 - Entitlements and payments are readable by their owner but writable only by
   the backend.
 - Cost calculations and their items are append-only historical snapshots.
+- Cost settings use the approved production-volume allocation model; the
+  deprecated per-recipe hourly-cost model is not part of the operational schema.
+- Cost module, trial, sales, and checkout flags default to disabled.
 - Administrative policies use the signed `app_metadata.role = admin` claim;
   authorization is never read from user-editable metadata.
+- Base44 identifiers are protected from authenticated client writes and remain
+  reserved for controlled migration and reconciliation.
 - All ownership, foreign-key, and RLS lookup columns are indexed.
 
 The Data API remains disabled in `config.toml`. Enabling it is a separate,
