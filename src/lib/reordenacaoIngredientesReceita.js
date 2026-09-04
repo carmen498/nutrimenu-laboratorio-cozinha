@@ -20,7 +20,14 @@ export function planejarReordenacaoIngredientes({
 
   const bloco = itens.slice(indiceOrigem, fimBloco);
   const restantes = itens.slice(0, indiceOrigem).concat(itens.slice(fimBloco));
-  let destinoAjustado = Math.max(0, Math.min(indiceDestino, restantes.length));
+  const filhosRemovidosAntesDoDestino = indiceDestino > indiceOrigem
+    ? bloco.length - 1
+    : 0;
+  const destinoSemFilhosDoBloco = indiceDestino - filhosRemovidosAntesDoDestino;
+  let destinoAjustado = Math.max(
+    0,
+    Math.min(destinoSemFilhosDoBloco, restantes.length),
+  );
 
   if (itemMovido.isGrupo) {
     let grupoAnterior = -1;
