@@ -114,8 +114,13 @@ begin
       and relation.relowner = 'postgres'::regrole
       and relation.relrowsecurity
       and not relation.relforcerowsecurity
+  ) or exists (
+    select 1
+    from pg_catalog.pg_trigger as trigger
+    where trigger.tgrelid = 'public.profiles'::regclass
+      and not trigger.tgisinternal
   ) then
-    raise exception 'reconciliation stopped: public.profiles owner or RLS contract changed';
+    raise exception 'reconciliation stopped: public.profiles owner, RLS, or trigger contract changed';
   end if;
 
   if (
@@ -200,7 +205,20 @@ begin
     'r|records',
     'r|storage_manifest',
     'r|user_profiles_shadow'
-  ]::text[] or exists (
+  ]::text[] or not exists (
+    select 1
+    from pg_catalog.pg_namespace as namespace
+    where namespace.nspname = 'labcozinha'
+      and namespace.nspowner = 'postgres'::regrole
+  ) or exists (
+    select 1
+    from pg_catalog.pg_class as relation
+    join pg_catalog.pg_namespace as namespace
+      on namespace.oid = relation.relnamespace
+    where namespace.nspname = 'labcozinha'
+      and relation.relkind in ('r', 'p', 'S', 'v', 'm', 'f')
+      and relation.relowner <> 'postgres'::regrole
+  ) or exists (
     select 1
     from pg_catalog.pg_proc as routine
     join pg_catalog.pg_namespace as namespace
@@ -256,6 +274,15 @@ begin
           pg_catalog.acldefault('f'::"char", routine.proowner)
         )
       ) as acl
+      where namespace.nspname = 'labcozinha'
+
+      union all
+
+      select default_acl.defaclrole, acl.grantee
+      from pg_catalog.pg_default_acl as default_acl
+      join pg_catalog.pg_namespace as namespace
+        on namespace.oid = default_acl.defaclnamespace
+      cross join lateral pg_catalog.aclexplode(default_acl.defaclacl) as acl
       where namespace.nspname = 'labcozinha'
     ) as object_acl
     where object_acl.grantee <> object_acl.owner_oid
