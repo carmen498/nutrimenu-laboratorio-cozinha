@@ -104,7 +104,16 @@ begin
     raise exception 'reconciliation stopped: public.profiles constraints changed';
   end if;
 
-  if (
+  if to_regprocedure('auth.jwt()') is null then
+    if exists (
+      select 1
+      from pg_catalog.pg_policies
+      where schemaname = 'public'
+        and tablename = 'profiles'
+    ) then
+      raise exception 'reconciliation stopped: unexpected local profiles policy';
+    end if;
+  elsif (
     select count(*) <> 1
       or count(*) filter (
         where policyname = 'profile owner or admin read'
