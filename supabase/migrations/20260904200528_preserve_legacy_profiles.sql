@@ -42,7 +42,10 @@ declare
     'profiles_role_check|c|CHECK (role = ANY (ARRAY[''admin''::text, ''user''::text]))',
     'profiles_source_user_id_key|u|UNIQUE (source_user_id)'
   ];
-  actual_legacy_tables text[];
+  actual_legacy_relations text[];
+  actual_function_execute_grantees text[];
+  expected_policy_qual constant text :=
+    '((id = auth.uid()) OR (((auth.jwt() -> ''app_metadata''::text) ->> ''role''::text) = ''admin''::text))';
   legacy_function regprocedure;
 begin
   if to_regclass('public.profiles') is null then
@@ -104,6 +107,52 @@ begin
     raise exception 'reconciliation stopped: public.profiles constraints changed';
   end if;
 
+  if not exists (
+    select 1
+    from pg_catalog.pg_class as relation
+    where relation.oid = 'public.profiles'::regclass
+      and relation.relowner = 'postgres'::regrole
+      and relation.relrowsecurity
+      and not relation.relforcerowsecurity
+  ) then
+    raise exception 'reconciliation stopped: public.profiles owner or RLS contract changed';
+  end if;
+
+  if (
+    select count(*) <> 32
+      or count(*) filter (
+        where (
+          case
+            when acl.grantee = 0 then 'PUBLIC'
+            else pg_catalog.pg_get_userbyid(acl.grantee)
+          end
+        ) = any (array['postgres', 'anon', 'authenticated', 'service_role'])
+          and acl.privilege_type = any (
+            array[
+              'DELETE',
+              'INSERT',
+              'MAINTAIN',
+              'REFERENCES',
+              'SELECT',
+              'TRIGGER',
+              'TRUNCATE',
+              'UPDATE'
+            ]
+          )
+          and not acl.is_grantable
+      ) <> 32
+    from pg_catalog.pg_class as relation
+    cross join lateral pg_catalog.aclexplode(
+      coalesce(
+        relation.relacl,
+        pg_catalog.acldefault('r'::"char", relation.relowner)
+      )
+    ) as acl
+    where relation.oid = 'public.profiles'::regclass
+  ) then
+    raise exception 'reconciliation stopped: public.profiles ACL contract changed';
+  end if;
+
   if to_regprocedure('auth.jwt()') is null then
     if exists (
       select 1
@@ -117,8 +166,11 @@ begin
     select count(*) <> 1
       or count(*) filter (
         where policyname = 'profile owner or admin read'
+          and permissive = 'PERMISSIVE'
           and cmd = 'SELECT'
           and roles = array['authenticated']::name[]
+          and qual = expected_policy_qual
+          and with_check is null
       ) <> 1
     from pg_catalog.pg_policies
     where schemaname = 'public'
@@ -127,34 +179,171 @@ begin
     raise exception 'reconciliation stopped: public.profiles policy contract changed';
   end if;
 
-  select array_agg(tablename::text order by tablename)
-  into actual_legacy_tables
-  from pg_catalog.pg_tables
-  where schemaname = 'labcozinha';
+  select array_agg(
+    format('%s|%s', relation.relkind::text, relation.relname)
+    order by
+      case when relation.relkind = 'S' then 0 else 1 end,
+      relation.relname
+  )
+  into actual_legacy_relations
+  from pg_catalog.pg_class as relation
+  join pg_catalog.pg_namespace as namespace
+    on namespace.oid = relation.relnamespace
+  where namespace.nspname = 'labcozinha'
+    and relation.relkind in ('r', 'p', 'S', 'v', 'm', 'f');
 
-  if actual_legacy_tables is distinct from array[
-    'id_map',
-    'migration_batch',
-    'reconciliation_report',
-    'records',
-    'storage_manifest',
-    'user_profiles_shadow'
-  ]::text[] then
-    raise exception 'reconciliation stopped: labcozinha table inventory changed';
+  if actual_legacy_relations is distinct from array[
+    'S|reconciliation_report_id_seq',
+    'r|id_map',
+    'r|migration_batch',
+    'r|reconciliation_report',
+    'r|records',
+    'r|storage_manifest',
+    'r|user_profiles_shadow'
+  ]::text[] or exists (
+    select 1
+    from pg_catalog.pg_proc as routine
+    join pg_catalog.pg_namespace as namespace
+      on namespace.oid = routine.pronamespace
+    where namespace.nspname = 'labcozinha'
+  ) then
+    raise exception 'reconciliation stopped: labcozinha object inventory changed';
   end if;
 
-  select p.oid::regprocedure
+  if exists (
+    select 1
+    from (
+      select namespace.nspowner as owner_oid, acl.grantee
+      from pg_catalog.pg_namespace as namespace
+      cross join lateral pg_catalog.aclexplode(
+        coalesce(
+          namespace.nspacl,
+          pg_catalog.acldefault('n'::"char", namespace.nspowner)
+        )
+      ) as acl
+      where namespace.nspname = 'labcozinha'
+
+      union all
+
+      select relation.relowner, acl.grantee
+      from pg_catalog.pg_class as relation
+      join pg_catalog.pg_namespace as namespace
+        on namespace.oid = relation.relnamespace
+      cross join lateral pg_catalog.aclexplode(
+        coalesce(
+          relation.relacl,
+          pg_catalog.acldefault(
+            case
+              when relation.relkind = 'S' then 's'::"char"
+              else 'r'::"char"
+            end,
+            relation.relowner
+          )
+        )
+      ) as acl
+      where namespace.nspname = 'labcozinha'
+        and relation.relkind in ('r', 'p', 'S', 'v', 'm', 'f')
+
+      union all
+
+      select routine.proowner, acl.grantee
+      from pg_catalog.pg_proc as routine
+      join pg_catalog.pg_namespace as namespace
+        on namespace.oid = routine.pronamespace
+      cross join lateral pg_catalog.aclexplode(
+        coalesce(
+          routine.proacl,
+          pg_catalog.acldefault('f'::"char", routine.proowner)
+        )
+      ) as acl
+      where namespace.nspname = 'labcozinha'
+    ) as object_acl
+    where object_acl.grantee <> object_acl.owner_oid
+  ) then
+    raise exception 'reconciliation stopped: labcozinha has a non-owner grant';
+  end if;
+
+  select routine.oid::regprocedure
   into legacy_function
-  from pg_catalog.pg_proc as p
-  join pg_catalog.pg_namespace as n on n.oid = p.pronamespace
-  where n.nspname = 'public'
-    and p.proname = 'rls_auto_enable'
-    and pg_catalog.pg_get_function_identity_arguments(p.oid) = ''
-    and p.prosecdef
-    and p.proconfig = array['search_path=pg_catalog'];
+  from pg_catalog.pg_proc as routine
+  join pg_catalog.pg_namespace as namespace
+    on namespace.oid = routine.pronamespace
+  join pg_catalog.pg_language as language
+    on language.oid = routine.prolang
+  where namespace.nspname = 'public'
+    and routine.proname = 'rls_auto_enable'
+    and pg_catalog.pg_get_function_identity_arguments(routine.oid) = ''
+    and routine.proowner = 'postgres'::regrole
+    and routine.prorettype = 'event_trigger'::regtype
+    and routine.prokind = 'f'
+    and language.lanname = 'plpgsql'
+    and routine.provolatile = 'v'
+    and routine.proparallel = 'u'
+    and not routine.proleakproof
+    and routine.prosecdef
+    and routine.proconfig = array['search_path=pg_catalog']
+    -- Hash of the documented event-trigger body. Structural attributes are
+    -- validated separately above so a body drift cannot pass the preflight.
+    and md5(routine.prosrc) = '99be20677b456ea8d3be47bdd44fb369';
 
   if legacy_function is null then
     raise exception 'reconciliation stopped: public.rls_auto_enable() contract changed';
+  end if;
+
+  if (
+    select count(*) <> 1
+      or count(*) filter (
+        where event_trigger.evtname = 'ensure_rls'
+          and event_trigger.evtevent = 'ddl_command_end'
+          and event_trigger.evtenabled = 'O'
+          and event_trigger.evttags::text[] = array[
+            'CREATE TABLE',
+            'CREATE TABLE AS',
+            'SELECT INTO'
+          ]::text[]
+          and event_trigger.evtfoid = legacy_function::oid
+      ) <> 1
+    from pg_catalog.pg_event_trigger as event_trigger
+    where event_trigger.evtname = 'ensure_rls'
+      or event_trigger.evtfoid = legacy_function::oid
+  ) then
+    raise exception 'reconciliation stopped: ensure_rls event trigger contract changed';
+  end if;
+
+  select array_agg(
+    case
+      when acl.grantee = 0 then 'PUBLIC'
+      else pg_catalog.pg_get_userbyid(acl.grantee)
+    end
+    order by
+      case
+        when acl.grantee = 0 then 'PUBLIC'
+        else pg_catalog.pg_get_userbyid(acl.grantee)
+      end
+  )
+  into actual_function_execute_grantees
+  from pg_catalog.pg_proc as routine
+  cross join lateral pg_catalog.aclexplode(
+    coalesce(
+      routine.proacl,
+      pg_catalog.acldefault('f'::"char", routine.proowner)
+    )
+  ) as acl
+  where routine.oid = legacy_function::oid
+    and acl.privilege_type = 'EXECUTE'
+    and not acl.is_grantable;
+
+  if actual_function_execute_grantees is distinct from array[
+    'PUBLIC',
+    'anon',
+    'authenticated',
+    'postgres',
+    'service_role'
+  ]::text[] and actual_function_execute_grantees is distinct from array[
+    'postgres',
+    'service_role'
+  ]::text[] then
+    raise exception 'reconciliation stopped: public.rls_auto_enable() ACL contract changed';
   end if;
 
   if exists (
