@@ -1,6 +1,6 @@
 begin;
 
-select plan(17);
+select plan(19);
 
 select has_schema(
   'labcozinha',
@@ -163,6 +163,23 @@ select ok(
 );
 
 select ok(
+  not exists (
+    select 1
+    from pg_catalog.pg_proc as routine
+    cross join lateral pg_catalog.aclexplode(
+      coalesce(
+        routine.proacl,
+        pg_catalog.acldefault('f'::"char", routine.proowner)
+      )
+    ) as acl
+    where routine.oid = 'public.rls_auto_enable()'::regprocedure
+      and acl.grantee = 0
+      and acl.privilege_type = 'EXECUTE'
+  ),
+  'PUBLIC cannot execute the legacy SECURITY DEFINER function'
+);
+
+select ok(
   not has_function_privilege(
     'authenticated',
     'public.rls_auto_enable()',
@@ -214,7 +231,51 @@ select ok(
 );
 
 select is_empty(
-  $$
+  $
+    select object_acl.object_name
+    from (
+      select namespace.nspname::text as object_name,
+             namespace.nspowner as owner_oid,
+             acl.grantee
+      from pg_catalog.pg_namespace as namespace
+      cross join lateral pg_catalog.aclexplode(
+        coalesce(
+          namespace.nspacl,
+          pg_catalog.acldefault('n'::"char", namespace.nspowner)
+        )
+      ) as acl
+      where namespace.nspname = 'labcozinha'
+
+      union all
+
+      select relation.oid::regclass::text,
+             relation.relowner,
+             acl.grantee
+      from pg_catalog.pg_class as relation
+      join pg_catalog.pg_namespace as namespace
+        on namespace.oid = relation.relnamespace
+      cross join lateral pg_catalog.aclexplode(
+        coalesce(
+          relation.relacl,
+          pg_catalog.acldefault(
+            case
+              when relation.relkind = 'S' then 's'::"char"
+              else 'r'::"char"
+            end,
+            relation.relowner
+          )
+        )
+      ) as acl
+      where namespace.nspname = 'labcozinha'
+        and relation.relkind in ('r', 'p', 'S', 'v', 'm', 'f')
+    ) as object_acl
+    where object_acl.grantee <> object_acl.owner_oid
+  $,
+  'legacy schema and relations have no non-owner grants'
+);
+
+select is_empty(
+  $
     select column_name
     from information_schema.columns
     where table_schema = 'public'
