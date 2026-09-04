@@ -244,7 +244,27 @@ CREATE INDEX "records_payload_gin" ON "labcozinha"."records" USING "gin" ("paylo
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
-CREATE POLICY "profile owner or admin read" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((("id" = "auth"."uid"()) OR ((("auth"."jwt"() -> 'app_metadata'::"text") ->> 'role'::"text") = 'admin'::"text")));
+-- Auth is intentionally disabled in the local database-only stack. On hosted
+-- projects auth.jwt() exists, so the pulled legacy policy is recreated exactly.
+DO $remote_schema$
+BEGIN
+  IF to_regprocedure('auth.jwt()') IS NOT NULL THEN
+    EXECUTE $policy$
+      CREATE POLICY "profile owner or admin read"
+      ON "public"."profiles"
+      FOR SELECT
+      TO "authenticated"
+      USING (
+        ("id" = "auth"."uid"())
+        OR (
+          (("auth"."jwt"() -> 'app_metadata'::"text") ->> 'role'::"text")
+          = 'admin'::"text"
+        )
+      )
+    $policy$;
+  END IF;
+END
+$remote_schema$;
 
 ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 
