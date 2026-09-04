@@ -1032,7 +1032,7 @@ export default function ReceitaAberta() {
       );
     }
 
-    if (dragged.isGrupo) {
+    if (dragged.isGrupo || dragged.isSubreceita) {
       const updates = planejarReordenacaoIngredientes({
         itens: items,
         indiceOrigem: sourceIdx,

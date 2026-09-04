@@ -56,10 +56,21 @@ export function planejarReordenacaoIngredientes({
   indiceDestino,
 }) {
   const itemMovido = itens[indiceOrigem];
-  if (!itemMovido?.isGrupo || indiceOrigem === indiceDestino) return null;
+  if (
+    !itemMovido
+    || (!itemMovido.isGrupo && !itemMovido.isSubreceita)
+    || indiceOrigem === indiceDestino
+  ) return null;
 
   let fimBloco = indiceOrigem + 1;
-  while (fimBloco < itens.length && !itens[fimBloco].isGrupo) fimBloco += 1;
+  if (itemMovido.isGrupo) {
+    while (fimBloco < itens.length && !itens[fimBloco].isGrupo) fimBloco += 1;
+  } else {
+    while (
+      fimBloco < itens.length
+      && itens[fimBloco].subreceita_parent_id === itemMovido.id
+    ) fimBloco += 1;
+  }
 
   const bloco = itens.slice(indiceOrigem, fimBloco);
   const restantes = itens.slice(0, indiceOrigem).concat(itens.slice(fimBloco));
