@@ -134,6 +134,60 @@ assert.deepEqual(
   "Mover uma Sub-receita deve preservar juntos o marcador e todos os seus filhos cacheados",
 );
 
+const tresGruposAoMoverParaBaixo = [
+  { id: "massa", isGrupo: true },
+  { id: "farinha" },
+  { id: "ovos" },
+  { id: "recheio", isGrupo: true },
+  { id: "queijo" },
+  { id: "finalizacao", isGrupo: true },
+  { id: "ervas" },
+];
+
+assert.deepEqual(
+  planejarReordenacaoIngredientes({
+    itens: tresGruposAoMoverParaBaixo,
+    indiceOrigem: 0,
+    indiceDestino: 3,
+  }),
+  [
+    { id: "recheio", ordem: 0 },
+    { id: "queijo", ordem: 10 },
+    { id: "massa", ordem: 20 },
+    { id: "farinha", ordem: 30 },
+    { id: "ovos", ordem: 40 },
+    { id: "finalizacao", ordem: 50 },
+    { id: "ervas", ordem: 60 },
+  ],
+  "Mover um Sub-título para baixo deve converter o índice do DnD sem saltar o grupo de destino",
+);
+
+const subreceitaAoMoverParaBaixo = [
+  { id: "molho", isSubreceita: true },
+  { id: "tomate-cache", subreceita_parent_id: "molho" },
+  { id: "cebola-cache", subreceita_parent_id: "molho" },
+  { id: "arroz" },
+  { id: "salada" },
+  { id: "batata" },
+];
+
+assert.deepEqual(
+  planejarReordenacaoIngredientes({
+    itens: subreceitaAoMoverParaBaixo,
+    indiceOrigem: 0,
+    indiceDestino: 3,
+  }),
+  [
+    { id: "arroz", ordem: 0 },
+    { id: "molho", ordem: 10 },
+    { id: "tomate-cache", ordem: 20 },
+    { id: "cebola-cache", ordem: 30 },
+    { id: "salada", ordem: 40 },
+    { id: "batata", ordem: 50 },
+  ],
+  "Mover uma Sub-receita para baixo deve descontar apenas os filhos adicionais removidos",
+);
+
 const draggableRowSource = readFileSync(
   new URL("../src/components/receita/DraggableRow.jsx", import.meta.url),
   "utf8",
