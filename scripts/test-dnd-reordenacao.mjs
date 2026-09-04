@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   ordenarItensCardapio,
   planejarMovimentoCardapio,
@@ -131,4 +132,48 @@ assert.deepEqual(
     { id: "salada", ordem: 40 },
   ],
   "Mover uma Sub-receita deve preservar juntos o marcador e todos os seus filhos cacheados",
+);
+
+const draggableRowSource = readFileSync(
+  new URL("../src/components/receita/DraggableRow.jsx", import.meta.url),
+  "utf8",
+);
+const cardapioSemanalSource = readFileSync(
+  new URL("../src/pages/CardapioSemanal.jsx", import.meta.url),
+  "utf8",
+);
+
+assert.deepEqual(
+  {
+    receita: {
+      handleEhBotaoSeguro: /<button\s+type="button"\s+\{\.\.\.provided\.dragHandleProps\}/s.test(draggableRowSource),
+      atributosDnDAplicados: draggableRowSource.includes("{...provided.dragHandleProps}"),
+      nomeAcessivel: draggableRowSource.includes('aria-label="Arraste para reordenar"'),
+    },
+    cardapio: {
+      handleEhBotaoSeguro: /<button\s+type="button"\s+\{\.\.\.dragProvided\.dragHandleProps\}/s.test(cardapioSemanalSource),
+      atributosDnDAplicados: cardapioSemanalSource.includes("{...dragProvided.dragHandleProps}"),
+      nomeAcessivel: cardapioSemanalSource.includes("aria-label={`Mover ${item.nome_cache}`}"),
+      alternativaTeclado: [
+        'aria-label="Mover para o dia anterior"',
+        'aria-label="Mover para cima"',
+        'aria-label="Mover para baixo"',
+        'aria-label="Mover para o próximo dia"',
+      ].every((rotulo) => cardapioSemanalSource.includes(rotulo)),
+    },
+  },
+  {
+    receita: {
+      handleEhBotaoSeguro: true,
+      atributosDnDAplicados: true,
+      nomeAcessivel: true,
+    },
+    cardapio: {
+      handleEhBotaoSeguro: true,
+      atributosDnDAplicados: true,
+      nomeAcessivel: true,
+      alternativaTeclado: true,
+    },
+  },
+  "Os controles públicos de arraste devem preservar teclado, ponteiro, nome acessível e alternativas por botão",
 );
