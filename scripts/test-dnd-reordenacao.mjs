@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { ordenarItensCardapio, planejarMovimentoCardapio } from "../src/lib/reordenacaoDnD.js";
+import {
+  ordenarItensCardapio,
+  planejarMovimentoCardapio,
+  planejarReordenacaoIngredientes,
+} from "../src/lib/reordenacaoDnD.js";
 
 const segunda = "2026-09-07";
 const itens = [
@@ -79,4 +83,28 @@ assert.deepEqual(
     ],
   },
   "Mover um Prato para outro dia deve persistir e reaparecer na ordem correta após o readback",
+);
+
+const ingredientesComGrupos = [
+  { id: "massa", isGrupo: true },
+  { id: "farinha" },
+  { id: "ovos" },
+  { id: "recheio", isGrupo: true },
+  { id: "queijo" },
+];
+
+assert.deepEqual(
+  planejarReordenacaoIngredientes({
+    itens: ingredientesComGrupos,
+    indiceOrigem: 0,
+    indiceDestino: 4,
+  }),
+  [
+    { id: "recheio", ordem: 0 },
+    { id: "queijo", ordem: 10 },
+    { id: "massa", ordem: 20 },
+    { id: "farinha", ordem: 30 },
+    { id: "ovos", ordem: 40 },
+  ],
+  "Mover um Sub-título deve preservar como bloco todos os ingredientes até o próximo Sub-título",
 );
