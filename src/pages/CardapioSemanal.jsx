@@ -20,6 +20,7 @@ import {
   reorganizarItensCardapioPeriodo,
   removerItemCardapioPeriodo,
 } from "@/lib/cardapioPeriodo";
+import { executarMovimentoCardapio, ordenarItensCardapio } from "@/lib/reordenacaoCardapio";
 
 const NOMES_DIAS = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
 const ORIGENS = {
@@ -53,10 +54,6 @@ function formatarData(data, completa = false) {
     month: completa ? "long" : "short",
     ...(completa ? { year: "numeric" } : {}),
   });
-}
-
-function ordenarItens(lista) {
-  return [...lista].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 }
 
 export default function CardapioSemanal() {
@@ -165,45 +162,20 @@ export default function CardapioSemanal() {
     return {
       data,
       nome: NOMES_DIAS[indice],
-      itens: ordenarItens(itens.filter((item) => item.data === data)),
+      itens: ordenarItensCardapio(itens.filter((item) => item.data === data)),
     };
   });
 
   function executarMovimento(dataOrigem, indiceOrigem, dataDestino, indiceDestino) {
     if (reorganizar.isPending) return;
-    const origem = ordenarItens(itens.filter((item) => item.data === dataOrigem));
-    const destino = dataOrigem === dataDestino
-      ? origem
-      : ordenarItens(itens.filter((item) => item.data === dataDestino));
-    const itemMovido = origem[indiceOrigem];
-    if (!itemMovido) return;
-
-    let novaOrigem;
-    let novoDestino;
-    if (dataOrigem === dataDestino) {
-      novoDestino = [...origem];
-      novoDestino.splice(indiceOrigem, 1);
-      novoDestino.splice(indiceDestino, 0, itemMovido);
-      novaOrigem = novoDestino;
-    } else {
-      novaOrigem = origem.filter((item) => item.id !== itemMovido.id);
-      novoDestino = [...destino];
-      novoDestino.splice(indiceDestino, 0, { ...itemMovido, data: dataDestino });
-    }
-
-    const afetados = new Map();
-    novaOrigem.forEach((item, ordem) => afetados.set(item.id, { ...item, data: dataOrigem, ordem }));
-    if (dataOrigem !== dataDestino) {
-      novoDestino.forEach((item, ordem) => afetados.set(item.id, { ...item, data: dataDestino, ordem }));
-    }
-
-    const novosItens = itens.map((item) => afetados.get(item.id) || item);
-    const movimentacoes = [...afetados.values()].map((item) => ({
-      id: item.id,
-      data: item.data,
-      ordem: item.ordem,
-    }));
-    reorganizar.mutate({ movimentacoes, novosItens });
+    executarMovimentoCardapio({
+      itens,
+      dataOrigem,
+      indiceOrigem,
+      dataDestino,
+      indiceDestino,
+      aplicarPlano: (plano) => reorganizar.mutate(plano),
+    });
   }
 
   function aoTerminarArraste(resultado) {

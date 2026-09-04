@@ -411,6 +411,7 @@ export default function TabelaIngredientesReceita({
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={() => handleMove(idx, 1)} title="Mover para baixo"><ArrowDown className="w-3 h-3" /></Button>
                           {!item.subreceita_parent_id ? (
                             <button
+                              type="button"
                               {...provided.dragHandleProps}
                               className="flex items-center justify-center h-7 w-7 cursor-grab active:cursor-grabbing text-muted-foreground opacity-40 hover:opacity-100 hover:text-primary transition-all touch-none rounded-md"
                               title="Arraste para reordenar"

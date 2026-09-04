@@ -13,6 +13,7 @@ export default function DraggableRow({ draggableId, index, isDragDisabled = fals
           {handlePosition === "start" && (
             !isDragDisabled ? (
               <button
+                type="button"
                 {...provided.dragHandleProps}
                 className="flex items-center justify-center w-8 min-h-[32px] cursor-grab active:cursor-grabbing text-muted-foreground opacity-40 group-hover:opacity-100 group-hover:text-primary transition-all touch-none shrink-0 rounded-l-md"
                 title="Arraste para reordenar"
