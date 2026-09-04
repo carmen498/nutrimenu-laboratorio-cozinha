@@ -1,6 +1,17 @@
 {
   "type": "supabase",
   "scopes": [
+    "edge_functions:read",
+    "edge_functions:write",
+    "secrets:read",
+    "secrets:write",
+    "environment:read",
+    "environment:write",
+    "auth:read",
+    "auth:write",
+    "storage:read",
+    "storage:write",
+    "database:write",
     "projects:read",
     "database:read"
   ]

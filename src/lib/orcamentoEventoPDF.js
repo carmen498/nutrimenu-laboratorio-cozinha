@@ -2,8 +2,8 @@ import { jsPDF } from "jspdf";
 import { montarOrcamentoEvento } from "@/lib/orcamentoEventoCalc";
 
 // Orçamento do Evento — documento COMERCIAL para o cliente. Usa
-// montarOrcamentoEvento como fonte única de dados (recebe só o preço por
-// pessoa já definido) — NUNCA desenha custo, PC, margem, kg ou quantidades
+// montarOrcamentoEvento como fonte única de dados (recebe só o preço final
+// já definido) — NUNCA desenha custo, PC, margem, kg ou quantidades
 // de bebidas neste PDF.
 
 const VERDE_ESCURO = [42, 78, 61];
@@ -20,8 +20,8 @@ function slugify(s) {
     .replace(/[^a-z0-9]+/g, "-");
 }
 
-export function gerarOrcamentoEventoPDF({ planejamento, dados, precoPorPessoa, validadeDias }) {
-  const orc = montarOrcamentoEvento({ planejamento, dados, precoPorPessoa, validadeDias });
+export function gerarOrcamentoEventoPDF({ planejamento, dados, precoFinal, validadeDias }) {
+  const orc = montarOrcamentoEvento({ planejamento, dados, precoFinal, validadeDias });
 
   const doc = /** @type {any} */ (new jsPDF());
   const pageWidth = doc.internal.pageSize.getWidth();

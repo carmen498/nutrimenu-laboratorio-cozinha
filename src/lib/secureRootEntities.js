@@ -56,12 +56,12 @@ export async function criarReceitaSegura(payload = {}) {
   return criada;
 }
 
-export async function criarCardapioSeguro(payload = {}) {
+export async function criarCardapioSeguro(/** @type {Record<string, any>} */ payload = {}) {
   const user = await usuarioAtual();
-  const dadosNormalizados = {
+  const dadosNormalizados = /** @type {Record<string, any>} */ ({
     ...payload,
     ...(payload.nome !== undefined ? { nome: toUpperName(payload.nome) } : {}),
-  };
+  });
   if (user.role === 'admin') {
     return base44.entities.Cardapio.create({
       ...dadosNormalizados,
