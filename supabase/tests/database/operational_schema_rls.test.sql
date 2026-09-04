@@ -360,6 +360,11 @@ values (
 
 set local role authenticated;
 select set_config(
+  'request.jwt.claim.sub',
+  '11111111-1111-4111-8111-111111111111',
+  true
+);
+select set_config(
   'request.jwt.claims',
   '{"sub":"11111111-1111-4111-8111-111111111111","role":"authenticated","app_metadata":{"role":"user"}}',
   true
@@ -506,6 +511,11 @@ select is(
 
 reset role;
 set local role authenticated;
+select set_config(
+  'request.jwt.claim.sub',
+  '33333333-3333-4333-8333-333333333333',
+  true
+);
 select set_config(
   'request.jwt.claims',
   '{"sub":"33333333-3333-4333-8333-333333333333","role":"authenticated","app_metadata":{"role":"admin"}}',
