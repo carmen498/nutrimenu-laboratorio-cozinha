@@ -151,6 +151,20 @@ select ok(
 );
 
 select ok(
+  not exists (
+    select 1
+    from pg_catalog.pg_constraint as foreign_key
+    join pg_catalog.pg_class as relation on relation.oid = foreign_key.conrelid
+    join pg_catalog.pg_namespace as namespace on namespace.oid = relation.relnamespace
+    join expected_operational_tables as expected on expected.table_name = relation.relname
+    where namespace.nspname = 'public'
+      and foreign_key.contype = 'f'
+      and foreign_key.convalidated
+  ),
+  'foreign keys remain NOT VALID until data reconciliation'
+);
+
+select ok(
   (
     select count(*) = 34 and bool_and(
       not has_table_privilege('anon', relation.oid, 'SELECT')

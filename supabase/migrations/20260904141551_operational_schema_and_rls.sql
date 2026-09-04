@@ -786,6 +786,41 @@ create table public.cost_calculation_items (
   constraint cost_calculation_items_snapshot_check check (jsonb_typeof(snapshot_details) = 'object')
 );
 
+-- Relationships are enforced for every new write, but existing rows are not
+-- trusted until the later import/reconciliation phase validates each FK.
+do $$
+declare
+  foreign_key record;
+begin
+  for foreign_key in
+    select
+      constraint_definition.conrelid::regclass as table_name,
+      constraint_definition.conname,
+      pg_get_constraintdef(constraint_definition.oid) as definition
+    from pg_catalog.pg_constraint as constraint_definition
+    join pg_catalog.pg_class as relation
+      on relation.oid = constraint_definition.conrelid
+    join pg_catalog.pg_namespace as namespace
+      on namespace.oid = relation.relnamespace
+    where namespace.nspname = 'public'
+      and constraint_definition.contype = 'f'
+    order by constraint_definition.oid
+  loop
+    execute format(
+      'alter table %s drop constraint %I',
+      foreign_key.table_name,
+      foreign_key.conname
+    );
+    execute format(
+      'alter table %s add constraint %I %s not valid',
+      foreign_key.table_name,
+      foreign_key.conname,
+      foreign_key.definition
+    );
+  end loop;
+end;
+$$;
+
 create index plans_product_id_idx on public.plans (product_id);
 create index user_entitlements_user_product_idx on public.user_entitlements (user_id, product_id);
 create index user_entitlements_product_status_idx on public.user_entitlements (product_id, status);
