@@ -50,12 +50,21 @@ export function planejarMovimentoCardapio({
   };
 }
 
-
 export function executarMovimentoCardapio({
+  itens = [],
+  dataOrigem,
+  indiceOrigem,
+  dataDestino,
+  indiceDestino,
   aplicarPlano,
-  ...movimento
 }) {
-  const plano = planejarMovimentoCardapio(movimento);
+  const plano = planejarMovimentoCardapio({
+    itens,
+    dataOrigem,
+    indiceOrigem,
+    dataDestino,
+    indiceDestino,
+  });
   if (!plano) return null;
   aplicarPlano(plano);
   return plano;

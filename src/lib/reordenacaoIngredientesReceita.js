@@ -64,12 +64,17 @@ export function planejarReordenacaoIngredientes({
   return novaOrdem.map((item, indice) => ({ id: item.id, ordem: indice * 10 }));
 }
 
-
 export async function persistirReordenacaoIngredientes({
+  itens = [],
+  indiceOrigem,
+  indiceDestino,
   persistir,
-  ...movimento
 }) {
-  const atualizacoes = planejarReordenacaoIngredientes(movimento);
+  const atualizacoes = planejarReordenacaoIngredientes({
+    itens,
+    indiceOrigem,
+    indiceDestino,
+  });
   if (!atualizacoes) return null;
   await persistir(atualizacoes);
   return atualizacoes;
