@@ -213,55 +213,11 @@ select ok(
   'cost calculations are append-only for service_role'
 );
 
-insert into auth.users (
-  id,
-  aud,
-  role,
-  email,
-  encrypted_password,
-  email_confirmed_at,
-  raw_app_meta_data,
-  raw_user_meta_data,
-  created_at,
-  updated_at
-)
+insert into auth.users (id)
 values
-  (
-    '11111111-1111-4111-8111-111111111111',
-    'authenticated',
-    'authenticated',
-    'owner-a@example.test',
-    'not-a-real-password',
-    now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{}'::jsonb,
-    now(),
-    now()
-  ),
-  (
-    '22222222-2222-4222-8222-222222222222',
-    'authenticated',
-    'authenticated',
-    'owner-b@example.test',
-    'not-a-real-password',
-    now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,
-    '{}'::jsonb,
-    now(),
-    now()
-  ),
-  (
-    '33333333-3333-4333-8333-333333333333',
-    'authenticated',
-    'authenticated',
-    'admin@example.test',
-    'not-a-real-password',
-    now(),
-    '{"provider":"email","providers":["email"],"role":"admin"}'::jsonb,
-    '{}'::jsonb,
-    now(),
-    now()
-  );
+  ('11111111-1111-4111-8111-111111111111'),
+  ('22222222-2222-4222-8222-222222222222'),
+  ('33333333-3333-4333-8333-333333333333');
 
 insert into public.products (id, code, name)
 values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'lab-cozinha', 'Laboratório de Cozinha');
