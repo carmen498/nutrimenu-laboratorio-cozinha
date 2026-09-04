@@ -29,15 +29,28 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1
-        with:
-          version: 2.116.0
+      - name: Install pinned Supabase CLI
+        env:
+          SUPABASE_CLI_VERSION: 2.116.0
+          SUPABASE_CLI_SHA256: 5b3031cb297d51b25be4c284e4c852254460ec722ec221d3b81b07d55acfd158
+        run: |
+          archive="$RUNNER_TEMP/supabase.tar.gz"
+          bin_dir="$RUNNER_TEMP/supabase-bin"
+          curl --fail --location --silent --show-error \
+            "https://github.com/supabase/cli/releases/download/v${SUPABASE_CLI_VERSION}/supabase_${SUPABASE_CLI_VERSION}_linux_amd64.tar.gz" \
+            --output "$archive"
+          echo "${SUPABASE_CLI_SHA256}  ${archive}" | sha256sum --check
+          mkdir -p "$bin_dir"
+          tar --extract --gzip --file "$archive" --directory "$bin_dir" supabase
+          echo "$bin_dir" >> "$GITHUB_PATH"
 
       - name: Verify pinned CLI
         run: test "$(supabase --version)" = "2.116.0"
+
+      - name: Verify database-only configuration
+        run: python3 supabase/tests/verify_config.py
 
       - name: Start local Supabase
         run: supabase start

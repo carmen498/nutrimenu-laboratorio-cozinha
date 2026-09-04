@@ -15,9 +15,13 @@ It does not define product-domain tables, migrate production data, configure
 secrets, link a remote project, or authorize a remote migration.
 
 The `labcozinha_migration` schema is intentionally absent from the Data API
-schema list. `anon` and `authenticated` receive no privileges. Only the
-server-side `service_role` receives access, and its key must never be exposed
-to the browser.
+schema list. `anon` and `authenticated` receive no privileges. The server-side
+`service_role` may update batch state, while raw records, ID mappings, and
+rejects are append-only. Its key must never be exposed to the browser.
+
+All non-database local services are disabled in this bootstrap. Auth, Storage,
+Realtime, Edge Runtime, Studio, SMTP, Analytics, and the Data API remain out of
+scope until their respective migration phases are reviewed.
 
 ## Local verification
 
