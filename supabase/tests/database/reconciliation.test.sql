@@ -268,14 +268,26 @@ select is_empty(
       ) as acl
       where namespace.nspname = 'labcozinha'
         and relation.relkind in ('r', 'p', 'S', 'v', 'm', 'f')
+
+      union all
+
+      select namespace.nspname || ':default',
+             default_acl.defaclrole,
+             acl.grantee
+      from pg_catalog.pg_default_acl as default_acl
+      join pg_catalog.pg_namespace as namespace
+        on namespace.oid = default_acl.defaclnamespace
+      cross join lateral pg_catalog.aclexplode(default_acl.defaclacl) as acl
+      where namespace.nspname = 'labcozinha'
     ) as object_acl
-    where object_acl.grantee <> object_acl.owner_oid
-  $,
-  'legacy schema and relations have no non-owner grants'
+    where object_acl.owner_oid <> 'postgres'::regrole
+      or object_acl.grantee <> object_acl.owner_oid
+  $acl$,
+  'legacy objects are postgres-owned and have no non-owner grants'
 );
 
 select is_empty(
-  $
+  $columns$
     select column_name
     from information_schema.columns
     where table_schema = 'public'
@@ -286,7 +298,7 @@ select is_empty(
         'trial_modelo',
         'pagamento_ativo_id'
       )
-  $$,
+  $columns$,
   'commercial legacy fields were not copied into the canonical profile'
 );
 
