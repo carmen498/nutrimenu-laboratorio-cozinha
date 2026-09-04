@@ -225,3 +225,36 @@ assert.deepEqual(
   ],
   "Mover um Ingrediente comum deve persistir a nova ordem sem dividir uma Sub-receita",
 );
+
+const tabelaIngredientesSource = readFileSync(
+  new URL("../src/components/receita/TabelaIngredientesReceita.jsx", import.meta.url),
+  "utf8",
+);
+
+assert.deepEqual(
+  {
+    conectaResultadoAoHandler: tabelaIngredientesSource.includes(
+      "<DragDropContext onDragEnd={handleDragEnd}>",
+    ),
+    publicaListaDeIngredientes: tabelaIngredientesSource.includes(
+      '<Droppable droppableId="ingredientes">',
+    ),
+    handleFinalEhBotaoSeguro: /<button\s+type="button"\s+\{\.\.\.provided\.dragHandleProps\}/s.test(
+      tabelaIngredientesSource,
+    ),
+    handleFinalRecebeDnD: tabelaIngredientesSource.includes(
+      "{...provided.dragHandleProps}",
+    ),
+    handleFinalTemNomeAcessivel: tabelaIngredientesSource.includes(
+      'aria-label="Arraste para reordenar"',
+    ),
+  },
+  {
+    conectaResultadoAoHandler: true,
+    publicaListaDeIngredientes: true,
+    handleFinalEhBotaoSeguro: true,
+    handleFinalRecebeDnD: true,
+    handleFinalTemNomeAcessivel: true,
+  },
+  "A Tabela de Ingredientes deve ligar o resultado do DnD ao handler e publicar um controle final acessível",
+);
