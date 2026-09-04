@@ -20,6 +20,7 @@ import {
   reorganizarItensCardapioPeriodo,
   removerItemCardapioPeriodo,
 } from "@/lib/cardapioPeriodo";
+import { planejarMovimentoCardapio } from "@/lib/reordenacaoDnD";
 
 const NOMES_DIAS = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
 const ORIGENS = {
@@ -171,6 +172,17 @@ export default function CardapioSemanal() {
 
   function executarMovimento(dataOrigem, indiceOrigem, dataDestino, indiceDestino) {
     if (reorganizar.isPending) return;
+    if (dataOrigem === dataDestino) {
+      const plano = planejarMovimentoCardapio({
+        itens,
+        dataOrigem,
+        indiceOrigem,
+        dataDestino,
+        indiceDestino,
+      });
+      if (plano) reorganizar.mutate(plano);
+      return;
+    }
     const origem = ordenarItens(itens.filter((item) => item.data === dataOrigem));
     const destino = dataOrigem === dataDestino
       ? origem
