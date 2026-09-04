@@ -52,6 +52,27 @@ jobs:
       - name: Verify pinned CLI
         run: test "$(supabase --version)" = "2.116.0"
 
+      - name: Generate official reconciliation migration filenames
+        run: |
+          supabase migration new preserve_legacy_profiles
+          sleep 1
+          supabase migration new bootstrap_migration_landing_after_remote
+          sleep 1
+          supabase migration new operational_schema_and_rls_after_remote
+          sleep 1
+          supabase migration new reconcile_legacy_profiles
+          find supabase/migrations -maxdepth 1 -type f \
+            \( -name '*_preserve_legacy_profiles.sql' \
+            -o -name '*_bootstrap_migration_landing_after_remote.sql' \
+            -o -name '*_operational_schema_and_rls_after_remote.sql' \
+            -o -name '*_reconcile_legacy_profiles.sql' \) \
+            -printf '%f\\n' | sort
+          find supabase/migrations -maxdepth 1 -type f \
+            \( -name '*_preserve_legacy_profiles.sql' \
+            -o -name '*_bootstrap_migration_landing_after_remote.sql' \
+            -o -name '*_operational_schema_and_rls_after_remote.sql' \
+            -o -name '*_reconcile_legacy_profiles.sql' \) -delete
+
       - name: Verify database-only configuration
         run: python3 supabase/tests/verify_config.py
 
