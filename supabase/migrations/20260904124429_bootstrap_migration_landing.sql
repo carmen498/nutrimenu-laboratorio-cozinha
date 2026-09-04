@@ -130,15 +130,15 @@ grant select, insert on
 to service_role;
 grant usage on all sequences in schema labcozinha_migration to service_role;
 
-alter default privileges in schema labcozinha_migration
+alter default privileges for role postgres in schema labcozinha_migration
   revoke all on tables from public, anon, authenticated;
-alter default privileges in schema labcozinha_migration
+alter default privileges for role postgres in schema labcozinha_migration
   revoke all on sequences from public, anon, authenticated;
-alter default privileges in schema labcozinha_migration
+alter default privileges for role postgres in schema labcozinha_migration
   revoke all on tables from service_role;
-alter default privileges in schema labcozinha_migration
+alter default privileges for role postgres in schema labcozinha_migration
   revoke all on sequences from service_role;
-alter default privileges in schema labcozinha_migration
+alter default privileges for role postgres in schema labcozinha_migration
   revoke execute on functions from public, anon, authenticated, service_role;
 
 commit;
