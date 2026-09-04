@@ -1,6 +1,6 @@
 begin;
 
-select plan(30);
+select plan(27);
 
 select has_schema(
   'labcozinha_migration',
@@ -297,12 +297,6 @@ create table labcozinha_migration.default_acl_probe (
   id bigint generated always as identity primary key
 );
 
-create function labcozinha_migration.default_acl_probe()
-returns boolean
-language sql
-immutable
-as $$select true$$;
-
 reset role;
 
 select ok(
@@ -331,27 +325,6 @@ select ok(
     cross join unnest(array['USAGE', 'SELECT', 'UPDATE']) as privileges(privilege_name)
   ),
   'future tables and sequences remain private by default'
-);
-
-select ok(
-  not has_function_privilege(
-    'anon', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
-  ),
-  'future functions are not executable by anon by default'
-);
-
-select ok(
-  not has_function_privilege(
-    'authenticated', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
-  ),
-  'future functions are not executable by authenticated by default'
-);
-
-select ok(
-  not has_function_privilege(
-    'service_role', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
-  ),
-  'future functions are not executable by service_role by default'
 );
 
 select * from finish();

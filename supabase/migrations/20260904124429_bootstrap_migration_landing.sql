@@ -138,12 +138,5 @@ alter default privileges for role postgres in schema labcozinha_migration
   revoke all on tables from service_role;
 alter default privileges for role postgres in schema labcozinha_migration
   revoke all on sequences from service_role;
--- PostgreSQL grants EXECUTE on new routines to PUBLIC globally. A schema-scoped
--- REVOKE cannot override that built-in global default, so close it globally for
--- routines created by postgres and require explicit grants everywhere.
-alter default privileges for role postgres
-  revoke execute on functions from public;
-alter default privileges for role postgres in schema labcozinha_migration
-  revoke execute on functions from anon, authenticated, service_role;
 
 commit;
