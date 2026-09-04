@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
+const useMutationAny = /** @type {any} */ (useMutation);
+
 const IDENTIFICACOES = [
   { value: "refeicao", label: "Refeição" },
   { value: "almoco", label: "Almoço" },
@@ -51,7 +53,7 @@ export default function CardapiosBase() {
     queryFn: () => listarCardapiosPeriodo(),
   });
 
-  const criar = useMutation({
+  const criar = useMutationAny({
     mutationFn: criarCardapioPeriodo,
     onSuccess: async (cardapio) => {
       await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });
@@ -61,7 +63,7 @@ export default function CardapiosBase() {
     onError: (erro) => toast.error(erro?.message || "Não foi possível criar o cardápio."),
   });
 
-  const duplicar = useMutation({
+  const duplicar = useMutationAny({
     mutationFn: ({ cardapio, dados }) => duplicarCardapioPeriodo(cardapio.id, dados),
     onSuccess: async (novo) => {
       await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });
@@ -72,7 +74,7 @@ export default function CardapiosBase() {
     onError: (erro) => toast.error(erro?.message || "Não foi possível duplicar o Cardápio."),
   });
 
-  const excluir = useMutation({
+  const excluir = useMutationAny({
     mutationFn: (cardapio) => excluirCardapioPeriodo(cardapio.id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["cardapios-periodo"] });

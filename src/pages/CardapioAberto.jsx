@@ -39,6 +39,7 @@ import { toUpperName } from "@/lib/textCase";
 import { fetchAllPages } from "@/lib/fetchAllPages";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 import { garantirCardapioEditavel } from "@/lib/forkCardapio";
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription,
@@ -82,6 +83,7 @@ function normalizarBusca(s) {
 export default function CardapioAberto() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
