@@ -169,6 +169,9 @@ select ok(
   'private migration tables expose no row policies to client roles'
 );
 
+insert into labcozinha_migration.batches (export_id, phase)
+values ('rls-sentinel', 'bootstrap');
+
 grant usage on schema labcozinha_migration to anon, authenticated;
 grant select, insert on labcozinha_migration.batches to anon, authenticated;
 grant usage on sequence labcozinha_migration.batches_id_seq to anon, authenticated;
