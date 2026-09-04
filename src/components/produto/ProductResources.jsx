@@ -1,5 +1,6 @@
 import React from "react";
 
+/** @type {Array<[string, string[]]>} */
 const groups = [
   ["Planejamento", ["Receitas e sub-receitas", "Cardápios e eventos", "Per capita e rendimentos", "Pré-preparos e ordem de produção"]],
   ["Controle", ["Banco de ingredientes", "Medidas caseiras e fatores de correção", "Insumos e embalagens", "Histórico e auditorias"]],

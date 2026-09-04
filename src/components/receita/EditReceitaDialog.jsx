@@ -206,10 +206,11 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
       // Sincroniza imediatamente a ficha e o catálogo. Apenas invalidar a query
       // deixava a listagem exibindo a categoria antiga até um novo refetch.
       qc.setQueryData(["receita", receitaId], [receitaAtualizada]);
-      qc.setQueryData(["receitas"], (atuais = []) => {
-        const indice = atuais.findIndex((item) => item.id === receitaId);
-        if (indice < 0) return [...atuais, receitaAtualizada];
-        return atuais.map((item) => item.id === receitaId ? receitaAtualizada : item);
+      qc.setQueryData(["receitas"], (atuais) => {
+        const listaAtual = Array.isArray(atuais) ? atuais : [];
+        const indice = listaAtual.findIndex((item) => item.id === receitaId);
+        if (indice < 0) return [...listaAtual, receitaAtualizada];
+        return listaAtual.map((item) => item.id === receitaId ? receitaAtualizada : item);
       });
 
       const camposCusto = ["porcoes_base", "peso_pos_preparo_total", "rendimento_total", "per_capita_g", "unidade_base"];

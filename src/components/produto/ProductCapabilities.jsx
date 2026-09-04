@@ -1,6 +1,7 @@
 import React from "react";
 import { BookOpen, Calculator, CalendarDays, ChartNoAxesCombined, ClipboardList, PackageSearch, Scale, Sparkles } from "lucide-react";
 
+/** @type {Array<[import("lucide-react").LucideIcon, string, string]>} */
 const items = [
   [BookOpen, "Receitas profissionais", "Cadastre, importe e organize receitas com ingredientes, preparo, rendimento, categorias, fotos e fichas técnicas."],
   [Scale, "Escalonamento automático", "Ajuste porções e quantidades mantendo proporções, medidas e custos coerentes para cada produção."],

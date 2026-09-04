@@ -139,7 +139,10 @@ export default function Cardapios() {
     setFavPending(p => ({ ...p, [c.id]: true }));
     try {
       await base44.entities.Cardapio.update(c.id, { favorito: !c.favorito });
-      qc.setQueryData(["cardapios"], (prev = []) => prev.map(x => x.id === c.id ? { ...x, favorito: !c.favorito } : x));
+      qc.setQueryData(["cardapios"], (prev) => {
+        const listaAtual = Array.isArray(prev) ? prev : [];
+        return listaAtual.map(x => x.id === c.id ? { ...x, favorito: !c.favorito } : x);
+      });
     } catch (e) { consoleErrorSeguro("Erro em refeições", e); }
     setFavPending(p => ({ ...p, [c.id]: false }));
   };

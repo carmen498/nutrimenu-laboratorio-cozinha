@@ -22,7 +22,7 @@ export default function PlanoCard({
   mensagemBloqueio = "",
   complemento = null,
   complementoActionLabel = "",
-  onComplementoAction,
+  onComplementoAction = undefined,
   complementoActionDisabled = false,
 }) {
   return (
