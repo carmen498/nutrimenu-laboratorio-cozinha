@@ -49,3 +49,41 @@ export function planejarMovimentoCardapio({
     novosItens: itens.map((item) => afetados.get(item.id) || item),
   };
 }
+
+export function planejarReordenacaoIngredientes({
+  itens = [],
+  indiceOrigem,
+  indiceDestino,
+}) {
+  const itemMovido = itens[indiceOrigem];
+  if (!itemMovido?.isGrupo || indiceOrigem === indiceDestino) return null;
+
+  let fimBloco = indiceOrigem + 1;
+  while (fimBloco < itens.length && !itens[fimBloco].isGrupo) fimBloco += 1;
+
+  const bloco = itens.slice(indiceOrigem, fimBloco);
+  const restantes = itens.slice(0, indiceOrigem).concat(itens.slice(fimBloco));
+  let destinoAjustado = indiceDestino >= fimBloco
+    ? indiceDestino - bloco.length
+    : indiceDestino;
+  destinoAjustado = Math.max(0, Math.min(destinoAjustado, restantes.length));
+
+  let grupoAnterior = -1;
+  for (let indice = 0; indice < destinoAjustado; indice += 1) {
+    if (restantes[indice].isGrupo) grupoAnterior = indice;
+  }
+  if (grupoAnterior >= 0 && destinoAjustado > grupoAnterior) {
+    let fimGrupoDestino = grupoAnterior + 1;
+    while (fimGrupoDestino < restantes.length && !restantes[fimGrupoDestino].isGrupo) {
+      fimGrupoDestino += 1;
+    }
+    if (destinoAjustado < fimGrupoDestino) destinoAjustado = fimGrupoDestino;
+  }
+
+  const novaOrdem = [
+    ...restantes.slice(0, destinoAjustado),
+    ...bloco,
+    ...restantes.slice(destinoAjustado),
+  ];
+  return novaOrdem.map((item, indice) => ({ id: item.id, ordem: indice * 10 }));
+}

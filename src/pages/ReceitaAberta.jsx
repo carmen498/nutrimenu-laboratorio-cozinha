@@ -40,6 +40,7 @@ import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
 import EscalarReceitaDialog from "@/components/receita/EscalarReceitaDialog";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
+import { planejarReordenacaoIngredientes } from "@/lib/reordenacaoDnD";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -932,6 +933,19 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.bulkUpdate(
         items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
       );
+    }
+
+    if (dragged.isGrupo) {
+      const updates = planejarReordenacaoIngredientes({
+        itens: items,
+        indiceOrigem: sourceIdx,
+        indiceDestino: destIdx,
+      });
+      if (!updates) return;
+      await base44.entities.IngredienteReceita.bulkUpdate(updates);
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Ordem alterada");
+      return;
     }
 
     if (item.subreceita_parent_id) {
