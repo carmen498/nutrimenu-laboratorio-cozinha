@@ -20,7 +20,7 @@ import {
   reorganizarItensCardapioPeriodo,
   removerItemCardapioPeriodo,
 } from "@/lib/cardapioPeriodo";
-import { ordenarItensCardapio, planejarMovimentoCardapio } from "@/lib/reordenacaoDnD";
+import { ordenarItensCardapio, planejarMovimentoCardapio } from "@/lib/reordenacaoCardapio";
 
 const NOMES_DIAS = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"];
 const ORIGENS = {

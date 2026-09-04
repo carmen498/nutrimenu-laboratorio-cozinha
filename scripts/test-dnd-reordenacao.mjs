@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import {
   ordenarItensCardapio,
   planejarMovimentoCardapio,
-  planejarReordenacaoIngredientes,
-} from "../src/lib/reordenacaoDnD.js";
+} from "../src/lib/reordenacaoCardapio.js";
+import { planejarReordenacaoIngredientes } from "../src/lib/reordenacaoIngredientesReceita.js";
 
 const segunda = "2026-09-07";
 const itens = [
