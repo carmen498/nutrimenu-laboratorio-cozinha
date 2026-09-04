@@ -6,31 +6,31 @@ Este documento registra somente metadados estruturais e agregados do projeto
 Nutrimenu Laboratório. Nenhum dado pessoal foi copiado para o repositório.
 
 - Projeto: Laboratorio (aibqicflleqxkotoyvtx)
-- Organização: Nutrimenu (jgssbhoqjzjusgfipxzo)
+- Organização atual: BRUBINS (rxbquhgfkzsczbsunzry)
 - Região: us-east-1
 - PostgreSQL: 17.6.1.166
 - Estado observado: ACTIVE_HEALTHY
-- Plano observado: Free
-- GitHub main observado: a93c330c1869a75dc8eba7c3a71dcaf8c8d8d87f
+- Plano atual: Pro
+- GitHub main no início da implementação: 883ecee6a45b2646d82b71cd07d70e4c07c8493d
 - Modelo operacional introduzido por: 822ad1d27eb5ebefeca4ae6987d48ee5c7224c64
-- Data da inspeção: 2026-09-04
-- Histórico remoto de migrations: vazio
+- Data da inspeção e certificação: 2026-09-04
+- Histórico remoto aprovado: 20260904194502 remote_schema
 
-A inspeção foi somente leitura. Nenhuma DDL, migration ou alteração de dados foi
-aplicada ao projeto principal.
+A inspeção funcional foi somente leitura. A inicialização do Branching
+materializou automaticamente o baseline de 77 statements no ledger remoto; não
+aplicou as migrations operacionais nem alterou o schema funcional ou os dados.
 
-## Bloqueio de ambiente isolado
+## Certificação em ambiente isolado
 
-A conta reconectada passou a enxergar a organização proprietária e o projeto.
-A criação da branch certify-822ad1d2, porém, foi recusada com
-PaymentRequiredException: Supabase Branching exige plano Pro ou superior.
+Depois da transferência para BRUBINS e da ativação do plano Pro, a cadeia
+versionada na PR #44 foi certificada em uma Preview Branch. A Preview recebeu
+somente um perfil sintético, aplicou preservação, bootstrap, modelo operacional
+e reconciliação, e comprovou contagens, mapeamento, grants e matriz RLS.
 
-O custo informado antes da tentativa foi US$ 0,01344 por hora. A tentativa não
-criou uma branch e não iniciou cobrança. A única branch listada continua sendo
-main.
-
-Enquanto não existir um ambiente isolado, migrations de reconciliação não devem
-ser aplicadas ao projeto principal.
+A Preview foi excluída após o receipt para encerrar a cobrança. O projeto
+principal permaneceu saudável, com as mesmas contagens e somente o baseline
+20260904194502 registrado no ledger. Nenhuma migration de reconciliação foi
+aplicada à produção.
 
 ## Inventário agregado
 
@@ -173,8 +173,8 @@ como atalho para contornar permissões.
 
 ## Sequência segura para implementação
 
-1. Disponibilizar ambiente isolado: upgrade temporário para Pro ou projeto
-   descartável explicitamente autorizado.
+1. Criar uma Preview Branch isolada a partir do baseline aprovado e removê-la
+   depois de registrar as evidências.
 2. Gerar migrations com o Supabase CLI; não inventar timestamps manualmente.
 3. Adicionar uma migration anterior ao modelo operacional que:
    - reconheça estritamente o contrato legado de public.profiles;
@@ -206,7 +206,8 @@ qualquer uma destas condições:
 - o snapshot de destino já existir;
 - a contagem canônica não corresponder à contagem legada;
 - advisors indicarem risco novo de segurança;
-- o histórico remoto de migrations deixar de estar vazio antes da janela.
+- o histórico remoto divergir do baseline único aprovado
+  `20260904194502 remote_schema` antes da janela.
 
 ## Proibições mantidas
 
