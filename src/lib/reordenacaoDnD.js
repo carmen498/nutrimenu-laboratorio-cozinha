@@ -79,16 +79,18 @@ export function planejarReordenacaoIngredientes({
     : indiceDestino;
   destinoAjustado = Math.max(0, Math.min(destinoAjustado, restantes.length));
 
-  let grupoAnterior = -1;
-  for (let indice = 0; indice < destinoAjustado; indice += 1) {
-    if (restantes[indice].isGrupo) grupoAnterior = indice;
-  }
-  if (grupoAnterior >= 0 && destinoAjustado > grupoAnterior) {
-    let fimGrupoDestino = grupoAnterior + 1;
-    while (fimGrupoDestino < restantes.length && !restantes[fimGrupoDestino].isGrupo) {
-      fimGrupoDestino += 1;
+  if (itemMovido.isGrupo) {
+    let grupoAnterior = -1;
+    for (let indice = 0; indice < destinoAjustado; indice += 1) {
+      if (restantes[indice].isGrupo) grupoAnterior = indice;
     }
-    if (destinoAjustado < fimGrupoDestino) destinoAjustado = fimGrupoDestino;
+    if (grupoAnterior >= 0 && destinoAjustado > grupoAnterior) {
+      let fimGrupoDestino = grupoAnterior + 1;
+      while (fimGrupoDestino < restantes.length && !restantes[fimGrupoDestino].isGrupo) {
+        fimGrupoDestino += 1;
+      }
+      if (destinoAjustado < fimGrupoDestino) destinoAjustado = fimGrupoDestino;
+    }
   }
 
   const novaOrdem = [
