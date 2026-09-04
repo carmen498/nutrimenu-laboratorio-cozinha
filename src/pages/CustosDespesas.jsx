@@ -22,7 +22,7 @@ export default function CustosDespesas() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [grupoInicial, setGrupoInicial] = useState("");
   const [editando, setEditando] = useState(null);
-  const [configLocal, setConfigLocal] = useState({});
+  const [configLocal, setConfigLocal] = useState(/** @type {Record<string, any>} */ ({}));
   const [salvandoConfig, setSalvandoConfig] = useState(false);
 
   const { data: despesas = [], isLoading } = useQuery({

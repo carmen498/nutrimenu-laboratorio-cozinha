@@ -15,12 +15,7 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
-import Termos from '@/pages/Termos';
-import Privacidade from '@/pages/Privacidade';
 import AceitarTermos from '@/pages/AceitarTermos';
-import SobrePublico from '@/pages/SobrePublico';
-import Contato from '@/pages/Contato';
-import Produto from '@/pages/Produto';
 import LandingOrRedirect from '@/components/LandingOrRedirect';
 import AppLoginRedirect from '@/components/auth/AppLoginRedirect';
 import { getCanonicalAppRedirectUrl } from '@/lib/publicUrls';
@@ -83,6 +78,11 @@ const CustosFicha = lazy(() => import('@/pages/CustosFicha'));
 const CustosHistorico = lazy(() => import('@/pages/CustosHistorico'));
 const CustosConfiguracoes = lazy(() => import('@/pages/CustosConfiguracoes'));
 const CustosBloqueado = lazy(() => import('@/pages/CustosBloqueado')); 
+const Termos = lazy(() => import('@/pages/Termos'));
+const Privacidade = lazy(() => import('@/pages/Privacidade'));
+const SobrePublico = lazy(() => import('@/pages/SobrePublico'));
+const Contato = lazy(() => import('@/pages/Contato'));
+const Produto = lazy(() => import('@/pages/Produto'));
 
 // Routes reachable without a valid session — these must keep rendering even
 // when the app-level check reports 'auth_required', otherwise a genuinely
