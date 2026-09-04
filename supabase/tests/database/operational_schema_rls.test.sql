@@ -199,21 +199,21 @@ select ok(
   'cost history is append-only for service_role'
 );
 
-select results_eq(
-  $$select column_name::text from information_schema.columns
-    where table_schema = 'public' and table_name = 'plans'
-      and column_name = any (array['duration_days', 'price_cents', 'is_trial', 'is_popular', 'sale_enabled', 'offer_version', 'display_order', 'benefits'])
-    order by column_name$$,
-  $$values ('benefits'), ('display_order'), ('duration_days'), ('is_popular'), ('is_trial'), ('offer_version'), ('price_cents'), ('sale_enabled')$$,
+select is(
+  (select array_agg(column_name::text order by column_name::text)
+   from information_schema.columns
+   where table_schema = 'public' and table_name = 'plans'
+     and column_name = any (array['duration_days', 'price_cents', 'is_trial', 'is_popular', 'sale_enabled', 'offer_version', 'display_order', 'benefits'])),
+  array['benefits', 'display_order', 'duration_days', 'is_popular', 'is_trial', 'offer_version', 'price_cents', 'sale_enabled']::text[],
   'plans contain the approved fixed-duration commercial contract'
 );
 
-select results_eq(
-  $$select column_name::text from information_schema.columns
-    where table_schema = 'public' and table_name = 'cost_user_settings'
-      and column_name = any (array['monthly_estimated_volume', 'business_cost_groups', 'apply_business_cost', 'business_cost_basis', 'production_days_month', 'average_recipes_day', 'commercialization_cost_pct', 'apply_commercialization_cost', 'default_margin_pct', 'active'])
-    order by column_name$$,
-  $$values ('active'), ('apply_business_cost'), ('apply_commercialization_cost'), ('average_recipes_day'), ('business_cost_basis'), ('business_cost_groups'), ('commercialization_cost_pct'), ('default_margin_pct'), ('monthly_estimated_volume'), ('production_days_month')$$,
+select is(
+  (select array_agg(column_name::text order by column_name::text)
+   from information_schema.columns
+   where table_schema = 'public' and table_name = 'cost_user_settings'
+     and column_name = any (array['monthly_estimated_volume', 'business_cost_groups', 'apply_business_cost', 'business_cost_basis', 'production_days_month', 'average_recipes_day', 'commercialization_cost_pct', 'apply_commercialization_cost', 'default_margin_pct', 'active'])),
+  array['active', 'apply_business_cost', 'apply_commercialization_cost', 'average_recipes_day', 'business_cost_basis', 'business_cost_groups', 'commercialization_cost_pct', 'default_margin_pct', 'monthly_estimated_volume', 'production_days_month']::text[],
   'cost settings contain the approved allocation model'
 );
 
@@ -224,12 +224,12 @@ select is_empty(
   'deprecated hourly and percentage cost model is absent'
 );
 
-select results_eq(
-  $$select column_name::text from information_schema.columns
-    where table_schema = 'public' and table_name = 'cost_calculations'
-      and column_name = any (array['parent_calculation_id', 'root_calculation_id', 'version_number', 'yield_snapshot', 'portion_snapshot', 'technical_engine_version', 'ingredient_cost_snapshot', 'recipe_supply_cost_snapshot', 'forgotten_ingredient_cost_snapshot', 'additional_input_snapshot', 'business_cost_snapshot', 'commercialization_snapshot'])
-    order by column_name$$,
-  $$values ('additional_input_snapshot'), ('business_cost_snapshot'), ('commercialization_snapshot'), ('forgotten_ingredient_cost_snapshot'), ('ingredient_cost_snapshot'), ('parent_calculation_id'), ('portion_snapshot'), ('recipe_supply_cost_snapshot'), ('root_calculation_id'), ('technical_engine_version'), ('version_number'), ('yield_snapshot')$$,
+select is(
+  (select array_agg(column_name::text order by column_name::text)
+   from information_schema.columns
+   where table_schema = 'public' and table_name = 'cost_calculations'
+     and column_name = any (array['parent_calculation_id', 'root_calculation_id', 'version_number', 'yield_snapshot', 'portion_snapshot', 'technical_engine_version', 'ingredient_cost_snapshot', 'recipe_supply_cost_snapshot', 'forgotten_ingredient_cost_snapshot', 'additional_input_snapshot', 'business_cost_snapshot', 'commercialization_snapshot'])),
+  array['additional_input_snapshot', 'business_cost_snapshot', 'commercialization_snapshot', 'forgotten_ingredient_cost_snapshot', 'ingredient_cost_snapshot', 'parent_calculation_id', 'portion_snapshot', 'recipe_supply_cost_snapshot', 'root_calculation_id', 'technical_engine_version', 'version_number', 'yield_snapshot']::text[],
   'cost history contains lineage and immutable snapshots'
 );
 
