@@ -50,7 +50,7 @@ export default function ListaPlanejamentos() {
       if (modelo?.id) porId.set(modelo.id, modelo);
       setPlanejamentos(
         Array.from(porId.values()).sort((a, b) =>
-          new Date(b.created_date || 0) - new Date(a.created_date || 0)
+          new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime()
         )
       );
     } catch (e) { consoleErrorSeguro("Erro em planejamento", e); }

@@ -46,11 +46,14 @@ export function carregarMercadoPagoSdk() {
 
 export function carregarMercadoPagoDeviceId() {
   if (typeof window === "undefined") return Promise.resolve(null);
-  if (window.MP_DEVICE_SESSION_ID) return Promise.resolve(window.MP_DEVICE_SESSION_ID);
+  const browserWindow = /** @type {Window & { MP_DEVICE_SESSION_ID?: string }} */ (window);
+  if (browserWindow.MP_DEVICE_SESSION_ID) return Promise.resolve(browserWindow.MP_DEVICE_SESSION_ID);
   if (deviceIdPromise) return deviceIdPromise;
 
   deviceIdPromise = new Promise((resolve) => {
-    let script = document.querySelector('script[data-mercadopago-security="v2"]');
+    let script = /** @type {HTMLScriptElement | null} */ (
+      document.querySelector('script[data-mercadopago-security="v2"]')
+    );
     if (!script) {
       script = document.createElement("script");
       script.src = "https://www.mercadopago.com/v2/security.js";
@@ -62,13 +65,13 @@ export function carregarMercadoPagoDeviceId() {
 
     const inicio = Date.now();
     const verificar = () => {
-      if (window.MP_DEVICE_SESSION_ID) return resolve(window.MP_DEVICE_SESSION_ID);
+      if (browserWindow.MP_DEVICE_SESSION_ID) return resolve(browserWindow.MP_DEVICE_SESSION_ID);
       if (Date.now() - inicio >= 5000) return resolve(null);
       window.setTimeout(verificar, 100);
     };
     verificar();
   }).finally(() => {
-    if (!window.MP_DEVICE_SESSION_ID) deviceIdPromise = null;
+    if (!browserWindow.MP_DEVICE_SESSION_ID) deviceIdPromise = null;
   });
 
   return deviceIdPromise;
