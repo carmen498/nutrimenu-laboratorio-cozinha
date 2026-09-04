@@ -284,6 +284,12 @@ GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "authenticated";
 
 GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "service_role";
 
+-- The hosted baseline above is already represented by the remote ledger. A
+-- fresh/local replay must not expose the SECURITY DEFINER routine, even for the
+-- short interval between this baseline and the reconciliation migration.
+REVOKE EXECUTE ON FUNCTION "public"."rls_auto_enable"()
+  FROM PUBLIC, "anon", "authenticated";
+
 GRANT ALL ON TABLE "public"."profiles" TO "anon";
 
 GRANT ALL ON TABLE "public"."profiles" TO "authenticated";
