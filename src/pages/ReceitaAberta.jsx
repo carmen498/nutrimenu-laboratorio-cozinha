@@ -40,7 +40,7 @@ import { converterGramasParaMedida } from "@/lib/conversorMedidas";
 import EscaladorReceita from "@/components/receita/EscaladorReceita";
 import EscalarReceitaDialog from "@/components/receita/EscalarReceitaDialog";
 import TabelaIngredientesReceita from "@/components/receita/TabelaIngredientesReceita";
-import { planejarReordenacaoIngredientes } from "@/lib/reordenacaoIngredientesReceita";
+import { persistirReordenacaoIngredientes } from "@/lib/reordenacaoIngredientesReceita";
 import CorPredominantePicker from "@/components/receita/CorPredominantePicker";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -1025,20 +1025,14 @@ export default function ReceitaAberta() {
     const destIdx = result.destination.index;
     if (!items[sourceIdx]) return;
 
-    if (!temOrdemManual) {
-      await base44.entities.IngredienteReceita.bulkUpdate(
-        items.map((item, indice) => ({ id: item.id, ordem: indice * 10 })),
-      );
-    }
-
-    const updates = planejarReordenacaoIngredientes({
+    const updates = await persistirReordenacaoIngredientes({
       itens: items,
       indiceOrigem: sourceIdx,
       indiceDestino: destIdx,
+      persistir: (atualizacoes) =>
+        base44.entities.IngredienteReceita.bulkUpdate(atualizacoes),
     });
     if (!updates) return;
-
-    await base44.entities.IngredienteReceita.bulkUpdate(updates);
     qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     toast.success("Ordem alterada");
   };

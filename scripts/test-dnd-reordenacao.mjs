@@ -267,6 +267,10 @@ const cardapioSemanalSource = readFileSync(
   new URL("../src/pages/CardapioSemanal.jsx", import.meta.url),
   "utf8",
 );
+const receitaAbertaSource = readFileSync(
+  new URL("../src/pages/ReceitaAberta.jsx", import.meta.url),
+  "utf8",
+);
 
 assert.deepEqual(
   {
@@ -274,6 +278,9 @@ assert.deepEqual(
       handleEhBotaoSeguro: /<button\s+type="button"\s+\{\.\.\.provided\.dragHandleProps\}/s.test(draggableRowSource),
       atributosDnDAplicados: draggableRowSource.includes("{...provided.dragHandleProps}"),
       nomeAcessivel: draggableRowSource.includes('aria-label="Arraste para reordenar"'),
+      persistenciaPeloControlador: receitaAbertaSource.includes(
+        "persistirReordenacaoIngredientes({",
+      ),
     },
     cardapio: {
       handleEhBotaoSeguro: /<button\s+type="button"\s+\{\.\.\.dragProvided\.dragHandleProps\}/s.test(cardapioSemanalSource),
@@ -285,6 +292,9 @@ assert.deepEqual(
         'aria-label="Mover para baixo"',
         'aria-label="Mover para o próximo dia"',
       ].every((rotulo) => cardapioSemanalSource.includes(rotulo)),
+      movimentoPeloControlador: cardapioSemanalSource.includes(
+        "executarMovimentoCardapio({",
+      ),
     },
   },
   {
@@ -292,12 +302,14 @@ assert.deepEqual(
       handleEhBotaoSeguro: true,
       atributosDnDAplicados: true,
       nomeAcessivel: true,
+      persistenciaPeloControlador: true,
     },
     cardapio: {
       handleEhBotaoSeguro: true,
       atributosDnDAplicados: true,
       nomeAcessivel: true,
       alternativaTeclado: true,
+      movimentoPeloControlador: true,
     },
   },
   "Os controles públicos de arraste devem preservar teclado, ponteiro, nome acessível e alternativas por botão",

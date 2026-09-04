@@ -49,3 +49,14 @@ export function planejarMovimentoCardapio({
     novosItens: itens.map((item) => afetados.get(item.id) || item),
   };
 }
+
+
+export function executarMovimentoCardapio({
+  aplicarPlano,
+  ...movimento
+}) {
+  const plano = planejarMovimentoCardapio(movimento);
+  if (!plano) return null;
+  aplicarPlano(plano);
+  return plano;
+}
