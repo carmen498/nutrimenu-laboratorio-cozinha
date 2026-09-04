@@ -23,6 +23,7 @@ for service in database_only_services:
     assert config[service]["enabled"] is False, f"{service} must remain disabled"
 
 assert config["storage"]["s3_protocol"]["enabled"] is False
+assert config["storage"]["analytics"]["enabled"] is False
 assert config["storage"]["vector"]["enabled"] is False
 
 print("Supabase database-only configuration: PASS")

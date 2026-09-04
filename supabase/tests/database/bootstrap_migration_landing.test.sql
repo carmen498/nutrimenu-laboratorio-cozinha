@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(28);
 
 select has_schema(
   'labcozinha_migration',
@@ -117,13 +117,54 @@ select ok(
   (
     select has_table_privilege('service_role', 'labcozinha_migration.batches', 'SELECT')
       and has_table_privilege('service_role', 'labcozinha_migration.batches', 'INSERT')
-      and has_table_privilege('service_role', 'labcozinha_migration.batches', 'UPDATE')
+      and has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'status', 'UPDATE'
+      )
+      and has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'finished_at', 'UPDATE'
+      )
+      and has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'source_count', 'UPDATE'
+      )
+      and has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'accepted_count', 'UPDATE'
+      )
+      and has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'rejected_count', 'UPDATE'
+      )
+      and has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'notes', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'id', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'export_id', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'source_system', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'phase', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'source_snapshot_at', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'started_at', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'source_checksum', 'UPDATE'
+      )
+      and not has_column_privilege(
+        'service_role', 'labcozinha_migration.batches', 'manifest', 'UPDATE'
+      )
       and not has_table_privilege('service_role', 'labcozinha_migration.batches', 'DELETE')
       and not has_table_privilege('service_role', 'labcozinha_migration.batches', 'TRUNCATE')
       and not has_table_privilege('service_role', 'labcozinha_migration.batches', 'REFERENCES')
       and not has_table_privilege('service_role', 'labcozinha_migration.batches', 'TRIGGER')
   ),
-  'service_role may update batch state but has no destructive privileges'
+  'service_role may update operational batch fields but not identity or provenance'
 );
 select ok(
   (
@@ -148,7 +189,7 @@ select ok(
   (
     select count(*) = 2 and bool_and(
       has_sequence_privilege('service_role', c.oid, 'USAGE')
-      and has_sequence_privilege('service_role', c.oid, 'SELECT')
+      and not has_sequence_privilege('service_role', c.oid, 'SELECT')
       and not has_sequence_privilege('service_role', c.oid, 'UPDATE')
     )
     from pg_catalog.pg_class as c
@@ -156,7 +197,7 @@ select ok(
     where n.nspname = 'labcozinha_migration'
       and c.relkind = 'S'
   ),
-  'service_role has only usage and read access to identity sequences'
+  'service_role has only usage access to identity sequences'
 );
 select ok(
   (
@@ -171,6 +212,19 @@ select ok(
 
 insert into labcozinha_migration.batches (export_id, phase)
 values ('rls-sentinel', 'bootstrap');
+
+set local role service_role;
+select lives_ok(
+  $$update labcozinha_migration.batches set status = 'loading' where export_id = 'rls-sentinel'$$,
+  'service_role can update operational batch state'
+);
+select throws_ok(
+  $$update labcozinha_migration.batches set export_id = 'rewritten' where export_id = 'rls-sentinel'$$,
+  '42501',
+  null,
+  'service_role cannot rewrite batch identity'
+);
+reset role;
 
 grant usage on schema labcozinha_migration to anon, authenticated;
 grant select, insert on labcozinha_migration.batches to anon, authenticated;
@@ -235,6 +289,57 @@ select ok(
       and c.contype = 'f'
   ),
   'landing, id map, and rejects reference a migration batch'
+);
+
+create table labcozinha_migration.default_acl_probe (
+  id bigint generated always as identity primary key
+);
+
+create function labcozinha_migration.default_acl_probe()
+returns boolean
+language sql
+immutable
+as $$select true$$;
+
+select ok(
+  (
+    select bool_and(
+      not has_table_privilege(
+        role_name,
+        'labcozinha_migration.default_acl_probe',
+        privilege_name
+      )
+    )
+    from unnest(array['anon', 'authenticated', 'service_role']) as roles(role_name)
+    cross join unnest(
+      array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']
+    ) as privileges(privilege_name)
+  )
+  and (
+    select bool_and(
+      not has_sequence_privilege(
+        role_name,
+        'labcozinha_migration.default_acl_probe_id_seq',
+        privilege_name
+      )
+    )
+    from unnest(array['anon', 'authenticated', 'service_role']) as roles(role_name)
+    cross join unnest(array['USAGE', 'SELECT', 'UPDATE']) as privileges(privilege_name)
+  ),
+  'future tables and sequences remain private by default'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
+  )
+  and not has_function_privilege(
+    'authenticated', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
+  )
+  and not has_function_privilege(
+    'service_role', 'labcozinha_migration.default_acl_probe()', 'EXECUTE'
+  ),
+  'future functions are not executable by client or service roles by default'
 );
 
 select * from finish();

@@ -114,13 +114,21 @@ revoke all on all tables in schema labcozinha_migration from public, anon, authe
 revoke all on all sequences in schema labcozinha_migration from public, anon, authenticated;
 revoke all on all tables in schema labcozinha_migration from service_role;
 revoke all on all sequences in schema labcozinha_migration from service_role;
-grant select, insert, update on labcozinha_migration.batches to service_role;
+grant select, insert on labcozinha_migration.batches to service_role;
+grant update (
+  status,
+  finished_at,
+  source_count,
+  accepted_count,
+  rejected_count,
+  notes
+) on labcozinha_migration.batches to service_role;
 grant select, insert on
   labcozinha_migration.raw_records,
   labcozinha_migration.id_map,
   labcozinha_migration.rejects
 to service_role;
-grant usage, select on all sequences in schema labcozinha_migration to service_role;
+grant usage on all sequences in schema labcozinha_migration to service_role;
 
 alter default privileges in schema labcozinha_migration
   revoke all on tables from public, anon, authenticated;
@@ -130,5 +138,7 @@ alter default privileges in schema labcozinha_migration
   revoke all on tables from service_role;
 alter default privileges in schema labcozinha_migration
   revoke all on sequences from service_role;
+alter default privileges in schema labcozinha_migration
+  revoke execute on functions from public, anon, authenticated, service_role;
 
 commit;
