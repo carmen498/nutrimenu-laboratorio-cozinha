@@ -67,6 +67,53 @@ jobs:
       - name: Run database tests
         run: supabase test db
 
+      - name: Reject drifted legacy ACL
+        env:
+          NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          supabase db reset --local --no-seed --version=20260904194502
+          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
+            --file supabase/tests/profile_acl_drift.psql
+          if supabase migration up --local >"$RUNNER_TEMP/profile-acl-drift.log" 2>&1; then
+            echo "Expected the drifted ACL preflight to fail"
+            exit 1
+          fi
+          if ! grep --fixed-strings \
+            "reconciliation stopped: public.profiles ACL contract changed" \
+            "$RUNNER_TEMP/profile-acl-drift.log"; then
+            sed -n '1,160p' "$RUNNER_TEMP/profile-acl-drift.log"
+            exit 1
+          fi
+
+      - name: Reject invalid profile domain
+        env:
+          NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          supabase db reset --local --no-seed --version=20260904200532
+          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
+            --file supabase/tests/invalid_reconciliation_profile.psql
+          if supabase migration up --local >"$RUNNER_TEMP/invalid-profile.log" 2>&1; then
+            echo "Expected the invalid profile reconciliation to fail"
+            exit 1
+          fi
+          if ! grep --fixed-strings \
+            "reconciliation stopped: segmento is outside the canonical domain" \
+            "$RUNNER_TEMP/invalid-profile.log"; then
+            sed -n '1,160p' "$RUNNER_TEMP/invalid-profile.log"
+            exit 1
+          fi
+
+      - name: Verify profile mapping with synthetic data
+        env:
+          NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          supabase db reset --local --no-seed --version=20260904200532
+          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
+            --file supabase/tests/valid_reconciliation_profile.psql
+          supabase migration up --local
+          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
+            --file supabase/tests/verify_reconciliation_mapping.psql
+
       - name: Stop local Supabase
         if: always()
         run: supabase stop --no-backup
