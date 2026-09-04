@@ -1,5 +1,7 @@
 # Clarify
 
+> Modified from Impeccable v4.1.3 for Nutrimenu. See [NOTICE.md](../NOTICE.md) and [LICENSE](../LICENSE).
+
 Improve interface language so users understand what happened, what matters, and what they can do next. Preserve factual meaning, established terminology, brand voice, and legal effect.
 
 ## Read the flow

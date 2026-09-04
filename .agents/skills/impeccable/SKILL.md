@@ -2,10 +2,12 @@
 name: impeccable
 description: Review or refine an existing frontend with an editorial design lens when the user asks for UI critique, polish, resilience hardening, UX copy clarification, or task-oriented product-interface guidance. Not for backend-only work, autonomous redesigns, or replacing the project's design system.
 metadata:
-  version: "4.1.3-nutrimenu.1"
+  version: "4.1.3-nutrimenu.2"
   upstream: "pbakaus/impeccable@c0f495212236129c2e92aaf7714a3a9914569d13"
   license: "Apache-2.0"
 ---
+
+> Modified project-local adaptation of Impeccable v4.1.3. See [NOTICE.md](NOTICE.md) and [LICENSE](LICENSE).
 
 # Impeccable — Nutrimenu edition
 
@@ -27,10 +29,10 @@ If two modes materially apply, combine their checks in one bounded pass. Critiqu
 ## Nutrimenu authority
 
 - Preserve the incumbent identity and behavior unless the user explicitly asks for a redesign.
-- Keep Inter as an accepted product typeface. Do not replace it merely because upstream Impeccable disfavors common fonts.
-- Keep existing HSL tokens until a separately approved migration changes the color source of truth.
+- Preserve the current type roles: Plus Jakarta Sans for body/UI, Playfair Display for headings/display, and Great Vibes for script accents. A different family requires an explicitly authorized typography redesign.
+- Preserve the applicable color source of truth: semantic HSL variables for the authenticated app and scoped `--lc-*` variables for landing pages.
 - Em dashes are valid in PT-BR legal or editorial copy when they improve meaning.
-- Prefer the repository's existing Radix primitives, components, Tailwind conventions, and dependencies. Adding or replacing dependencies requires an explicit implementation need.
+- Prefer the repository's existing Radix primitives, Lucide icons, shared components, Tailwind conventions, and dependencies. Adding or replacing dependencies requires an explicit implementation need.
 - Preserve factual, nutritional, legal, pricing, subscription, and permission semantics. Ask before changing meaning or claims.
 
 ## Operating boundary

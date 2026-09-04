@@ -1,5 +1,7 @@
 # Harden
 
+> Modified from Impeccable v4.1.3 for Nutrimenu. See [NOTICE.md](../NOTICE.md) and [LICENSE](../LICENSE).
+
 Make the authorized interface resilient to real Nutrimenu data, failures, permissions, and device constraints without redesigning it.
 
 ## Exercise realistic boundaries

@@ -1,5 +1,7 @@
 # Craft floor
 
+> Modified from Impeccable v4.1.3 for Nutrimenu. See [NOTICE.md](../NOTICE.md) and [LICENSE](../LICENSE).
+
 Apply this floor only after the authorized direction and scope are clear. The user brief, repository conventions, accessibility, and existing product behavior remain authoritative.
 
 ## Verify together

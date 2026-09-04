@@ -1,5 +1,7 @@
 # Polish
 
+> Modified from Impeccable v4.1.3 for Nutrimenu. See [NOTICE.md](../NOTICE.md) and [LICENSE](../LICENSE).
+
 Polish is refinement of an existing implementation. Preserve its visual world, content, behavior, and everything outside the authorized scope. If the concept itself is wrong, report that separately instead of concealing a redesign inside cleanup.
 
 ## Establish the system

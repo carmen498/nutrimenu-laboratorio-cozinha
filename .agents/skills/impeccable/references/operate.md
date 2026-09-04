@@ -1,12 +1,14 @@
 # Operate
 
+> Modified from Impeccable v4.1.3 for Nutrimenu. See [NOTICE.md](../NOTICE.md) and [LICENSE](../LICENSE).
+
 Use this mode for authenticated product surfaces where the user is completing a task: dashboards, settings, tables, editors, forms, and administrative tools. Familiarity, scanability, consistency, and truthful state outrank novelty.
 
 ## Product interface standard
 
-- Keep Inter as the established product typeface and use clear size, weight, and spacing steps.
-- Use existing HSL semantic tokens and preserve their meanings across hover, focus, active, disabled, selected, loading, error, warning, success, and informational states.
-- Prefer the repository's existing Radix primitives and component vocabulary for accessible behavior.
+- Preserve the established type roles: Plus Jakarta Sans for body/UI, Playfair Display for headings/display, and Great Vibes for script accents.
+- Use the target surface's existing tokens: semantic HSL variables in the authenticated app or scoped `--lc-*` variables on landing pages. Preserve their meanings across hover, focus, active, disabled, selected, loading, error, warning, success, and informational states.
+- Prefer the repository's existing Radix primitives, Lucide icons, and component vocabulary for accessible behavior.
 - Treat responsive behavior structurally: collapse navigation, reflow columns, and adapt tables rather than relying on fluid display typography.
 - Keep dense information when the task needs it; density is not a defect by itself.
 - Use motion to explain state or feedback, generally within a short interaction interval and with a reduced-motion path.

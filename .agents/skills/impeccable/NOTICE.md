@@ -10,3 +10,5 @@ This project-local skill is a curated adaptation of Impeccable:
 - license: Apache License 2.0
 
 The Nutrimenu adaptation retains a non-executable editorial subset and adds project-specific authority rules. Upstream scripts, hooks, agents, live mode, installer, update checker, image generation, runtime state, and provider integrations are intentionally excluded.
+
+`SKILL.md` and every file under `references/` are modified adaptations and carry a file-level modification notice as required by Apache-2.0 section 4(b).

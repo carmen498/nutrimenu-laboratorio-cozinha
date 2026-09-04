@@ -1,5 +1,7 @@
 # Critique
 
+> Modified from Impeccable v4.1.3 for Nutrimenu. See [NOTICE.md](../NOTICE.md) and [LICENSE](../LICENSE).
+
 Produce an evidence-based design review without changing files.
 
 ## Resolve the target
