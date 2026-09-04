@@ -66,6 +66,16 @@ $$;
 
 ALTER FUNCTION "public"."rls_auto_enable"() OWNER TO "postgres";
 
+-- Supabase's pulled baseline omitted the event-trigger object even though it
+-- exists on the hosted project. Recreate the observed contract for fresh/local
+-- replays so the fail-closed preflight verifies the same boundary everywhere.
+CREATE EVENT TRIGGER "ensure_rls"
+  ON ddl_command_end
+  WHEN TAG IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
+  EXECUTE FUNCTION "public"."rls_auto_enable"();
+
+ALTER EVENT TRIGGER "ensure_rls" OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
