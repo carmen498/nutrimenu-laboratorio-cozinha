@@ -108,3 +108,27 @@ assert.deepEqual(
   ],
   "Mover um Sub-título deve preservar como bloco todos os ingredientes até o próximo Sub-título",
 );
+
+const ingredientesComSubreceita = [
+  { id: "arroz" },
+  { id: "molho", isSubreceita: true },
+  { id: "tomate-cache", subreceita_parent_id: "molho" },
+  { id: "cebola-cache", subreceita_parent_id: "molho" },
+  { id: "salada" },
+];
+
+assert.deepEqual(
+  planejarReordenacaoIngredientes({
+    itens: ingredientesComSubreceita,
+    indiceOrigem: 1,
+    indiceDestino: 0,
+  }),
+  [
+    { id: "molho", ordem: 0 },
+    { id: "tomate-cache", ordem: 10 },
+    { id: "cebola-cache", ordem: 20 },
+    { id: "arroz", ordem: 30 },
+    { id: "salada", ordem: 40 },
+  ],
+  "Mover uma Sub-receita deve preservar juntos o marcador e todos os seus filhos cacheados",
+);
