@@ -935,19 +935,6 @@ export default function ReceitaAberta() {
       );
     }
 
-    if (dragged.isGrupo) {
-      const updates = planejarReordenacaoIngredientes({
-        itens: items,
-        indiceOrigem: sourceIdx,
-        indiceDestino: destIdx,
-      });
-      if (!updates) return;
-      await base44.entities.IngredienteReceita.bulkUpdate(updates);
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
-      toast.success("Ordem alterada");
-      return;
-    }
-
     if (item.subreceita_parent_id) {
       const parentId = item.subreceita_parent_id;
       const sibIdxs = [];
@@ -1043,6 +1030,19 @@ export default function ReceitaAberta() {
       await base44.entities.IngredienteReceita.bulkUpdate(
         items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
       );
+    }
+
+    if (dragged.isGrupo) {
+      const updates = planejarReordenacaoIngredientes({
+        itens: items,
+        indiceOrigem: sourceIdx,
+        indiceDestino: destIdx,
+      });
+      if (!updates) return;
+      await base44.entities.IngredienteReceita.bulkUpdate(updates);
+      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
+      toast.success("Ordem alterada");
+      return;
     }
 
     let blockStart, blockEnd;
