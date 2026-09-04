@@ -231,7 +231,7 @@ select ok(
 );
 
 select is_empty(
-  $
+  $acl$
     select object_acl.object_name
     from (
       select namespace.nspname::text as object_name,
