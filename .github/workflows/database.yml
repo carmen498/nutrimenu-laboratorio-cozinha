@@ -55,6 +55,9 @@ jobs:
       - name: Verify database-only configuration
         run: python3 supabase/tests/verify_config.py
 
+      - name: Verify migration sources
+        run: python3 supabase/tests/verify_migrations.py
+
       - name: Start local Supabase
         run: supabase start
 
@@ -71,37 +74,21 @@ jobs:
         env:
           NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: |
-          supabase db reset --local --no-seed --version=20260904194502
-          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
-            --file supabase/tests/profile_acl_drift.psql
-          if supabase migration up --local >"$RUNNER_TEMP/profile-acl-drift.log" 2>&1; then
-            echo "Expected the drifted ACL preflight to fail"
-            exit 1
-          fi
-          if ! grep --fixed-strings \
+          bash supabase/tests/assert_migration_rejected.sh \
+            20260904194502 \
+            supabase/tests/profile_acl_drift.psql \
             "reconciliation stopped: public.profiles ACL contract changed" \
-            "$RUNNER_TEMP/profile-acl-drift.log"; then
-            sed -n '1,160p' "$RUNNER_TEMP/profile-acl-drift.log"
-            exit 1
-          fi
+            "$RUNNER_TEMP/profile-acl-drift.log"
 
       - name: Reject invalid profile domain
         env:
           NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
         run: |
-          supabase db reset --local --no-seed --version=20260904200532
-          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
-            --file supabase/tests/invalid_reconciliation_profile.psql
-          if supabase migration up --local >"$RUNNER_TEMP/invalid-profile.log" 2>&1; then
-            echo "Expected the invalid profile reconciliation to fail"
-            exit 1
-          fi
-          if ! grep --fixed-strings \
+          bash supabase/tests/assert_migration_rejected.sh \
+            20260904200532 \
+            supabase/tests/invalid_reconciliation_profile.psql \
             "reconciliation stopped: segmento is outside the canonical domain" \
-            "$RUNNER_TEMP/invalid-profile.log"; then
-            sed -n '1,160p' "$RUNNER_TEMP/invalid-profile.log"
-            exit 1
-          fi
+            "$RUNNER_TEMP/invalid-profile.log"
 
       - name: Verify profile mapping with synthetic data
         env:
