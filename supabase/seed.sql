@@ -1,0 +1,1 @@
+-- Intentionally empty. This bootstrap must not load production or domain data.
