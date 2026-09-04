@@ -177,3 +177,27 @@ assert.deepEqual(
   },
   "Os controles públicos de arraste devem preservar teclado, ponteiro, nome acessível e alternativas por botão",
 );
+
+const subreceitaDentroDoGrupo = [
+  { id: "massa", isGrupo: true },
+  { id: "farinha" },
+  { id: "molho", isSubreceita: true },
+  { id: "tomate-cache", subreceita_parent_id: "molho" },
+  { id: "ovos" },
+];
+
+assert.deepEqual(
+  planejarReordenacaoIngredientes({
+    itens: subreceitaDentroDoGrupo,
+    indiceOrigem: 2,
+    indiceDestino: 1,
+  }),
+  [
+    { id: "massa", ordem: 0 },
+    { id: "molho", ordem: 10 },
+    { id: "tomate-cache", ordem: 20 },
+    { id: "farinha", ordem: 30 },
+    { id: "ovos", ordem: 40 },
+  ],
+  "Uma Sub-receita deve poder mudar de posição dentro do Sub-título sem separar seus filhos",
+);
