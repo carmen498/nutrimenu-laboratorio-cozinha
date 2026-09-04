@@ -321,6 +321,7 @@ begin
     select count(*) <> 1
       or count(*) filter (
         where event_trigger.evtname = 'ensure_rls'
+          and event_trigger.evtowner = 'postgres'::regrole
           and event_trigger.evtevent = 'ddl_command_end'
           and event_trigger.evtenabled = 'O'
           and event_trigger.evttags::text[] = array[
