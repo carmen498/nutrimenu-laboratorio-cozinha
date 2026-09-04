@@ -116,9 +116,9 @@ begin
       and not relation.relforcerowsecurity
   ) or exists (
     select 1
-    from pg_catalog.pg_trigger as trigger
-    where trigger.tgrelid = 'public.profiles'::regclass
-      and not trigger.tgisinternal
+    from pg_catalog.pg_trigger as table_trigger
+    where table_trigger.tgrelid = 'public.profiles'::regclass
+      and not table_trigger.tgisinternal
   ) then
     raise exception 'reconciliation stopped: public.profiles owner, RLS, or trigger contract changed';
   end if;
@@ -129,7 +129,7 @@ begin
         where (
           case
             when acl.grantee = 0 then 'PUBLIC'
-            else pg_catalog.pg_get_userbyid(acl.grantee)
+            else pg_catalog.pg_get_userbyid(acl.grantee)::text
           end
         ) = any (array['postgres', 'anon', 'authenticated', 'service_role'])
           and acl.privilege_type = any (
@@ -340,12 +340,12 @@ begin
   select array_agg(
     case
       when acl.grantee = 0 then 'PUBLIC'
-      else pg_catalog.pg_get_userbyid(acl.grantee)
+      else pg_catalog.pg_get_userbyid(acl.grantee)::text
     end
     order by
       case
         when acl.grantee = 0 then 'PUBLIC'
-        else pg_catalog.pg_get_userbyid(acl.grantee)
+        else pg_catalog.pg_get_userbyid(acl.grantee)::text
       end
   )
   into actual_function_execute_grantees
