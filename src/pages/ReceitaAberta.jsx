@@ -1023,64 +1023,21 @@ export default function ReceitaAberta() {
     const items = itensFichaAgrupada;
     const sourceIdx = result.source.index;
     const destIdx = result.destination.index;
-    const dragged = items[sourceIdx];
-    if (!dragged) return;
+    if (!items[sourceIdx]) return;
 
     if (!temOrdemManual) {
       await base44.entities.IngredienteReceita.bulkUpdate(
-        items.map((it, i) => ({ id: it.id, ordem: i * 10 }))
+        items.map((item, indice) => ({ id: item.id, ordem: indice * 10 })),
       );
     }
 
-    if (dragged.isGrupo || dragged.isSubreceita) {
-      const updates = planejarReordenacaoIngredientes({
-        itens: items,
-        indiceOrigem: sourceIdx,
-        indiceDestino: destIdx,
-      });
-      if (!updates) return;
-      await base44.entities.IngredienteReceita.bulkUpdate(updates);
-      qc.invalidateQueries({ queryKey: ["itens-receita", id] });
-      toast.success("Ordem alterada");
-      return;
-    }
+    const updates = planejarReordenacaoIngredientes({
+      itens: items,
+      indiceOrigem: sourceIdx,
+      indiceDestino: destIdx,
+    });
+    if (!updates) return;
 
-    let blockStart, blockEnd;
-    if (dragged.isGrupo) {
-      blockStart = sourceIdx;
-      blockEnd = sourceIdx + 1;
-      while (blockEnd < items.length && !items[blockEnd].isGrupo) blockEnd++;
-    } else if (dragged.isSubreceita) {
-      blockStart = sourceIdx;
-      blockEnd = sourceIdx + 1;
-      while (blockEnd < items.length && items[blockEnd].subreceita_parent_id === dragged.id) blockEnd++;
-    } else {
-      blockStart = sourceIdx;
-      blockEnd = sourceIdx + 1;
-    }
-
-    const blockItems = items.slice(blockStart, blockEnd);
-    const remaining = items.slice(0, blockStart).concat(items.slice(blockEnd));
-    let adjustedDest = destIdx >= blockEnd ? destIdx - blockItems.length : destIdx;
-    adjustedDest = Math.max(0, Math.min(adjustedDest, remaining.length));
-
-    if (adjustedDest > 0 && adjustedDest < remaining.length) {
-      const after = remaining[adjustedDest];
-      const before = remaining[adjustedDest - 1];
-      if (after && after.subreceita_parent_id && (!before || before.id !== after.subreceita_parent_id)) {
-        let snap = adjustedDest;
-        while (snap < remaining.length && remaining[snap].subreceita_parent_id === after.subreceita_parent_id) snap++;
-        adjustedDest = snap;
-      }
-    }
-
-    const newOrder = [
-      ...remaining.slice(0, adjustedDest),
-      ...blockItems,
-      ...remaining.slice(adjustedDest)
-    ];
-
-    const updates = newOrder.map((it, i) => ({ id: it.id, ordem: i * 10 }));
     await base44.entities.IngredienteReceita.bulkUpdate(updates);
     qc.invalidateQueries({ queryKey: ["itens-receita", id] });
     toast.success("Ordem alterada");

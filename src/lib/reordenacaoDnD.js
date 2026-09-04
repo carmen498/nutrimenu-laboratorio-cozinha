@@ -56,28 +56,23 @@ export function planejarReordenacaoIngredientes({
   indiceDestino,
 }) {
   const itemMovido = itens[indiceOrigem];
-  if (
-    !itemMovido
-    || (!itemMovido.isGrupo && !itemMovido.isSubreceita)
-    || indiceOrigem === indiceDestino
-  ) return null;
+  if (!itemMovido || indiceOrigem === indiceDestino) return null;
 
   let fimBloco = indiceOrigem + 1;
   if (itemMovido.isGrupo) {
     while (fimBloco < itens.length && !itens[fimBloco].isGrupo) fimBloco += 1;
-  } else {
+  } else if (itemMovido.isSubreceita) {
     while (
       fimBloco < itens.length
       && itens[fimBloco].subreceita_parent_id === itemMovido.id
     ) fimBloco += 1;
   }
 
+  if (indiceDestino > indiceOrigem && indiceDestino < fimBloco) return null;
+
   const bloco = itens.slice(indiceOrigem, fimBloco);
   const restantes = itens.slice(0, indiceOrigem).concat(itens.slice(fimBloco));
-  let destinoAjustado = indiceDestino >= fimBloco
-    ? indiceDestino - bloco.length
-    : indiceDestino;
-  destinoAjustado = Math.max(0, Math.min(destinoAjustado, restantes.length));
+  let destinoAjustado = Math.max(0, Math.min(indiceDestino, restantes.length));
 
   if (itemMovido.isGrupo) {
     let grupoAnterior = -1;
@@ -90,6 +85,19 @@ export function planejarReordenacaoIngredientes({
         fimGrupoDestino += 1;
       }
       if (destinoAjustado < fimGrupoDestino) destinoAjustado = fimGrupoDestino;
+    }
+  }
+
+  for (let indice = 0; indice < restantes.length; indice += 1) {
+    if (!restantes[indice].isSubreceita) continue;
+    let fimSubreceita = indice + 1;
+    while (
+      fimSubreceita < restantes.length
+      && restantes[fimSubreceita].subreceita_parent_id === restantes[indice].id
+    ) fimSubreceita += 1;
+    if (destinoAjustado > indice && destinoAjustado < fimSubreceita) {
+      destinoAjustado = fimSubreceita;
+      break;
     }
   }
 
