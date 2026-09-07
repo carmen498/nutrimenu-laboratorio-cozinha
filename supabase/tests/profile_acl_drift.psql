@@ -1,0 +1,2 @@
+-- Synthetic ACL drift: the preservation migration must reject this state.
+revoke insert on table public.profiles from anon;
