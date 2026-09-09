@@ -1,0 +1,44 @@
+{
+  "name": "Lembrete de pagamento pendente - E-mail e WhatsApp",
+  "description": "Diariamente \u00e0s 11:15 no hor\u00e1rio de Bras\u00edlia, envia e-mail e WhatsApp para pagamentos pendentes h\u00e1 3 dias ou mais.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "15 14 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "lembrete_de_pagamento_pendente_e_mail_e_whatsapp",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "enviarLembretePendencia",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "enviarLembretePendencia"
+  }
+}
