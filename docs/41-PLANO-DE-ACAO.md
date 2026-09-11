@@ -154,7 +154,9 @@ Continua em **shadow-mode** conforme `19-MIGRATION-PLAN.md`. Não é bloqueador 
 | 5 | `onboarding_dia5` | Caso real: orçamento de evento + convite para o WhatsApp da Carmen | workflow diário: `data_inicio + 5` |
 | Véspera | `onboarding_resumo_oferta` | "Você já criou X receitas e Y cardápios" + oferta de conversão (seção 4) | workflow diário: 6º dia de uso ou `data_expiracao − 1` |
 
-Implementação: **uma** nova function `enviarOnboardingTrial` (com dedupe por `LogEmail.usuario_id + tipo`, mesmo padrão de `enviarTrialExpirando`) acionada por um workflow diário às 09:00 America/Sao_Paulo. Templates ficam editáveis em Admin → Comunicação → Transacionais.
+**Implementado em 11/09/2026:** function `enviarOnboardingTrial` + workflow diário "E-mail diário: onboarding do trial" (09:00 America/Sao_Paulo), cobrindo dia 2, dia 5 e véspera/6º dia de uso. Cada tipo é enviado **uma única vez por usuário** (dedupe por `LogEmail.usuario_id + tipo`) e **só dispara depois que o template é ativado** em Admin → Comunicação → Transacionais, onde as três linhas já aparecem em "Rascunho". Primeira execução real: 8 trials avaliados, nenhum elegível hoje.
+
+Implementação prevista originalmente: **uma** nova function `enviarOnboardingTrial` (com dedupe por `LogEmail.usuario_id + tipo`, mesmo padrão de `enviarTrialExpirando`) acionada por um workflow diário às 09:00 America/Sao_Paulo. Templates ficam editáveis em Admin → Comunicação → Transacionais.
 
 ### 3.4 Gatilhos dentro do app
 | Gatilho | Onde | Status |
@@ -162,7 +164,7 @@ Implementação: **uma** nova function `enviarOnboardingTrial` (com dedupe por `
 | Barra de progresso do trial ("X de 7 dias · janela até DD/MM") com CTA para planos | Home, todo o trial | **Implementado nesta versão** (`TrialProgressoBanner`) |
 | Aviso de urgência a ≤ 3 dias | Home | Existente |
 | Mensagem contextual após 1ª receita escalada / 1º orçamento: "isso ficará salvo no seu plano" | `EscaladorReceita`, `OrcamentoCardapio`, `OrcamentoEvento` | Próxima iteração — flag `onboarding_aha_visto` em `updateMe` |
-| Checklist de primeiros passos (3 itens) | Home, enquanto não concluído | Próxima iteração |
+| Checklist de primeiros passos (escalar receita · montar refeição · planejar evento) | Home, só em trial, desaparece ao concluir os 3 | **Implementado nesta versão** (`ChecklistPrimeirosPassos`, progresso de `contagensHome`) |
 
 ### 3.5 Métricas
 | Métrica | Fonte | Meta |

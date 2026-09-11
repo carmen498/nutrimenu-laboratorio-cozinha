@@ -20,7 +20,10 @@
         "pagamento_recusado",
         "pagamento_estornado",
         "plano_vencendo",
-        "pagamento_pendente_lembrete"
+        "pagamento_pendente_lembrete",
+        "onboarding_dia2",
+        "onboarding_dia5",
+        "onboarding_resumo_oferta"
       ],
       "description": "Tipo do e-mail transacional disparado"
     },

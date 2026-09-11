@@ -34,6 +34,33 @@ const LINHAS = [
 <p>Escolha um plano para continuar usando todas as funcionalidades.</p>`,
   },
   {
+    gatilho: "Onboarding · Dia 2",
+    status: "Rascunho",
+    tipoLog: "onboarding_dia2",
+    assuntoPadrao: "{{nome}}, sua receita em qualquer quantidade",
+    corpoPadrao: `<p>Olá {{nome}},</p>
+<p>Você sabia que, no Laboratório de Cozinha, a mesma receita serve 4 ou 400 pessoas sem você recalcular nada à mão? O custo por porção e a lista de compras se ajustam junto.</p>
+<p>Abra uma receita, mude o número de porções e veja o que acontece.</p>`,
+  },
+  {
+    gatilho: "Onboarding · Dia 5",
+    status: "Rascunho",
+    tipoLog: "onboarding_dia5",
+    assuntoPadrao: "{{nome}}, do cardápio ao orçamento do cliente",
+    corpoPadrao: `<p>Olá {{nome}},</p>
+<p>Depois de montar uma refeição ou um evento, o Laboratório gera o orçamento pronto para enviar ao cliente — com o preço final que você definir e sem expor seus custos internos.</p>
+<p>É o caminho que a Carmen usa em todos os eventos dela.</p>`,
+  },
+  {
+    gatilho: "Onboarding · Véspera do fim do teste",
+    status: "Rascunho",
+    tipoLog: "onboarding_resumo_oferta",
+    assuntoPadrao: "{{nome}}, seu teste está no fim",
+    corpoPadrao: `<p>Olá {{nome}},</p>
+<p>Seu período de teste está chegando ao fim. Tudo o que você criou continua salvo na sua conta ao escolher um plano.</p>
+<p>O plano anual sai por menos da metade do mensal — vale conferir antes de decidir.</p>`,
+  },
+  {
     gatilho: "Pagamento aprovado",
     status: "Rascunho",
     tipoLog: "pagamento_aprovado",

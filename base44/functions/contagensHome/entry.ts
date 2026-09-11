@@ -6,10 +6,11 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const [receitas, ingredientes, cardapiosPeriodo] = await Promise.all([
+    const [receitas, ingredientes, cardapiosPeriodo, eventos] = await Promise.all([
       base44.entities.Receita.list("-updated_date", 5000),
       base44.entities.Ingrediente.list("-updated_date", 5000),
       base44.entities.CardapioPeriodo.list("-created_date", 5000),
+      base44.entities.Planejamento.list("-created_date", 5000),
     ]);
 
     // O indicador público representa o catálogo compartilhado. Cópias pessoais
@@ -44,6 +45,9 @@ export default async function(req) {
       totalIngredientes: ingredientes.length,
       totalCardapios: cardapiosPeriodo.length,
       minhasReceitas: minhasReceitas.length,
+      // Usado pelo checklist de primeiros passos: RLS já limita a leitura aos
+      // eventos do próprio usuário.
+      meusEventos: eventos.length,
       receitasAtualizadas30d,
       receitasRecentes,
       receitasDestaque,

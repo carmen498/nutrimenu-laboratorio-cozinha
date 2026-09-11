@@ -11,6 +11,7 @@ import IntegracoesReceitaHome from "@/components/home/IntegracoesReceitaHome";
 import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
 import DicasCarmenCarousel from "@/components/home/DicasCarmenCarousel";
 import AvisoAssinaturaHome from "@/components/home/AvisoAssinaturaHome";
+import ChecklistPrimeirosPassos from "@/components/home/ChecklistPrimeirosPassos";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -80,6 +81,15 @@ export default function Home() {
           O que vamos cozinhar hoje?
         </p>
       </div>
+
+      {/* Primeiros passos — só durante o teste, some ao concluir os 3 passos */}
+      {user?.status_assinatura === "trial" && !carregandoContagens && (
+        <ChecklistPrimeirosPassos
+          minhasReceitas={contagens?.minhasReceitas ?? 0}
+          meusCardapios={contagens?.totalCardapios ?? 0}
+          meusEventos={contagens?.meusEventos ?? 0}
+        />
+      )}
 
       {/* Ações principais */}
       <AcoesPrincipaisHome minhasReceitasCount={contagens?.minhasReceitas ?? 0} />
