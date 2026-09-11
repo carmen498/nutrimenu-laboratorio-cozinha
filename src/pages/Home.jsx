@@ -12,6 +12,7 @@ import ReceitaDestaqueCard from "@/components/home/ReceitaDestaqueCard";
 import DicasCarmenCarousel from "@/components/home/DicasCarmenCarousel";
 import AvisoAssinaturaHome from "@/components/home/AvisoAssinaturaHome";
 import ChecklistPrimeirosPassos from "@/components/home/ChecklistPrimeirosPassos";
+import PerfilOrigemCard from "@/components/home/PerfilOrigemCard";
 
 const CORES = {
   verdeEscuro: "#2A4E3D",
@@ -90,6 +91,9 @@ export default function Home() {
           meusEventos={contagens?.meusEventos ?? 0}
         />
       )}
+
+      {/* Origem e segmento (plano 4.4) — só para quem ainda não informou */}
+      <PerfilOrigemCard user={user} />
 
       {/* Ações principais */}
       <AcoesPrincipaisHome minhasReceitasCount={contagens?.minhasReceitas ?? 0} />

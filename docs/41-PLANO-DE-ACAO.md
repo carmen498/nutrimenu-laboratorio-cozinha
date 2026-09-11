@@ -194,6 +194,8 @@ Implementação prevista originalmente: **uma** nova function `enviarOnboardingT
 | D+3 | WhatsApp `reativacao_alto_uso` | trial vencido com > 5 receitas pessoais | `TemplateWascript` + `notificarWascript` |
 
 ### 4.4 Rastreabilidade
+**Implementado em 11/09/2026:** card "Conte um pouco sobre você" na Home (`PerfilOrigemCard`), com dois selects opcionais (origem e segmento) gravados via `updateMe`. Aparece apenas para usuários não admin sem `origem`/`segmento` e desaparece ao salvar ou fechar — cobre tanto quem entrou por e-mail/senha quanto por Google. Também nesta versão: mensagem do "momento aha" após escalar uma receita durante o teste (`AvisoEscalaTrial`), com link para /planos.
+
 - Preencher `User.origem` e `User.segmento` **no cadastro** (campos já existem no admin; hoje 0/10 preenchidos) — 2 selects opcionais após o OTP.
 - Novo campo `Pagamento.cupom` e `User.cupom_origem` para atribuição de parceria/indicação.
 - Card no admin: **Conversão trial → pagante** = pagamentos aprovados de ex-trials ÷ trials iniciados no período.
