@@ -125,7 +125,8 @@ Cada item segue: **causa provável → correção → teste de regressão → cr
 
 ### 2.8 Latência — 1ª etapa concluída em 11/09/2026
 - **Feito:** a contagem de receitas/refeições/cardápios/eventos por usuário no Admin passou a ser agregada no servidor (`movimentacaoAdminUsuarios`, admin-only) com cache de 10 min no cliente; antes o navegador baixava todas essas entidades só para contar. Verificado em prévia: tabela renderizada em ~2,8 s com as contagens idênticas às da função.
-- **Restante:** `staleTime` nas demais listas estáveis e imagens em WebP.
+- **Medição de 11/09 (prévia, admin logado):** Início **1,2 s**, Receitas **1,1 s**, Admin **2,8 s** — dentro da meta (Home < 2 s, Admin < 4 s). As listas estáveis (receitas, tags, vínculos de tag, ingredientes) **já usam `staleTime` de 5 min** e o cliente de dados não refaz busca ao focar a janela nem ao remontar; não há cache faltando para adicionar.
+- **Aceite:** cumprido. Resta apenas otimização de imagem (WebP nas fotos de destaque), de ganho marginal — tratar junto de um trabalho visual futuro.
 - **Causa provável (original):** páginas administrativas baixam entidades inteiras (`fetchAllPages` de Receita/Cardapio/Planejamento em `UsuariosTab`); ausência de `staleTime` em várias queries; imagens não otimizadas.
 - **Correção:** mover agregações do admin para uma function (mesmo padrão de `contagensHome`); `staleTime` ≥ 5 min em listas estáveis; WebP nas imagens de hero.
 - **Aceite:** Home < 2 s e Admin < 4 s em 4G (Lighthouse/Performance), medido antes e depois.
