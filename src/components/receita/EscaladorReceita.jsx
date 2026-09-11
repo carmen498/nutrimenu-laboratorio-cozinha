@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, RotateCcw } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 function useSyncedText(value, formatFn) {
   const [text, setText] = useState(formatFn(value));
@@ -60,6 +61,15 @@ const parseDecimal = (t) => {
 
 export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChangePC, onChangePorcoes, onChangeTotalG, isEscalado, onRestore }) {
   const totalKg = (quantidadeTotalG || 0) / 1000;
+  // Métrica de ativação (plano 3.5): registra o "momento aha" uma única vez por
+  // abertura da ficha, na primeira vez que o usuário mexe na escala.
+  const escalaRegistrada = useRef(false);
+
+  const registrarEscala = (origem) => {
+    if (escalaRegistrada.current) return;
+    escalaRegistrada.current = true;
+    base44.analytics.track({ eventName: "receita_escalada", properties: { origem } });
+  };
 
   return (
     <div className="rounded-xl border bg-card p-4">
@@ -80,8 +90,8 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           value={pc || 0}
           unit="g/porção"
           step={10}
-          onStep={(delta) => onChangePC(Math.max(1, (pc || 0) + delta))}
-          onCommit={(v) => onChangePC(Math.max(1, Math.round(v)))}
+          onStep={(delta) => { registrarEscala("pc"); onChangePC(Math.max(1, (pc || 0) + delta)); }}
+          onCommit={(v) => { registrarEscala("pc"); onChangePC(Math.max(1, Math.round(v))); }}
           formatDisplay={(v) => (v > 0 ? String(Math.round(v)) : "")}
           parseInput={parseDecimal}
         />
@@ -103,8 +113,8 @@ export default function EscaladorReceita({ pc, porcoes, quantidadeTotalG, onChan
           suffix={quantidadeTotalG ? `${Math.round(quantidadeTotalG).toLocaleString("pt-BR")} g` : null}
           step={0.5}
           highlight
-          onStep={(delta) => onChangeTotalG(Math.max(0, (quantidadeTotalG || 0) + delta * 1000))}
-          onCommit={(v) => onChangeTotalG(Math.max(0, Math.round(v * 1000)))}
+          onStep={(delta) => { registrarEscala("total"); onChangeTotalG(Math.max(0, (quantidadeTotalG || 0) + delta * 1000)); }}
+          onCommit={(v) => { registrarEscala("total"); onChangeTotalG(Math.max(0, Math.round(v * 1000))); }}
           formatDisplay={(v) => (v > 0 ? (v < 1 ? v.toFixed(2).replace(".", ",") : v.toFixed(1).replace(".", ",")) : "")}
           parseInput={parseDecimal}
         />
