@@ -1,5 +1,6 @@
 import { criarIngredienteReceita, criarReceitaTag } from '@/lib/secureChildEntities';
 import { criarReceitaSegura } from '@/lib/secureRootEntities';
+import AvisoEscalaTrial from '@/components/receita/AvisoEscalaTrial';
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -1357,6 +1358,7 @@ REGRAS:
         isEscalado={isEscalado}
         onRestore={handleRestaurarEscala}
       />
+      <AvisoEscalaTrial visivel={isEscalado} />
       <div className="flex justify-end items-center gap-1.5">
         <Popover>
           <PopoverTrigger asChild>
