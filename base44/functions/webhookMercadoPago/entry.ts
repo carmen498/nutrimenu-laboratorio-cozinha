@@ -22,7 +22,7 @@ import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v7-2026-08-30-monitoramento-erros";
+const VERSAO_CODIGO = "webhook-v8-2026-09-11-sem-assinatura-separada";
 
 export default async function(req: Request): Promise<Response> {
   let dataIdContexto: string | null = null;
@@ -57,9 +57,13 @@ export default async function(req: Request): Promise<Response> {
     const { valida: assinaturaValida, diagnostico: diagnosticoAssinatura } = await validarAssinatura(req, dataId);
     if (!assinaturaValida) {
       console.log("Assinatura inválida na notificação do Mercado Pago", diagnosticoAssinatura);
+      // Requisição sem header x-signature não é uma notificação do Mercado Pago
+      // (varredura, teste manual, monitor). Separar os dois casos é o que torna a
+      // métrica "assinatura inválida" utilizável: só ela indica secret/manifest errados.
+      const semAssinatura = diagnosticoAssinatura?.x_signature_presente === false;
       await registrarLog({
         assinatura_valida: false,
-        resultado: "assinatura_invalida",
+        resultado: semAssinatura ? "sem_assinatura" : "assinatura_invalida",
         diagnostico_resumo: JSON.stringify(diagnosticoAssinatura),
       });
       return Response.json({ error: "invalid_signature" }, { status: 401 });

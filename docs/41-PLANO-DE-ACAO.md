@@ -1,6 +1,6 @@
 # 41 — Plano de Ação 360°: Estabilidade, Onboarding, Vendas e Captação
 
-**Versão:** 1.0 · **Data:** 11/09/2026 · **Responsável:** Carmen Reinstein · **Revisão:** trimestral
+**Versão:** 1.1 · **Data:** 11/09/2026 (v1.1: seções 1.3, 1.4 e 2.1–2.4 revisadas após verificação em código e logs) · **Responsável:** Carmen Reinstein · **Revisão:** trimestral
 **Complementa:** `40-PLANO-CAPTACAO-USUARIOS.md` (estratégia de captação), `30-TROUBLESHOOTING.md` (erros conhecidos), `19-MIGRATION-PLAN.md` (migração Supabase/Vercel).
 
 ---
@@ -9,7 +9,7 @@
 
 | Frente | Prioridade | Situação | Ação-chave |
 |---|---|---|---|
-| Estabilidade técnica | **P0** | Funil de pagamento com falhas de webhook e persistência | Corrigir assinatura do webhook, aprovação síncrona e orçamento **antes** de investir em aquisição |
+| Estabilidade técnica | **P0** | Webhook, aprovação síncrona e e-mails **verificados como já corrigidos**; restam orçamento, dados de catálogo, OAuth e latência | Fechar 2.5–2.8 e monitorar 7 dias **antes** de investir em aquisição |
 | Onboarding (7 dias de trial) | P1 | Só existe e-mail de boas-vindas e aviso a 3 dias do fim | Sequência de 4 e-mails + barra de progresso do trial + mensagem no 1º "momento aha" |
 | Conversão trial → pagante | P1 | 8 trials ativos, 1 pagante, nenhuma oferta de fim de trial | Oferta de 48h no fim do trial, plano anual como "2 meses grátis", recuperação de vencidos |
 | Captação de clientes | P2 | Origem/segmento dos usuários não preenchidos (0/10) | Indicação, 3 parcerias, calendário Instagram, depois tráfego pago |
@@ -45,22 +45,24 @@
 
 | Resultado | Qtd | Leitura |
 |---|---|---|
-| assinatura_invalida | **67 (55%)** | **P0.** Mais da metade das notificações é descartada: segredo desatualizado, header mal lido ou URL divergente da cadastrada no MP |
+| assinatura_invalida | 67 (55%) | **Verificado em 11/09: não é falha de segredo.** O diagnóstico persistido mostra `x_signature_presente: false` — são requisições que chegam **sem** header de assinatura (varredura, teste manual, monitor), não notificações do MP com HMAC divergente. 62 das 67 estão na janela de homologação de 16–19/08; desde 20/08 houve apenas 4 (sandbox E2E, 30/08) e 1 isolada (08/09) |
 | processado | 42 | — |
 | status_nao_final | 8 | Esperado |
-| order_nao_encontrada | 4 | Notificações de ambiente cruzado (sandbox × prod) |
+| order_nao_encontrada | 4 | Notificações de ambiente cruzado (sandbox × prod), já respondidas com HTTP 200 |
+
+`testarAssinaturaWebhookMP` executado em 11/09 retornou `success: true` (ambiente `producao`, credencial presente, assinatura correta aceita e assinatura errada rejeitada): **a validação HMAC está correta**. A partir de `webhook-v8` os dois casos são registrados separadamente (`sem_assinatura` × `assinatura_invalida`), para que a métrica de aceite meça apenas o que indica problema real de segredo/manifest.
 
 ### 1.4 E-mails transacionais (73 envios)
 
 | Indicador | Valor |
 |---|---|
-| Enviados / falhou | 50 / **23 (32%)** |
+| Enviados / falhou | 50 / 23 (32% no acumulado; **última falha em 19/08**, nenhuma desde então) |
 | Boas-vindas | 31 |
 | Trial expirando | 5 |
 | Trial vencido | 1 |
 | Pagamento aprovado | 17 |
 
-Uma taxa de falha de 32% em transacionais é inaceitável para o funil: o usuário que não recebe "trial expirando" não converte.
+As 23 falhas (15 boas-vindas, 7 pagamento aprovado, 1 estorno) estão concentradas em 16–19/08 e **sem `detalhe_erro`** — anteriores à instrumentação atual, que já grava o motivo sanitizado. Entre 20/08 e 10/09 houve 32 envios e nenhuma falha. Conclusão: o problema foi resolvido junto com a configuração do Resend; o que falta é **monitorar**, não corrigir às cegas.
 
 ### 1.5 Qualidade dos dados de catálogo
 
@@ -79,27 +81,26 @@ Uma taxa de falha de 32% em transacionais é inaceitável para o funil: o usuár
 
 Cada item segue: **causa provável → correção → teste de regressão → critério de aceite**. A ordem é a ordem de execução.
 
-### 2.1 Webhook Mercado Pago — 55% de assinaturas inválidas
-- **Causa provável:** `MERCADOPAGO_WEBHOOK_SECRET` fora de sincronia com o painel MP; validação HMAC usando `data.id` bruto quando o MP envia em minúsculo/maiúsculo divergente; notificações do sandbox chegando na URL de produção.
-- **Correção:** usar `testarAssinaturaWebhookMP` com uma notificação real capturada; alinhar o manifest (`id`, `request-id`, `ts`) exatamente ao formato do MP; separar URL sandbox (`webhookMercadoPagoSandboxE2E`) da de produção no painel MP; regenerar e reconfigurar o segredo.
-- **Regressão:** replay de 5 notificações reais (approved, rejected, refunded, pending, cancelled) → todas `processado`.
-- **Aceite:** `assinatura_invalida` < 2% em 7 dias corridos, medido em `LogWebhookMercadoPago`.
+> **Resultado da verificação de 11/09/2026:** os itens 2.1 a 2.4 estavam registrados como pendências críticas, mas a auditoria de código e de logs mostrou que **as três causas de perda de receita já foram corrigidas** em versões anteriores (`webhook-v7`, `criarPagamentoMercadoPago v20`). Eles permanecem documentados abaixo com o status real e viram **itens de monitoramento**, não de correção. O P0 remanescente é 2.5 a 2.8.
 
-### 2.2 Aprovação síncrona não libera plano nem envia e-mail
-- **Causa provável:** `criarPagamentoMercadoPago` retorna `approved` mas o fluxo de ativação (`ativarAssinaturaPagamento` / `ativarCompraPagamento`) só roda no webhook.
-- **Correção:** chamar o mesmo helper compartilhado de ativação no retorno síncrono, com idempotência pela `idempotency_key`/`mercadopago_order_id`, para que webhook e retorno síncrono convirjam.
-- **Regressão:** cartão aprovado no sandbox → `User.plano_atual` atualizado, `AcessoLaboratorioCustosUsuario` criado quando aplicável, `LogEmail pagamento_aprovado = enviado`, sem duplicidade quando o webhook chegar depois.
-- **Aceite:** 100% dos `approved` com `User` atualizado em < 10 s e exatamente 1 e-mail.
+### 2.1 Webhook Mercado Pago — assinaturas inválidas ✅ resolvido / monitorar
+- **Hipótese original:** segredo fora de sincronia, manifest divergente ou notificação de sandbox na URL de produção.
+- **Verificado:** `testarAssinaturaWebhookMP` → `success: true`; `validarAssinaturaMercadoPago.ts` já normaliza o `data.id` em minúsculas, valida `ts`/`v1` e compara em tempo constante. As 67 rejeições eram requisições **sem** header `x-signature`, quase todas na homologação de agosto.
+- **Feito nesta versão:** `webhook-v8` grava `sem_assinatura` separado de `assinatura_invalida`, tornando a métrica confiável.
+- **Aceite (monitoramento):** `assinatura_invalida` = 0 em 7 dias corridos; `sem_assinatura` não é falha do sistema, só ruído externo.
 
-### 2.3 Webhook `order.refunded` retornando 502
-- **Causa provável:** exceção não tratada em `revogarAcessoEstorno` quando o pagamento já está estornado ou o usuário foi excluído; MP repete a notificação e acumula erros.
-- **Correção:** responder 200 sempre que a notificação for reconhecida (mesmo já processada) e registrar `resultado` adequado; tratar `Pagamento` inexistente como `pagamento_interno_nao_encontrado`.
-- **Aceite:** zero 5xx no MP para `order.refunded` em 7 dias; `reprocessarPagamentoEstorno` sem pendências.
+### 2.2 Aprovação síncrona não libera plano nem envia e-mail ✅ resolvido / validar em produção
+- **Verificado:** `criarPagamentoMercadoPago` (v20) já chama `ativarCompraPagamento` quando o status resolvido é `approved`, tanto no caminho novo quanto no caminho idempotente, e o webhook reexecuta o helper em replays sem duplicar efeitos (o helper ignora quem já foi ativado).
+- **Pendente:** uma transação real aprovada de ponta a ponta em produção para confirmar `User.plano_atual`, entitlement de Custos e um único `LogEmail pagamento_aprovado`.
+- **Aceite:** 1 compra real aprovada com plano liberado em < 10 s e exatamente 1 e-mail.
 
-### 2.4 Falha em 32% dos e-mails transacionais
-- **Causa provável:** domínio remetente não verificado no Resend para parte dos destinos; wrapper HTML (`emailWrapper.ts`) não aplicado gerando payload inválido; destinatários de teste inexistentes.
-- **Correção:** verificar domínio/DKIM no Resend; garantir que `renderTemplateEmail` sempre passe pelo wrapper; registrar `detalhe_erro` sanitizado em todo `falhou`.
-- **Aceite:** taxa de falha < 3% em 30 dias; 100% dos `falhou` com `detalhe_erro` preenchido.
+### 2.3 Webhook `order.refunded` retornando 502 ✅ resolvido
+- **Verificado:** o webhook responde HTTP 200 em todos os desfechos não processáveis (`order_nao_encontrada`, `pagamento_interno_nao_encontrado`, `sem_data_id`) e o `catch` final também devolve 200 com `processing_failed`, justamente para não gerar tempestade de retentativas. Não há caminho restante que produza 5xx; `revogarCompraEstorno` roda apenas na transição para `estornado` e replays caem na idempotência.
+- **Aceite:** zero 5xx em `order.refunded` em 7 dias (monitorar no painel MP); `reprocessarPagamentoEstorno` sem pendências.
+
+### 2.4 Falhas de e-mail transacional ✅ resolvido / monitorar
+- **Verificado:** `registrarLogEmail` já persiste `detalhe_erro` sanitizado em toda falha. As 23 falhas históricas são anteriores a essa instrumentação (por isso vazias) e cessaram em 19/08.
+- **Aceite:** taxa de falha < 3% em 30 dias; toda nova falha com `detalhe_erro` preenchido e visível em Saúde Operacional.
 
 ### 2.5 Persistência do preço no Orçamento (Cardápio e Evento)
 - **Causa provável:** `preco_final_orcamento` salvo em estado local e gravado só em determinados caminhos de saída da tela; guard "Ativar Quanto cobrar" não bloqueia navegação.
@@ -234,8 +235,8 @@ Detalhamento estratégico em `40-PLANO-CAPTACAO-USUARIOS.md`. Aqui, apenas o que
 
 | Semana | Entregas | Gate |
 |---|---|---|
-| 1–2 | 2.1 webhook, 2.2 aprovação síncrona, 2.3 refunded 502, 2.4 e-mails | Aceites 2.1–2.4 |
-| 3 | 2.5 orçamento, 2.6 dados de catálogo (dry-run → aplicar) | Aceites 2.5–2.6 |
+| 1 | 2.1–2.4 verificados como resolvidos (11/09); iniciar janela de 7 dias de monitoramento + 1 compra real de validação | Aceites 2.1–2.4 |
+| 1–3 | 2.5 orçamento, 2.6 dados de catálogo (dry-run → aplicar) | Aceites 2.5–2.6 |
 | 4 | 2.7 OAuth, 2.8 latência; `origem/segmento` no cadastro (4.4) | **Go para onboarding** |
 | 5–6 | Sequência de e-mails (3.3), mensagem "momento aha", checklist (3.4) | Métricas 3.5 ativas |
 | 7–8 | Oferta 48 h (4.1), badge anual (4.2), recuperação D+3/D+7 (4.3), card de conversão no admin | **Go para captação** |
@@ -260,7 +261,7 @@ Detalhamento estratégico em `40-PLANO-CAPTACAO-USUARIOS.md`. Aqui, apenas o que
 
 ## 8. Critérios de aceite do plano (Go/No-Go por frente)
 
-- [ ] **P0 concluído:** `assinatura_invalida` < 2%, aprovações síncronas ativando 100%, zero 5xx em `order.refunded`, falha de e-mail < 3%, preço de orçamento persistindo, 0 ingredientes sem preço, 0 receitas-base sem per capita.
+- [ ] **P0 concluído:** `assinatura_invalida` = 0 em 7 dias (medido com a separação `sem_assinatura`), 1 compra real aprovada liberando o plano, zero 5xx em `order.refunded`, falha de e-mail < 3%, preço de orçamento persistindo, 0 ingredientes sem preço, 0 receitas-base sem per capita.
 - [ ] **Onboarding ativo:** 4 e-mails com template `ativo`, barra de progresso visível, evento `receita_escalada` sendo coletado.
 - [ ] **Conversão instrumentada:** oferta de 48 h configurada, card de conversão no admin, recuperação D+3/D+7 rodando.
 - [ ] **Captação pronta:** `origem/segmento` > 80% preenchidos nos novos cadastros, 1 cupom de parceria ativo, calendário de conteúdo do mês publicado.

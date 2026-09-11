@@ -18,6 +18,7 @@
       "type": "string",
       "enum": [
         "assinatura_invalida",
+        "sem_assinatura",
         "sem_data_id",
         "order_nao_encontrada",
         "pagamento_interno_nao_encontrado",
@@ -26,7 +27,7 @@
         "tipo_nao_mapeado",
         "erro_processamento"
       ],
-      "description": "Em qual ponto o processamento parou (ou terminou com sucesso)"
+      "description": "Em qual ponto o processamento parou (ou terminou com sucesso). sem_assinatura = requisi\u00e7\u00e3o chegou sem header x-signature (n\u00e3o \u00e9 notifica\u00e7\u00e3o leg\u00edtima do Mercado Pago); assinatura_invalida = notifica\u00e7\u00e3o assinada cujo HMAC n\u00e3o confere."
     },
     "pagamento_id": {
       "type": "string",
