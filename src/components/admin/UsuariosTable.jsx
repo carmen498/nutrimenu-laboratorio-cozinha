@@ -75,7 +75,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             const historico = pagamentosPorUsuario.get(u.id) || [];
             const expandido = expandidos.has(u.id);
             const acessoCustos = acessoCustosPorUsuario.get(u.id);
-            const movimentacao = movimentacaoPorUsuario.get(u.id) || { receitas: [], refeicoes: [], cardapios: [], eventos: [] };
+            const movimentacao = movimentacaoPorUsuario.get(u.id) || { receitas: 0, refeicoes: 0, cardapios: 0, eventos: 0 };
             let statusCustos = "Não contratado";
             if (acessoCustos) {
               if (acessoCustos.status === "suspenso") statusCustos = "Suspenso";
@@ -105,10 +105,10 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       {u.nome_completo || u.full_name || "—"}
                     </button>
                   </TableCell>
-                  <TableCell className="text-center">{movimentacao.receitas.length}</TableCell>
-                  <TableCell className="text-center">{movimentacao.refeicoes.length}</TableCell>
-                  <TableCell className="text-center">{movimentacao.cardapios.length}</TableCell>
-                  <TableCell className="text-center">{movimentacao.eventos.length}</TableCell>
+                  <TableCell className="text-center">{movimentacao.receitas}</TableCell>
+                  <TableCell className="text-center">{movimentacao.refeicoes}</TableCell>
+                  <TableCell className="text-center">{movimentacao.cardapios}</TableCell>
+                  <TableCell className="text-center">{movimentacao.eventos}</TableCell>
                   <TableCell>{PLANO_LABEL[u.plano_atual] || "—"}</TableCell>
                   <TableCell>{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</TableCell>
                   <TableCell><Badge variant="outline">{statusCustos}</Badge></TableCell>
@@ -138,10 +138,10 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       <div className="px-4 pt-4">
                         <p className="text-sm font-semibold mb-2">Movimentação no Laboratório de Cozinha</p>
                         <div className="flex flex-wrap gap-2 text-xs">
-                          <Badge variant="secondary">{movimentacao.receitas.length} receitas</Badge>
-                          <Badge variant="secondary">{movimentacao.refeicoes.length} refeições</Badge>
-                          <Badge variant="secondary">{movimentacao.cardapios.length} cardápios</Badge>
-                          <Badge variant="secondary">{movimentacao.eventos.length} eventos</Badge>
+                          <Badge variant="secondary">{movimentacao.receitas} receitas</Badge>
+                          <Badge variant="secondary">{movimentacao.refeicoes} refeições</Badge>
+                          <Badge variant="secondary">{movimentacao.cardapios} cardápios</Badge>
+                          <Badge variant="secondary">{movimentacao.eventos} eventos</Badge>
                         </div>
                       </div>
                       <HistoricoPagamentosLinha pagamentos={historico} />
@@ -157,7 +157,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
       <Sheet open={!!usuarioAberto} onOpenChange={(open) => { if (!open) { setUsuarioAberto(null); setDadosNFAbertos(false); } }}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
           {usuarioAberto && (() => {
-            const movimentacao = movimentacaoPorUsuario.get(usuarioAberto.id) || { receitas: [], refeicoes: [], cardapios: [], eventos: [] };
+            const movimentacao = movimentacaoPorUsuario.get(usuarioAberto.id) || { receitas: 0, refeicoes: 0, cardapios: 0, eventos: 0 };
             const historico = pagamentosPorUsuario.get(usuarioAberto.id) || [];
             const ultimoPagamento = historico.find((p) => p.status === "approved") || historico[0] || null;
             const status = computeStatusUsuario(usuarioAberto);
@@ -298,10 +298,10 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 <section>
                   <h3 className="font-semibold mb-3">Movimentação no Laboratório de Cozinha</h3>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.receitas.length}</strong><p className="text-xs">Receitas</p></div>
-                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.refeicoes.length}</strong><p className="text-xs">Refeições</p></div>
-                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.cardapios.length}</strong><p className="text-xs">Cardápios</p></div>
-                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.eventos.length}</strong><p className="text-xs">Eventos</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.receitas}</strong><p className="text-xs">Receitas</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.refeicoes}</strong><p className="text-xs">Refeições</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.cardapios}</strong><p className="text-xs">Cardápios</p></div>
+                    <div className="rounded-lg bg-muted p-3 text-center"><strong>{movimentacao.eventos}</strong><p className="text-xs">Eventos</p></div>
                   </div>
                 </section>
 

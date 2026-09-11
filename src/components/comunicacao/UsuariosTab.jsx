@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 import { computeStatusUsuario, usuarioMatchTipo } from "@/lib/statusAssinaturaUsuario";
 import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamentosUsuario";
 import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
-import { fetchAllFilteredPages, fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
+import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
@@ -56,32 +56,22 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
     retry: false,
   });
 
+  // A contagem de movimentação é agregada no servidor: baixar todas as receitas,
+  // refeições, cardápios e eventos no navegador era a maior fonte de lentidão.
   const { data: movimentacoes = {}, isLoading: carregandoMovimentacoes, isError: erroMovimentacoes, error: detalheErroMovimentacoes } = useQuery({
     queryKey: ["admin-movimentacao-laboratorio"],
     queryFn: async () => {
-      const carregarOuVazio = (promessa) => promessa.catch(() => []);
-      const [receitas, refeicoes, cardapios, eventos] = await Promise.all([
-        carregarOuVazio(fetchAllFilteredPages(base44.entities.Receita, { is_base: false }, "-created_date", 500)),
-        carregarOuVazio(fetchAllFilteredPages(base44.entities.Cardapio, { is_base: false }, "-created_date", 500)),
-        carregarOuVazio(fetchAllPages(base44.entities.CardapioPeriodo, "-created_date", 500)),
-        carregarOuVazio(fetchAllPages(base44.entities.Planejamento, "-created_date", 500)),
-      ]);
-      return { receitas, refeicoes, cardapios, eventos };
+      const response = await base44.functions.invoke("movimentacaoAdminUsuarios", {});
+      return response.data?.movimentacao || {};
     },
+    staleTime: 10 * 60 * 1000,
     retry: false,
   });
 
-  const movimentacaoPorUsuario = useMemo(() => {
-    const map = new Map();
-    const registrar = (tipo, item) => {
-      const userId = item.usuario_dono_id || item.created_by_id;
-      if (!userId) return;
-      if (!map.has(userId)) map.set(userId, { receitas: [], refeicoes: [], cardapios: [], eventos: [] });
-      map.get(userId)[tipo].push(item);
-    };
-    Object.entries(movimentacoes).forEach(([tipo, itens]) => (itens || []).forEach((item) => registrar(tipo, item)));
-    return map;
-  }, [movimentacoes]);
+  const movimentacaoPorUsuario = useMemo(
+    () => new Map(Object.entries(movimentacoes)),
+    [movimentacoes]
+  );
 
   const acessoCustosPorUsuario = useMemo(() => {
     const map = new Map();

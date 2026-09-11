@@ -119,11 +119,14 @@ Cada item segue: **causa provável → correção → teste de regressão → cr
 
 ### 2.7 Google OAuth "app not found"
 - **Causa provável:** origem/redirect não cadastrada para o domínio customizado; falha de plataforma em alguns dispositivos (registrada em `known_issues`).
+- **Feito em 11/09:** o login já exibe fallback claro quando o Google falha ("use seu e-mail e senha abaixo…"). A configuração das origens/provedor é feita pela Carmen na página **Autenticação** do painel do aplicativo.
 - **Correção:** validar origens autorizadas para `laborat-rio-de-cozinha.base44.app` **e** o domínio customizado; abrir chamado com o suporte da plataforma anexando dispositivo/navegador; exibir mensagem clara com fallback "entrar com e-mail" quando o OAuth falhar.
 - **Aceite:** login Google funciona em Chrome/Safari desktop e mobile em ambos os domínios.
 
-### 2.8 Latência
-- **Causa provável:** páginas administrativas baixam entidades inteiras (`fetchAllPages` de Receita/Cardapio/Planejamento em `UsuariosTab`); ausência de `staleTime` em várias queries; imagens não otimizadas.
+### 2.8 Latência — 1ª etapa concluída em 11/09/2026
+- **Feito:** a contagem de receitas/refeições/cardápios/eventos por usuário no Admin passou a ser agregada no servidor (`movimentacaoAdminUsuarios`, admin-only) com cache de 10 min no cliente; antes o navegador baixava todas essas entidades só para contar. Verificado em prévia: tabela renderizada em ~2,8 s com as contagens idênticas às da função.
+- **Restante:** `staleTime` nas demais listas estáveis e imagens em WebP.
+- **Causa provável (original):** páginas administrativas baixam entidades inteiras (`fetchAllPages` de Receita/Cardapio/Planejamento em `UsuariosTab`); ausência de `staleTime` em várias queries; imagens não otimizadas.
 - **Correção:** mover agregações do admin para uma function (mesmo padrão de `contagensHome`); `staleTime` ≥ 5 min em listas estáveis; WebP nas imagens de hero.
 - **Aceite:** Home < 2 s e Admin < 4 s em 4G (Lighthouse/Performance), medido antes e depois.
 

@@ -75,7 +75,9 @@ export default function Login() {
       const destinoOAuth = new URL(returnTo, window.location.origin).toString();
       await withAuthTimeout(base44.auth.loginWithProvider("google", destinoOAuth));
     } catch (err) {
-      setError(err?.message || "Não foi possível iniciar o login com Google. Tente novamente.");
+      setError(
+        "Não foi possível entrar com o Google agora. Use seu e-mail e senha abaixo — se ainda não tem senha, clique em \"Esqueceu a senha?\" para criar uma."
+      );
       setGoogleLoading(false);
     }
   };
