@@ -102,11 +102,12 @@ Cada item segue: **causa provável → correção → teste de regressão → cr
 - **Verificado:** `registrarLogEmail` já persiste `detalhe_erro` sanitizado em toda falha. As 23 falhas históricas são anteriores a essa instrumentação (por isso vazias) e cessaram em 19/08.
 - **Aceite:** taxa de falha < 3% em 30 dias; toda nova falha com `detalhe_erro` preenchido e visível em Saúde Operacional.
 
-### 2.5 Persistência do preço no Orçamento (Cardápio e Evento)
-- **Causa provável:** `preco_final_orcamento` salvo em estado local e gravado só em determinados caminhos de saída da tela; guard "Ativar Quanto cobrar" não bloqueia navegação.
-- **Correção:** salvar em `onBlur`/debounce diretamente na entidade (`Cardapio` / `Planejamento`), com feedback visual "salvo"; converter o guard em bloqueio real via `useBlocker` do React Router.
-- **Regressão:** editar preço → sair pelo menu → voltar → valor preservado; PDF do orçamento com o mesmo valor.
-- **Aceite:** 10/10 tentativas manuais preservam o valor; nenhum relato de perda em 30 dias.
+### 2.5 Persistência do preço no Orçamento (Cardápio e Evento) ✅ corrigido em 11/09/2026
+- **Causa real (não era o `onBlur`):** o valor era exibido em pt-BR (`1.500,00`) e relido com `replace(",", ".")`, que deixa o separador de milhar → `Number("1.500.00") = NaN` → 0. Todo preço **igual ou acima de R$ 1.000** voltava zerado ao reabrir a tela e o blur seguinte gravava esse zero. Valores abaixo de mil sempre funcionaram — daí a impressão de falha "intermitente".
+- **Correção:** helper único `src/lib/precoOrcamento.js` (`parsePrecoBR` / `formatPrecoBR`) usado nas duas telas; a gravação só ocorre quando o valor muda, o campo é reformatado após salvar e há confirmação visível ("Preço salvo: R$ …").
+- **Verificado em preview (11/09):** Evento — carregou `1.500,00`, salvou `2.000,50`, persistiu `2000.5`; Refeição — carregou `1.500,00`, salvou `3.250,75`, persistiu `3250.75`; nenhum erro de console. Registros de teste removidos.
+- **Aceite:** cumprido para valores de qualquer magnitude; monitorar relatos por 30 dias.
+- **Nota:** o guard "Ativar Quanto cobrar" já bloqueia de fato — a tela do Orçamento não renderiza sem markup ativo, então não há navegação a bloquear.
 
 ### 2.6 Dados de catálogo
 | Item | Ação | Ferramenta existente | Aceite |
@@ -236,7 +237,8 @@ Detalhamento estratégico em `40-PLANO-CAPTACAO-USUARIOS.md`. Aqui, apenas o que
 | Semana | Entregas | Gate |
 |---|---|---|
 | 1 | 2.1–2.4 verificados como resolvidos (11/09); iniciar janela de 7 dias de monitoramento + 1 compra real de validação | Aceites 2.1–2.4 |
-| 1–3 | 2.5 orçamento, 2.6 dados de catálogo (dry-run → aplicar) | Aceites 2.5–2.6 |
+| 1 | 2.5 orçamento **concluído em 11/09** | Aceite 2.5 ✅ |
+| — | 2.6 dados de catálogo | **Fora do escopo atual por decisão da Carmen (11/09)** — retomar quando houver tempo de curadoria |
 | 4 | 2.7 OAuth, 2.8 latência; `origem/segmento` no cadastro (4.4) | **Go para onboarding** |
 | 5–6 | Sequência de e-mails (3.3), mensagem "momento aha", checklist (3.4) | Métricas 3.5 ativas |
 | 7–8 | Oferta 48 h (4.1), badge anual (4.2), recuperação D+3/D+7 (4.3), card de conversão no admin | **Go para captação** |

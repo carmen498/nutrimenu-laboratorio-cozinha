@@ -9,6 +9,8 @@ import { carregarDadosRelatorios } from "@/lib/relatoriosPlanejamentoPDF";
 import { montarOrcamentoEvento } from "@/lib/orcamentoEventoCalc";
 import { gerarOrcamentoEventoPDF } from "@/lib/orcamentoEventoPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
+import { parsePrecoBR, formatPrecoBR } from "@/lib/precoOrcamento";
+import { toast } from "sonner";
 
 // Tela de pré-visualização do Orçamento do Evento (documento comercial do
 // cliente). Regra de segurança: nenhum dado interno (custo, PC, kg, margem,
@@ -32,7 +34,7 @@ export default function OrcamentoEvento() {
     setObsComercial(p.observacoes_orcamento || "");
     const totalPessoas = Number(p.total_pessoas) || (Number(p.qtd_homens) || 0) + (Number(p.qtd_mulheres) || 0) + (Number(p.qtd_criancas) || 0);
     const totalLegado = p.preco_pessoa_orcamento != null ? Number(p.preco_pessoa_orcamento) * totalPessoas : null;
-    setPrecoFinal(p.preco_final_orcamento != null ? Number(p.preco_final_orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : totalLegado != null ? totalLegado.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
+    setPrecoFinal(p.preco_final_orcamento != null ? formatPrecoBR(p.preco_final_orcamento) : totalLegado != null ? formatPrecoBR(totalLegado) : "");
     const d = await carregarDadosRelatorios(p);
     setDados(d);
     setLoading(false);
@@ -40,7 +42,7 @@ export default function OrcamentoEvento() {
 
   useEffect(() => { load(); }, [load]);
 
-  const precoFinalNum = Number(String(precoFinal).replace(",", ".")) || 0;
+  const precoFinalNum = parsePrecoBR(precoFinal);
 
   const orc = useMemo(() => {
     if (!planejamento || !dados) return null;
@@ -53,9 +55,12 @@ export default function OrcamentoEvento() {
   };
 
   const savePrecoFinal = async (value) => {
-    const num = Math.max(0, Number(String(value).replace(",", ".")) || 0);
+    const num = parsePrecoBR(value);
+    if (num === Number(planejamento.preco_final_orcamento || 0)) return;
     await base44.entities.Planejamento.update(planejamento.id, { preco_final_orcamento: num });
     setPlanejamento((atual) => ({ ...atual, preco_final_orcamento: num }));
+    setPrecoFinal(formatPrecoBR(num));
+    toast.success(`Preço salvo: R$ ${formatPrecoBR(num)}`);
   };
 
   if (loading || !planejamento || !orc) {

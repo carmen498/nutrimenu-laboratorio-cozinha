@@ -12,6 +12,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { montarOrcamento } from "@/lib/orcamentoCalc";
 import { gerarOrcamentoPDF } from "@/lib/orcamentoPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
+import { parsePrecoBR, formatPrecoBR } from "@/lib/precoOrcamento";
+import { toast } from "sonner";
 
 // Tela de pré-visualização do Orçamento (documento comercial do cliente).
 // Regra de segurança: nenhum dado interno (custo, custo por pessoa, markup, %, kg de
@@ -40,7 +42,7 @@ export default function OrcamentoCardapio() {
     const c = await base44.entities.Cardapio.get(id);
     setCardapio(c);
     setObsComercial(c.observacoes_orcamento || "");
-    setPrecoFinal(c.preco_final_orcamento != null ? Number(c.preco_final_orcamento).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
+    setPrecoFinal(c.preco_final_orcamento != null ? formatPrecoBR(c.preco_final_orcamento) : "");
 
     const [recs, ins, todasRec] = await Promise.all([
       base44.entities.CardapioReceita.filter({ cardapio_id: id }, "ordem", 200),
@@ -84,7 +86,7 @@ export default function OrcamentoCardapio() {
   }, [cardapio, receitas, receitaMap, ingredientesPorReceita, insumos, num, markup, ingredienteMap, insumosPorReceita, esquecidosPorReceita]);
 
   const totalCalculado = calcs ? calcs.precoVenda * num : 0;
-  const precoFinalNum = precoFinal === "" ? totalCalculado : Math.max(0, Number(String(precoFinal).replace(",", ".")) || 0);
+  const precoFinalNum = precoFinal === "" ? totalCalculado : parsePrecoBR(precoFinal);
 
   const orc = useMemo(() => {
     if (!cardapio || !calcs) return null;
@@ -105,9 +107,12 @@ export default function OrcamentoCardapio() {
   };
 
   const savePrecoFinal = async (value) => {
-    const numFinal = Math.max(0, Number(String(value).replace(",", ".")) || 0);
+    const numFinal = parsePrecoBR(value);
+    if (numFinal === Number(cardapio.preco_final_orcamento || 0)) return;
     await base44.entities.Cardapio.update(cardapio.id, { preco_final_orcamento: numFinal });
     setCardapio((atual) => ({ ...atual, preco_final_orcamento: numFinal }));
+    setPrecoFinal(formatPrecoBR(numFinal));
+    toast.success(`Preço salvo: R$ ${formatPrecoBR(numFinal)}`);
   };
 
   if (loading || !cardapio) {
