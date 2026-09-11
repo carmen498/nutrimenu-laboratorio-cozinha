@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, Clock } from "lucide-react";
 import { hojeSaoPauloISO, statusAssinaturaEfetivo } from "@/lib/acessoAssinatura";
 import { formatarDataBrasilia } from "@/lib/fusoBrasilia";
+import TrialProgressoBanner from "@/components/home/TrialProgressoBanner";
 
 const formatarData = (dataStr) => formatarDataBrasilia(dataStr);
 
@@ -55,6 +56,16 @@ export default function AvisoAssinaturaHome({ user }) {
             Trial expira em {Math.max(diasRestantes, 0)} {diasRestantes === 1 ? "dia" : "dias"} · Assinar agora
           </span>
         </Link>
+      );
+    }
+    if (user?.trial_modelo === "7_em_30") {
+      const diasUsados = [...new Set(Array.isArray(user?.trial_dias_uso) ? user.trial_dias_uso : [])].length;
+      return (
+        <TrialProgressoBanner
+          diasUsados={diasUsados}
+          diasRestantesJanela={diasRestantes}
+          janelaAte={formatarData(user?.data_expiracao)}
+        />
       );
     }
   }
