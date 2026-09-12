@@ -189,6 +189,8 @@ Implementação prevista originalmente: **uma** nova function `enviarOnboardingT
 - Manter todas as notas atuais sobre renovação **sem** as palavras proibidas (fidelidade/compromisso).
 
 ### 4.3 Recuperação de trial vencido
+**Implementado em 11/09/2026 (e-mails):** function `enviarReativacaoTrial` + workflow diário "E-mail diário: reativação de trial vencido" (09:30 America/Sao_Paulo). Envia `reativacao_d3` e `reativacao_d7` para `status_assinatura = vencido` no 3º e 7º dia após `data_expiracao`, **somente para quem nunca teve pagamento aprovado**, uma única vez por usuário (dedupe por `LogEmail.usuario_id + tipo`) e apenas depois que o template for ativado em Admin → Comunicação → Transacionais. Primeira execução real: 2 vencidos avaliados, nenhum elegível hoje. WhatsApp de alto uso segue pendente.
+
 | Momento | Canal | Regra | Infra |
 |---|---|---|---|
 | D+3 do vencimento | E-mail `reativacao_d3` | todo trial vencido sem pagamento | `enviarTrialVencido` estendido com dia relativo |

@@ -23,7 +23,9 @@
         "pagamento_pendente_lembrete",
         "onboarding_dia2",
         "onboarding_dia5",
-        "onboarding_resumo_oferta"
+        "onboarding_resumo_oferta",
+        "reativacao_d3",
+        "reativacao_d7"
       ],
       "description": "Tipo do e-mail transacional disparado"
     },

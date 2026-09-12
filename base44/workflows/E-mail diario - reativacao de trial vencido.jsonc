@@ -1,0 +1,41 @@
+{
+  "name": "E-mail di\u00e1rio: reativa\u00e7\u00e3o de trial vencido",
+  "description": "Diariamente \u00e0s 09:30 no hor\u00e1rio de Bras\u00edlia, envia os e-mails de recupera\u00e7\u00e3o D+3 e D+7 para trials vencidos que nunca pagaram.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "30 12 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "e_mail_di_rio_reativacao_de_trial_vencido",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "enviarReativacaoTrial",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

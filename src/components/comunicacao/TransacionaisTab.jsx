@@ -61,6 +61,24 @@ const LINHAS = [
 <p>O plano anual sai por menos da metade do mensal — vale conferir antes de decidir.</p>`,
   },
   {
+    gatilho: "Reativação · 3 dias após o fim do teste",
+    status: "Rascunho",
+    tipoLog: "reativacao_d3",
+    assuntoPadrao: "{{nome}}, suas receitas continuam aqui",
+    corpoPadrao: `<p>Olá {{nome}},</p>
+<p>Seu teste do Laboratório de Cozinha terminou, mas tudo o que você criou continua salvo: receitas, cardápios, eventos e custos.</p>
+<p>Ao escolher um plano, você volta exatamente de onde parou.</p>`,
+  },
+  {
+    gatilho: "Reativação · 7 dias após o fim do teste",
+    status: "Rascunho",
+    tipoLog: "reativacao_d7",
+    assuntoPadrao: "{{nome}}, quer retomar de onde parou?",
+    corpoPadrao: `<p>Olá {{nome}},</p>
+<p>Faz uma semana que seu teste terminou. Suas receitas e cardápios seguem guardados na sua conta.</p>
+<p>Se ficou alguma dúvida sobre escalar receitas, custos ou orçamentos, responda este e-mail — a gente ajuda.</p>`,
+  },
+  {
     gatilho: "Pagamento aprovado",
     status: "Rascunho",
     tipoLog: "pagamento_aprovado",
