@@ -5,7 +5,7 @@ import { APP_SITE_URLS } from "@/lib/publicUrls";
 const PLANS = [
   { name: "Teste Grátis", price: "R$ 0", period: "", detail: "7 dias de uso em até 30 dias · Cozinha + Custos · sem cartão", featured: false, cta: "Começar teste" },
   { name: "30 dias", price: "R$ 29,90", period: "/30 dias", detail: "Sem fidelidade · pague de novo só se quiser continuar", featured: false, cta: "Assinar 30 dias" },
-  { name: "Anual", price: "R$ 198", period: "/ano", detail: "Cobrança única, com opção de parcelar no cartão · equivale a R$ 16,50/mês — mais de 2 meses grátis em relação ao plano de 30 dias", featured: true, cta: "Assinar anual" },
+  { name: "Anual", price: "R$ 198", period: "/ano", detail: "Cobrança única, com opção de parcelar no cartão · equivale a R$ 16,50/mês · economia de R$ 160,80 por ano em relação ao plano de 30 dias", featured: true, cta: "Assinar anual" },
 ];
 
 export default function PlansSection() {
