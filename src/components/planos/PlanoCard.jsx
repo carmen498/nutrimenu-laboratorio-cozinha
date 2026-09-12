@@ -24,6 +24,7 @@ export default function PlanoCard({
   complementoActionLabel = "",
   onComplementoAction = undefined,
   complementoActionDisabled = false,
+  selo = "",
 }) {
   return (
     <div
@@ -45,6 +46,11 @@ export default function PlanoCard({
           {nome}
         </h3>
         <p className="text-sm text-muted-foreground text-center mt-1">{subtitulo}</p>
+        {selo && (
+          <span className="mt-2 inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
+            {selo}
+          </span>
+        )}
         {beneficios?.length > 0 ? (
           <ul className="mt-3 space-y-1.5 w-full">
             {beneficios.map((b) => (

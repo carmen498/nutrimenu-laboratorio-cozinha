@@ -183,6 +183,8 @@ Implementação prevista originalmente: **uma** nova function `enviarOnboardingT
 - UI: card em `Planos` com contador de expiração real (persistido em `User.oferta_conversao_expira_em`), tom amber.
 
 ### 4.2 Posicionamento do plano anual
+**Implementado em 11/09/2026:** selo "2 meses grátis" no card do plano anual em `/planos` (nova prop `selo` em `PlanoCard`) e nota equivalente no card anual da landing. Nenhuma palavra proibida usada.
+
 - Landing e `/planos`: badge **"2 meses grátis"** (R$ 198 = 12 × 16,50 vs. 12 × 29,90 = R$ 358,80 → economia de R$ 160,80, equivalente a mais de 5 mensalidades; comunicar como "2 meses grátis" é conservador e verdadeiro).
 - Manter todas as notas atuais sobre renovação **sem** as palavras proibidas (fidelidade/compromisso).
 

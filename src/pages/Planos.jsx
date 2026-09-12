@@ -138,6 +138,7 @@ export default function Planos() {
               preco={formatarPreco(configPorId.anual)}
               precoDetalhe={configPorId.anual.preco_detalhe}
               beneficios={configPorId.anual.beneficios}
+              selo="2 meses grátis"
               botaoLabel="Assinar anual"
               destaque={configPorId.anual.mais_popular}
               onClick={() => handleAssinar("anual", configPorId.anual.nome)}
