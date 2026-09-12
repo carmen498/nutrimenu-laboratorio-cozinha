@@ -17,7 +17,8 @@
         "pagamento_recusado",
         "plano_vencendo",
         "pagamento_pendente_lembrete",
-        "pagamento_estornado"
+        "pagamento_estornado",
+        "reativacao_alto_uso"
       ],
       "description": "Tipo do evento transacional que originou o envio"
     },

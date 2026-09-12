@@ -11,6 +11,9 @@ import PlanoCard from "@/components/planos/PlanoCard";
 import IncluidoTodosPlanos from "@/components/planos/IncluidoTodosPlanos";
 import { BannerVencido, BannerTrialExpirando } from "@/components/planos/AvisoAssinaturaBanner";
 import CheckoutDialog from "@/components/planos/CheckoutDialog";
+import OfertaConversaoCard from "@/components/planos/OfertaConversaoCard";
+
+const comDesconto = (valor, pct) => Math.round(Number(valor || 0) * (1 - pct / 100) * 100) / 100;
 
 const formatarData = (dataStr) => {
   if (!dataStr) return null;
@@ -57,6 +60,26 @@ export default function Planos() {
     ? [...new Set(Array.isArray(user?.trial_dias_uso) ? user.trial_dias_uso : [])].length
     : null;
 
+  // Oferta de 48 h de primeira assinatura — o servidor decide elegibilidade, prazo e desconto.
+  const { data: oferta } = useQuery({
+    queryKey: ["oferta-conversao", user?.id],
+    queryFn: async () => (await base44.functions.invoke("obterOfertaConversao", {})).data,
+    enabled: statusAssinatura === "trial" && user?.role !== "admin",
+    staleTime: 60 * 1000,
+  });
+  const ofertaAtiva = !!oferta?.ativa && Date.parse(oferta.expira_em) > Date.now();
+  const descontoDe = (planoId) => (ofertaAtiva ? Number(oferta.descontos?.[planoId] || 0) : 0);
+  const precoOferta = (planoId) => {
+    const cfg = configPorId[planoId];
+    const pct = descontoDe(planoId);
+    if (!cfg || !(pct > 0)) return null;
+    return {
+      preco: formatarPreco({ ...cfg, preco_exibido: comDesconto(cfg.preco_exibido, pct) }),
+      precoDetalhe: `de ${formatarPreco(cfg)} · ${pct}% off na 1ª assinatura`,
+      selo: `${pct}% de desconto · oferta de fim de teste`,
+    };
+  };
+
   const scrollToPlano = (planoId) => document.getElementById(`plano-${planoId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
 
   const handleTestarGratis = async () => {
@@ -81,6 +104,14 @@ export default function Planos() {
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6"><ArrowLeft className="w-4 h-4" /> Voltar</Link>
 
       {assinaturaVencida && <BannerVencido dataVencimento={formatarData(user?.data_expiracao) || "—"} onRenovar={() => scrollToPlano(planoAtual || "mensal")} />}
+
+      {ofertaAtiva && (
+        <OfertaConversaoCard
+          expiraEm={oferta.expira_em}
+          descontos={oferta.descontos}
+          onEscolher={(planoId) => configPorId[planoId] && handleAssinar(planoId, configPorId[planoId].nome)}
+        />
+      )}
 
       <div className="text-center mb-10">
         <h1 className="font-heading text-3xl font-bold text-foreground">Planos</h1>
@@ -118,9 +149,10 @@ export default function Planos() {
               planoId="mensal"
               nome={configPorId.mensal.nome}
               subtitulo={configPorId.mensal.subtitulo}
-              preco={formatarPreco(configPorId.mensal)}
-              precoDetalhe={configPorId.mensal.preco_detalhe}
+              preco={precoOferta("mensal")?.preco || formatarPreco(configPorId.mensal)}
+              precoDetalhe={precoOferta("mensal")?.precoDetalhe || configPorId.mensal.preco_detalhe}
               beneficios={configPorId.mensal.beneficios}
+              selo={precoOferta("mensal")?.selo || ""}
               botaoLabel="Assinar mensal"
               destaque={configPorId.mensal.mais_popular}
               onClick={() => handleAssinar("mensal", configPorId.mensal.nome)}
@@ -135,10 +167,10 @@ export default function Planos() {
               planoId="anual"
               nome={configPorId.anual.nome}
               subtitulo={configPorId.anual.subtitulo}
-              preco={formatarPreco(configPorId.anual)}
-              precoDetalhe={configPorId.anual.preco_detalhe}
+              preco={precoOferta("anual")?.preco || formatarPreco(configPorId.anual)}
+              precoDetalhe={precoOferta("anual")?.precoDetalhe || configPorId.anual.preco_detalhe}
               beneficios={configPorId.anual.beneficios}
-              selo="Economize R$ 160,80 por ano"
+              selo={precoOferta("anual")?.selo || "Economize R$ 160,80 por ano"}
               botaoLabel="Assinar anual"
               destaque={configPorId.anual.mais_popular}
               onClick={() => handleAssinar("anual", configPorId.anual.nome)}
@@ -180,7 +212,7 @@ export default function Planos() {
         onOpenChange={(v) => !v && setCheckoutPlano(null)}
         plano={checkoutPlano?.id}
         planoNome={checkoutPlano?.nome}
-        planoValor={Number(configPorId[checkoutPlano?.id]?.valor_cobranca || 0)}
+        planoValor={comDesconto(configPorId[checkoutPlano?.id]?.valor_cobranca, descontoDe(checkoutPlano?.id))}
         email={user?.email}
       />
     </div>

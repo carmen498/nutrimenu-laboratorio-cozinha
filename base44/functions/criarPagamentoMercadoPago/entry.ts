@@ -12,6 +12,7 @@ import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { avaliarElegibilidadeRenovacao } from "../../shared/regraRenovacao.ts";
 import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
+import { resolverOfertaConversao, aplicarDescontoOferta } from "../../shared/ofertaConversao.ts";
 
 const PLANOS_VALIDOS = ["mensal", "anual", "renovacao", "custos_mensal", "custos_anual"];
 const FORMAS_VALIDAS = ["cartao", "pix"];
@@ -26,7 +27,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v20-2026-08-30-cartao-e-liberacao-imediata";
+const VERSAO_CODIGO = "v21-2026-09-12-oferta-fim-trial";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -160,6 +161,20 @@ export default async function(req: Request): Promise<Response> {
       if (!(valorCozinha > 0)) return Response.json({ error: `Preço inválido para o plano ${planoBaseId}` }, { status: 500 });
     }
 
+    // Oferta de fim de trial (48 h): desconto decidido aqui, nunca pelo frontend.
+    // Só honra uma oferta já iniciada (na tela de Planos) e ainda dentro do prazo.
+    let descontoOfertaPct = 0;
+    let valorSemDesconto = 0;
+    if (planoBaseId && ["mensal", "anual"].includes(planoBaseId)) {
+      const oferta = await resolverOfertaConversao(base44, user, { ativarSeElegivel: false });
+      const pct = oferta.ativa ? Number(oferta.descontos?.[planoBaseId] || 0) : 0;
+      if (pct > 0) {
+        descontoOfertaPct = pct;
+        valorSemDesconto = valorCozinha;
+        valorCozinha = aplicarDescontoOferta(valorCozinha, pct);
+      }
+    }
+
     if (addonId) {
       const configsAddon = await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: addonId, produto: "laboratorio_custos" });
       configAddon = configsAddon?.[0] || null;
@@ -232,6 +247,7 @@ export default async function(req: Request): Promise<Response> {
       ...(addonId ? { addon_plano_id: addonId } : {}),
       valor_cozinha: valorCozinha,
       valor_custos: valorCustos,
+      ...(descontoOfertaPct > 0 ? { desconto_oferta_pct: descontoOfertaPct, valor_sem_desconto: valorSemDesconto + valorCustos } : {}),
       forma_pagamento,
       valor,
       parcelas,

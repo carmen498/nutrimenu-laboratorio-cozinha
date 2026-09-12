@@ -43,6 +43,7 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
         valor_cobranca: Number(form.valor_cobranca) || 0,
         beneficios: form.beneficios.split("\n").map((b) => b.trim()).filter(Boolean),
         mais_popular: !!form.mais_popular,
+        desconto_primeira_assinatura_pct: Math.min(90, Math.max(0, Number(form.desconto_primeira_assinatura_pct) || 0)),
       };
       await base44.entities.ConfiguracaoPlano.update(plano.id, dados);
       toast({ title: "Plano salvo" });
@@ -104,6 +105,16 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
               Este é o valor efetivamente cobrado via Mercado Pago quando o cliente assina este plano.
             </p>
           </div>
+
+          {["mensal", "anual"].includes(plano.plano_id) && (
+            <div className="space-y-1.5">
+              <Label>Desconto da oferta de fim de teste (%)</Label>
+              <Input type="number" min="0" max="90" step="1" value={form.desconto_primeira_assinatura_pct ?? 0} onChange={setNum("desconto_primeira_assinatura_pct")} />
+              <p className="text-xs text-muted-foreground">
+                Oferta de 48 h exibida em Planos quando o teste está no fim (≤ 2 dias ou ≥ 6 dias usados), só para quem nunca pagou. 0 desativa.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label>Benefícios (um por linha)</Label>

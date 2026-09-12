@@ -46,6 +46,16 @@
       "minimum": 0,
       "description": "Parcela do valor total atribu\u00edda ao Laborat\u00f3rio de Custos."
     },
+    "desconto_oferta_pct": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Desconto (%) da oferta de fim de trial aplicado server-side \u00e0 parcela do Laborat\u00f3rio de Cozinha, quando houver."
+    },
+    "valor_sem_desconto": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Valor total antes do desconto da oferta, para auditoria comercial."
+    },
     "forma_pagamento": {
       "type": "string",
       "enum": [

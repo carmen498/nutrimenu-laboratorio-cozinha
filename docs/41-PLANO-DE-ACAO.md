@@ -178,6 +178,8 @@ Implementação prevista originalmente: **uma** nova function `enviarOnboardingT
 ## 4. Frente P1 — Conversão trial → assinante
 
 ### 4.1 Oferta de fim de trial (48 h)
+**Implementado em 12/09/2026:** campo `desconto_primeira_assinatura_pct` em `ConfiguracaoPlano` (mensal/anual), editável em Admin → Comunicação → Planos → Editar. A elegibilidade (trial, ≤ 2 dias ou ≥ 6 dias usados, nunca pagou) e o prazo são decididos no servidor (`obterOfertaConversao` + `shared/ofertaConversao.ts`); a expiração fica persistida em `User.oferta_conversao_expira_em`, definida uma única vez na primeira visita elegível a `/planos`. A tela exibe card âmbar com contador real (`OfertaConversaoCard`) e os cards mensal/anual com preço riscado; `criarPagamentoMercadoPago` (v21) reaplica o desconto no valor cobrado e grava `Pagamento.desconto_oferta_pct` / `valor_sem_desconto`. **Pendente da Carmen:** definir o percentual (hoje 0 = oferta desligada).
+
 - Novo registro em `ConfiguracaoPlano` com `plano_id = mensal` e `versao_oferta = "primeira-assinatura-48h"` ou campo `desconto_primeira_assinatura_pct` — o preço continua sendo decidido **server-side** em `criarPagamentoMercadoPago`.
 - Elegibilidade: `status_assinatura = trial` e (`diasRestantes ≤ 2` ou `diasUsados ≥ 6`) e nunca pagou.
 - UI: card em `Planos` com contador de expiração real (persistido em `User.oferta_conversao_expira_em`), tom amber.
@@ -189,7 +191,7 @@ Implementação prevista originalmente: **uma** nova function `enviarOnboardingT
 - Manter todas as notas atuais sobre renovação **sem** as palavras proibidas (fidelidade/compromisso).
 
 ### 4.3 Recuperação de trial vencido
-**Implementado em 11/09/2026 (e-mails):** function `enviarReativacaoTrial` + workflow diário "E-mail diário: reativação de trial vencido" (09:30 America/Sao_Paulo). Envia `reativacao_d3` e `reativacao_d7` para `status_assinatura = vencido` no 3º e 7º dia após `data_expiracao`, **somente para quem nunca teve pagamento aprovado**, uma única vez por usuário (dedupe por `LogEmail.usuario_id + tipo`) e apenas depois que o template for ativado em Admin → Comunicação → Transacionais. Primeira execução real: 2 vencidos avaliados, nenhum elegível hoje. WhatsApp de alto uso segue pendente.
+**Implementado em 11/09/2026 (e-mails):** function `enviarReativacaoTrial` + workflow diário "E-mail diário: reativação de trial vencido" (09:30 America/Sao_Paulo). Envia `reativacao_d3` e `reativacao_d7` para `status_assinatura = vencido` no 3º e 7º dia após `data_expiracao`, **somente para quem nunca teve pagamento aprovado**, uma única vez por usuário (dedupe por `LogEmail.usuario_id + tipo`) e apenas depois que o template for ativado em Admin → Comunicação → Transacionais. Primeira execução real: 2 vencidos avaliados, nenhum elegível hoje. **WhatsApp de alto uso implementado em 12/09/2026:** no D+3, se o usuário tem telefone cadastrado e > 5 receitas pessoais, a mesma function dispara `reativacao_alto_uso` via Wascript (uma vez por usuário, dedupe em `LogWhatsapp`). Esse tipo **só envia com template salvo e ativo** em Admin → Comunicação → Editor de template WhatsApp (texto padrão já sugerido); respeita `WASCRIPT_MODO_TESTE`.
 
 | Momento | Canal | Regra | Infra |
 |---|---|---|---|

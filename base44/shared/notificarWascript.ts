@@ -14,9 +14,14 @@ const DEFAULTS: Record<string, string> = {
   plano_vencendo: "Olá {{nome}}, seu plano no Laboratório de Cozinha vence em breve. Renove agora para não perder o acesso às suas receitas e cardápios.",
   pagamento_pendente_lembrete: "Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado. Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.",
   pagamento_estornado: "Olá {{nome}}, confirmamos o estorno do seu pagamento no Laboratório de Cozinha. O valor será devolvido pelo Mercado Pago conforme o prazo do seu banco. Qualquer dúvida, estamos à disposição.",
+  reativacao_alto_uso: "Olá {{nome}}, aqui é a Carmen, do Laboratório de Cozinha. Vi que você criou várias receitas durante o teste — elas continuam salvas na sua conta. Se quiser retomar de onde parou ou tirar alguma dúvida, é só me responder por aqui.",
 };
 
-type TipoWascript = "pagamento_aprovado" | "pagamento_recusado" | "plano_vencendo" | "pagamento_pendente_lembrete" | "pagamento_estornado";
+// Tipos que NUNCA disparam sem um template salvo e marcado como ativo pelo admin
+// (mensagens de recuperação são opt-in explícito, ao contrário das transacionais).
+const REQUER_TEMPLATE_ATIVO = new Set(["reativacao_alto_uso"]);
+
+type TipoWascript = "pagamento_aprovado" | "pagamento_recusado" | "plano_vencendo" | "pagamento_pendente_lembrete" | "pagamento_estornado" | "reativacao_alto_uso";
 
 export async function enviarNotificacaoWhatsapp(
   base44: any,
@@ -33,7 +38,7 @@ export async function enviarNotificacaoWhatsapp(
   const template = templates?.[0];
   const textoBase = template?.texto || DEFAULTS[tipo];
   // Sem template salvo ainda, usa o texto padrão como ativo. Com template salvo, respeita o status.
-  const ativo = template ? template.status === "ativo" : true;
+  const ativo = template ? template.status === "ativo" : !REQUER_TEMPLATE_ATIVO.has(tipo);
 
   if (!ativo) {
     console.log(`Template WhatsApp "${tipo}" está em rascunho — mensagem não enviada.`);

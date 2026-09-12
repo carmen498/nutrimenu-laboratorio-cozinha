@@ -117,6 +117,18 @@
         }
       }
     },
+    "oferta_conversao_expira_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fim da oferta de 48 h de primeira assinatura (fim do trial). Definida uma \u00fanica vez pelo servidor quando o trial entra na reta final.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "data_proxima_cobranca": {
       "type": "string",
       "format": "date",

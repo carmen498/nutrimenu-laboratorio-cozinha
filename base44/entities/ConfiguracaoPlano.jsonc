@@ -54,6 +54,13 @@
       "type": "number",
       "description": "Valor real reservado para cobran\u00e7a server-side quando o checkout do respectivo produto estiver homologado."
     },
+    "desconto_primeira_assinatura_pct": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 90,
+      "default": 0,
+      "description": "Desconto (%) da oferta de fim de trial (48 h) para a primeira assinatura deste plano. 0 = sem oferta. Aplicado server-side; s\u00f3 para mensal/anual do Laborat\u00f3rio de Cozinha."
+    },
     "beneficios": {
       "type": "array",
       "items": {
