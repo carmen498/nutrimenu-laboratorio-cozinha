@@ -43,6 +43,9 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
         valor_cobranca: Number(form.valor_cobranca) || 0,
         beneficios: form.beneficios.split("\n").map((b) => b.trim()).filter(Boolean),
         mais_popular: !!form.mais_popular,
+        venda_habilitada: !!form.venda_habilitada,
+        preco_apos_promocao: Number(form.preco_apos_promocao) || 0,
+        promocao_valida_ate: form.promocao_valida_ate || "",
         desconto_primeira_assinatura_pct: Math.min(90, Math.max(0, Number(form.desconto_primeira_assinatura_pct) || 0)),
       };
       await base44.entities.ConfiguracaoPlano.update(plano.id, dados);
@@ -116,6 +119,20 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
             </div>
           )}
 
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Preço depois da promoção (R$)</Label>
+              <Input type="number" step="0.01" value={form.preco_apos_promocao ?? 0} onChange={setNum("preco_apos_promocao")} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Promoção válida até</Label>
+              <Input type="date" value={form.promocao_valida_ate || ""} onChange={set("promocao_valida_ate")} />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Com os dois campos preenchidos, o card exibe "R$ {Number(form.preco_exibido) || 0} até a data; depois R$ {Number(form.preco_apos_promocao) || 0}". Nunca usa preço riscado.
+          </p>
+
           <div className="space-y-1.5">
             <Label>Benefícios (um por linha)</Label>
             <Textarea rows={5} value={form.beneficios} onChange={set("beneficios")} />
@@ -127,6 +144,14 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
               <p className="text-xs text-muted-foreground">Exibe o destaque "Mais popular" neste card</p>
             </div>
             <Switch checked={!!form.mais_popular} onCheckedChange={(v) => setForm((f) => ({ ...f, mais_popular: v }))} />
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <Label>Venda liberada</Label>
+              <p className="text-xs text-muted-foreground">Desligado, o card aparece sem botão de compra e o servidor recusa a cobrança desta oferta.</p>
+            </div>
+            <Switch checked={!!form.venda_habilitada} onCheckedChange={(v) => setForm((f) => ({ ...f, venda_habilitada: v }))} />
           </div>
         </div>
 

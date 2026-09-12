@@ -1,0 +1,139 @@
+{
+  "name": "PedidoDesistencia",
+  "type": "object",
+  "properties": {
+    "usuario_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio que pediu a desist\u00eancia."
+    },
+    "usuario_nome": {
+      "type": "string",
+      "description": "Nome do solicitante no momento do pedido (cache para a fila administrativa)."
+    },
+    "pagamento_id": {
+      "type": "string",
+      "description": "Pagamento aprovado ao qual a desist\u00eancia se refere."
+    },
+    "plano": {
+      "type": "string",
+      "description": "Identificador da oferta comprada, copiado do pagamento."
+    },
+    "plano_nome": {
+      "type": "string",
+      "description": "Nome comercial da oferta, para leitura humana na fila."
+    },
+    "valor": {
+      "type": "number",
+      "description": "Valor pago, a ser devolvido integralmente."
+    },
+    "compra_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da compra. \u00c9 dela que corre o prazo legal de 7 dias."
+    },
+    "solicitado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora EXATA do clique em 'Desistir da compra', gravada pelo servidor. O que conta o prazo \u00e9 o pedido, n\u00e3o o atendimento."
+    },
+    "dentro_do_prazo_legal": {
+      "type": "boolean",
+      "default": true,
+      "description": "true quando o pedido foi feito dentro dos 7 dias corridos da compra (direito de arrependimento)."
+    },
+    "prazo_atendimento_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Prazo interno para concluir a devolu\u00e7\u00e3o (7 dias corridos a partir do pedido)."
+    },
+    "motivo": {
+      "type": "string",
+      "description": "Motivo informado pelo cliente. Sempre opcional \u2014 a lei n\u00e3o exige justificativa."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "aberto",
+        "em_atendimento",
+        "concluido",
+        "recusado"
+      ],
+      "default": "aberto",
+      "description": "Situa\u00e7\u00e3o do pedido na fila administrativa."
+    },
+    "responsavel_nome": {
+      "type": "string",
+      "description": "Quem est\u00e1 cuidando do atendimento.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "concluido_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora em que a devolu\u00e7\u00e3o foi conclu\u00edda.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
+    "observacao_admin": {
+      "type": "string",
+      "description": "Anota\u00e7\u00e3o interna do atendimento (comprovante do estorno, contato feito).",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "usuario_id",
+    "pagamento_id",
+    "solicitado_em",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.usuario_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -4,10 +4,17 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CheckCircle2 } from "lucide-react";
 import CartaoForm from "./CartaoForm";
 import PixForm from "./PixForm";
+import AvisoDesistencia from "./AvisoDesistencia";
+import DadosNotaFiscalCheckout from "./DadosNotaFiscalCheckout";
+import { useAuth } from "@/lib/AuthContext";
+import { avaliarDadosFiscais } from "@/lib/dadosFiscais";
 
 export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, email, planoValor = 0, addon = null, addonCheckoutBloqueado = false, somenteAddon = false }) {
   const [resultadoPagamento, setResultadoPagamento] = useState(null);
   const [aceiteContratacao, setAceiteContratacao] = useState(false);
+  const { user } = useAuth();
+  // Sem dados de nota fiscal a compra não se conclui — o servidor revalida antes de cobrar.
+  const dadosFiscaisOk = avaliarDadosFiscais(user || {}).completo;
 
   const handleClose = () => {
     setResultadoPagamento(null);
@@ -62,6 +69,8 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
           </div>
         ) : (
           <div className="space-y-4">
+            <AvisoDesistencia />
+            {!dadosFiscaisOk && <DadosNotaFiscalCheckout />}
             <label className="flex items-start gap-2 rounded-lg border p-3 text-sm cursor-pointer">
               <input
                 type="checkbox"
@@ -87,6 +96,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 onClose={handleClose}
                 onSuccess={setResultadoPagamento}
                 aceiteTermos={aceiteContratacao}
+                podePagar={dadosFiscaisOk}
               />
             </TabsContent>
             <TabsContent value="pix" className="pt-4">
@@ -98,6 +108,7 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
                 onClose={handleClose}
                 onSuccess={setResultadoPagamento}
                 aceiteTermos={aceiteContratacao}
+                podePagar={dadosFiscaisOk}
               />
             </TabsContent>
             </Tabs>

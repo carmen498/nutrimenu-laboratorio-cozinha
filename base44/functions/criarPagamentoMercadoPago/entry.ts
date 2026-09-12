@@ -13,8 +13,10 @@ import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.t
 import { avaliarElegibilidadeRenovacao } from "../../shared/regraRenovacao.ts";
 import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
 import { resolverOfertaConversao, aplicarDescontoOferta } from "../../shared/ofertaConversao.ts";
+import { OFERTAS_ZR, ofertaZR } from "../../shared/guiaTecnicoZR.ts";
+import { avaliarDadosFiscais } from "../../shared/dadosFiscais.ts";
 
-const PLANOS_VALIDOS = ["mensal", "anual", "renovacao", "custos_mensal", "custos_anual"];
+const PLANOS_VALIDOS = ["mensal", "anual", "renovacao", "custos_mensal", "custos_anual", ...Object.keys(OFERTAS_ZR)];
 const FORMAS_VALIDAS = ["cartao", "pix"];
 const NOME_PLANOS: Record<string, string> = {
   mensal: "Plano 30 dias — Laboratório de Cozinha",
@@ -22,12 +24,13 @@ const NOME_PLANOS: Record<string, string> = {
   renovacao: "Renovação Anual — Laboratório de Cozinha",
   custos_mensal: "Laboratório de Custos — 30 dias",
   custos_anual: "Laboratório de Custos — Anual",
+  ...Object.fromEntries(Object.entries(OFERTAS_ZR).map(([id, o]) => [id, `${o.nome} — Guia Técnico ZR`])),
 };
 
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v21-2026-09-12-oferta-fim-trial";
+const VERSAO_CODIGO = "v22-2026-09-12-guia-zr-e-dados-fiscais";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -122,6 +125,17 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: "Informe um CPF válido do titular do pagamento" }, { status: 400 });
     }
 
+    // Sem CPF/CNPJ e endereço completo não há como emitir a nota fiscal depois —
+    // por isso a compra não se conclui. O cadastro é a fonte destes dados.
+    const dadosFiscais = avaliarDadosFiscais(user);
+    if (!dadosFiscais.completo) {
+      return Response.json({
+        error: `Complete os dados para emissão de nota fiscal antes de pagar: ${dadosFiscais.faltando.join(", ")}.`,
+        code: "dados_fiscais_incompletos",
+        faltando: dadosFiscais.faltando,
+      }, { status: 409 });
+    }
+
     const ambiente = (secrets.get("AMBIENTE") || "").trim().toLowerCase();
     const deviceIdSeguro = typeof device_id === "string" ? device_id.trim() : "";
     const deviceIdValido = /^[\x21-\x7E]{8,256}$/.test(deviceIdSeguro);
@@ -135,8 +149,9 @@ export default async function(req: Request): Promise<Response> {
 
     // Preço e composição vêm sempre do servidor. O frontend informa apenas IDs de ofertas.
     const planoEhCustos = ["custos_mensal", "custos_anual"].includes(plano);
-    const planoBaseId = somente_addon || planoEhCustos ? null : plano;
-    const addonId = addon_plano_id || (planoEhCustos ? plano : null);
+    const planoZr = ofertaZR(plano);
+    const planoBaseId = somente_addon || planoEhCustos || planoZr ? null : plano;
+    const addonId = planoZr ? null : (addon_plano_id || (planoEhCustos ? plano : null));
 
     if (addonId && !["custos_mensal", "custos_anual"].includes(addonId)) {
       return Response.json({ error: "Plano do Laboratório de Custos inválido" }, { status: 400 });
@@ -188,9 +203,26 @@ export default async function(req: Request): Promise<Response> {
       if (!(valorCustos > 0)) return Response.json({ error: `Preço inválido para o plano ${addonId}` }, { status: 500 });
     }
 
-    const valor = valorCozinha + valorCustos;
+    // Faixa do Guia Técnico ZR: produto independente, preço e liberação de venda no servidor.
+    let valorGuiaZr = 0;
+    if (planoZr) {
+      const configZr = (await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: plano, produto: "guia_zr" }))?.[0] || null;
+      if (!configZr || configZr.valor_cobranca == null) return Response.json({ error: `Preço não configurado para a faixa ${plano}` }, { status: 500 });
+      if (!configZr.venda_habilitada) {
+        return Response.json({
+          error: "A venda das faixas do Guia Técnico ZR ainda não está liberada.",
+          code: "zr_checkout_disabled",
+        }, { status: 409 });
+      }
+      valorGuiaZr = Number(configZr.valor_cobranca);
+      if (!(valorGuiaZr > 0)) return Response.json({ error: `Preço inválido para a faixa ${plano}` }, { status: 500 });
+    }
+
+    const valor = valorCozinha + valorCustos + valorGuiaZr;
     if (!(valor > 0)) return Response.json({ error: "Valor total inválido" }, { status: 500 });
-    const produtoCompra = addonId ? (planoBaseId ? "cozinha_mais_custos" : "laboratorio_custos") : "laboratorio_cozinha";
+    const produtoCompra = planoZr
+      ? "guia_zr"
+      : addonId ? (planoBaseId ? "cozinha_mais_custos" : "laboratorio_custos") : "laboratorio_cozinha";
     const valorFormatado = valor.toFixed(2);
     const parcelas = forma_pagamento === "cartao" ? (parseInt(installments, 10) || 1) : 1;
     const planoParcelamento = planoBaseId || addonId || plano;
@@ -247,6 +279,7 @@ export default async function(req: Request): Promise<Response> {
       ...(addonId ? { addon_plano_id: addonId } : {}),
       valor_cozinha: valorCozinha,
       valor_custos: valorCustos,
+      ...(valorGuiaZr > 0 ? { valor_guia_zr: valorGuiaZr } : {}),
       ...(descontoOfertaPct > 0 ? { desconto_oferta_pct: descontoOfertaPct, valor_sem_desconto: valorSemDesconto + valorCustos } : {}),
       forma_pagamento,
       valor,

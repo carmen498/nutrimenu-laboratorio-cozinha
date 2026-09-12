@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 const INTERVALO_POLLING_MS = 4000;
 const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
-export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false }) {
+export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false, podePagar = true }) {
   const [cpf, setCpf] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,6 +54,10 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
     setError("");
     if (!aceiteTermos) {
       setError("Aceite os Termos de Uso e a Política de Privacidade para concluir a contratação.");
+      return;
+    }
+    if (!podePagar) {
+      setError("Complete os dados para emissão de nota fiscal acima antes de pagar.");
       return;
     }
     setLoading(true);
@@ -166,7 +170,7 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos}>
+      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos || !podePagar}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Gerar QR Code PIX
       </Button>

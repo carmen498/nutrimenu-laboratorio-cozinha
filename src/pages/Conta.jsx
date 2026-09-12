@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { formatarTelefone } from "@/lib/formatarTelefone";
 import { formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
+import DesistenciaCompraCard from "@/components/conta/DesistenciaCompraCard";
 import { toast } from "sonner";
 
 function getIniciais(nome) {
@@ -289,6 +290,11 @@ export default function Conta() {
       <Button className="w-full" style={{ backgroundColor: "#2A4E3D" }} disabled={!telefoneValido || saving} onClick={handleSalvar}>
         {saving ? "Salvando..." : "Salvar alterações"}
       </Button>
+
+      {/* Desistência da compra — direito de arrependimento de 7 dias */}
+      {!isAdminViewingOther && (
+        <DesistenciaCompraCard usuarioId={targetUserId} pagamentos={pagamentosAprovados} />
+      )}
 
       {/* Anotações internas — só na visão admin sobre outro usuário */}
       {isAdminViewingOther && (

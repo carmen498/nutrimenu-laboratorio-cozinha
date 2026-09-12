@@ -17,6 +17,7 @@ import ConfiguracoesEmailTab from "@/components/comunicacao/ConfiguracoesEmailTa
 import PlanosTab from "@/components/comunicacao/PlanosTab";
 import AcessosCustosTab from "@/components/comunicacao/AcessosCustosTab";
 import SaudeOperacionalTab from "@/components/comunicacao/SaudeOperacionalTab";
+import DesistenciasTab from "@/components/comunicacao/DesistenciasTab";
 
 export default function AdminComunicacao() {
   const navigate = useNavigate();
@@ -67,6 +68,7 @@ export default function AdminComunicacao() {
           <TabsTrigger value="saude">Saúde operacional</TabsTrigger>
           <TabsTrigger value="acessos-custos">Acessos Custos</TabsTrigger>
           <TabsTrigger value="planos">Planos</TabsTrigger>
+          <TabsTrigger value="desistencias">Desistências</TabsTrigger>
           <TabsTrigger value="transacionais">Transacionais</TabsTrigger>
           <TabsTrigger value="campanhas">Campanhas</TabsTrigger>
           <TabsTrigger value="whatsapp-reativo">WhatsApp reativo</TabsTrigger>
@@ -92,6 +94,9 @@ export default function AdminComunicacao() {
         </TabsContent>
         <TabsContent value="planos" className="pt-4">
           <PlanosTab />
+        </TabsContent>
+        <TabsContent value="desistencias" className="pt-4">
+          <DesistenciasTab />
         </TabsContent>
         <TabsContent value="transacionais" className="pt-4">
           <TransacionaisTab />

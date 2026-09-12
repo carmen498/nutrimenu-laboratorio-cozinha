@@ -3,6 +3,7 @@ import { avaliarAcessoAssinaturaServer } from "./acessoAssinatura.ts";
 import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
+import { ativarGuiaZR, ofertaZR } from "./guiaTecnicoZR.ts";
 
 const MODULO = "laboratorio_custos";
 
@@ -86,6 +87,11 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
 
 export async function ativarCompraPagamento(base44: any, pagamento: any): Promise<void> {
   const tipo = pagamento?.produto_compra || "laboratorio_cozinha";
+  // Faixa do Guia Técnico ZR: produto independente, não mexe na assinatura da plataforma.
+  if (tipo === "guia_zr" || ofertaZR(pagamento?.plano)) {
+    await ativarGuiaZR(base44, pagamento);
+    return;
+  }
   if (["laboratorio_cozinha", "cozinha_mais_custos"].includes(tipo)) {
     await ativarPlanoEEnviarEmail(base44, pagamento);
   }

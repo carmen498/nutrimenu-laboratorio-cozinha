@@ -12,6 +12,7 @@ import IncluidoTodosPlanos from "@/components/planos/IncluidoTodosPlanos";
 import { BannerVencido, BannerTrialExpirando } from "@/components/planos/AvisoAssinaturaBanner";
 import CheckoutDialog from "@/components/planos/CheckoutDialog";
 import OfertaConversaoCard from "@/components/planos/OfertaConversaoCard";
+import PlanosGuiaZR from "@/components/planos/PlanosGuiaZR";
 
 const comDesconto = (valor, pct) => Math.round(Number(valor || 0) * (1 - pct / 100) * 100) / 100;
 
@@ -95,8 +96,8 @@ export default function Planos() {
     }
   };
 
-  const handleAssinar = (planoId, planoNome) => {
-    setCheckoutPlano({ id: planoId, nome: planoNome });
+  const handleAssinar = (planoId, planoNome, valor = null) => {
+    setCheckoutPlano({ id: planoId, nome: planoNome, valor });
   };
 
   return (
@@ -203,6 +204,8 @@ export default function Planos() {
 
       <IncluidoTodosPlanos />
 
+      <PlanosGuiaZR onAssinar={handleAssinar} />
+
       {statusAssinatura === "trial" && acessoAssinatura.temAcesso && diasRestantesTrial != null && diasRestantesTrial <= 3 && (
         <BannerTrialExpirando diasRestantes={Math.max(diasRestantesTrial, 0)} onAssinar={() => scrollToPlano("anual")} />
       )}
@@ -212,7 +215,7 @@ export default function Planos() {
         onOpenChange={(v) => !v && setCheckoutPlano(null)}
         plano={checkoutPlano?.id}
         planoNome={checkoutPlano?.nome}
-        planoValor={comDesconto(configPorId[checkoutPlano?.id]?.valor_cobranca, descontoDe(checkoutPlano?.id))}
+        planoValor={checkoutPlano?.valor != null ? checkoutPlano.valor : comDesconto(configPorId[checkoutPlano?.id]?.valor_cobranca, descontoDe(checkoutPlano?.id))}
         email={user?.email}
       />
     </div>

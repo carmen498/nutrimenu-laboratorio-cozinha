@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { carregarMercadoPagoDeviceId, carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
 
-export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false }) {
+export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false, podePagar = true }) {
   const parcelasOpcoes = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => i + 1);
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
@@ -30,6 +30,10 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
     setError("");
     if (!aceiteTermos) {
       setError("Aceite os Termos de Uso e a Política de Privacidade para concluir a contratação.");
+      return;
+    }
+    if (!podePagar) {
+      setError("Complete os dados para emissão de nota fiscal acima antes de pagar.");
       return;
     }
     setLoading(true);
@@ -187,7 +191,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         </Select>
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos}>
+      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos || !podePagar}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Pagar
       </Button>

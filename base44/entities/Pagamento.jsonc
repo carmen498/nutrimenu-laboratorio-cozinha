@@ -14,19 +14,26 @@
         "anual",
         "renovacao",
         "custos_mensal",
-        "custos_anual"
+        "custos_anual",
+        "zr_tin",
+        "zr_tin_renovacao",
+        "zr_full",
+        "zr_full_renovacao",
+        "zr_arquitetura",
+        "zr_arquitetura_renovacao"
       ],
-      "description": "Plano principal da tentativa. Para compra somente do Laborat\u00f3rio de Custos usa custos_mensal ou custos_anual."
+      "description": "Plano principal da tentativa. Para compra somente do Laborat\u00f3rio de Custos usa custos_mensal ou custos_anual; faixas do Guia T\u00e9cnico ZR usam prefixo zr_."
     },
     "produto_compra": {
       "type": "string",
       "enum": [
         "laboratorio_cozinha",
         "laboratorio_custos",
-        "cozinha_mais_custos"
+        "cozinha_mais_custos",
+        "guia_zr"
       ],
       "default": "laboratorio_cozinha",
-      "description": "Escopo comercial do pagamento: produto-base, complemento isolado ou compra combinada."
+      "description": "Escopo comercial do pagamento: produto-base, complemento isolado, compra combinada ou faixa do Guia T\u00e9cnico ZR."
     },
     "addon_plano_id": {
       "type": "string",
@@ -45,6 +52,11 @@
       "type": "number",
       "minimum": 0,
       "description": "Parcela do valor total atribu\u00edda ao Laborat\u00f3rio de Custos."
+    },
+    "valor_guia_zr": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Parcela do valor total atribu\u00edda \u00e0 faixa do Guia T\u00e9cnico ZR."
     },
     "desconto_oferta_pct": {
       "type": "number",
@@ -139,6 +151,18 @@
       "type": "boolean",
       "default": false,
       "description": "true quando o lembrete de pagamento pendente j\u00e1 foi disparado"
+    },
+    "desistencia_solicitada_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora do pedido de desist\u00eancia (direito de arrependimento de 7 dias) associado a este pagamento.",
+      "rls": {
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
     }
   },
   "required": [

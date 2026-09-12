@@ -6,7 +6,8 @@
       "type": "string",
       "enum": [
         "laboratorio_cozinha",
-        "laboratorio_custos"
+        "laboratorio_custos",
+        "guia_zr"
       ],
       "default": "laboratorio_cozinha",
       "description": "Produto ao qual a oferta pertence. Registros legados sem produto s\u00e3o tratados como Laborat\u00f3rio de Cozinha."
@@ -20,9 +21,15 @@
         "renovacao",
         "custos_trial",
         "custos_mensal",
-        "custos_anual"
+        "custos_anual",
+        "zr_tin",
+        "zr_tin_renovacao",
+        "zr_full",
+        "zr_full_renovacao",
+        "zr_arquitetura",
+        "zr_arquitetura_renovacao"
       ],
-      "description": "Identificador fixo da oferta. Ofertas do Laborat\u00f3rio de Custos usam prefixo custos_."
+      "description": "Identificador fixo da oferta. Ofertas do Laborat\u00f3rio de Custos usam prefixo custos_; as faixas do Guia T\u00e9cnico ZR usam prefixo zr_."
     },
     "nome": {
       "type": "string",
@@ -50,9 +57,19 @@
       "type": "string",
       "description": "Texto complementar menor abaixo do pre\u00e7o em destaque."
     },
+    "preco_apos_promocao": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Pre\u00e7o que passar\u00e1 a valer depois da data promocional. Gera a frase 'R$ X at\u00e9 DD/MM; depois R$ Y'. Nunca usar pre\u00e7o riscado em produto que n\u00e3o teve pre\u00e7o praticado antes."
+    },
+    "promocao_valida_ate": {
+      "type": "string",
+      "format": "date",
+      "description": "\u00daltimo dia do pre\u00e7o promocional de lan\u00e7amento. Vazio = sem promo\u00e7\u00e3o."
+    },
     "valor_cobranca": {
       "type": "number",
-      "description": "Valor real reservado para cobran\u00e7a server-side quando o checkout do respectivo produto estiver homologado."
+      "description": "Valor real cobrado no checkout, decidido sempre no servidor."
     },
     "desconto_primeira_assinatura_pct": {
       "type": "number",
@@ -82,7 +99,7 @@
     "venda_habilitada": {
       "type": "boolean",
       "default": true,
-      "description": "Controla se esta oferta pode ser usada comercialmente. Para Laborat\u00f3rio de Custos permanece false at\u00e9 homologa\u00e7\u00e3o."
+      "description": "Controla se esta oferta pode ser usada comercialmente. Para Laborat\u00f3rio de Custos e para as faixas do Guia T\u00e9cnico ZR permanece false at\u00e9 homologa\u00e7\u00e3o."
     },
     "versao_oferta": {
       "type": "string",

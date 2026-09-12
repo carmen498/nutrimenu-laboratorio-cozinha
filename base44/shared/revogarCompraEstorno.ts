@@ -1,8 +1,15 @@
 import { revogarAcessoEstorno } from "./revogarAcessoEstorno.ts";
+import { revogarGuiaZR, ofertaZR } from "./guiaTecnicoZR.ts";
 
 export async function revogarCompraEstorno(base44: any, pagamento: any) {
   const tipo = pagamento?.produto_compra || "laboratorio_cozinha";
   const resultados: Record<string, any> = {};
+
+  // Estorno de faixa do ZR revoga só a faixa daquele pagamento.
+  if (tipo === "guia_zr" || ofertaZR(pagamento?.plano)) {
+    resultados.guia_zr = await revogarGuiaZR(base44, pagamento);
+    return resultados;
+  }
 
   if (["laboratorio_cozinha", "cozinha_mais_custos"].includes(tipo)) {
     resultados.cozinha = await revogarAcessoEstorno(base44, pagamento);
