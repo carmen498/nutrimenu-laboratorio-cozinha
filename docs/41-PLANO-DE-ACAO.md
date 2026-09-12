@@ -202,7 +202,7 @@ Implementação prevista originalmente: **uma** nova function `enviarOnboardingT
 
 - Preencher `User.origem` e `User.segmento` **no cadastro** (campos já existem no admin; hoje 0/10 preenchidos) — 2 selects opcionais após o OTP.
 - Novo campo `Pagamento.cupom` e `User.cupom_origem` para atribuição de parceria/indicação.
-- Card no admin: **Conversão trial → pagante** = pagamentos aprovados de ex-trials ÷ trials iniciados no período.
+- Card no admin: **Conversão trial → pagante** = pagamentos aprovados de ex-trials ÷ trials iniciados no período. **Implementado em 12/09/2026** em Admin → Comunicação → Saúde operacional (`ConversaoTrialCard`): taxa acumulada com meta de 10%, mais "em trial", "pagantes" e "vencidos sem pagar". Conta como convertido quem tem pagamento aprovado **ou** plano pago liberado manualmente. Snapshot: 1 de 10 (10%).
 
 ### 4.5 Métricas
 | Métrica | Meta 90 dias |

@@ -5,10 +5,13 @@ import { Button } from "@/components/ui/button";
 import SaudeMetricCard from "@/components/admin/SaudeMetricCard";
 import useSaudeOperacional from "@/hooks/useSaudeOperacional";
 import { calcularSaudeOperacional } from "@/lib/saudeOperacional";
+import { calcularConversaoTrial } from "@/lib/conversaoTrial";
+import ConversaoTrialCard from "@/components/admin/ConversaoTrialCard";
 
 export default function SaudeOperacionalTab() {
   const { data, isLoading, isError, sincronizando, sincronizar } = useSaudeOperacional();
   const metricas = useMemo(() => calcularSaudeOperacional(data || {}), [data]);
+  const conversao = useMemo(() => calcularConversaoTrial(data || {}), [data]);
 
   const handleSincronizar = async () => {
     try {
@@ -26,6 +29,7 @@ export default function SaudeOperacionalTab() {
 
   return (
     <div className="space-y-4">
+      <ConversaoTrialCard {...conversao} />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metricas.map((metrica) => <SaudeMetricCard key={metrica.titulo} {...metrica} />)}
       </div>

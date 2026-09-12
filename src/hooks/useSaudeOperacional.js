@@ -8,12 +8,13 @@ export default function useSaudeOperacional() {
   const query = useQuery({
     queryKey: ["admin-saude-operacional"],
     queryFn: async () => {
-      const [pagamentos, webhooks, emails] = await Promise.all([
+      const [pagamentos, webhooks, emails, usuarios] = await Promise.all([
         base44.entities.Pagamento.list("-created_date", 500),
         base44.entities.LogWebhookMercadoPago.list("-created_date", 500),
         base44.entities.LogEmail.list("-enviado_em", 500),
+        base44.entities.User.list("-created_date", 500),
       ]);
-      return { pagamentos, webhooks, emails };
+      return { pagamentos, webhooks, emails, usuarios };
     },
     retry: false,
   });
