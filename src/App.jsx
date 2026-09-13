@@ -26,6 +26,7 @@ import { getCanonicalAppRedirectUrl } from '@/lib/publicUrls';
 const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
 const CustosLayout = lazy(() => import('@/components/custos/CustosLayout'));
 const EntrarNoGuia = lazy(() => import('@/pages/EntrarNoGuia'));
+const SairDoGuia = lazy(() => import('@/pages/SairDoGuia'));
 const ContaZR = lazy(() => import('@/pages/ContaZR'));
 const ComprarZR = lazy(() => import('@/pages/ComprarZR'));
 const Home = lazy(() => import('@/pages/Home'));
@@ -91,7 +92,7 @@ const Produto = lazy(() => import('@/pages/Produto'));
 // when the app-level check reports 'auth_required', otherwise a genuinely
 // fresh visitor (no token yet) gets redirected to /login and then hits a
 // permanent blank screen, since the error never clears on that same page.
-const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto', '/sair-do-guia'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -144,6 +145,7 @@ const AuthenticatedApp = () => {
         <Route path="/SobrePublico" element={<Navigate to="/sobre" replace />} />
         <Route path="/contato" element={<Contato />} />
         <Route path="/produto" element={<Produto />} />
+        <Route path="/sair-do-guia" element={<SairDoGuia />} />
         <Route path="/" element={<LandingOrRedirect />} />
         <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<AppLoginRedirect />} />}>
