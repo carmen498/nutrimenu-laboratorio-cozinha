@@ -25,6 +25,7 @@ import { getCanonicalAppRedirectUrl } from '@/lib/publicUrls';
 // apenas Landing (via LandingOrRedirect), autenticação e páginas legais acima.
 const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
 const CustosLayout = lazy(() => import('@/components/custos/CustosLayout'));
+const EntrarNoGuia = lazy(() => import('@/pages/EntrarNoGuia'));
 const Home = lazy(() => import('@/pages/Home'));
 const Receitas = lazy(() => import('@/pages/Receitas'));
 const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
@@ -201,6 +202,7 @@ const AuthenticatedApp = () => {
             <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
             <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
           </Route>
+          <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
           <Route element={<CustosRoute />}>
             <Route element={<CustosLayout />}>
               <Route path="/custos" element={<CustosInicio />} />
