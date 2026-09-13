@@ -339,6 +339,14 @@ export default async function(req: Request): Promise<Response> {
         // normalizado e validado acima; nunca é persistido na entidade Pagamento.
         ...(cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
         phone: { area_code: telefoneAreaCode, number: telefoneNumber },
+        address: {
+          zip_code: String(user.cep || "").replace(/\D/g, ""),
+          street_name: (user.logradouro || user.endereco || "").toString().trim(),
+          street_number: (user.numero || "S/N").toString().trim(),
+          neighborhood: (user.bairro || "").toString().trim(),
+          city: (user.cidade || String(user.cidade_uf || "").split("/")[0] || "").toString().trim(),
+          federal_unit: (user.estado || String(user.cidade_uf || "").split("/")[1] || "").toString().trim().toUpperCase(),
+        },
       },
     };
 
