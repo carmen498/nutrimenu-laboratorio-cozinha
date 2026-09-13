@@ -26,6 +26,7 @@ import { getCanonicalAppRedirectUrl } from '@/lib/publicUrls';
 const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
 const CustosLayout = lazy(() => import('@/components/custos/CustosLayout'));
 const EntrarNoGuia = lazy(() => import('@/pages/EntrarNoGuia'));
+const ContaZR = lazy(() => import('@/pages/ContaZR'));
 const Home = lazy(() => import('@/pages/Home'));
 const Receitas = lazy(() => import('@/pages/Receitas'));
 const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
@@ -203,6 +204,7 @@ const AuthenticatedApp = () => {
             <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
           </Route>
           <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
+          <Route path="/conta-zr" element={<ContaZR />} />
           <Route element={<CustosRoute />}>
             <Route element={<CustosLayout />}>
               <Route path="/custos" element={<CustosInicio />} />
