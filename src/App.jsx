@@ -27,6 +27,7 @@ const AppLayout = lazy(() => import('@/components/layout/AppLayout'));
 const CustosLayout = lazy(() => import('@/components/custos/CustosLayout'));
 const EntrarNoGuia = lazy(() => import('@/pages/EntrarNoGuia'));
 const ContaZR = lazy(() => import('@/pages/ContaZR'));
+const ComprarZR = lazy(() => import('@/pages/ComprarZR'));
 const Home = lazy(() => import('@/pages/Home'));
 const Receitas = lazy(() => import('@/pages/Receitas'));
 const MinhasReceitas = lazy(() => import('@/pages/MinhasReceitas'));
@@ -205,6 +206,7 @@ const AuthenticatedApp = () => {
           </Route>
           <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
           <Route path="/conta-zr" element={<ContaZR />} />
+          <Route path="/comprar-zr" element={<ComprarZR />} />
           <Route element={<CustosRoute />}>
             <Route element={<CustosLayout />}>
               <Route path="/custos" element={<CustosInicio />} />
