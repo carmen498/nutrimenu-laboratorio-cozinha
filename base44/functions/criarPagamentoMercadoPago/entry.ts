@@ -30,7 +30,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v23-2026-09-13-antifraude-telefone-items-category";
+const VERSAO_CODIGO = "v24-2026-09-13-address-state-fix";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -323,6 +323,15 @@ export default async function(req: Request): Promise<Response> {
     const [primeiroNome, ...restoNome] = nomeCompleto ? nomeCompleto.split(/\s+/) : [""];
     const sobrenome = restoNome.join(" ");
 
+    // Endereço do pagador: ou vai completo, ou não vai. Campo faltando derruba a order.
+    const endCep = String(user.cep || "").replace(/\D/g, "");
+    const endLogradouro = (user.logradouro || user.endereco || "").toString().trim();
+    const endNumero = (user.numero || "S/N").toString().trim();
+    const endBairro = (user.bairro || "").toString().trim();
+    const endCidade = (user.cidade || String(user.cidade_uf || "").split("/")[0] || "").toString().trim();
+    const endEstado = (user.estado || String(user.cidade_uf || "").split("/")[1] || "").toString().trim().toUpperCase();
+    const enderecoCompleto = endCep && endLogradouro && endNumero && endBairro && endCidade && endEstado;
+
     const orderBody: Record<string, unknown> = {
       type: "online",
       processing_mode: "automatic",
@@ -339,14 +348,16 @@ export default async function(req: Request): Promise<Response> {
         // normalizado e validado acima; nunca é persistido na entidade Pagamento.
         ...(cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
         phone: { area_code: telefoneAreaCode, number: telefoneNumber },
-        address: {
-          zip_code: String(user.cep || "").replace(/\D/g, ""),
-          street_name: (user.logradouro || user.endereco || "").toString().trim(),
-          street_number: (user.numero || "S/N").toString().trim(),
-          neighborhood: (user.bairro || "").toString().trim(),
-          city: (user.cidade || String(user.cidade_uf || "").split("/")[0] || "").toString().trim(),
-          federal_unit: (user.estado || String(user.cidade_uf || "").split("/")[1] || "").toString().trim().toUpperCase(),
-        },
+        ...(enderecoCompleto ? {
+          address: {
+            zip_code: endCep,
+            street_name: endLogradouro,
+            street_number: endNumero,
+            neighborhood: endBairro,
+            city: endCidade,
+            state: endEstado,
+          },
+        } : {}),
       },
     };
 
