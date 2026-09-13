@@ -170,37 +170,6 @@ export default function ContaZR() {
               )}
             </section>
 
-            {/* 2. Recibos / comprovantes */}
-            <section className="space-y-3">
-              <h2 className="zr-serif text-lg font-semibold text-[#1F1B16]">Recibos e comprovantes</h2>
-              {pagamentosZR.length === 0 ? (
-                <p className="text-sm text-[#6B6358]">Nenhum comprovante de pagamento disponível.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {pagamentosZR.map((p) => (
-                    <li key={p.id} className="rounded-xl border border-[#E2DBC9] bg-white p-4 flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
-                        <FileText className="w-4 h-4 mt-0.5 text-[#8A6D3B]" />
-                        <div>
-                          <p className="text-sm font-medium text-[#1F1B16]">
-                            R$ {Number(p.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                          </p>
-                          <p className="text-xs text-[#6B6358]">
-                            {p.forma_pagamento === "pix" ? "PIX" : "Cartão"} · {formatarDataHora(p.created_date)} · {p.status}
-                          </p>
-                        </div>
-                      </div>
-                      {p.nota_fiscal_url ? (
-                        <a href={p.nota_fiscal_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-[#8A6D3B] hover:underline">
-                          Nota fiscal
-                        </a>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
             {/* 3. Desistência */}
             <section className="space-y-3">
               <h2 className="zr-serif text-lg font-semibold text-[#1F1B16]">Desistência</h2>
