@@ -344,84 +344,72 @@ export default async function(req: Request): Promise<Response> {
     const endEstado = (user.estado || String(user.cidade_uf || "").split("/")[1] || "").toString().trim().toUpperCase();
     const enderecoCompleto = endCep && endLogradouro && endNumero && endBairro && endCidade && endEstado;
 
-    // Payload separado por meio de pagamento.
-    // PIX: payload mínimo (apenas payer.email). PIX é irreversível, não tem
-    // contestação nem chargeback — o antifraude do Mercado Pago existe para
-    // proteger cartão. Campos extras (items, payer completo, capture_mode,
-    // X-meli-session-id) causam rejeição 400 "property_value" no PIX porque
-    // o capture_mode faz o MP validar payment_method.type contra uma lista
-    // que não inclui "bank_transfer".
-    // Cartão: payload completo com items, payer identificado, device
-    // fingerprint (X-meli-session-id) e capture_mode para captura imediata.
-    let orderBody: Record<string, unknown>;
+    // O Mercado Pago aplica validação restritiva de payment_method.type
+    // quando capture_mode está presente, e rejeita "bank_transfer" (PIX).
+    // Sem o campo, o padrão da conta vale e PIX e cartão funcionam.
+    // Comprovado em 13/09/2026: payload idêntico, 201 sem o campo, 400 com.
+    const orderBody: Record<string, unknown> = {
+      type: "online",
+      processing_mode: "automatic",
+      external_reference: pagamento.id,
+      description: descricaoPlano,
+      total_amount: valorFormatado,
+      payer: {
+        email: payerEmail,
+        entity_type: "individual",
+        ...(primeiroNome ? { first_name: primeiroNome } : {}),
+        ...(sobrenome ? { last_name: sobrenome } : {}),
+        // Identificação do pagador também acompanha o cartão. O CPF já foi
+        // normalizado e validado acima; nunca é persistido na entidade Pagamento.
+        ...(cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
+        phone: { area_code: telefoneAreaCode, number: telefoneNumber },
+        ...(enderecoCompleto ? {
+          address: {
+            zip_code: endCep,
+            street_name: endLogradouro,
+            street_number: endNumero,
+            neighborhood: endBairro,
+            city: endCidade,
+            state: endEstado,
+          },
+        } : {}),
+      },
+    };
+
+    // Items enviados para todos os fluxos (cartão e PIX). O category_id
+    // "virtual_goods" sinaliza ao antifraude que se trata de produto digital.
+    orderBody.items = produtoCompra === "cozinha_mais_custos"
+      ? [
+          { title: NOME_PLANOS[planoBaseId], description: NOME_PLANOS[planoBaseId], unit_price: valorCozinha.toFixed(2), quantity: 1, category_id: "virtual_goods" },
+          { title: NOME_PLANOS[addonId], description: NOME_PLANOS[addonId], unit_price: valorCustos.toFixed(2), quantity: 1, category_id: "virtual_goods" },
+        ]
+      : [
+          { title: descricaoPlano, description: descricaoPlano, unit_price: valorFormatado, quantity: 1, category_id: "virtual_goods" },
+        ];
 
     if (forma_pagamento === "pix") {
-      orderBody = {
-        type: "online",
-        processing_mode: "automatic",
-        external_reference: pagamento.id,
-        description: descricaoPlano,
-        total_amount: valorFormatado,
-        payer: { email: payerEmail },
-        transactions: {
-          payments: [
-            {
-              amount: valorFormatado,
-              payment_method: { id: "pix", type: "bank_transfer" },
-            },
-          ],
-        },
+      orderBody.transactions = {
+        payments: [
+          {
+            amount: valorFormatado,
+            payment_method: { id: "pix", type: "bank_transfer" },
+          },
+        ],
       };
     } else {
-      orderBody = {
-        type: "online",
-        processing_mode: "automatic",
-        capture_mode: "automatic",
-        external_reference: pagamento.id,
-        description: descricaoPlano,
-        total_amount: valorFormatado,
-        payer: {
-          email: payerEmail,
-          entity_type: "individual",
-          ...(primeiroNome ? { first_name: primeiroNome } : {}),
-          ...(sobrenome ? { last_name: sobrenome } : {}),
-          // Identificação do pagador também acompanha o cartão. O CPF já foi
-          // normalizado e validado acima; nunca é persistido na entidade Pagamento.
-          ...(cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
-          phone: { area_code: telefoneAreaCode, number: telefoneNumber },
-          ...(enderecoCompleto ? {
-            address: {
-              zip_code: endCep,
-              street_name: endLogradouro,
-              street_number: endNumero,
-              neighborhood: endBairro,
-              city: endCidade,
-              state: endEstado,
+      orderBody.transactions = {
+        payments: [
+          {
+            amount: valorFormatado,
+            payment_method: {
+              id: body.payment_method_id || "master",
+              type: "credit_card",
+              token,
+              installments: parcelas,
+              statement_descriptor: "NUTRIMENU",
             },
-          } : {}),
-        },
-        items: produtoCompra === "cozinha_mais_custos"
-          ? [
-              { title: NOME_PLANOS[planoBaseId], description: NOME_PLANOS[planoBaseId], unit_price: valorCozinha.toFixed(2), quantity: 1, category_id: "virtual_goods" },
-              { title: NOME_PLANOS[addonId], description: NOME_PLANOS[addonId], unit_price: valorCustos.toFixed(2), quantity: 1, category_id: "virtual_goods" },
-            ]
-          : [
-              { title: descricaoPlano, description: descricaoPlano, unit_price: valorFormatado, quantity: 1, category_id: "virtual_goods" },
-            ],
-        transactions: {
-          payments: [
-            {
-              amount: valorFormatado,
-              payment_method: {
-                id: body.payment_method_id || "master",
-                type: "credit_card",
-                token,
-                installments: parcelas,
-                statement_descriptor: "NUTRIMENU",
-              },
-            },
-          ],
-        },
+          },
+        ],
       };
     }
 
