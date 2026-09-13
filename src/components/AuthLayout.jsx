@@ -5,7 +5,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle = null, footer 
     <div className="min-h-screen flex flex-col bg-background">
       <header className="w-full py-6 bg-brand flex items-center justify-center px-4">
         <span className="font-heading text-2xl md:text-3xl text-brand-foreground tracking-wide">
-          Laboratório de Cozinha
+          Nutrimenu
         </span>
       </header>
       <div className="flex-1 flex items-center justify-center px-4 py-10">

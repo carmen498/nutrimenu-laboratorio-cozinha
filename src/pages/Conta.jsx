@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { formatarTelefone } from "@/lib/formatarTelefone";
+import { capitalizarNome } from "@/lib/capitalizarNome";
 import { formatarData, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import DesistenciaCompraCard from "@/components/conta/DesistenciaCompraCard";
 import { toast } from "sonner";
@@ -86,7 +87,8 @@ export default function Conta() {
     if (!telefoneValido) return;
     setSaving(true);
     const payload = {
-      nome_completo: nomeCompleto,
+      nome_completo: capitalizarNome(nomeCompleto),
+      full_name: capitalizarNome(nomeCompleto),
       telefone_whatsapp: telefone,
       empresa,
       cpf_cnpj: cpfCnpj,

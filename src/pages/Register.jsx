@@ -14,6 +14,9 @@ import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { formatarTelefone } from "@/lib/formatarTelefone";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import { mensagemErroCadastro, validarSenhaForte, validarTelefoneBrasileiro } from "@/lib/registerValidation";
+import { safeReturnTo } from "@/lib/authReturnTo";
+import { APP_SITE_URLS } from "@/lib/publicUrls";
+import { capitalizarNome } from "@/lib/capitalizarNome";
 
 
 export default function Register() {
@@ -32,6 +35,14 @@ export default function Register() {
   const [aceitaTermos, setAceitaTermos] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Captura o destino de retorno antes de qualquer limpeza de URL — preserva
+  // o parâmetro através da etapa de OTP para que o usuário volte para onde
+  // veio (ex.: Guia Técnico ZR) e não termine preso no Laboratório de Cozinha.
+  const [returnTo] = useState(() => {
+    const dest = safeReturnTo();
+    return dest === "/" ? new URL(APP_SITE_URLS.appHome).pathname : dest;
+  });
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
@@ -65,7 +76,8 @@ export default function Register() {
       setError("As senhas não coincidem");
       return;
     }
-    setFullName(nomeLimpo);
+    const nomeCapitalizado = capitalizarNome(nomeLimpo);
+    setFullName(nomeCapitalizado);
     setEmail(emailLimpo);
     setLoading(true);
     try {
@@ -101,7 +113,7 @@ export default function Register() {
     // chamada falhar, o AuthContext repete a tentativa após o redirecionamento.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
 
-    const perfilCadastro = { nome_completo: fullName, telefone_whatsapp: telefone };
+    const perfilCadastro = { nome_completo: fullName, full_name: fullName, telefone_whatsapp: telefone };
     sessionStorage.setItem("base44_pending_registration_profile", JSON.stringify(perfilCadastro));
     try {
       await base44.auth.updateMe(perfilCadastro);
@@ -135,7 +147,7 @@ export default function Register() {
       }
     }
 
-    window.location.href = "/app";
+    window.location.href = returnTo;
   };
 
   const handleResend = async () => {
@@ -168,7 +180,8 @@ export default function Register() {
     // somente depois que o Google devolver uma sessão autenticada.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
     try {
-      await base44.auth.loginWithProvider("google", new URL("/app", window.location.origin).toString());
+      const destinoOAuth = new URL(returnTo, window.location.origin).toString();
+      await base44.auth.loginWithProvider("google", destinoOAuth);
     } catch (err) {
       sessionStorage.removeItem("base44_pending_terms_acceptance");
       setGoogleLoading(false);
@@ -412,7 +425,7 @@ export default function Register() {
             >
               Política de Privacidade
             </a>{" "}
-            do Laboratório de Cozinha
+            do Nutrimenu
           </Label>
         </div>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !aceitaTermos}>
