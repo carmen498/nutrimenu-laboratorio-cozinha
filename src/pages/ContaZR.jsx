@@ -9,6 +9,7 @@ import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 import { Loader2, ShieldCheck, FileText, ArrowLeft, Clock, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
 import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
+import { formatarDataBrasilia, formatarDataHoraBrasilia, partesDataBrasilia } from "@/lib/fusoBrasilia";
 
 const PRAZO_DIAS = 7;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -33,28 +34,21 @@ const NOME_PLANO = {
 
 const ehZR = (plano) => typeof plano === "string" && plano.startsWith("zr_");
 
-const formatarDataHora = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-};
-
-const formatarData = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
-};
+const formatarDataHora = (iso) => formatarDataHoraBrasilia(iso) || "—";
+const formatarData = (iso) => formatarDataBrasilia(iso) || "—";
 
 // Contagem por dia corrido: no dia da compra restam 7; no dia seguinte, 6;
-// ... chegando a 0 no sétimo dia. Compara datas em meia-noite (hora local).
+// ... chegando a 0 no sétimo dia. Usa meia-noite no fuso America/Sao_Paulo
+// para ambas as datas — nunca UTC — para que uma compra às 23h de SP não
+// apareça como "ontem" nem desloque a contagem do direito de arrependimento.
 const diasRestantes = (compraEm) => {
-  const t = new Date(compraEm).getTime();
-  if (!Number.isFinite(t)) return -1;
-  const inicio = new Date(compraEm);
-  inicio.setHours(0, 0, 0, 0);
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  const diasDecorridos = Math.floor((hoje.getTime() - inicio.getTime()) / DIA_MS);
+  const partesCompra = partesDataBrasilia(compraEm);
+  if (!partesCompra) return -1;
+  const partesHoje = partesDataBrasilia(new Date());
+  if (!partesHoje) return -1;
+  const inicio = Date.UTC(Number(partesCompra.year), Number(partesCompra.month) - 1, Number(partesCompra.day));
+  const hoje = Date.UTC(Number(partesHoje.year), Number(partesHoje.month) - 1, Number(partesHoje.day));
+  const diasDecorridos = Math.floor((hoje - inicio) / DIA_MS);
   return PRAZO_DIAS - diasDecorridos;
 };
 
