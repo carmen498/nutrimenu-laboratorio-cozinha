@@ -1,9 +1,10 @@
 // Normaliza os estados retornados pela Orders API do Mercado Pago para os
 // estados internos da entidade Pagamento. A Orders API usa, entre outros,
-// processed / failed / canceled / expired / refunded; as transações associadas
-// usam estados equivalentes. Estados não finais permanecem pending.
+// processed / failed / canceled / expired / refunded / charged_back /
+// partially_refunded; as transações associadas usam estados equivalentes.
+// Estados não finais permanecem pending.
 
-export type StatusPagamentoInterno = "pending" | "approved" | "rejected" | "cancelled" | "estornado";
+export type StatusPagamentoInterno = "pending" | "approved" | "rejected" | "cancelled" | "estornado" | "contestado" | "estornado_parcial";
 
 export function resolverStatusOrderMercadoPago(order: any): StatusPagamentoInterno {
   const orderStatus = String(order?.status || "").toLowerCase();
@@ -11,6 +12,10 @@ export function resolverStatusOrderMercadoPago(order: any): StatusPagamentoInter
 
   // Reembolso deve prevalecer sobre qualquer estado anterior de processamento.
   if (orderStatus === "refunded" || txStatus === "refunded") return "estornado";
+  // Contestação (chargeback) revoga o acesso, igual ao estorno.
+  if (orderStatus === "charged_back" || txStatus === "charged_back") return "contestado";
+  // Estorno parcial: registra, NÃO revoga — admin decide manualmente.
+  if (orderStatus === "partially_refunded" || txStatus === "partially_refunded") return "estornado_parcial";
 
   // Uma order expirada/cancelada não poderá mais ser paga; internamente usamos
   // "cancelled" por compatibilidade com os registros existentes.
@@ -31,6 +36,8 @@ export function resolverStatusPaymentMercadoPago(payment: any): StatusPagamentoI
   const status = String(payment?.status || "").toLowerCase();
   if (status === "approved") return "approved";
   if (status === "refunded") return "estornado";
+  if (status === "charged_back") return "contestado";
+  if (status === "partially_refunded") return "estornado_parcial";
   if (["cancelled", "canceled", "expired"].includes(status)) return "cancelled";
   if (["rejected", "failed"].includes(status)) return "rejected";
   return "pending";

@@ -15,6 +15,7 @@ import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
 import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
+import { notificarAdminEventoWebhook } from "../../shared/notificarAdminWebhook.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 import { registrarLogEmail, resumirErroOperacional } from "../../shared/governancaLogs.ts";
@@ -22,7 +23,7 @@ import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v8-2026-09-11-sem-assinatura-separada";
+const VERSAO_CODIGO = "webhook-v9-2026-09-13-contestacao-estorno-parcial-cancelamento";
 
 export default async function(req: Request): Promise<Response> {
   let dataIdContexto: string | null = null;
@@ -169,11 +170,27 @@ export default async function(req: Request): Promise<Response> {
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
 
-      // Estorno reverte um acesso que já havia sido concedido — revoga o plano do
-      // usuário. "rejected"/"cancelled" são tentativas que nunca ativaram nada.
-      if (novoStatus === "estornado") {
+      // Estorno, contestação e cancelamento revertem um acesso que já havia sido
+      // concedido — revogam o entitlement daquele pagamento. Estorno parcial NÃO
+      // revoga: apenas registra e deixa o admin decidir.
+      if (["estornado", "contestado", "cancelled"].includes(novoStatus)) {
         const revogacao = await revogarCompraEstorno(base44, pagamento);
-        console.log("Resultado da revogação por estorno", { pagamento_id: pagamento.id, revogacao });
+        console.log("Resultado da revogação", { pagamento_id: pagamento.id, status: novoStatus, revogacao });
+      }
+
+      const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+
+      // Aviso ao administrador para contestação, estorno parcial e cancelamento.
+      // Falha no aviso não aborta o processamento do webhook.
+      if (["contestado", "estornado_parcial", "cancelled"].includes(novoStatus)) {
+        await notificarAdminEventoWebhook(base44, {
+          status_resolvido: novoStatus,
+          pagamento_id: pagamento.id,
+          usuario_id: pagamento.usuario_id,
+          usuario_nome: usuario?.nome_completo || usuario?.full_name || "",
+          plano: pagamento.plano,
+          valor: pagamento.valor,
+        }).catch((e: any) => console.log("Falha ao notificar admin:", e?.message || "erro"));
       }
 
       // Dispara o e-mail transacional de pagamento recusado/estornado, apenas se o
@@ -184,7 +201,6 @@ export default async function(req: Request): Promise<Response> {
       else if (novoStatus === "estornado") tipoEmail = "pagamento_estornado";
 
       if (tipoEmail) {
-        const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
         if (usuario?.email) {
           const nome = usuario.nome_completo || usuario.full_name || "";
           const DEFAULTS: Record<string, { assunto: string; corpo: string }> = {
