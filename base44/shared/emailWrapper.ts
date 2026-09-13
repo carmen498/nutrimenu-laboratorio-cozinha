@@ -1,22 +1,35 @@
 // Módulo compartilhado: envolve o corpo de qualquer e-mail (transacional ou
-// campanha) com o cabeçalho e rodapé fixos da marca, usando os valores
-// cadastrados em ConfiguracaoEmail (singleton). Usado internamente por
-// sendEmailViaResend, para que toda function de envio já saia com o layout
-// padrão sem precisar duplicar HTML.
+// campanha) com o cabeçalho e rodapé fixos da marca. Para laboratorio_cozinha
+// lê ConfiguracaoEmail (singleton, configurável pelo admin); para guia_zr,
+// laboratorio_custos e fallback usa identidade própria hardcoded via
+// identidadeProduto. Usado internamente por sendEmailViaResend.
+import { resolverIdentidadeProduto } from "./identidadeProduto.ts";
 
-export async function buildEmailHtml(base44, corpoHtml, { marketing = false } = {}) {
-  const configs = await base44.asServiceRole.entities.ConfiguracaoEmail.list();
-  const cfg = configs?.[0] || {};
+export async function buildEmailHtml(base44, corpoHtml, { marketing = false, produto } = {}) {
+  const identidade = resolverIdentidadeProduto(produto);
 
-  const nome = cfg.nome_remetente || "Laboratório de Cozinha";
-  const tagline = cfg.tagline || "Receitas que se Multiplicam";
-  const cor = cfg.cor_cabecalho || "#5c7a5f";
-  const assinatura = cfg.assinatura_rodape || "Carmen Reinstein · Laboratório de Cozinha";
-  const emailContato = cfg.email_contato || "";
-  const endereco = cfg.endereco_rodape || "";
-  const textoCancelamento = cfg.texto_cancelamento || "Cancelar inscrição";
+  let nome: string, tagline: string, cor: string, assinatura: string;
+  let emailContato = "", endereco = "";
+
+  if (identidade) {
+    nome = identidade.nome;
+    tagline = identidade.tagline;
+    cor = identidade.cor;
+    assinatura = identidade.assinatura;
+  } else {
+    const configs = await base44.asServiceRole.entities.ConfiguracaoEmail.list();
+    const cfg = configs?.[0] || {};
+    nome = cfg.nome_remetente || "Laboratório de Cozinha";
+    tagline = cfg.tagline || "Receitas que se Multiplicam";
+    cor = cfg.cor_cabecalho || "#5c7a5f";
+    assinatura = cfg.assinatura_rodape || "Carmen Reinstein · Laboratório de Cozinha";
+    emailContato = cfg.email_contato || "";
+    endereco = cfg.endereco_rodape || "";
+  }
+
+  const textoCancelamento = "Cancelar inscrição";
   const emailCancelamento = emailContato || "contato@nutrimenu.com.br";
-  const hrefCancelamento = `mailto:${emailCancelamento}?subject=${encodeURIComponent("Cancelar inscrição - Laboratório de Cozinha")}`;
+  const hrefCancelamento = `mailto:${emailCancelamento}?subject=${encodeURIComponent(`Cancelar inscrição - ${nome}`)}`;
 
   return `<!DOCTYPE html>
 <html>

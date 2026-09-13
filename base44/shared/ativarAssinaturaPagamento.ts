@@ -37,7 +37,7 @@ async function enviarBoasVindasSeNecessario(base44: any, usuario: any): Promise<
   );
   if (!ativo) return;
 
-  const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+  const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento?.produto_compra });
   await registrarLogEmail(base44, {
     usuarioId: usuario.id,
     email: usuario.email,
@@ -46,7 +46,7 @@ async function enviarBoasVindasSeNecessario(base44: any, usuario: any): Promise<
   });
 }
 
-export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string; created_date?: string }): Promise<void> {
+export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string; created_date?: string; produto_compra?: string }): Promise<void> {
   const usuarioAntes = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
 
   // A mesma transação pode voltar pela resposta síncrona, por repetição HTTP e pelo
@@ -96,7 +96,7 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
     });
 
     if (ativo) {
-      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
       await registrarLogEmail(base44, {
         usuarioId: usuario.id,
         email: usuario.email,

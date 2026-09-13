@@ -19,13 +19,14 @@ export async function notificarAdminEventoWebhook(
     usuario_nome?: string;
     plano?: string;
     valor?: number;
+    produto_compra?: string;
   }
 ): Promise<void> {
   const titulo = TITULOS[evento.status_resolvido] || evento.status_resolvido;
   const valorTxt = evento.valor != null ? `R$ ${Number(evento.valor).toFixed(2)}` : "—";
   const nome = evento.usuario_nome || evento.usuario_id;
 
-  const assunto = `[Laboratório de Cozinha] ${titulo} — pagamento ${evento.pagamento_id}`;
+  const assunto = `[${evento.produto_compra || "Nutrimenu"}] ${titulo} — pagamento ${evento.pagamento_id}`;
   const acao = evento.status_resolvido === "estornado_parcial"
     ? "Estorno parcial registrado — o acesso <strong>NÃO</strong> foi revogado automaticamente. Avalie manualmente."
     : "O acesso do usuário foi revogado automaticamente.";
@@ -40,7 +41,7 @@ export async function notificarAdminEventoWebhook(
   const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }).catch(() => []);
   for (const admin of admins || []) {
     if (admin.email) {
-      await sendEmailViaResend(base44, { to: admin.email, subject: assunto, html }).catch((e: any) =>
+      await sendEmailViaResend(base44, { to: admin.email, subject: assunto, html, produto: evento.produto_compra }).catch((e: any) =>
         console.log(`Falha ao enviar e-mail admin (${admin.email}):`, e?.message || "erro")
       );
     }

@@ -44,7 +44,7 @@ export default async function(req: Request): Promise<Response> {
           const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_pendente_lembrete", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
 
           if (ativo) {
-            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
             await registrarLogEmail(base44, {
               usuarioId: usuario.id,
               email: usuario.email,

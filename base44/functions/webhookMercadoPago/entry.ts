@@ -190,6 +190,7 @@ export default async function(req: Request): Promise<Response> {
           usuario_nome: usuario?.nome_completo || usuario?.full_name || "",
           plano: pagamento.plano,
           valor: pagamento.valor,
+          produto_compra: pagamento.produto_compra,
         }).catch((e: any) => console.log("Falha ao notificar admin:", e?.message || "erro"));
       }
 
@@ -218,7 +219,7 @@ export default async function(req: Request): Promise<Response> {
           const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
 
           if (ativo) {
-            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
             await registrarLogEmail(base44, {
               usuarioId: usuario.id,
               email: usuario.email,

@@ -79,7 +79,7 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
       { plano: nomePlano, data_expiracao: dataExpiracao },
     );
     if (ativo) {
-      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
       await registrarLogEmail(base44, { usuarioId: usuario.id, email: usuario.email, tipo: "custos_pagamento_aprovado", resultado });
     }
   }

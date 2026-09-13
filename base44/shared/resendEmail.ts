@@ -3,14 +3,17 @@
 // chamada HTTP à API do Resend em cada function.
 import { secrets } from "base44:runtime";
 import { buildEmailHtml } from "./emailWrapper.ts";
+import { resolverIdentidadeProduto } from "./identidadeProduto.ts";
 
-export async function sendEmailViaResend(base44, { to, subject, html, marketing = false }) {
+export async function sendEmailViaResend(base44, { to, subject, html, marketing = false, produto }) {
   const apiKey = secrets.get("RESEND_API_KEY");
   if (!apiKey) {
     return { ok: false, error: "RESEND_API_KEY não configurada" };
   }
 
-  const htmlFinal = await buildEmailHtml(base44, html, { marketing });
+  const htmlFinal = await buildEmailHtml(base44, html, { marketing, produto });
+  const identidade = resolverIdentidadeProduto(produto);
+  const fromName = identidade?.fromName || "Laboratório de Cozinha";
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -19,7 +22,7 @@ export async function sendEmailViaResend(base44, { to, subject, html, marketing 
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      from: "Laboratório de Cozinha <contato@nutrimenu.com.br>",
+      from: `${fromName} <contato@nutrimenu.com.br>`,
       to: [to],
       subject,
       html: htmlFinal,
