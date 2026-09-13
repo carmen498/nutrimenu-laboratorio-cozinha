@@ -36,12 +36,18 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Captura o destino de retorno antes de qualquer limpeza de URL — preserva
-  // o parâmetro através da etapa de OTP para que o usuário volte para onde
-  // veio (ex.: Guia Técnico ZR) e não termine preso no Laboratório de Cozinha.
+  // O destino de retorno precisa sobreviver a troca de aba (abrir o e-mail) e
+  // a recarregamento da página. safeReturnTo() consome e destrói o valor de
+  // sessionStorage no primeiro mount — se a página recarrega, ele se perde e o
+  // usuário cai no /app. Por isso persistimos numa chave própria que só é
+  // limpa depois do redirecionamento real.
   const [returnTo] = useState(() => {
+    const persisted = sessionStorage.getItem("base44_register_return_to");
+    if (persisted) return persisted;
     const dest = safeReturnTo();
-    return dest === "/" ? new URL(APP_SITE_URLS.appHome).pathname : dest;
+    const final = dest === "/" ? new URL(APP_SITE_URLS.appHome).pathname : dest;
+    sessionStorage.setItem("base44_register_return_to", final);
+    return final;
   });
 
   useEffect(() => {
@@ -147,6 +153,7 @@ export default function Register() {
       }
     }
 
+    sessionStorage.removeItem("base44_register_return_to");
     window.location.href = returnTo;
   };
 
