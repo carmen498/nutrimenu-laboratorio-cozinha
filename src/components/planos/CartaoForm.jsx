@@ -15,6 +15,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
   const [validade, setValidade] = useState("");
   const [cvv, setCvv] = useState("");
   const [cpf, setCpf] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [parcelas, setParcelas] = useState("1");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -61,6 +62,10 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
       if (cpfLimpo.length !== 11) {
         throw new Error("Informe um CPF válido do titular do cartão.");
       }
+      const telefoneLimpo = telefone.replace(/\D/g, "");
+      if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+        throw new Error("Informe um telefone válido com DDD.");
+      }
 
       const metodos = await mp.getPaymentMethods({ bin: cardNumberLimpo.slice(0, 6) });
       const paymentMethodId = metodos?.results?.[0]?.id || metodos?.[0]?.id;
@@ -101,7 +106,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         device_id: deviceId,
         installments: parseInt(parcelas, 10),
         payment_method_id: paymentMethodId,
-        payer: { email, cpf: cpfLimpo },
+        payer: { email, cpf: cpfLimpo, telefone },
       });
 
       onSuccess(res.data);
@@ -171,6 +176,17 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
           value={cpf}
           onChange={(e) => setCpf(e.target.value)}
           placeholder="000.000.000-00"
+          required
+          autoComplete="off"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="cartao-telefone">Telefone com DDD</Label>
+        <Input
+          id="cartao-telefone"
+          value={telefone}
+          onChange={(e) => setTelefone(e.target.value)}
+          placeholder="(00) 00000-0000"
           required
           autoComplete="off"
         />

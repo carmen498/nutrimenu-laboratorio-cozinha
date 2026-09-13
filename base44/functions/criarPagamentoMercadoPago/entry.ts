@@ -30,7 +30,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v22-2026-09-12-guia-zr-e-dados-fiscais";
+const VERSAO_CODIGO = "v23-2026-09-13-antifraude-telefone-items-category";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -124,6 +124,12 @@ export default async function(req: Request): Promise<Response> {
     if (cpfLimpo.length !== 11) {
       return Response.json({ error: "Informe um CPF válido do titular do pagamento" }, { status: 400 });
     }
+    const telefoneLimpo = typeof payer?.telefone === "string" ? payer.telefone.replace(/\D/g, "") : "";
+    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+      return Response.json({ error: "Informe um telefone válido com DDD" }, { status: 400 });
+    }
+    const telefoneAreaCode = telefoneLimpo.slice(0, 2);
+    const telefoneNumber = telefoneLimpo.slice(2);
 
     // Sem CPF/CNPJ e endereço completo não há como emitir a nota fiscal depois —
     // por isso a compra não se conclui. O cadastro é a fonte destes dados.
@@ -332,21 +338,20 @@ export default async function(req: Request): Promise<Response> {
         // Identificação do pagador também acompanha o cartão. O CPF já foi
         // normalizado e validado acima; nunca é persistido na entidade Pagamento.
         ...(cpfLimpo ? { identification: { type: "CPF", number: cpfLimpo } } : {}),
+        phone: { area_code: telefoneAreaCode, number: telefoneNumber },
       },
     };
 
-    // A Orders API não aceita a propriedade "items" em pedidos PIX (retorna
-    // HTTP 400 "unsupported_properties") — só é suportada no fluxo de cartão.
-    if (forma_pagamento === "cartao") {
-      orderBody.items = produtoCompra === "cozinha_mais_custos"
-        ? [
-            { title: NOME_PLANOS[planoBaseId], description: NOME_PLANOS[planoBaseId], unit_price: valorCozinha.toFixed(2), quantity: 1 },
-            { title: NOME_PLANOS[addonId], description: NOME_PLANOS[addonId], unit_price: valorCustos.toFixed(2), quantity: 1 },
-          ]
-        : [
-            { title: descricaoPlano, description: descricaoPlano, unit_price: valorFormatado, quantity: 1 },
-          ];
-    }
+    // Items enviados para todos os fluxos (cartão e PIX). O category_id
+    // "virtual_goods" sinaliza ao antifraude que se trata de produto digital.
+    orderBody.items = produtoCompra === "cozinha_mais_custos"
+      ? [
+          { title: NOME_PLANOS[planoBaseId], description: NOME_PLANOS[planoBaseId], unit_price: valorCozinha.toFixed(2), quantity: 1, category_id: "virtual_goods" },
+          { title: NOME_PLANOS[addonId], description: NOME_PLANOS[addonId], unit_price: valorCustos.toFixed(2), quantity: 1, category_id: "virtual_goods" },
+        ]
+      : [
+          { title: descricaoPlano, description: descricaoPlano, unit_price: valorFormatado, quantity: 1, category_id: "virtual_goods" },
+        ];
 
     if (forma_pagamento === "pix") {
       orderBody.transactions = {
@@ -367,7 +372,7 @@ export default async function(req: Request): Promise<Response> {
               type: "credit_card",
               token,
               installments: parcelas,
-              statement_descriptor: "PLATAFORMA ZR",
+              statement_descriptor: "NUTRIMENU",
             },
           },
         ],

@@ -10,6 +10,7 @@ const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
 export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false, podePagar = true }) {
   const [cpf, setCpf] = useState("");
+  const [telefone, setTelefone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState(null);
@@ -60,6 +61,11 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
       setError("Complete os dados para emissão de nota fiscal acima antes de pagar.");
       return;
     }
+    const telefoneLimpo = telefone.replace(/\D/g, "");
+    if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
+      setError("Informe um telefone válido com DDD.");
+      return;
+    }
     setLoading(true);
     try {
       if (!tentativaPagamentoRef.current) tentativaPagamentoRef.current = crypto.randomUUID();
@@ -70,7 +76,7 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
         tentativa_id: tentativaPagamentoRef.current,
         forma_pagamento: "pix",
         aceite_termos: true,
-        payer: { email, cpf },
+        payer: { email, cpf, telefone },
       });
       setResultado(res.data);
       if (res.data?.pagamentoId) iniciarPolling(res.data.pagamentoId);
@@ -165,6 +171,17 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
           value={cpf}
           onChange={(e) => setCpf(e.target.value)}
           placeholder="000.000.000-00"
+          required
+          autoComplete="off"
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="pix-telefone">Telefone com DDD</Label>
+        <Input
+          id="pix-telefone"
+          value={telefone}
+          onChange={(e) => setTelefone(e.target.value)}
+          placeholder="(00) 00000-0000"
           required
           autoComplete="off"
         />
