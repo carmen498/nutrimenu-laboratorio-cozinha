@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 const INTERVALO_POLLING_MS = 4000;
 const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
-export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false, podePagar = true }) {
+export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
   const [cpf, setCpf] = useState("");
   const [telefone, setTelefone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -83,7 +83,12 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
     } catch (err) {
       const status = err?.response?.data?.status;
       if (["rejected", "cancelled", "estornado"].includes(status)) tentativaPagamentoRef.current = null;
-      setError(err?.response?.data?.error || err.message || "Erro ao gerar o PIX.");
+      const respostaErro = err?.response?.data;
+      if (respostaErro?.code === "upgrade_requer_faixas") {
+        onErroUpgrade?.(respostaErro);
+        return;
+      }
+      setError(respostaErro?.error || err.message || "Erro ao gerar o PIX.");
     } finally {
       setLoading(false);
     }

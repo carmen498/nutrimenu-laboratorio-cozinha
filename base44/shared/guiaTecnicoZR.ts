@@ -1,20 +1,106 @@
 // Ofertas do Guia Técnico ZR e concessão/revogação das faixas de acesso.
 // Regras: 12 meses por compra; as faixas ACUMULAM; recompra da mesma faixa
 // estende o vencimento a partir da data maior; "acesso-livre" não é vendável.
+// Ofertas de upgrade (zr_full_upgrade_*) concedem a faixa "full" por um preço
+// menor, exigindo que o usuário já tenha faixas inferiores ativas.
 
 export const MESES_ACESSO_ZR = 12;
 
-export const OFERTAS_ZR: Record<string, { faixa: string; nome: string; renovacao: boolean; maxParcelas: number }> = {
+export const OFERTAS_ZR: Record<string, {
+  faixa: string;
+  nome: string;
+  renovacao: boolean;
+  maxParcelas: number;
+  upgrade?: boolean;
+  requer_faixas?: string[];
+}> = {
   zr_tin: { faixa: "tin", nome: "ZR Tabela de Informação Nutricional", renovacao: false, maxParcelas: 3 },
   zr_tin_renovacao: { faixa: "tin", nome: "Renovação anual — ZR Tabela de Informação Nutricional", renovacao: true, maxParcelas: 3 },
   zr_full: { faixa: "full", nome: "ZR Profissional", renovacao: false, maxParcelas: 6 },
   zr_full_renovacao: { faixa: "full", nome: "Renovação anual — ZR Profissional", renovacao: true, maxParcelas: 6 },
   zr_arquitetura: { faixa: "arquitetura-do-rotulo", nome: "ZR Arquitetura do Rótulo", renovacao: false, maxParcelas: 2 },
   zr_arquitetura_renovacao: { faixa: "arquitetura-do-rotulo", nome: "Renovação anual — ZR Arquitetura do Rótulo", renovacao: true, maxParcelas: 2 },
+  zr_full_upgrade_tin: { faixa: "full", nome: "Upgrade para ZR Profissional (TIN)", renovacao: false, maxParcelas: 6, upgrade: true, requer_faixas: ["tin"] },
+  zr_full_upgrade_arquitetura: { faixa: "full", nome: "Upgrade para ZR Profissional (Arquitetura)", renovacao: false, maxParcelas: 6, upgrade: true, requer_faixas: ["arquitetura-do-rotulo"] },
+  zr_full_upgrade_tin_arquitetura: { faixa: "full", nome: "Upgrade para ZR Profissional (TIN + Arquitetura)", renovacao: false, maxParcelas: 6, upgrade: true, requer_faixas: ["tin", "arquitetura-do-rotulo"] },
 };
 
 export function ofertaZR(planoId: unknown) {
   return typeof planoId === "string" ? OFERTAS_ZR[planoId] || null : null;
+}
+
+// Definições canônicas para seeding em ConfiguracaoPlano.
+// Os preços das ofertas de upgrade são os únicos valores controlados aqui;
+// preços das ofertas regulares são sempre lidos do banco, nunca sobrescritos.
+export const CONFIGURACOES_UPGRADE_ZR_CANONICAS = [
+  {
+    plano_id: "zr_full_upgrade_tin",
+    produto: "guia_zr",
+    nome: "Upgrade para ZR Profissional (TIN)",
+    subtitulo: "Para quem já tem a Tabela de Informação Nutricional ativa",
+    preco_exibido: 150,
+    periodo_exibido: "unico",
+    preco_detalhe: "12 meses de acesso",
+    valor_cobranca: 150,
+    beneficios: ["Acesso completo à faixa ZR Profissional", "Mantém sua faixa TIN ativa"],
+    mais_popular: false,
+    ordem: 40,
+    venda_habilitada: true,
+    versao_oferta: "upgrade-v1",
+  },
+  {
+    plano_id: "zr_full_upgrade_arquitetura",
+    produto: "guia_zr",
+    nome: "Upgrade para ZR Profissional (Arquitetura)",
+    subtitulo: "Para quem já tem a Arquitetura do Rótulo ativa",
+    preco_exibido: 200,
+    periodo_exibido: "unico",
+    preco_detalhe: "12 meses de acesso",
+    valor_cobranca: 200,
+    beneficios: ["Acesso completo à faixa ZR Profissional", "Mantém sua faixa Arquitetura ativa"],
+    mais_popular: false,
+    ordem: 41,
+    venda_habilitada: true,
+    versao_oferta: "upgrade-v1",
+  },
+  {
+    plano_id: "zr_full_upgrade_tin_arquitetura",
+    produto: "guia_zr",
+    nome: "Upgrade para ZR Profissional (TIN + Arquitetura)",
+    subtitulo: "Para quem já tem TIN e Arquitetura do Rótulo ativas",
+    preco_exibido: 53,
+    periodo_exibido: "unico",
+    preco_detalhe: "12 meses de acesso",
+    valor_cobranca: 53,
+    beneficios: ["Acesso completo à faixa ZR Profissional", "Mantém suas faixas TIN e Arquitetura ativas"],
+    mais_popular: false,
+    ordem: 42,
+    venda_habilitada: true,
+    versao_oferta: "upgrade-v1",
+  },
+] as const;
+
+// Verifica se o usuário tem todas as faixas exigidas ativas.
+// Acesso vitalício (vitalicio=true) é considerado ativo sem checar fim_em.
+export async function validarFaixasUpgrade(
+  base44: any,
+  userId: string,
+  requerFaixas: string[],
+): Promise<{ ok: boolean; faltantes: string[] }> {
+  if (!requerFaixas?.length) return { ok: true, faltantes: [] };
+  const registros = await base44.asServiceRole.entities.AcessoGuiaTecnicoZR.filter({ user_id: userId });
+  const agora = Date.now();
+  const ativas = new Set<string>();
+  for (const r of registros || []) {
+    if (r.status !== "ativo") continue;
+    if (r.inicio_em && Date.parse(r.inicio_em) > agora) continue;
+    if (r.vitalicio) { ativas.add(r.faixa); continue; }
+    if (!r.fim_em) { ativas.add(r.faixa); continue; }
+    const fim = Date.parse(r.fim_em);
+    if (Number.isFinite(fim) && fim >= agora) ativas.add(r.faixa);
+  }
+  const faltantes = requerFaixas.filter((f) => !ativas.has(f));
+  return { ok: faltantes.length === 0, faltantes };
 }
 
 function somarMeses(base: Date, meses: number): Date {

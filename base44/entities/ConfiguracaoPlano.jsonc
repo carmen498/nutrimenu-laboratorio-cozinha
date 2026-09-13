@@ -27,9 +27,12 @@
         "zr_full",
         "zr_full_renovacao",
         "zr_arquitetura",
-        "zr_arquitetura_renovacao"
+        "zr_arquitetura_renovacao",
+        "zr_full_upgrade_tin",
+        "zr_full_upgrade_arquitetura",
+        "zr_full_upgrade_tin_arquitetura"
       ],
-      "description": "Identificador fixo da oferta. Ofertas do Laborat\u00f3rio de Custos usam prefixo custos_; as faixas do Guia T\u00e9cnico ZR usam prefixo zr_."
+      "description": "Identificador fixo da oferta. Ofertas do Laborat\u00f3rio de Custos usam prefixo custos_; as faixas do Guia T\u00e9cnico ZR usam prefixo zr_. Ofertas de upgrade (zr_full_upgrade_*) concedem a faixa full por pre\u00e7o menor, exigindo faixas inferiores ativas."
     },
     "nome": {
       "type": "string",

@@ -12,7 +12,7 @@ import CartaoForm from "@/components/planos/CartaoForm";
 import PixForm from "@/components/planos/PixForm";
 import AvisoDesistencia from "@/components/planos/AvisoDesistencia";
 import DadosNotaFiscalCheckout from "@/components/planos/DadosNotaFiscalCheckout";
-import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 const URL_GUIA = "https://zr.nutrimenu.com.br";
 const URL_GUIA_ENTRAR = "https://zr.nutrimenu.com.br/entrar";
@@ -36,9 +36,11 @@ export default function ComprarZR() {
   const [resultadoPendente, setResultadoPendente] = useState(null);
   const [aceiteContratacao, setAceiteContratacao] = useState(false);
   const [metodoPagamento, setMetodoPagamento] = useState("cartao");
+  const [erroUpgrade, setErroUpgrade] = useState(null);
   const { user } = useAuth();
 
   const urlParams = new URLSearchParams(window.location.search);
+  const planoId = urlParams.get("plano");
   const faixaNormalizada = normalizarFaixa(urlParams.get("faixa"));
 
   const { data: ofertasData, isLoading: ofertasLoading } = useQuery({
@@ -46,9 +48,10 @@ export default function ComprarZR() {
     queryFn: () => base44.functions.invoke("ofertasGuiaZR", {}),
   });
 
-  const oferta = (ofertasData?.data?.ofertas || []).find(
-    (o) => o.faixa === faixaNormalizada && !o.renovacao
-  );
+  const oferta = (ofertasData?.data?.ofertas || []).find((o) => {
+    if (planoId) return o.plano_id === planoId;
+    return o.faixa === faixaNormalizada && !o.renovacao;
+  });
 
   const { data: acessos = [], isLoading: acessosLoading } = useQuery({
     queryKey: ["acessos-zr", user?.id],
@@ -56,9 +59,10 @@ export default function ComprarZR() {
     enabled: !!user?.id,
   });
 
+  const faixaDaOferta = oferta?.faixa || faixaNormalizada;
   const temFaixaAtiva = (acessos || []).some(
     (a) =>
-      a.faixa === faixaNormalizada &&
+      a.faixa === faixaDaOferta &&
       a.status === "ativo" &&
       (a.vitalicio || !a.fim_em || new Date(a.fim_em).getTime() >= Date.now())
   );
@@ -99,7 +103,7 @@ export default function ComprarZR() {
       </header>
 
       <main className="max-w-xl mx-auto px-5 py-8">
-        {!faixaNormalizada || !oferta ? (
+        {!oferta ? (
           <div className="space-y-4">
             <p className="text-base text-[#4A4338]">
               A faixa informada na URL não existe ou não está disponível para compra.
@@ -128,6 +132,22 @@ export default function ComprarZR() {
             <Loader2 className="w-10 h-10 animate-spin text-[#8A6D3B]" />
             <p className="font-medium text-[#1F1B16]">Pagamento em processamento</p>
             <p className="text-sm text-[#6B6358]">Você será redirecionado automaticamente assim que for confirmado.</p>
+          </div>
+        ) : erroUpgrade ? (
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 rounded-xl border border-[#E2DBC9] bg-white p-5">
+              <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-[#1F1B16]">Upgrade indisponível</p>
+                <p className="text-sm text-[#6B6358] mt-1">
+                  Este upgrade exige faixas ativas que você ainda não possui:{" "}
+                  {(erroUpgrade.faixas_faltantes || []).map((f) => NOMES_FAIXA[f] || f).join(", ")}.
+                </p>
+              </div>
+            </div>
+            <a href="/comprar-zr?plano=zr_full" className="inline-flex items-center gap-2 text-sm font-medium text-[#8A6D3B] hover:underline">
+              <ArrowLeft className="w-4 h-4" /> Comprar ZR Profissional pelo preço cheio
+            </a>
           </div>
         ) : (
           <div className="space-y-5">
@@ -202,6 +222,7 @@ export default function ComprarZR() {
                 email={user?.email}
                 onClose={handleClose}
                 onSuccess={handleSuccess}
+                onErroUpgrade={setErroUpgrade}
                 aceiteTermos={aceiteContratacao}
                 podePagar={dadosFiscaisOk}
               />
@@ -211,6 +232,7 @@ export default function ComprarZR() {
                 email={user?.email}
                 onClose={handleClose}
                 onSuccess={handleSuccess}
+                onErroUpgrade={setErroUpgrade}
                 aceiteTermos={aceiteContratacao}
                 podePagar={dadosFiscaisOk}
               />

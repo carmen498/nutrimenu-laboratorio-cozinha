@@ -25,6 +25,8 @@ export default async function(req: Request): Promise<Response> {
           periodo_exibido: c.periodo_exibido || null,
           preco_detalhe: c.preco_detalhe || null,
           renovacao: ref?.renovacao ?? c.plano_id.endsWith("_renovacao"),
+          upgrade: ref?.upgrade ?? false,
+          requer_faixas: ref?.requer_faixas ?? [],
           duracao_meses: 12,
           mais_popular: Boolean(c.mais_popular),
           ordem: Number(c.ordem || 0),

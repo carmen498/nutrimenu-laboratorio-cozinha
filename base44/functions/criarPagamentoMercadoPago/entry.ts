@@ -13,7 +13,7 @@ import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.t
 import { avaliarElegibilidadeRenovacao } from "../../shared/regraRenovacao.ts";
 import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
 import { resolverOfertaConversao, aplicarDescontoOferta } from "../../shared/ofertaConversao.ts";
-import { OFERTAS_ZR, ofertaZR } from "../../shared/guiaTecnicoZR.ts";
+import { OFERTAS_ZR, ofertaZR, validarFaixasUpgrade } from "../../shared/guiaTecnicoZR.ts";
 import { avaliarDadosFiscais } from "../../shared/dadosFiscais.ts";
 
 const PLANOS_VALIDOS = ["mensal", "anual", "renovacao", "custos_mensal", "custos_anual", ...Object.keys(OFERTAS_ZR)];
@@ -222,6 +222,18 @@ export default async function(req: Request): Promise<Response> {
       }
       valorGuiaZr = Number(configZr.valor_cobranca);
       if (!(valorGuiaZr > 0)) return Response.json({ error: `Preço inválido para a faixa ${plano}` }, { status: 500 });
+    }
+
+    // Upgrade: valida faixas ativas exigidas antes de prosseguir com o pagamento.
+    if (planoZr?.upgrade && planoZr.requer_faixas?.length) {
+      const validacaoUpgrade = await validarFaixasUpgrade(base44, user.id, planoZr.requer_faixas);
+      if (!validacaoUpgrade.ok) {
+        return Response.json({
+          error: "Este upgrade requer faixas ativas que você não possui",
+          code: "upgrade_requer_faixas",
+          faixas_faltantes: validacaoUpgrade.faltantes,
+        }, { status: 409 });
+      }
     }
 
     const valor = valorCozinha + valorCustos + valorGuiaZr;

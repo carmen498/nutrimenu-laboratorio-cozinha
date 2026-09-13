@@ -8,7 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { carregarMercadoPagoDeviceId, carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
 
-export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, aceiteTermos = false, podePagar = true }) {
+export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
   const parcelasOpcoes = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => i + 1);
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
@@ -114,6 +114,10 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
       const status = err?.response?.data?.status;
       if (["rejected", "cancelled", "estornado"].includes(status)) tentativaPagamentoRef.current = null;
       const respostaErro = err?.response?.data;
+      if (respostaErro?.code === "upgrade_requer_faixas") {
+        onErroUpgrade?.(respostaErro);
+        return;
+      }
       const mensagem = respostaErro?.error || err.message || "Erro ao processar o pagamento.";
       const orientacao = respostaErro?.orientacao;
       setError(orientacao ? `${mensagem}. ${orientacao}` : mensagem);

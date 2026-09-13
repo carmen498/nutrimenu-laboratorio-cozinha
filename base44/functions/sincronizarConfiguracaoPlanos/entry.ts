@@ -3,6 +3,7 @@ import {
   CONFIGURACAO_RENOVACAO_CANONICA,
   configuracaoRenovacaoValida,
 } from "../../shared/configuracaoPlanoRenovacao.ts";
+import { CONFIGURACOES_UPGRADE_ZR_CANONICAS } from "../../shared/guiaTecnicoZR.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -13,6 +14,19 @@ export default async function(req: Request): Promise<Response> {
 
     const body = await req.json().catch(() => ({}));
     const corrigirValorCobranca = body?.corrigir_valor_cobranca === true;
+
+    // Seeding das ofertas de upgrade do Guia Técnico ZR (idempotente por plano_id).
+    // Cria cada registro de ConfiguracaoPlano se ainda não existir; nunca sobrescreve.
+    for (const canonica of CONFIGURACOES_UPGRADE_ZR_CANONICAS) {
+      const existente = await base44.asServiceRole.entities.ConfiguracaoPlano.filter({
+        plano_id: canonica.plano_id,
+        produto: "guia_zr",
+      });
+      if (!existente?.length) {
+        await base44.asServiceRole.entities.ConfiguracaoPlano.create({ ...canonica });
+      }
+    }
+
     const configs = await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: "renovacao" });
 
     if ((configs || []).length > 1) {
