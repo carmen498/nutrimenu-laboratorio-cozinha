@@ -90,7 +90,7 @@ export default function Login() {
       footer={
         <>
           Não tem conta?{" "}
-          <Link to="/register" className="text-primary font-medium hover:underline">
+          <Link to={`/register?returnTo=${encodeURIComponent(returnTo)}`} className="text-primary font-medium hover:underline">
             Criar conta
           </Link>
         </>
