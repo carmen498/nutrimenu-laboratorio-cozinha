@@ -194,9 +194,7 @@ export default function ContaZR() {
                         <a href={p.nota_fiscal_url} target="_blank" rel="noreferrer" className="text-xs font-medium text-[#8A6D3B] hover:underline">
                           Nota fiscal
                         </a>
-                      ) : (
-                        <span className="text-xs text-[#9A9081]">Sem nota fiscal</span>
-                      )}
+                      ) : null}
                     </li>
                   ))}
                 </ul>
