@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 import { Loader2, ShieldCheck, FileText, ArrowLeft, Clock, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
+import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
 
 const PRAZO_DIAS = 7;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -16,6 +17,18 @@ const NOMES_FAIXA = {
   tin: "Tabela de Informação Nutricional",
   full: "ZR Profissional",
   "arquitetura-do-rotulo": "Arquitetura do Rótulo",
+};
+
+const NOME_PLANO = {
+  zr_tin: "ZR Tabela de Informação Nutricional",
+  zr_tin_renovacao: "Renovação — ZR Tabela de Informação Nutricional",
+  zr_full: "ZR Profissional",
+  zr_full_renovacao: "Renovação — ZR Profissional",
+  zr_arquitetura: "ZR Arquitetura do Rótulo",
+  zr_arquitetura_renovacao: "Renovação — ZR Arquitetura do Rótulo",
+  zr_full_upgrade_tin: "Upgrade para ZR Profissional (TIN)",
+  zr_full_upgrade_arquitetura: "Upgrade para ZR Profissional (Arquitetura)",
+  zr_full_upgrade_tin_arquitetura: "Upgrade para ZR Profissional (TIN + Arquitetura)",
 };
 
 const ehZR = (plano) => typeof plano === "string" && plano.startsWith("zr_");
@@ -32,15 +45,23 @@ const formatarData = (iso) => {
   return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
 };
 
+// Contagem por dia corrido: no dia da compra restam 7; no dia seguinte, 6;
+// ... chegando a 0 no sétimo dia. Compara datas em meia-noite (hora local).
 const diasRestantes = (compraEm) => {
   const t = new Date(compraEm).getTime();
   if (!Number.isFinite(t)) return -1;
-  return Math.ceil((t + PRAZO_DIAS * DIA_MS - Date.now()) / DIA_MS);
+  const inicio = new Date(compraEm);
+  inicio.setHours(0, 0, 0, 0);
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const diasDecorridos = Math.floor((hoje.getTime() - inicio.getTime()) / DIA_MS);
+  return PRAZO_DIAS - diasDecorridos;
 };
 
 export default function ContaZR() {
   const qc = useQueryClient();
   const [enviandoId, setEnviandoId] = useState(null);
+  const [nfPagamento, setNfPagamento] = useState(null);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["me-conta-zr"],
@@ -62,6 +83,13 @@ export default function ContaZR() {
   const pagamentosZR = useMemo(() => (pagamentos || []).filter((p) => ehZR(p.plano)), [pagamentos]);
   const pagamentoPorId = useMemo(() => Object.fromEntries(pagamentosZR.map((p) => [p.id, p])), [pagamentosZR]);
   const temAlgumaCompra = (acessos || []).length > 0 || pagamentosZR.length > 0;
+
+  // Compras aprovadas (não estornadas) ainda dentro dos 7 dias do direito de arrependimento.
+  const comprasNoPrazo = useMemo(
+    () => pagamentosZR.filter((p) => p.status === "approved" && diasRestantes(p.created_date) > 0),
+    [pagamentosZR]
+  );
+  const mostrarDesistencia = comprasNoPrazo.length > 0;
 
   const solicitarDesistencia = async (pagamentoId) => {
     setEnviandoId(pagamentoId);
@@ -158,10 +186,20 @@ export default function ContaZR() {
                           </span>
                         </div>
                         {pag && (
-                          <p className="text-xs text-[#6B6358] mt-2">
-                            Recibo: R$ {Number(pag.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ·{" "}
-                            {pag.forma_pagamento === "pix" ? "PIX" : "Cartão"} · {formatarData(pag.created_date)}
-                          </p>
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs text-[#6B6358]">
+                              Recibo: R$ {Number(pag.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ·{" "}
+                              {pag.forma_pagamento === "pix" ? "PIX" : "Cartão"} · {formatarData(pag.created_date)}
+                            </p>
+                            {pag.status === "approved" && (
+                              <button
+                                onClick={() => setNfPagamento(pag)}
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#8A6D3B] hover:underline"
+                              >
+                                <FileText className="w-3.5 h-3.5" /> Pedir nota fiscal
+                              </button>
+                            )}
+                          </div>
                         )}
                       </li>
                     );
@@ -170,17 +208,16 @@ export default function ContaZR() {
               )}
             </section>
 
-            {/* 3. Desistência */}
-            <section className="space-y-3">
-              <h2 className="zr-serif text-lg font-semibold text-[#1F1B16]">Desistência</h2>
-              <div className="rounded-xl border border-[#E2DBC9] bg-[#FBF8F1] p-4 space-y-3">
-                <p className="flex items-start gap-2 text-sm text-[#3A342B]">
-                  <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-[#8A6D3B]" />
-                  Sete dias para desistir, contados da compra, com devolução integral do valor pago e sem precisar justificar.
-                </p>
-                {pagamentosZR
-                  .filter((p) => p.status === "approved")
-                  .map((p) => {
+            {/* 2. Desistência — só aparece quando há compra aprovada dentro dos 7 dias */}
+            {mostrarDesistencia && (
+              <section className="space-y-3">
+                <h2 className="zr-serif text-lg font-semibold text-[#1F1B16]">Desistência</h2>
+                <div className="rounded-xl border border-[#E2DBC9] bg-[#FBF8F1] p-4 space-y-3">
+                  <p className="flex items-start gap-2 text-sm text-[#3A342B]">
+                    <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-[#8A6D3B]" />
+                    Sete dias para desistir, contados da compra, com devolução integral do valor pago e sem precisar justificar.
+                  </p>
+                  {comprasNoPrazo.map((p) => {
                     const pedido = pedidoPorPagamento[p.id];
                     const dias = diasRestantes(p.created_date);
                     const elegivel = dias > 0;
@@ -190,7 +227,7 @@ export default function ContaZR() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-medium text-[#1F1B16]">
-                              {p.plano.replace(/_/g, " ")}
+                              {NOME_PLANO[p.plano] || p.plano}
                             </p>
                             <p className="text-xs text-[#6B6358]">
                               R$ {Number(p.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · comprado em {formatarDataHora(p.created_date)}
@@ -219,10 +256,11 @@ export default function ContaZR() {
                       </div>
                     );
                   })}
-              </div>
-            </section>
+                </div>
+              </section>
+            )}
 
-            {/* 4. Voltar */}
+            {/* 3. Voltar */}
             <div>
               <a href="https://zr.nutrimenu.com.br" className="inline-flex items-center gap-2 text-sm font-medium text-[#8A6D3B] hover:underline">
                 <ArrowLeft className="w-4 h-4" /> Voltar ao Guia Técnico ZR
@@ -231,6 +269,14 @@ export default function ContaZR() {
           </>
         )}
       </main>
+
+      {nfPagamento && (
+        <PedirNotaFiscalDialog
+          pagamento={nfPagamento}
+          user={user}
+          onClose={() => setNfPagamento(null)}
+        />
+      )}
     </div>
   );
 }
