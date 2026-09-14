@@ -10,7 +10,7 @@ export async function buildEmailHtml(base44, corpoHtml, { marketing = false, pro
   const identidade = resolverIdentidadeProduto(produto);
 
   let nome: string, tagline: string, cor: string, assinatura: string;
-  let emailContato = "", endereco = "";
+  let emailContato = "";
 
   if (identidade) {
     nome = identidade.nome;
@@ -25,7 +25,6 @@ export async function buildEmailHtml(base44, corpoHtml, { marketing = false, pro
     cor = cfg.cor_cabecalho || "#5c7a5f";
     assinatura = cfg.assinatura_rodape || "Carmen Reinstein · Laboratório de Cozinha";
     emailContato = cfg.email_contato || "";
-    endereco = cfg.endereco_rodape || "";
   }
 
   const textoCancelamento = "Cancelar inscrição";
@@ -47,7 +46,6 @@ export async function buildEmailHtml(base44, corpoHtml, { marketing = false, pro
       <div style="padding:20px 24px;border-top:1px solid #eee;color:#888;font-size:12px;font-family:Arial,sans-serif;text-align:center;">
         <div>${assinatura}</div>
         ${emailContato ? `<div>${emailContato}</div>` : ""}
-        ${endereco ? `<div>${endereco}</div>` : ""}
         <div>${DADOS_EMPRESA.razaoSocial} · CNPJ ${DADOS_EMPRESA.cnpj}</div>
         <div>${DADOS_EMPRESA.enderecoCompleto}</div>
         ${marketing ? `<div style="margin-top:8px;"><a href="${hrefCancelamento}" style="color:#888;text-decoration:underline;">${textoCancelamento}</a></div>` : ""}
