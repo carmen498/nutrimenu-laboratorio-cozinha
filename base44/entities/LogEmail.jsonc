@@ -6,6 +6,22 @@
       "type": "string",
       "description": "ID t\u00e9cnico do usu\u00e1rio destinat\u00e1rio, quando dispon\u00edvel; usado para deduplica\u00e7\u00e3o sem depender do contato em claro"
     },
+    "pagamento_id": {
+      "type": "string",
+      "description": "Pagamento que originou o evento, quando aplic\u00e1vel."
+    },
+    "pedido_desistencia_id": {
+      "type": "string",
+      "description": "Pedido de desist\u00eancia relacionado, quando existir."
+    },
+    "evento_chave": {
+      "type": "string",
+      "description": "Identificador est\u00e1vel para deduplica\u00e7\u00e3o do evento de comunica\u00e7\u00e3o."
+    },
+    "origem": {
+      "type": "string",
+      "description": "Origem t\u00e9cnica do disparo."
+    },
     "destinatario_email": {
       "type": "string",
       "description": "E-mail mascarado do destinat\u00e1rio (ex.: ca***@dominio.com); novos registros n\u00e3o persistem o endere\u00e7o completo"
@@ -19,6 +35,10 @@
         "pagamento_aprovado",
         "pagamento_recusado",
         "pagamento_estornado",
+        "pagamento_contestado",
+        "pagamento_encerrado",
+        "desistencia_solicitada_suporte",
+        "desistencia_falha_reembolso_suporte",
         "plano_vencendo",
         "pagamento_pendente_lembrete",
         "onboarding_dia2",
