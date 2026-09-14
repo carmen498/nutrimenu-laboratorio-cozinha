@@ -8,6 +8,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 import { avaliarDadosFiscais } from "@/lib/dadosFiscais";
+import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 import CartaoForm from "@/components/planos/CartaoForm";
 import PixForm from "@/components/planos/PixForm";
 import AvisoDesistencia from "@/components/planos/AvisoDesistencia";
@@ -64,7 +65,7 @@ export default function ComprarZR() {
     (a) =>
       a.faixa === faixaDaOferta &&
       a.status === "ativo" &&
-      (a.vitalicio || !a.fim_em || new Date(a.fim_em).getTime() >= Date.now())
+      (a.vitalicio || !a.fim_em || dataHoraBase44(a.fim_em).getTime() >= Date.now())
   );
 
   const dadosFiscaisOk = avaliarDadosFiscais(user || {}).completo;
