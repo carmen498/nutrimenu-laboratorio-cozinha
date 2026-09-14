@@ -1,0 +1,16 @@
+{
+  "name": "reprocessarDesistencias",
+  "entry": "entry.ts",
+  "automations": [
+    {
+      "type": "scheduled",
+      "name": "reprocessar_estornos_automaticos",
+      "description": "Consulta e reprocessa estornos automáticos pendentes a cada 15 minutos.",
+      "is_active": true,
+      "schedule_mode": "recurring",
+      "schedule_type": "simple",
+      "repeat_unit": "minutes",
+      "repeat_interval": 15
+    }
+  ]
+}
