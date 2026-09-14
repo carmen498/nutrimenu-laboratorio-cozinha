@@ -123,8 +123,21 @@ export async function finalizarEstornoConfirmado(
   pagamento: any,
   pedidoOpcional: any | null = null,
   origem = "webhook_mercado_pago",
+  dadosMercadoPago: {
+    mercadopago_payment_id?: string | null;
+    estornado_em?: string | null;
+    valor_estornado?: number | null;
+  } = {},
 ) {
-  await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "estornado" });
+  const agora = new Date().toISOString();
+  await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
+    status: "estornado",
+    estornado_em: dadosMercadoPago.estornado_em || pagamento.estornado_em || agora,
+    valor_estornado: Number(dadosMercadoPago.valor_estornado ?? pagamento.valor_estornado ?? pagamento.valor ?? 0),
+    ...(dadosMercadoPago.mercadopago_payment_id
+      ? { mercadopago_payment_id: String(dadosMercadoPago.mercadopago_payment_id) }
+      : {}),
+  });
   const revogacao = await revogarCompraEstorno(base44, pagamento);
 
   let pedido = pedidoOpcional;
@@ -132,7 +145,6 @@ export async function finalizarEstornoConfirmado(
     const pedidos = await base44.asServiceRole.entities.PedidoDesistencia.filter({ pagamento_id: pagamento.id }).catch(() => []);
     pedido = pedidos?.[0] || null;
   }
-  const agora = new Date().toISOString();
   if (pedido && pedido.status !== "concluido") {
     await base44.asServiceRole.entities.PedidoDesistencia.update(pedido.id, {
       status: "concluido",
