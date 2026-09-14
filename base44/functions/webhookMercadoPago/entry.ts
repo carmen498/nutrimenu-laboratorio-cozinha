@@ -177,7 +177,7 @@ export default async function(req: Request): Promise<Response> {
     } else {
       await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
 
-      // Estorno, contestação e cancelamento revertem um acesso que já havia sido
+      // Estorno, contestação e pagamento encerrado revertem um acesso que já havia sido
       // concedido — revogam o entitlement daquele pagamento. Estorno parcial NÃO
       // revoga: apenas registra e deixa o admin decidir.
       if (novoStatus === "estornado") {
@@ -192,7 +192,7 @@ export default async function(req: Request): Promise<Response> {
 
       const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
 
-      // Aviso ao administrador para contestação, estorno parcial e cancelamento.
+      // Aviso ao administrador para contestação, estorno parcial e pagamento encerrado.
       // Falha no aviso não aborta o processamento do webhook.
       if (["contestado", "estornado_parcial", "cancelled"].includes(novoStatus)) {
         await notificarAdminEventoWebhook(base44, {
