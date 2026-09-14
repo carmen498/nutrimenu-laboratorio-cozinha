@@ -18,6 +18,7 @@ import { lerRascunhoEvento } from "@/lib/eventoRascunho";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { useAuth } from "@/lib/AuthContext";
 import { toast } from "sonner";
+import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 import { toUpperName } from "@/lib/textCase";
 
 export default function ListaPlanejamentos() {
@@ -50,7 +51,7 @@ export default function ListaPlanejamentos() {
       if (modelo?.id) porId.set(modelo.id, modelo);
       setPlanejamentos(
         Array.from(porId.values()).sort((a, b) =>
-          new Date(b.created_date || 0).getTime() - new Date(a.created_date || 0).getTime()
+          dataHoraBase44(b.created_date || 0).getTime() - dataHoraBase44(a.created_date || 0).getTime()
         )
       );
     } catch (e) { consoleErrorSeguro("Erro em planejamento", e); }
