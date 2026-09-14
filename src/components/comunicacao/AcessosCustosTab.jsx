@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertTriangle, CheckCircle2, Clock3, Loader2, PauseCircle, PlayCircle, Search, ShieldCheck, XCircle } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 
 const MODULO = "laboratorio_custos";
 
@@ -55,8 +56,8 @@ function estadoDoAcesso(acesso, agora = new Date()) {
   if (acesso.status === "cancelado") return "cancelado";
   if (acesso.status === "expirado") return "expirado";
   if (acesso.status === "pendente") return "pendente";
-  if (acesso.inicio_em && new Date(acesso.inicio_em) > agora) return "pendente";
-  if (acesso.fim_em && new Date(acesso.fim_em) < agora) return "expirado";
+  if (acesso.inicio_em && dataHoraBase44(acesso.inicio_em) > agora) return "pendente";
+  if (acesso.fim_em && dataHoraBase44(acesso.fim_em) < agora) return "expirado";
   if (acesso.status === "ativo" && acesso.modalidade === "trial") return "trial_ativo";
   if (acesso.status === "ativo") return "ativo";
   return "pendente";
@@ -278,7 +279,7 @@ export default function AcessosCustosTab({ usuarios = [] }) {
             <TableHeader><TableRow><TableHead>Usuário</TableHead><TableHead>Cozinha</TableHead><TableHead>Estado Custos</TableHead><TableHead>Modalidade</TableHead><TableHead>Início</TableHead><TableHead>Vencimento</TableHead><TableHead>Trial</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
             <TableBody>
               {linhas.map((linha) => {
-                const vencido = linha.atual?.fim_em && new Date(linha.atual.fim_em) < new Date();
+                const vencido = linha.atual?.fim_em && dataHoraBase44(linha.atual.fim_em) < new Date();
                 const podeReativar = ["suspenso", "cancelado"].includes(linha.estado) && !vencido && linha.baseAtiva;
                 return <TableRow key={linha.usuario.id}>
                   <TableCell><div className="font-medium">{linha.usuario.nome_completo || linha.usuario.full_name || "—"}</div><div className="text-xs text-muted-foreground">{linha.usuario.email}</div></TableCell>
