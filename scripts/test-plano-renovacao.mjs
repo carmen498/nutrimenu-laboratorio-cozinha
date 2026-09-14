@@ -28,6 +28,9 @@ async function importarTs(relPath, injetarAcesso = false) {
   const full = path.join(root, relPath);
   let source = await fs.readFile(full, "utf8");
   if (injetarAcesso) source = source.replace(/import \{ hojeSaoPauloISO \} from [^;]+;/, hojeSaoPauloInline);
+  // Este teste executa o módulo isolado por data URL; imports relativos não têm base hierárquica.
+  // A renovação não é oferta ZR, portanto o stub preserva exatamente o ramo sob teste.
+  source = source.replace(/import \{ ofertaZR \} from [^;]+;/, "const ofertaZR = () => null;");
   const js = ts.transpileModule(source, {
     compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
     fileName: full,
