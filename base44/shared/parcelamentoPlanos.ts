@@ -1,11 +1,8 @@
 export const MAX_PARCELAS_PADRAO = 12;
 export const MAX_PARCELAS_RENOVACAO = 6;
 
-import { ofertaZR } from "./guiaTecnicoZR.ts";
 
 export function maxParcelasPlano(plano: string): number {
-  const zr = ofertaZR(plano);
-  if (zr) return zr.maxParcelas;
   if (plano === "custos_mensal") return 1;
   if (plano === "custos_anual") return 6;
   return plano === "renovacao" ? MAX_PARCELAS_RENOVACAO : MAX_PARCELAS_PADRAO;
