@@ -112,7 +112,7 @@ export default async function(req: Request): Promise<Response> {
       situacao: statusReal,
       estornado_em: estornadoEm,
       valor_estornado: valorEstornado || (statusReal === "estornado" ? Number(pagamento.valor || 0) : 0),
-      transacao: transacaoId || pagamento.mercadopago_payment_id || null,
+      transacao: pagamento.mercadopago_order_id,
     });
   } catch (error) {
     console.error("Erro ao gerar comprovante ZR", error);
