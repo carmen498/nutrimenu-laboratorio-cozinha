@@ -8,6 +8,7 @@ export default function PlanoCard({
   subtitulo,
   preco,
   precoDetalhe,
+  parcelamentoDetalhe = "",
   beneficios,
   botaoLabel,
   destaque = false,
@@ -68,6 +69,9 @@ export default function PlanoCard({
         <p className="font-heading text-xl font-bold leading-none text-center text-foreground whitespace-nowrap">{preco}</p>
         {precoDetalhe && (
           <p className="text-xs text-muted-foreground mt-1 text-center">{precoDetalhe}</p>
+        )}
+        {parcelamentoDetalhe && (
+          <p className="text-xs font-medium text-foreground mt-1 text-center">{parcelamentoDetalhe}</p>
         )}
       </div>
 
