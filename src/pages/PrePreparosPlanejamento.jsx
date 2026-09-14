@@ -8,6 +8,7 @@ import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { carregarDadosPrePreparos, montarPrePreparos } from "@/lib/prePreparosCalc";
 import { gerarPrePreparosPDF } from "@/lib/prePreparosPDF";
 import { abrirUrlHttpsSegura } from "@/lib/securityHardening";
+import { formatarDataBrasilia } from "@/lib/fusoBrasilia";
 
 // Tela de pré-visualização do Relatório de Pré-preparos (mise en place) do Evento —
 // mesmo padrão visual das telas Ficha do Cardápio / Orçamento. Conteúdo idêntico
@@ -61,7 +62,7 @@ export default function PrePreparosPlanejamento() {
   };
 
   const tipoLabel = [planejamento.tipo_planejamento, planejamento.tipo_servico].filter(Boolean).join(" · ");
-  const dataEvento = planejamento.created_date ? new Date(planejamento.created_date).toLocaleDateString("pt-BR") : null;
+  const dataEvento = planejamento.created_date ? formatarDataBrasilia(planejamento.created_date) : null;
 
   return (
     <div className="space-y-4 pb-24 md:pb-8 max-w-3xl mx-auto">
