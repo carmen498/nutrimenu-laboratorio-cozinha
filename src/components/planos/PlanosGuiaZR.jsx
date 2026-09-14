@@ -24,6 +24,10 @@ export default function PlanosGuiaZR({ onAssinar }) {
     queryKey: ["configuracao-planos-zr"],
     queryFn: () => base44.entities.ConfiguracaoPlano.filter({ produto: "guia_zr" }, "ordem"),
   });
+  const { data: ofertasPublicas = [] } = useQuery({
+    queryKey: ["ofertas-zr-condicoes-comerciais"],
+    queryFn: async () => (await base44.functions.invoke("ofertasGuiaZR", {})).data?.ofertas || [],
+  });
   const { data: direito } = useQuery({
     queryKey: ["direito-guia-zr"],
     queryFn: async () => (await base44.functions.invoke("direitoAcessoGuiaZR", {})).data,
@@ -31,6 +35,7 @@ export default function PlanosGuiaZR({ onAssinar }) {
   });
 
   const porId = Object.fromEntries(ofertas.map((o) => [o.plano_id, o]));
+  const condicoesPorId = Object.fromEntries(ofertasPublicas.map((o) => [o.plano_id, o]));
   const minhasFaixas = Object.fromEntries((direito?.faixas || []).map((f) => [f.faixa, f]));
   if (!ofertas.length) return null;
 
@@ -54,6 +59,7 @@ export default function PlanosGuiaZR({ onAssinar }) {
           const usarRenovacao = !!minha && !minha.vitalicio && !!renovacao;
           const alvo = usarRenovacao ? renovacao : oferta;
           const vendaLiberada = !!alvo.venda_habilitada;
+          const parcelasSemJuros = Number(condicoesPorId[alvo.plano_id]?.parcelas_sem_juros || 1);
 
           return (
             <PlanoCard
@@ -63,6 +69,7 @@ export default function PlanosGuiaZR({ onAssinar }) {
               subtitulo={oferta.subtitulo}
               preco={formatarPreco(alvo)}
               precoDetalhe={usarRenovacao ? alvo.preco_detalhe : (textoPrecoPromocional(alvo) || alvo.preco_detalhe)}
+              parcelamentoDetalhe={parcelasSemJuros > 1 ? `Até ${parcelasSemJuros}x sem juros` : ""}
               beneficios={alvo.beneficios}
               selo={minha ? (minha.vitalicio ? "Acesso vitalício" : `Ativo até ${formatarData(minha.vence_em)}`) : ""}
               destaque={!minha && !!oferta.mais_popular}
