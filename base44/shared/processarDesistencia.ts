@@ -4,6 +4,7 @@ import { renderTemplateEmail } from "./templateEmail.ts";
 import { revogarCompraEstorno } from "./revogarCompraEstorno.ts";
 import { registrarLogEmail, resumirErroOperacional } from "./governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "./statusMercadoPago.ts";
+import { dataHoraUtcBase44, formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 
 const MP_BASE = "https://api.mercadopago.com/v1/orders";
 const BACKOFF_MINUTOS = [15, 60, 360, 1440];
@@ -22,6 +23,22 @@ function proximaTentativa(tentativas: number): string {
 
 function resumoMp(status: number, data: any): string {
   return resumirErroOperacional(`HTTP ${status} — ${data?.code || data?.error || data?.message || data?.status || "sem detalhe"}`);
+}
+
+export function validarCronologiaPedido(pedido: any, pagamento: any, origem: string): boolean {
+  const compra = dataHoraUtcBase44(pedido?.compra_em || pagamento?.created_date);
+  const solicitacao = dataHoraUtcBase44(pedido?.solicitado_em || pedido?.created_date);
+  const valido = Number.isFinite(compra.getTime()) && Number.isFinite(solicitacao.getTime()) && solicitacao.getTime() >= compra.getTime();
+  if (!valido) {
+    console.error("INCONSISTENCIA_CRONOLOGIA_PEDIDO_DESISTENCIA", {
+      origem,
+      pedido_id: pedido?.id || null,
+      pagamento_id: pagamento?.id || pedido?.pagamento_id || null,
+      compra_em: pedido?.compra_em || pagamento?.created_date || null,
+      solicitado_em: pedido?.solicitado_em || pedido?.created_date || null,
+    });
+  }
+  return valido;
 }
 
 export function criarChaveIdempotenciaReembolso(pedidoId: string): string {
@@ -145,9 +162,10 @@ export async function finalizarEstornoConfirmado(
 
 export async function avisarSuporteDesistencia(base44: any, pedido: any, pagamento: any, usuario: any) {
   const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }).catch(() => []);
-  const dataHora = new Date(pedido.solicitado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const dataHora = dataHoraUtcBase44(pedido.solicitado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
   const valor = Number(pagamento.valor || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  const html = `<p><strong>Novo pedido de desistência.</strong></p><p><strong>Cliente:</strong> ${usuario.nome_completo || usuario.full_name || usuario.email}<br><strong>Plano:</strong> ${pedido.plano_nome || pagamento.plano}<br><strong>Valor:</strong> ${valor}<br><strong>Pagamento:</strong> ${pagamento.id}<br><strong>Hora do clique:</strong> ${dataHora}</p><p>O estorno automático foi iniciado.</p>`;
+  const html = `<p><strong>Novo pedido de desistência.</strong></p><p><strong>Cliente:</strong> ${usuario.nome_completo || usuario.full_name || usuario.email}<br><strong>Plano:</strong> ${pedido.plano_nome || pagamento.plano}<br><strong>Valor:</strong> ${valor}<br><strong>Pagamento:</strong> ${pagamento.id}<br><strong>Hora do clique:</strong> ${dataHora} (horário de Brasília)<br><strong>Prazo legal:</strong> ${prazoLegal}</p><p>O estorno automático foi iniciado.</p>`;
 
   const resultados = [];
   for (const admin of admins || []) {
