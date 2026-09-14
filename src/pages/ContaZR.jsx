@@ -6,9 +6,10 @@ import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
-import { Loader2, ShieldCheck, FileText, ArrowLeft, BookOpen, Clock, Infinity as InfinityIcon } from "lucide-react";
+import { Loader2, ShieldCheck, FileText, ReceiptText, ArrowLeft, BookOpen, Clock, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
 import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
+import ComprovantePagamentoDialog from "@/components/conta-zr/ComprovantePagamentoDialog";
 import { dataHoraBase44, formatarDataBrasilia, formatarDataHoraBrasilia, formatarPrazoBrasilia } from "@/lib/fusoBrasilia";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -54,6 +55,7 @@ export default function ContaZR() {
   const qc = useQueryClient();
   const [enviandoId, setEnviandoId] = useState(null);
   const [nfPagamento, setNfPagamento] = useState(null);
+  const [comprovantePagamento, setComprovantePagamento] = useState(null);
 
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["me-conta-zr"],
@@ -171,6 +173,9 @@ export default function ContaZR() {
                             <p className="text-xs text-[#6B6358] mt-0.5">
                               {a.origem === "checkout" ? "Compra" : a.origem || "Concessão"} ·{" "}
                               {formatarData(a.inicio_em || a.created_date)}
+                              {pag && (
+                                <> · R$ {Number(pag.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · {pag.forma_pagamento === "pix" ? "PIX" : "Cartão"}</>
+                              )}
                             </p>
                           </div>
                           <span
@@ -194,22 +199,28 @@ export default function ContaZR() {
                           </span>
                         </div>
                         {pag && (
-                          <div className="mt-2 space-y-1">
-                            <p className="text-xs text-[#6B6358]">
-                              Recibo: R$ {Number(pag.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ·{" "}
-                              {pag.forma_pagamento === "pix" ? "PIX" : "Cartão"} · {formatarData(pag.created_date)}
-                            </p>
+                          <div className="mt-2 space-y-2">
                             {pag.prazo_desistencia_em && (
                               <p className="text-xs text-[#6B6358]">Prazo para desistir: {formatarPrazoBrasilia(pag.prazo_desistencia_em)}</p>
                             )}
-                            {pag.status === "approved" && (
-                              <button
-                                onClick={() => setNfPagamento(pag)}
-                                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#8A6D3B] hover:underline"
-                              >
-                                <FileText className="w-3.5 h-3.5" /> Pedir nota fiscal
-                              </button>
-                            )}
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                              {["approved", "estornado", "estornado_parcial", "contestado", "cancelled"].includes(pag.status) && (
+                                <button
+                                  onClick={() => setComprovantePagamento(pag)}
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#8A6D3B] hover:underline"
+                                >
+                                  <ReceiptText className="w-3.5 h-3.5" /> Ver comprovante
+                                </button>
+                              )}
+                              {pag.status === "approved" && (
+                                <button
+                                  onClick={() => setNfPagamento(pag)}
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#8A6D3B] hover:underline"
+                                >
+                                  <FileText className="w-3.5 h-3.5" /> Pedir nota fiscal
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )}
                       </li>
@@ -284,6 +295,12 @@ export default function ContaZR() {
           pagamento={nfPagamento}
           user={user}
           onClose={() => setNfPagamento(null)}
+        />
+      )}
+      {comprovantePagamento && (
+        <ComprovantePagamentoDialog
+          pagamento={comprovantePagamento}
+          onClose={() => setComprovantePagamento(null)}
         />
       )}
     </div>
