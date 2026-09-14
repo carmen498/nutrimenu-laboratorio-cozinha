@@ -4,6 +4,7 @@ import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
 import { ativarGuiaZR, ofertaZR } from "./guiaTecnicoZR.ts";
+import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 
 const MODULO = "laboratorio_custos";
 
@@ -79,7 +80,9 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
       { plano: nomePlano, data_expiracao: dataExpiracao },
     );
     if (ativo) {
-      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
+      const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
+      const htmlComPrazo = `${html}<p><strong>Direito de arrependimento:</strong> ${prazoLegal}.</p>`;
+      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html: htmlComPrazo, produto: pagamento.produto_compra });
       await registrarLogEmail(base44, { usuarioId: usuario.id, email: usuario.email, tipo: "custos_pagamento_aprovado", resultado });
     }
   }
