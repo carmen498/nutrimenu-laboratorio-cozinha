@@ -15,6 +15,7 @@ import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
 import { resolverOfertaConversao, aplicarDescontoOferta } from "../../shared/ofertaConversao.ts";
 import { OFERTAS_ZR, ofertaZR, validarFaixasUpgrade } from "../../shared/guiaTecnicoZR.ts";
 import { avaliarDadosFiscais } from "../../shared/dadosFiscais.ts";
+import { calcularPrazoDesistencia } from "../../shared/prazoDesistencia.ts";
 
 const PLANOS_VALIDOS = ["mensal", "anual", "renovacao", "custos_mensal", "custos_anual", ...Object.keys(OFERTAS_ZR)];
 const FORMAS_VALIDAS = ["cartao", "pix"];
@@ -30,7 +31,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v25-2026-09-13-pix-minimal-payload";
+const VERSAO_CODIGO = "v26-2026-09-14-prazo-desistencia-server";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -308,6 +309,7 @@ export default async function(req: Request): Promise<Response> {
       termos_versao_aceita: VERSAO_TERMOS_ATUAL,
       privacidade_versao_aceita: VERSAO_PRIVACIDADE_ATUAL,
       versao_codigo: VERSAO_CODIGO,
+      prazo_desistencia_em: calcularPrazoDesistencia(new Date()),
     });
 
     const accessToken = ambiente === "producao"
