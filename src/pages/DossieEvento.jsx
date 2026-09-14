@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import CabecalhoRelatorio from "@/components/relatorios/CabecalhoRelatorio";
 import { carregarDadosDossie, montarDossie } from "@/lib/dossieEventoCalc";
 import { gerarDossiePDF } from "@/lib/dossieEventoPDF";
+import { formatarDataBrasilia } from "@/lib/fusoBrasilia";
 
 function fmtKg(v) { return (v || 0).toFixed(1).replace(".", ",") + " kg"; }
 function fmtRs(v) { return "R$ " + (v || 0).toFixed(2).replace(".", ","); }
@@ -72,7 +73,7 @@ export default function DossieEvento() {
     planejamento.horario_inicio ? `início ${planejamento.horario_inicio}` : null,
     planejamento.duracao_horas ? `${planejamento.duracao_horas}h de duração` : null,
   ].filter(Boolean).join(" · ");
-  const dataEvento = planejamento.created_date ? new Date(planejamento.created_date).toLocaleDateString("pt-BR") : null;
+  const dataEvento = planejamento.created_date ? formatarDataBrasilia(planejamento.created_date) : null;
 
   return (
     <div className="space-y-4 pb-24 md:pb-8 max-w-3xl mx-auto">
