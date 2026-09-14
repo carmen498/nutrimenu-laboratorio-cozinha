@@ -7,7 +7,9 @@ import {
   avisarSuporteDesistencia,
   criarChaveIdempotenciaReembolso,
   processarReembolsoDesistencia,
+  validarCronologiaPedido,
 } from "../../shared/processarDesistencia.ts";
+import { dataHoraUtcBase44 } from "../../shared/prazoDesistencia.ts";
 
 const DIAS_ARREPENDIMENTO = 7;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -39,15 +41,24 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const jaExistentes = await base44.asServiceRole.entities.PedidoDesistencia.filter({ pagamento_id });
-    if ((jaExistentes || []).length) {
-      return Response.json({ pedidoId: jaExistentes[0].id, status: jaExistentes[0].status, duplicado: true });
+    const statusQueBloqueiam = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "concluido"]);
+    const pedidoEmAndamento = (jaExistentes || []).find((item: any) => statusQueBloqueiam.has(item.status));
+    if (pedidoEmAndamento) {
+      return Response.json({ pedidoId: pedidoEmAndamento.id, status: pedidoEmAndamento.status, duplicado: true });
     }
 
-    const solicitadoEm = new Date();
-    const compraEm = new Date(pagamento.created_date);
-    const prazoFinal = new Date(compraEm.getTime() + DIAS_ARREPENDIMENTO * DIA_MS);
-    const dentroDoPrazo = solicitadoEm.getTime() <= prazoFinal.getTime();
-    if (!dentroDoPrazo) {
+    const legadoAberto = (jaExistentes || [])
+      .filter((item: any) => item.status === "aberto")
+      .sort((a: any, b: any) => dataHoraUtcBase44(a.solicitado_em || a.created_date).getTime() - dataHoraUtcBase44(b.solicitado_em || b.created_date).getTime())[0];
+    const agora = new Date();
+    const compraEm = dataHoraUtcBase44(pagamento.created_date);
+    const solicitadoEm = legadoAberto ? dataHoraUtcBase44(legadoAberto.solicitado_em || legadoAberto.created_date) : agora;
+    const prazoFinal = dataHoraUtcBase44(pagamento.prazo_desistencia_em);
+    if (!Number.isFinite(prazoFinal.getTime())) {
+      console.error("PAGAMENTO_SEM_PRAZO_DESISTENCIA", { pagamento_id });
+      return Response.json({ error: "Prazo legal da compra indisponível", code: "prazo_ausente" }, { status: 500 });
+    }
+    if (!legadoAberto && agora.getTime() > prazoFinal.getTime()) {
       return Response.json({
         error: "O prazo de 7 dias para desistir desta compra já passou.",
         code: "prazo_expirado",
@@ -55,34 +66,44 @@ export default async function(req: Request): Promise<Response> {
       }, { status: 409 });
     }
 
-    const pedido = await base44.asServiceRole.entities.PedidoDesistencia.create({
-      usuario_id: user.id,
-      usuario_nome: user.nome_completo || user.full_name || user.email || "",
-      pagamento_id,
-      plano: pagamento.plano,
-      plano_nome: NOMES[pagamento.plano] || pagamento.plano,
-      valor: Number(pagamento.valor || 0),
-      compra_em: compraEm.toISOString(),
-      solicitado_em: solicitadoEm.toISOString(),
-      dentro_do_prazo_legal: true,
-      prazo_atendimento_em: new Date(solicitadoEm.getTime() + DIAS_ARREPENDIMENTO * DIA_MS).toISOString(),
-      motivo: String(motivo || "").slice(0, 500),
-      status: "processando",
-      mercadopago_order_id: pagamento.mercadopago_order_id || "",
-      tentativas_reembolso: 0,
-      suporte_aviso_status: "pendente",
-      cliente_email_status: "pendente",
-    });
-
-    const idempotencyKey = criarChaveIdempotenciaReembolso(pedido.id);
-    await base44.asServiceRole.entities.PedidoDesistencia.update(pedido.id, {
-      idempotency_key_reembolso: idempotencyKey,
-    });
+    let pedido;
+    if (legadoAberto) {
+      const dadosLegado = {
+        status: "processando",
+        mercadopago_order_id: legadoAberto.mercadopago_order_id || pagamento.mercadopago_order_id || "",
+        idempotency_key_reembolso: legadoAberto.idempotency_key_reembolso || criarChaveIdempotenciaReembolso(legadoAberto.id),
+      };
+      await base44.asServiceRole.entities.PedidoDesistencia.update(legadoAberto.id, dadosLegado);
+      pedido = { ...legadoAberto, ...dadosLegado };
+    } else {
+      pedido = await base44.asServiceRole.entities.PedidoDesistencia.create({
+        usuario_id: user.id,
+        usuario_nome: user.nome_completo || user.full_name || user.email || "",
+        pagamento_id,
+        plano: pagamento.plano,
+        plano_nome: NOMES[pagamento.plano] || pagamento.plano,
+        valor: Number(pagamento.valor || 0),
+        compra_em: compraEm.toISOString(),
+        solicitado_em: solicitadoEm.toISOString(),
+        dentro_do_prazo_legal: true,
+        prazo_atendimento_em: new Date(solicitadoEm.getTime() + DIAS_ARREPENDIMENTO * DIA_MS).toISOString(),
+        motivo: String(motivo || "").slice(0, 500),
+        status: "processando",
+        mercadopago_order_id: pagamento.mercadopago_order_id || "",
+        tentativas_reembolso: 0,
+        suporte_aviso_status: "pendente",
+        cliente_email_status: "pendente",
+      });
+      const idempotencyKey = criarChaveIdempotenciaReembolso(pedido.id);
+      await base44.asServiceRole.entities.PedidoDesistencia.update(pedido.id, { idempotency_key_reembolso: idempotencyKey });
+      pedido = { ...pedido, idempotency_key_reembolso: idempotencyKey };
+    }
+    validarCronologiaPedido(pedido, pagamento, "clique_desistencia");
     await base44.asServiceRole.entities.Pagamento.update(pagamento_id, {
       desistencia_solicitada_em: solicitadoEm.toISOString(),
     });
 
-    const pedidoProcessavel = { ...pedido, idempotency_key_reembolso: idempotencyKey };
+    const pedidoProcessavel = pedido;
     const avisoSuporte = await avisarSuporteDesistencia(base44, pedidoProcessavel, pagamento, user);
     const resultado = await processarReembolsoDesistencia(base44, pedidoProcessavel, pagamento, {
       consultarAntes: false,
