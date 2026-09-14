@@ -14,7 +14,7 @@ import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { formatarTelefone } from "@/lib/formatarTelefone";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
 import { mensagemErroCadastro, validarSenhaForte, validarTelefoneBrasileiro } from "@/lib/registerValidation";
-import { safeReturnTo } from "@/lib/authReturnTo";
+import { readFreshReturnTo, resolveRegisterReturnTo, safeReturnTo, serializeReturnTo } from "@/lib/authReturnTo";
 import { APP_SITE_URLS } from "@/lib/publicUrls";
 import { capitalizarNome } from "@/lib/capitalizarNome";
 
@@ -36,18 +36,35 @@ export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // O destino de retorno precisa sobreviver a troca de aba (abrir o e-mail) e
-  // a recarregamento da página. safeReturnTo() consome e destrói o valor de
-  // sessionStorage no primeiro mount — se a página recarrega, ele se perde e o
-  // usuário cai no /app. Por isso persistimos numa chave própria que só é
-  // limpa depois do redirecionamento real.
+  // A URL da tentativa atual sempre vence qualquer destino anterior. Sem URL,
+  // a cópia persistida sobrevive a remontagens por até 30 minutos. Se não houver
+  // destino novo nem persistência fresca, a intenção anterior é abandonada.
   const [returnTo] = useState(() => {
-    const persisted = sessionStorage.getItem("base44_register_return_to");
-    if (persisted) return persisted;
-    const dest = safeReturnTo();
-    const final = dest === "/" ? new URL(APP_SITE_URLS.appHome).pathname : dest;
-    sessionStorage.setItem("base44_register_return_to", final);
-    return final;
+    const params = new URLSearchParams(window.location.search);
+    const pendingRaw = sessionStorage.getItem("base44_pending_return_to");
+    const hasNewDestination =
+      params.has("returnTo") ||
+      params.has("from_url") ||
+      readFreshReturnTo(pendingRaw) !== null;
+
+    const safeDestination = safeReturnTo();
+    const fallback = new URL(APP_SITE_URLS.appHome).pathname;
+    const newDestination = safeDestination === "/" ? fallback : safeDestination;
+    const persistedRaw = sessionStorage.getItem("base44_register_return_to");
+    const resolution = resolveRegisterReturnTo({
+      hasNewDestination,
+      newDestination,
+      persistedRaw,
+      fallback,
+    });
+
+    if (resolution.action === "persist") {
+      sessionStorage.setItem("base44_register_return_to", serializeReturnTo(resolution.destination));
+    } else if (resolution.action === "clear") {
+      sessionStorage.removeItem("base44_register_return_to");
+    }
+
+    return resolution.destination;
   });
 
   useEffect(() => {
