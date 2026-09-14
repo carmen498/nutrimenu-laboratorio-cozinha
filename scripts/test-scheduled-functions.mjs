@@ -8,6 +8,7 @@ const jobs = [
   { name: "enviarPlanoVencendo", start: "11:20", unit: "days", interval: 1, cooldown: "cooldownHoras: 20" },
   { name: "enviarLembretePendencia", start: "11:30", unit: "days", interval: 1, cooldown: "cooldownHoras: 20" },
   { name: "atualizarPrecosAutomatico", start: "06:00", unit: "weeks", interval: 1, weekdays: [1], cooldown: "cooldownHoras: 144" },
+  { name: "reprocessarDesistencias", unit: "minutes", interval: 15, cooldown: "cooldownHoras: 0.2" },
 ];
 
 const erros = [];
