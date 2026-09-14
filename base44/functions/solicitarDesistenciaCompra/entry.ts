@@ -3,6 +3,11 @@
 // atendimento. Não exige justificativa e vale mesmo com o conteúdo já acessado.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { OFERTAS_ZR } from "../../shared/guiaTecnicoZR.ts";
+import {
+  avisarSuporteDesistencia,
+  criarChaveIdempotenciaReembolso,
+  processarReembolsoDesistencia,
+} from "../../shared/processarDesistencia.ts";
 
 const DIAS_ARREPENDIMENTO = 7;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -62,14 +67,36 @@ export default async function(req: Request): Promise<Response> {
       dentro_do_prazo_legal: true,
       prazo_atendimento_em: new Date(solicitadoEm.getTime() + DIAS_ARREPENDIMENTO * DIA_MS).toISOString(),
       motivo: String(motivo || "").slice(0, 500),
-      status: "aberto",
+      status: "processando",
+      mercadopago_order_id: pagamento.mercadopago_order_id || "",
+      tentativas_reembolso: 0,
+      suporte_aviso_status: "pendente",
+      cliente_email_status: "pendente",
     });
 
+    const idempotencyKey = criarChaveIdempotenciaReembolso(pedido.id);
+    await base44.asServiceRole.entities.PedidoDesistencia.update(pedido.id, {
+      idempotency_key_reembolso: idempotencyKey,
+    });
     await base44.asServiceRole.entities.Pagamento.update(pagamento_id, {
       desistencia_solicitada_em: solicitadoEm.toISOString(),
     });
 
-    return Response.json({ pedidoId: pedido.id, status: "aberto", solicitado_em: solicitadoEm.toISOString() });
+    const pedidoProcessavel = { ...pedido, idempotency_key_reembolso: idempotencyKey };
+    const avisoSuporte = await avisarSuporteDesistencia(base44, pedidoProcessavel, pagamento, user);
+    const resultado = await processarReembolsoDesistencia(base44, pedidoProcessavel, pagamento, {
+      consultarAntes: false,
+      origem: "clique_desistencia",
+    });
+
+    return Response.json({
+      pedidoId: pedido.id,
+      status: resultado.status,
+      solicitado_em: solicitadoEm.toISOString(),
+      aviso_suporte: avisoSuporte.ok ? "enviado" : "falhou",
+      reembolso: resultado.resultado,
+      proxima_tentativa_em: resultado.proxima_tentativa_em || null,
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
