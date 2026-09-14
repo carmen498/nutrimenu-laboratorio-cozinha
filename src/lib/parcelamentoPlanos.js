@@ -1,7 +1,7 @@
 export const MAX_PARCELAS_PADRAO = 12;
 export const MAX_PARCELAS_RENOVACAO = 6;
 
-// Espelho de base44/shared/guiaTecnicoZR.ts — o servidor revalida o parcelamento.
+// Tetos legados dos Laboratórios; o Guia ZR consulta o Mercado Pago dinamicamente.
 
 export function maxParcelasPlano(plano) {
   if (plano === "custos_mensal") return 1;
