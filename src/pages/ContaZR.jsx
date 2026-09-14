@@ -9,7 +9,7 @@ import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
 import { Loader2, ShieldCheck, FileText, ArrowLeft, BookOpen, Clock, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
 import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
-import { formatarDataBrasilia, formatarDataHoraBrasilia, partesDataBrasilia } from "@/lib/fusoBrasilia";
+import { dataHoraBase44, formatarDataBrasilia, formatarDataHoraBrasilia, formatarPrazoBrasilia } from "@/lib/fusoBrasilia";
 
 const PRAZO_DIAS = 7;
 const DIA_MS = 24 * 60 * 60 * 1000;
@@ -44,19 +44,11 @@ const acessoEstaVigente = (acesso) =>
 const formatarDataHora = (iso) => formatarDataHoraBrasilia(iso) || "—";
 const formatarData = (iso) => formatarDataBrasilia(iso) || "—";
 
-// Contagem por dia corrido: no dia da compra restam 7; no dia seguinte, 6;
-// ... chegando a 0 no sétimo dia. Usa meia-noite no fuso America/Sao_Paulo
-// para ambas as datas — nunca UTC — para que uma compra às 23h de SP não
-// apareça como "ontem" nem desloque a contagem do direito de arrependimento.
-const diasRestantes = (compraEm) => {
-  const partesCompra = partesDataBrasilia(compraEm);
-  if (!partesCompra) return -1;
-  const partesHoje = partesDataBrasilia(new Date());
-  if (!partesHoje) return -1;
-  const inicio = Date.UTC(Number(partesCompra.year), Number(partesCompra.month) - 1, Number(partesCompra.day));
-  const hoje = Date.UTC(Number(partesHoje.year), Number(partesHoje.month) - 1, Number(partesHoje.day));
-  const diasDecorridos = Math.floor((hoje - inicio) / DIA_MS);
-  return PRAZO_DIAS - diasDecorridos;
+// A tela não decide o prazo: apenas conta até o instante persistido pelo servidor.
+const diasRestantes = (prazoEm) => {
+  const prazo = dataHoraBase44(prazoEm).getTime();
+  if (!Number.isFinite(prazo)) return -1;
+  return Math.max(0, Math.ceil((prazo - Date.now()) / DIA_MS));
 };
 
 export default function ContaZR() {
@@ -88,7 +80,7 @@ export default function ContaZR() {
 
   // Compras aprovadas (não estornadas) ainda dentro dos 7 dias do direito de arrependimento.
   const comprasNoPrazo = useMemo(
-    () => pagamentosZR.filter((p) => p.status === "approved" && diasRestantes(p.created_date) > 0),
+    () => pagamentosZR.filter((p) => p.status === "approved" && diasRestantes(p.prazo_desistencia_em) > 0),
     [pagamentosZR]
   );
   const mostrarDesistencia = comprasNoPrazo.length > 0;
@@ -112,6 +104,7 @@ export default function ContaZR() {
     enabled: !!user?.id,
   });
   const pedidoPorPagamento = useMemo(() => Object.fromEntries((pedidos || []).map((p) => [p.pagamento_id, p])), [pedidos]);
+  const statusQueBloqueiamNovoPedido = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "concluido"]);
 
   const carregando = userLoading || acessosLoading || pagsLoading;
 
@@ -194,7 +187,7 @@ export default function ContaZR() {
                               </>
                             ) : a.fim_em ? (
                               <>
-                                <Clock className="w-3 h-3" /> até {formatarData(a.fim_em)}
+                                <Clock className="w-3 h-3" /> {formatarPrazoBrasilia(a.fim_em)}
                               </>
                             ) : (
                               "Sem prazo"
@@ -207,6 +200,9 @@ export default function ContaZR() {
                               Recibo: R$ {Number(pag.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} ·{" "}
                               {pag.forma_pagamento === "pix" ? "PIX" : "Cartão"} · {formatarData(pag.created_date)}
                             </p>
+                            {pag.prazo_desistencia_em && (
+                              <p className="text-xs text-[#6B6358]">Prazo para desistir: {formatarPrazoBrasilia(pag.prazo_desistencia_em)}</p>
+                            )}
                             {pag.status === "approved" && (
                               <button
                                 onClick={() => setNfPagamento(pag)}
@@ -235,7 +231,8 @@ export default function ContaZR() {
                   </p>
                   {comprasNoPrazo.map((p) => {
                     const pedido = pedidoPorPagamento[p.id];
-                    const dias = diasRestantes(p.created_date);
+                    const pedidoBloqueia = pedido && statusQueBloqueiamNovoPedido.has(pedido.status);
+                    const dias = diasRestantes(p.prazo_desistencia_em);
                     const elegivel = dias > 0;
                     if (!pedido && !elegivel) return null;
                     return (
@@ -246,12 +243,15 @@ export default function ContaZR() {
                               {NOME_PLANO[p.plano] || p.plano}
                             </p>
                             <p className="text-xs text-[#6B6358]">
-                              R$ {Number(p.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · comprado em {formatarDataHora(p.created_date)}
+                              R$ {Number(p.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · comprado em {formatarDataHora(p.created_date)} (horário de Brasília)
+                            </p>
+                            <p className="text-xs text-[#6B6358]">
+                              Prazo para desistir: {formatarPrazoBrasilia(p.prazo_desistencia_em)}
                             </p>
                           </div>
                           {pedido ? (
                             <span className="text-xs text-[#8A6D3B] font-medium">
-                              Pedido em {formatarDataHora(pedido.solicitado_em)} · {pedido.status.replace(/_/g, " ")}
+                              Pedido em {formatarDataHora(pedido.solicitado_em)} (horário de Brasília) · {pedido.status.replace(/_/g, " ")}
                             </span>
                           ) : (
                             <span className="text-xs text-[#6B6358]">
@@ -259,7 +259,7 @@ export default function ContaZR() {
                             </span>
                           )}
                         </div>
-                        {!pedido && elegivel && (
+                        {!pedidoBloqueia && elegivel && (
                           <button
                             onClick={() => solicitarDesistencia(p.id)}
                             disabled={enviandoId === p.id}
