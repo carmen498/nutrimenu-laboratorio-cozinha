@@ -157,6 +157,11 @@
       "default": false,
       "description": "true quando o lembrete de pagamento pendente j\u00e1 foi disparado"
     },
+    "prazo_desistencia_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Prazo final do direito de arrependimento, decidido e gravado pelo servidor no momento da compra, sempre em UTC com sufixo Z."
+    },
     "desistencia_solicitada_em": {
       "type": "string",
       "format": "date-time",
