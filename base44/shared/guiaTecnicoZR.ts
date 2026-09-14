@@ -10,19 +10,18 @@ export const OFERTAS_ZR: Record<string, {
   faixa: string;
   nome: string;
   renovacao: boolean;
-  maxParcelas: number;
   upgrade?: boolean;
   requer_faixas?: string[];
 }> = {
-  zr_tin: { faixa: "tin", nome: "ZR Tabela de Informação Nutricional", renovacao: false, maxParcelas: 3 },
-  zr_tin_renovacao: { faixa: "tin", nome: "Renovação anual — ZR Tabela de Informação Nutricional", renovacao: true, maxParcelas: 3 },
-  zr_full: { faixa: "full", nome: "ZR Profissional", renovacao: false, maxParcelas: 6 },
-  zr_full_renovacao: { faixa: "full", nome: "Renovação anual — ZR Profissional", renovacao: true, maxParcelas: 6 },
-  zr_arquitetura: { faixa: "arquitetura-do-rotulo", nome: "ZR Arquitetura do Rótulo", renovacao: false, maxParcelas: 2 },
-  zr_arquitetura_renovacao: { faixa: "arquitetura-do-rotulo", nome: "Renovação anual — ZR Arquitetura do Rótulo", renovacao: true, maxParcelas: 2 },
-  zr_full_upgrade_tin: { faixa: "full", nome: "Upgrade para ZR Profissional (TIN)", renovacao: false, maxParcelas: 6, upgrade: true, requer_faixas: ["tin"] },
-  zr_full_upgrade_arquitetura: { faixa: "full", nome: "Upgrade para ZR Profissional (Arquitetura)", renovacao: false, maxParcelas: 6, upgrade: true, requer_faixas: ["arquitetura-do-rotulo"] },
-  zr_full_upgrade_tin_arquitetura: { faixa: "full", nome: "Upgrade para ZR Profissional (TIN + Arquitetura)", renovacao: false, maxParcelas: 6, upgrade: true, requer_faixas: ["tin", "arquitetura-do-rotulo"] },
+  zr_tin: { faixa: "tin", nome: "ZR Tabela de Informação Nutricional", renovacao: false },
+  zr_tin_renovacao: { faixa: "tin", nome: "Renovação anual — ZR Tabela de Informação Nutricional", renovacao: true },
+  zr_full: { faixa: "full", nome: "ZR Profissional", renovacao: false },
+  zr_full_renovacao: { faixa: "full", nome: "Renovação anual — ZR Profissional", renovacao: true },
+  zr_arquitetura: { faixa: "arquitetura-do-rotulo", nome: "ZR Arquitetura do Rótulo", renovacao: false },
+  zr_arquitetura_renovacao: { faixa: "arquitetura-do-rotulo", nome: "Renovação anual — ZR Arquitetura do Rótulo", renovacao: true },
+  zr_full_upgrade_tin: { faixa: "full", nome: "Upgrade para ZR Profissional (TIN)", renovacao: false, upgrade: true, requer_faixas: ["tin"] },
+  zr_full_upgrade_arquitetura: { faixa: "full", nome: "Upgrade para ZR Profissional (Arquitetura)", renovacao: false, upgrade: true, requer_faixas: ["arquitetura-do-rotulo"] },
+  zr_full_upgrade_tin_arquitetura: { faixa: "full", nome: "Upgrade para ZR Profissional (TIN + Arquitetura)", renovacao: false, upgrade: true, requer_faixas: ["tin", "arquitetura-do-rotulo"] },
 };
 
 export function ofertaZR(planoId: unknown) {
