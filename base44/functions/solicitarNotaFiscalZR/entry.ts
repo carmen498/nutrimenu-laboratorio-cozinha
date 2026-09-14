@@ -7,7 +7,7 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { OFERTAS_ZR } from "../../shared/guiaTecnicoZR.ts";
 import { DADOS_EMPRESA } from "../../shared/dadosEmpresa.ts";
-import { resolverPagadorFiscal } from "../../shared/dadosFiscaisPagador.ts";
+import { resolverPagadorFiscal } from "../../shared/dadosFiscaisPagador.js";
 import { dataHoraUtcBase44 } from "../../shared/prazoDesistencia.ts";
 
 export default async function(req: Request): Promise<Response> {
