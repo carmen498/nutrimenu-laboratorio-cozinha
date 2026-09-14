@@ -4,7 +4,6 @@
 // no navegador. Repetições automáticas da MESMA tentativa reutilizam a mesma chave.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { secrets } from "base44:runtime";
 import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
 import { avaliarAcessoAssinaturaServer } from "../../shared/acessoAssinatura.ts";
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
@@ -12,6 +11,9 @@ import { resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { avaliarElegibilidadeRenovacao } from "../../shared/regraRenovacao.ts";
 import { validarParcelamentoPlano } from "../../shared/parcelamentoPlanos.ts";
+import { obterCredencialMercadoPago } from "../../shared/mercadoPagoCredencial.ts";
+import { consultarParcelasOuAVista } from "../../shared/parcelamentoMercadoPago.ts";
+import { aplicarDescontoPixParaBaixo, lerCondicoesComerciaisZR } from "../../shared/condicoesComerciaisZR.ts";
 import { resolverOfertaConversao, aplicarDescontoOferta } from "../../shared/ofertaConversao.ts";
 import { OFERTAS_ZR, ofertaZR, validarFaixasUpgrade } from "../../shared/guiaTecnicoZR.ts";
 import { avaliarDadosFiscais } from "../../shared/dadosFiscais.ts";
@@ -31,7 +33,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v27-2026-09-14-dados-comprovante";
+const VERSAO_CODIGO = "v28-2026-09-14-parcelamento-pix-zr";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -49,7 +51,7 @@ export default async function(req: Request): Promise<Response> {
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json().catch(() => ({}));
-    const { plano, addon_plano_id, somente_addon = false, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id, device_id } = body;
+    const { plano, addon_plano_id, somente_addon = false, forma_pagamento, token, installments, payer, aceite_termos, tentativa_id, device_id, card_bin } = body;
 
     if (aceite_termos !== true) {
       return Response.json({
@@ -143,7 +145,7 @@ export default async function(req: Request): Promise<Response> {
       }, { status: 409 });
     }
 
-    const ambiente = (secrets.get("AMBIENTE") || "").trim().toLowerCase();
+    const { ambiente, accessToken } = obterCredencialMercadoPago();
     const deviceIdSeguro = typeof device_id === "string" ? device_id.trim() : "";
     const deviceIdValido = /^[\x21-\x7E]{8,256}$/.test(deviceIdSeguro);
     if (forma_pagamento === "cartao" && ambiente === "producao" && !deviceIdValido) {
@@ -212,6 +214,7 @@ export default async function(req: Request): Promise<Response> {
 
     // Faixa do Guia Técnico ZR: produto independente, preço e liberação de venda no servidor.
     let valorGuiaZr = 0;
+    let descontoPixPct = 0;
     if (planoZr) {
       const configZr = (await base44.asServiceRole.entities.ConfiguracaoPlano.filter({ plano_id: plano, produto: "guia_zr" }))?.[0] || null;
       if (!configZr || configZr.valor_cobranca == null) return Response.json({ error: `Preço não configurado para a faixa ${plano}` }, { status: 500 });
@@ -223,6 +226,12 @@ export default async function(req: Request): Promise<Response> {
       }
       valorGuiaZr = Number(configZr.valor_cobranca);
       if (!(valorGuiaZr > 0)) return Response.json({ error: `Preço inválido para a faixa ${plano}` }, { status: 500 });
+      if (forma_pagamento === "pix") {
+        const condicoes = await lerCondicoesComerciaisZR(base44);
+        descontoPixPct = condicoes.descontoPix;
+        valorSemDesconto = valorGuiaZr;
+        valorGuiaZr = aplicarDescontoPixParaBaixo(valorGuiaZr, descontoPixPct);
+      }
     }
 
     // Upgrade: valida faixas ativas exigidas antes de prosseguir com o pagamento.
@@ -245,13 +254,28 @@ export default async function(req: Request): Promise<Response> {
     const valorFormatado = valor.toFixed(2);
     const parcelas = forma_pagamento === "cartao" ? (parseInt(installments, 10) || 1) : 1;
     const planoParcelamento = planoBaseId || addonId || plano;
-    const parcelamento = validarParcelamentoPlano(planoParcelamento, parcelas);
-    if (!parcelamento.valido) {
-      return Response.json({
-        error: `Parcelamento inválido para o plano ${planoParcelamento}. Máximo permitido: ${parcelamento.maximo}x`,
-        code: "parcelamento_invalido",
-        max_parcelas: parcelamento.maximo,
-      }, { status: 400 });
+    if (forma_pagamento === "cartao" && planoZr) {
+      const resultadoParcelamento = await consultarParcelasOuAVista({
+        bin: String(card_bin || ""),
+        valor,
+        accessToken,
+        contexto: { function: "criarPagamentoMercadoPago", ambiente, plano },
+      });
+      if (!resultadoParcelamento.opcoes.some((opcao) => opcao.installments === parcelas)) {
+        return Response.json({
+          error: "A opção de parcelamento não está disponível para este cartão.",
+          code: "parcelamento_invalido",
+        }, { status: 400 });
+      }
+    } else {
+      const parcelamento = validarParcelamentoPlano(planoParcelamento, parcelas);
+      if (!parcelamento.valido) {
+        return Response.json({
+          error: `Parcelamento inválido para o plano ${planoParcelamento}. Máximo permitido: ${parcelamento.maximo}x`,
+          code: "parcelamento_invalido",
+          max_parcelas: parcelamento.maximo,
+        }, { status: 400 });
+      }
     }
 
     // A prova da contratação é gerada no servidor no instante da tentativa.
@@ -299,6 +323,7 @@ export default async function(req: Request): Promise<Response> {
       valor_cozinha: valorCozinha,
       valor_custos: valorCustos,
       ...(valorGuiaZr > 0 ? { valor_guia_zr: valorGuiaZr } : {}),
+      ...(descontoPixPct > 0 ? { desconto_pix_pct: descontoPixPct, valor_sem_desconto: valorSemDesconto } : {}),
       ...(descontoOfertaPct > 0 ? { desconto_oferta_pct: descontoOfertaPct, valor_sem_desconto: valorSemDesconto + valorCustos } : {}),
       forma_pagamento,
       valor,
@@ -311,10 +336,6 @@ export default async function(req: Request): Promise<Response> {
       versao_codigo: VERSAO_CODIGO,
       prazo_desistencia_em: calcularPrazoDesistencia(new Date()),
     });
-
-    const accessToken = ambiente === "producao"
-      ? secrets.get("MERCADOPAGO_ACCESS_TOKEN_PROD")
-      : secrets.get("MERCADOPAGO_ACCESS_TOKEN_SANDBOX");
 
     // Em sandbox, o Mercado Pago só aceita e-mails de comprador de teste
     // (terminados em @testuser.com). Como o e-mail real do usuário logado
@@ -413,6 +434,24 @@ export default async function(req: Request): Promise<Response> {
           },
         ],
       };
+    }
+
+    // A Orders API exige igualdade exata entre total_amount, a soma de
+    // items[].unit_price e transactions.payments[].amount.
+    const itens = orderBody.items as Array<{ unit_price: string; quantity: number }>;
+    const pagamentoOrder = (orderBody.transactions as any)?.payments?.[0];
+    const somaItens = itens.reduce((total, item) => total + Number(item.unit_price) * Number(item.quantity), 0).toFixed(2);
+    if (String(orderBody.total_amount) !== valorFormatado ||
+        String(pagamentoOrder?.amount) !== valorFormatado ||
+        somaItens !== valorFormatado) {
+      console.error("Valores divergentes no corpo da order Mercado Pago", {
+        pagamento_id: pagamento.id,
+        total_amount: orderBody.total_amount,
+        soma_items: somaItens,
+        payment_amount: pagamentoOrder?.amount,
+        esperado: valorFormatado,
+      });
+      return Response.json({ error: "Não foi possível montar o pagamento com valores consistentes" }, { status: 500 });
     }
 
     const mpResponse = await fetch("https://api.mercadopago.com/v1/orders", {
