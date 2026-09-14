@@ -15,6 +15,7 @@
     "typecheck": "tsc -p ./jsconfig.json",
     "test:renewal": "node scripts/test-plano-renovacao.mjs",
     "test:comprovante-zr": "node scripts/test-comprovante-zr.mjs",
+    "test:parcelamento-pix-zr": "node scripts/test-parcelamento-pix-zr.mjs",
     "test:orcamento": "node scripts/test-orcamento-evento.mjs",
     "test:cardapio": "node scripts/test-cardapio-etapa-12.mjs",
     "test:security": "node scripts/test-rls-children.mjs && node scripts/test-scheduled-functions.mjs && node scripts/test-subscription-matrix.mjs && node scripts/test-auth-routing.mjs && npm run test:renewal && npm run test:comprovante-zr",
