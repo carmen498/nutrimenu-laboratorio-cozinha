@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Loader2, Pencil, RefreshCw, Star } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import ConfiguracaoPlanoDialog from "./ConfiguracaoPlanoDialog";
+import CondicoesComerciaisZR from "./CondicoesComerciaisZR";
 
 const formatarPreco = (plano) => {
   const valor = (plano.preco_exibido || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -67,6 +68,8 @@ export default function PlanosTab() {
         Edite aqui os valores e textos exibidos na tela pública de Planos. O valor "cobrado no checkout" é o que
         efetivamente será debitado no Mercado Pago.
       </p>
+
+      <CondicoesComerciaisZR />
 
       {renovacaoInvalida && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950">
