@@ -15,7 +15,7 @@ assert.match(helper, /tipo: "pagamento_estornado"/);
 assert.match(webhook, /finalizarEstornoConfirmado\(base44, pagamento, null, "webhook_mercado_pago"\)/);
 
 assert.match(helper, /"X-Idempotency-Key": chave/);
-assert.match(helper, /method: "POST"[\s\S]*\/refund/);
+assert.match(helper, /\$\{MP_BASE\}\/\$\{orderId\}\/refund[\s\S]*method: "POST"/);
 assert.doesNotMatch(helper, /body:\s*JSON\.stringify/);
 assert.match(helper, /if \(opcoes\.consultarAntes\)[\s\S]*consultarOrder\(orderId\)/);
 assert.match(solicitar, /status: "processando"/);
