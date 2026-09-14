@@ -163,6 +163,9 @@ export default function ComprarZR() {
                 R$ {Number(oferta.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
               {oferta.preco_detalhe && <p className="text-xs text-[#6B6358] mt-1">{oferta.preco_detalhe}</p>}
+              {Number(oferta.parcelas_sem_juros) > 1 && (
+                <p className="text-sm font-medium text-[#3A342B] mt-1">Até {oferta.parcelas_sem_juros}x sem juros</p>
+              )
               {oferta.beneficios?.length > 0 && (
                 <ul className="mt-4 space-y-1.5">
                   {oferta.beneficios.map((b, i) => (
