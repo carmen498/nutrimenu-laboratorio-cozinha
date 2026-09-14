@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
 import { dataHoraBase44, formatarDataBrasilia, formatarDataHoraBrasilia, formatarPrazoBrasilia } from "@/lib/fusoBrasilia";
 
-const PRAZO_DIAS = 7;
 const DIA_MS = 24 * 60 * 60 * 1000;
 
 const NOMES_FAIXA = {
@@ -39,7 +38,7 @@ const acessoEstaVigente = (acesso) =>
   acesso.status === "ativo" &&
   (acesso.vitalicio ||
     !acesso.fim_em ||
-    new Date(acesso.fim_em).getTime() >= Date.now());
+    dataHoraBase44(acesso.fim_em).getTime() >= Date.now());
 
 const formatarDataHora = (iso) => formatarDataHoraBrasilia(iso) || "—";
 const formatarData = (iso) => formatarDataBrasilia(iso) || "—";
