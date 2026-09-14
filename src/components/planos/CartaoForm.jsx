@@ -281,7 +281,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         {carregandoParcelas && <p className="text-xs text-muted-foreground">Carregando opções do Mercado Pago…</p>}
         {avisoParcelas && <p className="text-xs text-amber-700">{avisoParcelas}</p>}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>
+      {error && <p className="text-sm text-destructive">{error}</p>}
       <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos || !podePagar}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Pagar
