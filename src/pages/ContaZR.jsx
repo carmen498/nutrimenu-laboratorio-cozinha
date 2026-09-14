@@ -6,7 +6,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
-import { Loader2, ShieldCheck, FileText, ArrowLeft, Clock, Infinity as InfinityIcon } from "lucide-react";
+import { Loader2, ShieldCheck, FileText, ArrowLeft, BookOpen, Clock, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
 import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
 import { formatarDataBrasilia, formatarDataHoraBrasilia, partesDataBrasilia } from "@/lib/fusoBrasilia";
@@ -33,6 +33,13 @@ const NOME_PLANO = {
 };
 
 const ehZR = (plano) => typeof plano === "string" && plano.startsWith("zr_");
+const URL_GUIA_ENTRAR = "https://zr.nutrimenu.com.br/entrar?destino=%2F";
+
+const acessoEstaVigente = (acesso) =>
+  acesso.status === "ativo" &&
+  (acesso.vitalicio ||
+    !acesso.fim_em ||
+    new Date(acesso.fim_em).getTime() >= Date.now());
 
 const formatarDataHora = (iso) => formatarDataHoraBrasilia(iso) || "—";
 const formatarData = (iso) => formatarDataBrasilia(iso) || "—";
@@ -77,6 +84,7 @@ export default function ContaZR() {
   const pagamentosZR = useMemo(() => (pagamentos || []).filter((p) => ehZR(p.plano)), [pagamentos]);
   const pagamentoPorId = useMemo(() => Object.fromEntries(pagamentosZR.map((p) => [p.id, p])), [pagamentosZR]);
   const temAlgumaCompra = (acessos || []).length > 0 || pagamentosZR.length > 0;
+  const temAcessoAtivo = (acessos || []).some(acessoEstaVigente);
 
   // Compras aprovadas (não estornadas) ainda dentro dos 7 dias do direito de arrependimento.
   const comprasNoPrazo = useMemo(
@@ -135,6 +143,17 @@ export default function ContaZR() {
           </div>
         ) : (
           <>
+            {temAcessoAtivo && (
+              <div>
+                <a
+                  href={URL_GUIA_ENTRAR}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-[#1F1B16] px-5 py-3 text-sm font-semibold text-[#F4F1EA] shadow-sm hover:bg-[#2A2420]"
+                >
+                  <BookOpen className="w-4 h-4" /> Acessar o Guia Técnico ZR
+                </a>
+              </div>
+            )}
+
             {/* 1. Compras / faixas */}
             <section className="space-y-3">
               <h2 className="zr-serif text-lg font-semibold text-[#1F1B16]">Minhas faixas</h2>
@@ -144,16 +163,19 @@ export default function ContaZR() {
                 <ul className="space-y-3">
                   {acessos.map((a) => {
                     const pag = a.referencia_pagamento_id ? pagamentoPorId[a.referencia_pagamento_id] : null;
-                    const vigente =
-                      a.status === "ativo" &&
-                      (a.vitalicio ||
-                        !a.fim_em ||
-                        new Date(a.fim_em).getTime() >= Date.now());
+                    const vigente = acessoEstaVigente(a);
                     return (
                       <li key={a.id} className="rounded-xl border border-[#E2DBC9] bg-white p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-semibold text-[#1F1B16]">{NOMES_FAIXA[a.faixa] || a.faixa}</p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-semibold text-[#1F1B16]">{NOMES_FAIXA[a.faixa] || a.faixa}</p>
+                              {a.status === "cancelado" && (
+                                <span className="inline-flex rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                                  Plano cancelado
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-[#6B6358] mt-0.5">
                               {a.origem === "checkout" ? "Compra" : a.origem || "Concessão"} ·{" "}
                               {formatarData(a.inicio_em || a.created_date)}
@@ -163,7 +185,7 @@ export default function ContaZR() {
                             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${
                               vigente
                                 ? "bg-[#EFE8D8] text-[#6B5530]"
-                                : "bg-[#F1ECE3] text-[#9A9081] line-through"
+                                : "bg-[#F1ECE3] text-[#6B6358]"
                             }`}
                           >
                             {a.vitalicio ? (
@@ -254,12 +276,6 @@ export default function ContaZR() {
               </section>
             )}
 
-            {/* 3. Voltar */}
-            <div>
-              <a href="https://zr.nutrimenu.com.br" className="inline-flex items-center gap-2 text-sm font-medium text-[#8A6D3B] hover:underline">
-                <ArrowLeft className="w-4 h-4" /> Voltar ao Guia Técnico ZR
-              </a>
-            </div>
           </>
         )}
       </main>
