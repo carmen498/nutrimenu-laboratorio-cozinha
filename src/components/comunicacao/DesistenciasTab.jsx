@@ -32,7 +32,7 @@ export default function DesistenciasTab() {
   const tentarNovamente = async (pedido) => {
     setTentandoId(pedido.id);
     try {
-      const resposta = await base44.functions.invoke("reprocessarDesistencias", { pedido_id: pedido.id });
+      const resposta = await base44.functions.invoke("tentarReembolsoNovamente", { pedido_id: pedido.id });
       await qc.invalidateQueries({ queryKey: ["pedidos-desistencia-admin"] });
       toast({
         title: resposta?.data?.status === "concluido" ? "Estorno confirmado" : "Nova tentativa registrada",
