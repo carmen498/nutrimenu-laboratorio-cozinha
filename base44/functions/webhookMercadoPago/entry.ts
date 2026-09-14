@@ -15,6 +15,10 @@ import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
 import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
+import {
+  enviarAvisoClienteEventoPagamento,
+  finalizarEstornoConfirmado,
+} from "../../shared/processarDesistencia.ts";
 import { notificarAdminEventoWebhook } from "../../shared/notificarAdminWebhook.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
@@ -23,7 +27,7 @@ import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
-const VERSAO_CODIGO = "webhook-v9-2026-09-13-contestacao-estorno-parcial-cancelamento";
+const VERSAO_CODIGO = "webhook-v10-2026-09-14-estorno-automatico-email-idempotente";
 
 export default async function(req: Request): Promise<Response> {
   let dataIdContexto: string | null = null;
@@ -159,7 +163,10 @@ export default async function(req: Request): Promise<Response> {
       // Se a gravação do pagamento ocorreu, mas a atualização do usuário falhou,
       // um replay aprovado repara a liberação. O helper ignora quem já foi ativado.
       if (novoStatus === "approved") await ativarCompraPagamento(base44, pagamento);
-      console.log(`Pagamento já estava ${novoStatus} — efeitos colaterais ignorados (idempotência).`);
+      else if (novoStatus === "estornado") await finalizarEstornoConfirmado(base44, pagamento, null, "webhook_mercado_pago");
+      else if (novoStatus === "contestado") await enviarAvisoClienteEventoPagamento(base44, pagamento, "pagamento_contestado", "webhook_mercado_pago");
+      else if (novoStatus === "cancelled") await enviarAvisoClienteEventoPagamento(base44, pagamento, "pagamento_encerrado", "webhook_mercado_pago");
+      console.log(`Pagamento já estava ${novoStatus} — efeitos idempotentes conferidos.`);
       await registrarLog({ assinatura_valida: true, resultado: "processado", pagamento_id: pagamentoId, status_resolvido: novoStatus });
       return Response.json({ received: true, status: novoStatus, idempotent: true });
     }
@@ -173,9 +180,14 @@ export default async function(req: Request): Promise<Response> {
       // Estorno, contestação e cancelamento revertem um acesso que já havia sido
       // concedido — revogam o entitlement daquele pagamento. Estorno parcial NÃO
       // revoga: apenas registra e deixa o admin decidir.
-      if (["estornado", "contestado", "cancelled"].includes(novoStatus)) {
+      if (novoStatus === "estornado") {
+        const finalizacao = await finalizarEstornoConfirmado(base44, pagamento, null, "webhook_mercado_pago");
+        console.log("Estorno confirmado e finalizado", { pagamento_id: pagamento.id, finalizacao });
+      } else if (["contestado", "cancelled"].includes(novoStatus)) {
         const revogacao = await revogarCompraEstorno(base44, pagamento);
-        console.log("Resultado da revogação", { pagamento_id: pagamento.id, status: novoStatus, revogacao });
+        const tipoAviso = novoStatus === "contestado" ? "pagamento_contestado" : "pagamento_encerrado";
+        await enviarAvisoClienteEventoPagamento(base44, pagamento, tipoAviso, "webhook_mercado_pago");
+        console.log("Acesso revogado e cliente avisado", { pagamento_id: pagamento.id, status: novoStatus, revogacao });
       }
 
       const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
@@ -199,7 +211,7 @@ export default async function(req: Request): Promise<Response> {
       // O e-mail de aprovado é disparado dentro de ativarPlanoEEnviarEmail, acima.
       let tipoEmail: string | null = null;
       if (novoStatus === "rejected") tipoEmail = "pagamento_recusado";
-      else if (novoStatus === "estornado") tipoEmail = "pagamento_estornado";
+      // Estorno, contestação e pagamento encerrado usam o emissor idempotente compartilhado.
 
       if (tipoEmail) {
         if (usuario?.email) {
@@ -234,10 +246,6 @@ export default async function(req: Request): Promise<Response> {
         if (usuario && novoStatus === "rejected") {
           await enviarNotificacaoWhatsapp(base44, "pagamento_recusado", usuario).catch((e: any) =>
             console.log("Falha ao enviar WhatsApp de pagamento recusado:", e.message)
-          );
-        } else if (usuario && novoStatus === "estornado") {
-          await enviarNotificacaoWhatsapp(base44, "pagamento_estornado", usuario).catch((e: any) =>
-            console.log("Falha ao enviar WhatsApp de pagamento estornado:", e.message)
           );
         }
       }
