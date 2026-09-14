@@ -8,6 +8,47 @@
 // /\evil.com parses same-origin but normalizes to a protocol-relative
 // //evil.com when assigned to location.href — an open redirect. So require the
 // resolved path to be exactly one leading slash (no "//" prefix, no backslash).
+export const RETURN_TO_MAX_AGE_MS = 30 * 60 * 1000;
+
+export function serializeReturnTo(value, savedAt = Date.now()) {
+  return JSON.stringify({ value, savedAt });
+}
+
+export function readFreshReturnTo(raw, now = Date.now()) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    const age = now - Number(parsed?.savedAt);
+    if (typeof parsed?.value !== "string" || !Number.isFinite(age) || age < 0 || age > RETURN_TO_MAX_AGE_MS) {
+      return null;
+    }
+    return parsed.value;
+  } catch {
+    // Compatibilidade: o formato antigo era uma string pura. Ele é tratado
+    // como ausente para não herdar uma intenção sem carimbo de hora.
+    return null;
+  }
+}
+
+export function resolveRegisterReturnTo({
+  hasNewDestination,
+  newDestination,
+  persistedRaw,
+  fallback,
+  now = Date.now(),
+}) {
+  if (hasNewDestination) {
+    return { destination: newDestination, action: "persist" };
+  }
+
+  const persisted = readFreshReturnTo(persistedRaw, now);
+  if (persisted) {
+    return { destination: persisted, action: "keep" };
+  }
+
+  return { destination: fallback, action: "clear" };
+}
+
 export function safeReturnTo() {
   const params = new URLSearchParams(window.location.search);
   // "returnTo" is this app's own param name; "from_url" is what the SDK's
@@ -17,9 +58,10 @@ export function safeReturnTo() {
   // Falls back to sessionStorage: index.html strips the param from the address
   // bar as soon as the page loads (before React mounts) and stashes the raw
   // value there, so by the time this runs the URL itself may already be clean.
-  const stored = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("base44_pending_return_to") : null;
+  const storedRaw = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("base44_pending_return_to") : null;
+  const stored = readFreshReturnTo(storedRaw);
   const raw = params.get("returnTo") || params.get("from_url") || stored;
-  if (stored) sessionStorage.removeItem("base44_pending_return_to");
+  if (storedRaw) sessionStorage.removeItem("base44_pending_return_to");
   if (!raw) return "/";
   // Aceita somente caminho interno literal. URLs absolutas, inclusive da mesma
   // origem, não fazem parte do contrato e são rejeitadas antes do parse.
