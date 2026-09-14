@@ -23,7 +23,7 @@ assert.ok(parcelamento.includes("opcoes: [opcaoAVista(valor)]"));
 assert.ok(cartao.includes("total_amount"));
 assert.ok(cartao.includes("sem juros"));
 
-assert.ok(credencial.includes("secrets.get(\\"AMBIENTE\\")"));
+assert.ok(credencial.includes('secrets.get("AMBIENTE")'));
 assert.ok(credencial.includes("MERCADOPAGO_ACCESS_TOKEN_PROD"));
 assert.ok(credencial.includes("MERCADOPAGO_ACCESS_TOKEN_SANDBOX"));
 assert.ok(!parcelamento.includes("Deno.env.get"));
