@@ -88,6 +88,10 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
         onErroUpgrade?.(respostaErro);
         return;
       }
+      if (respostaErro?.code === "nome_fiscal_invalido") {
+        setError(respostaErro.error + " Atualize seus dados de nota fiscal acima e tente novamente.");
+        return;
+      }
       setError(respostaErro?.error || err.message || "Erro ao gerar o PIX.");
     } finally {
       setLoading(false);

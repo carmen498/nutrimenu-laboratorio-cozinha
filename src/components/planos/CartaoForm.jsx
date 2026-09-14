@@ -184,6 +184,10 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         onErroUpgrade?.(respostaErro);
         return;
       }
+      if (respostaErro?.code === "nome_fiscal_invalido") {
+        setError(respostaErro.error + " Atualize seus dados de nota fiscal acima e tente novamente.");
+        return;
+      }
       const mensagem = respostaErro?.error || err.message || "Erro ao processar o pagamento.";
       const orientacao = respostaErro?.orientacao;
       setError(orientacao ? `${mensagem}. ${orientacao}` : mensagem);

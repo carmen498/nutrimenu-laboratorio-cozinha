@@ -13,9 +13,15 @@ export function avaliarDadosFiscais(usuario = {}) {
   const documento = String(usuario.cpf_cnpj || "").replace(/\D/g, "");
   const cep = String(usuario.cep || "").replace(/\D/g, "");
   const [cidadeLegado = "", estadoLegado = ""] = String(usuario.cidade_uf || "").split("/");
+  const ehCnpj = documento.length === 14;
+  const nomeResolvido = String(usuario.nome_completo || usuario.full_name || "").trim();
+  const temSobrenome = nomeResolvido.split(/\s+/).filter(Boolean).length >= 2;
 
   const validacoes = {
     "CPF ou CNPJ": documento.length === 11 || documento.length === 14,
+    ...(ehCnpj
+      ? { "Razão social": !!primeiro(usuario.razao_social) }
+      : { "Nome e sobrenome": temSobrenome }),
     "CEP": cep.length === 8,
     "Logradouro": !!primeiro(usuario.logradouro, usuario.endereco),
     "Número": !!primeiro(usuario.numero),

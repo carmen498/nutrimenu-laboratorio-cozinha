@@ -14,6 +14,8 @@ export default function DadosNotaFiscalCheckout() {
   const { user, checkUserAuth } = useAuth();
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState({
+    nome_completo: user?.nome_completo || user?.full_name || "",
+    razao_social: user?.razao_social || "",
     cpf_cnpj: user?.cpf_cnpj || "",
     cep: user?.cep || "",
     logradouro: user?.logradouro || user?.endereco || "",
@@ -27,6 +29,8 @@ export default function DadosNotaFiscalCheckout() {
   const set = (campo, transform) => (e) =>
     setForm((f) => ({ ...f, [campo]: transform ? transform(e.target.value) : e.target.value }));
   const avaliacao = avaliarDadosFiscais(form);
+  const documentoLimpo = String(form.cpf_cnpj || "").replace(/\D/g, "");
+  const ehCnpj = documentoLimpo.length === 14;
 
   const handleSalvar = async () => {
     setSalvando(true);
@@ -52,6 +56,17 @@ export default function DadosNotaFiscalCheckout() {
         <p className="text-xs text-amber-900">Obrigatórios para concluir a compra. Ficam salvos na sua conta.</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
+        {ehCnpj ? (
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">Razão social *</Label>
+            <Input value={form.razao_social} onChange={set("razao_social")} placeholder="Nome empresarial" />
+          </div>
+        ) : (
+          <div className="space-y-1 sm:col-span-2">
+            <Label className="text-xs">Nome completo (nome e sobrenome) *</Label>
+            <Input value={form.nome_completo} onChange={set("nome_completo")} placeholder="Seu nome completo" />
+          </div>
+        )}
         <div className="space-y-1"><Label className="text-xs">CPF ou CNPJ *</Label><Input value={form.cpf_cnpj} onChange={set("cpf_cnpj")} placeholder="000.000.000-00" /></div>
         <div className="space-y-1"><Label className="text-xs">CEP *</Label><Input value={form.cep} onChange={set("cep")} placeholder="00000-000" /></div>
         <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Logradouro *</Label><Input value={form.logradouro} onChange={set("logradouro")} placeholder="Rua, avenida..." /></div>

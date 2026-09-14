@@ -33,7 +33,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v28-2026-09-14-parcelamento-pix-zr";
+const VERSAO_CODIGO = "v29-2026-09-14-nome-fiscal-cnpj";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -143,6 +143,29 @@ export default async function(req: Request): Promise<Response> {
         code: "dados_fiscais_incompletos",
         faltando: dadosFiscais.faltando,
       }, { status: 409 });
+    }
+
+    // Safety net: o frontend já orienta o preenchimento do nome via
+    // avaliarDadosFiscais, mas este check garante que o backend nunca
+    // prossiga com nome de uma palavra (CPF) ou razão social ausente (CNPJ).
+    const documentoUsuario = String(user.cpf_cnpj || "").replace(/\D/g, "");
+    const ehCnpj = documentoUsuario.length === 14;
+    const nomeResolvido = String(user.nome_completo || user.full_name || "").trim();
+    if (ehCnpj) {
+      if (!String(user.razao_social || "").trim()) {
+        return Response.json({
+          error: "Razão social obrigatória para nota fiscal de pessoa jurídica.",
+          code: "nome_fiscal_invalido",
+        }, { status: 409 });
+      }
+    } else {
+      const partesNome = nomeResolvido.split(/\s+/).filter(Boolean);
+      if (partesNome.length < 2) {
+        return Response.json({
+          error: "Nome incompleto para nota fiscal. Informe nome e sobrenome na sua conta.",
+          code: "nome_fiscal_invalido",
+        }, { status: 409 });
+      }
     }
 
     const { ambiente, accessToken } = obterCredencialMercadoPago();
@@ -354,9 +377,18 @@ export default async function(req: Request): Promise<Response> {
 
     // Nome do pagador, para aparecer identificado no painel do Mercado Pago
     // (sem isso o campo "comprador" fica em branco na conciliação).
-    const nomeCompleto = (user.full_name || "").trim();
-    const [primeiroNome, ...restoNome] = nomeCompleto ? nomeCompleto.split(/\s+/) : [""];
-    const sobrenome = restoNome.join(" ");
+    // CNPJ: razão social inteira no first_name, last_name omitido, nunca repetida.
+    // CPF: nome + sobrenome (já validado acima).
+    let primeiroNome: string;
+    let sobrenome: string;
+    if (ehCnpj && user.razao_social) {
+      primeiroNome = String(user.razao_social).trim();
+      sobrenome = "";
+    } else {
+      const partes = nomeResolvido.split(/\s+/).filter(Boolean);
+      primeiroNome = partes[0] || "";
+      sobrenome = partes.slice(1).join(" ");
+    }
 
     // Endereço do pagador: ou vai completo, ou não vai. Campo faltando derruba a order.
     const endCep = String(user.cep || "").replace(/\D/g, "");
@@ -468,6 +500,16 @@ export default async function(req: Request): Promise<Response> {
     });
 
     const mpData = await mpResponse.json().catch(() => null);
+
+    // Primeira compra com CNPJ: caminho nunca exercitado em produção.
+    // Registramos a resposta completa para auditoria do fluxo PJ.
+    if (ehCnpj) {
+      console.log("Resposta completa do Mercado Pago (CNPJ)", {
+        pagamento_id: pagamento.id,
+        http_status: mpResponse.status,
+        response: mpData,
+      });
+    }
 
     if (!mpResponse.ok) {
       console.log("Mercado Pago recusou a criação da order", {
