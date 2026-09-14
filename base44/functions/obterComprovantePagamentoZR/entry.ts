@@ -1,7 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.48";
 import { secrets } from "base44:runtime";
 import { DADOS_EMPRESA } from "../../shared/dadosEmpresa.ts";
-import { resolverPagadorFiscal } from "../../shared/dadosFiscaisPagador.ts";
+import { resolverPagadorFiscal } from "../../shared/dadosFiscaisPagador.js";
 import { ofertaZR } from "../../shared/guiaTecnicoZR.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { finalizarEstornoConfirmado } from "../../shared/processarDesistencia.ts";
