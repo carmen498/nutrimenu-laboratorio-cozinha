@@ -18,7 +18,7 @@ assert.ok(parcelamento.includes("payment_methods/installments"));
 assert.ok(parcelamento.includes("payer_costs"));
 assert.ok(parcelamento.includes("installment_amount"));
 assert.ok(parcelamento.includes("grupoA - grupoB || a.installments - b.installments"));
-assert.ok(parcelamento.includes("console.error(\\"Fallback de parcelamento Mercado Pago acionado\\""));
+assert.ok(parcelamento.includes('console.error("Fallback de parcelamento Mercado Pago acionado"'));
 assert.ok(parcelamento.includes("opcoes: [opcaoAVista(valor)]"));
 assert.ok(cartao.includes("total_amount"));
 assert.ok(cartao.includes("sem juros"));
