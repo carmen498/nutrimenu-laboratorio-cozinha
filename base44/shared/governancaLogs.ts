@@ -38,11 +38,19 @@ export async function registrarLogEmail(
     email: string;
     tipo: string;
     resultado: { ok?: boolean; detalhe_completo?: unknown; error?: unknown };
+    pagamentoId?: string | null;
+    pedidoDesistenciaId?: string | null;
+    eventoChave?: string | null;
+    origem?: string | null;
   },
 ): Promise<void> {
   const status = params.resultado?.ok ? "enviado" : "falhou";
   await base44.asServiceRole.entities.LogEmail.create({
     usuario_id: params.usuarioId || "",
+    pagamento_id: params.pagamentoId || "",
+    pedido_desistencia_id: params.pedidoDesistenciaId || "",
+    evento_chave: params.eventoChave || "",
+    origem: params.origem || "",
     destinatario_email: mascararEmail(params.email),
     tipo: params.tipo,
     enviado_em: new Date().toISOString(),
