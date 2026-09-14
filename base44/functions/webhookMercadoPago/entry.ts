@@ -149,6 +149,21 @@ export default async function(req: Request): Promise<Response> {
     const novoStatus = recursoTipo === "order"
       ? resolverStatusOrderMercadoPago(recurso)
       : resolverStatusPaymentMercadoPago(recurso);
+    const transacao = recursoTipo === "order" ? recurso?.transactions?.payments?.[0] : recurso;
+    const transacaoId = transacao?.id == null ? null : String(transacao.id);
+    const pagoEmBruto = transacao?.date_approved || null;
+    const pagoEm = pagoEmBruto && Number.isFinite(new Date(pagoEmBruto).getTime())
+      ? new Date(pagoEmBruto).toISOString()
+      : null;
+    const estornadoEmBruto = transacao?.date_last_updated || recurso?.last_updated_date || null;
+    const estornadoEm = estornadoEmBruto && Number.isFinite(new Date(estornadoEmBruto).getTime())
+      ? new Date(estornadoEmBruto).toISOString()
+      : null;
+    const valorEstornado = Number(transacao?.amount_refunded ?? recurso?.total_refunded_amount ?? 0);
+    const dadosTransacao = {
+      ...(transacaoId ? { mercadopago_payment_id: transacaoId } : {}),
+      ...(pagoEm ? { pago_em: pagoEm } : {}),
+    };
 
     if (novoStatus === "pending") {
       console.log(`Status do ${recursoTipo} ainda não é final:`, recurso.status);
@@ -172,16 +187,20 @@ export default async function(req: Request): Promise<Response> {
     }
 
     if (novoStatus === "approved") {
-      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved" });
+      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "approved", ...dadosTransacao });
       await ativarCompraPagamento(base44, pagamento);
     } else {
-      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus });
+      await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: novoStatus, ...dadosTransacao });
 
       // Estorno, contestação e pagamento encerrado revertem um acesso que já havia sido
       // concedido — revogam o entitlement daquele pagamento. Estorno parcial NÃO
       // revoga: apenas registra e deixa o admin decidir.
       if (novoStatus === "estornado") {
-        const finalizacao = await finalizarEstornoConfirmado(base44, pagamento, null, "webhook_mercado_pago");
+        const finalizacao = await finalizarEstornoConfirmado(base44, pagamento, null, "webhook_mercado_pago", {
+          mercadopago_payment_id: transacaoId,
+          estornado_em: estornadoEm,
+          valor_estornado: valorEstornado || Number(pagamento.valor || 0),
+        });
         console.log("Estorno confirmado e finalizado", { pagamento_id: pagamento.id, finalizacao });
       } else if (["contestado", "cancelled"].includes(novoStatus)) {
         const revogacao = await revogarCompraEstorno(base44, pagamento);
