@@ -18,7 +18,7 @@ const dialogCode = fs.readFileSync("src/components/conta-zr/ComprovantePagamento
 assert.ok(functionCode.includes("Seu pagamento e seu acesso não foram afetados"));
 assert.ok(functionCode.includes("resolverPagadorFiscal(user)"));
 assert.ok(!functionCode.includes("user.full_name"));
-assert.ok(notaCode.includes("resolverPagadorFiscal(user)"));
+assert.ok(notaCode.includes("resolverPagadorFiscal({ ...user, ...updateData })"));
 assert.ok(!notaCode.includes("user.full_name"));
 assert.ok(contaCode.includes('pag.status === "approved"') && !contaCode.includes('pag.status === "approved" && vigente'));
 assert.ok(dialogCode.includes("ESTORNADO em"));
