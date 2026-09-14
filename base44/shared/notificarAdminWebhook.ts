@@ -7,7 +7,7 @@ import { secrets } from "base44:runtime";
 const TITULOS: Record<string, string> = {
   contestado: "Contestação (chargeback)",
   estornado_parcial: "Estorno parcial",
-  cancelled: "Cancelamento de pagamento",
+  cancelled: "Pagamento encerrado pelo Mercado Pago",
 };
 
 export async function notificarAdminEventoWebhook(
