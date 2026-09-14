@@ -16,6 +16,7 @@ import { hojeSaoPauloISO } from "./acessoAssinatura.ts";
 import { calcularExpiracaoInclusiva } from "./datasAssinatura.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
 import { proximoCicloRenovacao } from "./regraRenovacao.ts";
+import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365, renovacao: 365 };
 const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual", renovacao: "Renovação anual" };
@@ -46,7 +47,7 @@ async function enviarBoasVindasSeNecessario(base44: any, usuario: any): Promise<
   });
 }
 
-export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string; created_date?: string; produto_compra?: string }): Promise<void> {
+export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: string; plano: string; usuario_id: string; created_date?: string; produto_compra?: string; prazo_desistencia_em?: string }): Promise<void> {
   const usuarioAntes = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
 
   // A mesma transação pode voltar pela resposta síncrona, por repetição HTTP e pelo
@@ -96,7 +97,9 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
     });
 
     if (ativo) {
-      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
+      const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
+      const htmlComPrazo = `${html}<p><strong>Direito de arrependimento:</strong> ${prazoLegal}.</p>`;
+      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html: htmlComPrazo, produto: pagamento.produto_compra });
       await registrarLogEmail(base44, {
         usuarioId: usuario.id,
         email: usuario.email,
