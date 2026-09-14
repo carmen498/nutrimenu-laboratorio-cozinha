@@ -95,7 +95,7 @@ export default function ComprovantePagamentoDialog({ pagamento, onClose }) {
                 <Linha rotulo="Forma de pagamento" valor={forma} />
                 <Linha rotulo="Data do pagamento" valor={dados.pago_em ? `${formatarDataHoraBrasilia(dados.pago_em)} (horário de Brasília)` : "Data do pagamento não localizada"} />
                 <Linha rotulo="Situação" valor={situacao} />
-                <Linha rotulo="Transação" valor={dados.transacao || "Número da transação não localizado"} />
+                <Linha rotulo="N.º da transação" valor={dados.transacao || "Número da transação não localizado"} />
               </dl>
               <p className="text-sm">Confira este pagamento pelo número da transação no Mercado Pago.</p>
               <p className="text-sm font-medium">Este comprovante NÃO substitui nota fiscal. Para uso contábil, solicite a nota fiscal em Minha Conta → Pedir nota fiscal.</p>
