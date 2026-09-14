@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import RelatoriosDialog from "@/components/relatorios/RelatoriosDialog";
 import { DOSSIE_REPORT_DEF } from "@/lib/relatoriosDefs";
+import { formatarDataBrasilia } from "@/lib/fusoBrasilia";
 import {
   carregarDadosRelatorios,
   gerarRelatorioProducao,
@@ -55,7 +56,7 @@ export default function RelatoriosPlanejamentoDialog({ open, onClose, planejamen
       titulo="Relatórios do Evento"
       cabecalho={planejamento ? {
         nome: planejamento.nome,
-        data: planejamento.created_date ? new Date(planejamento.created_date).toLocaleDateString("pt-BR") : null,
+        data: planejamento.created_date ? formatarDataBrasilia(planejamento.created_date) : null,
         tipoLabel: [planejamento.tipo_planejamento, planejamento.tipo_servico].filter(Boolean).join(" · "),
         numPessoas: totalPessoas || null,
       } : null}
