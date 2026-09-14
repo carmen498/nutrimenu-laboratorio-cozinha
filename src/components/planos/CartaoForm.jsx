@@ -8,8 +8,31 @@ import { base44 } from "@/api/base44Client";
 import { carregarMercadoPagoDeviceId, carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
 
+const moeda = (valor) => Number(valor).toLocaleString("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+});
+
+const formatarOpcaoParcelamento = (opcao) => {
+  if (opcao.installment_amount == null) return `${opcao.installments}x`;
+  const parcela = `${opcao.installments}x de ${moeda(opcao.installment_amount)}`;
+  return Number(opcao.installment_rate) > 0
+    ? `${parcela} · total ${moeda(opcao.total_amount)}`
+    : `${parcela} sem juros`;
+};
+
 export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
-  const parcelasOpcoes = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => i + 1);
+  const planoEhZr = String(plano || "").startsWith("zr_");
+  const parcelasFixasLegadas = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => ({
+    installments: i + 1,
+    installment_amount: null,
+    installment_rate: 0,
+    total_amount: null,
+  }));
+  const [parcelasOpcoes, setParcelasOpcoes] = useState(planoEhZr ? [] : parcelasFixasLegadas);
+  const [carregandoParcelas, setCarregandoParcelas] = useState(false);
+  const [avisoParcelas, setAvisoParcelas] = useState("");
   const [numero, setNumero] = useState("");
   const [nome, setNome] = useState("");
   const [validade, setValidade] = useState("");
@@ -25,6 +48,48 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
     // Pré-carrega o SDK e o identificador antifraude somente quando o cartão é aberto.
     Promise.all([carregarMercadoPagoSdk(), carregarMercadoPagoDeviceId()]).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!planoEhZr) return;
+    const bin = numero.replace(/\D/g, "").slice(0, 6);
+    if (bin.length !== 6) {
+      setParcelas("1");
+      setParcelasOpcoes([]);
+      setAvisoParcelas("");
+      return;
+    }
+
+    let ativo = true;
+    const timer = setTimeout(async () => {
+      setCarregandoParcelas(true);
+      setAvisoParcelas("");
+      try {
+        const resposta = await base44.functions.invoke("consultarParcelamentoMercadoPago", { plano, bin });
+        if (!ativo) return;
+        const opcoes = Array.isArray(resposta.data?.payer_costs) ? resposta.data.payer_costs : [];
+        const validas = opcoes.filter((opcao) =>
+          Number.isInteger(Number(opcao.installments)) &&
+          Number.isFinite(Number(opcao.installment_amount)) &&
+          (Number(opcao.installment_rate) <= 0 || Number.isFinite(Number(opcao.total_amount)))
+        );
+        setParcelasOpcoes(validas);
+        setParcelas(String(validas[0]?.installments || 1));
+        setAvisoParcelas(resposta.data?.aviso || "");
+      } catch {
+        if (!ativo) return;
+        setParcelasOpcoes([{ installments: 1, installment_amount: null, installment_rate: 0, total_amount: null }]);
+        setParcelas("1");
+        setAvisoParcelas("Não foi possível carregar as opções de parcelamento. O pagamento poderá ser feito em 1x.");
+      } finally {
+        if (ativo) setCarregandoParcelas(false);
+      }
+    }, 400);
+
+    return () => {
+      ativo = false;
+      clearTimeout(timer);
+    };
+  }, [numero, plano, planoEhZr]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,6 +170,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         token: cardToken.id,
         device_id: deviceId,
         installments: parseInt(parcelas, 10),
+        card_bin: cardNumberLimpo.slice(0, 6),
         payment_method_id: paymentMethodId,
         payer: { email, cpf: cpfLimpo, telefone },
       });
@@ -202,15 +268,20 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {parcelasOpcoes.map((n) => (
-              <SelectItem key={n} value={String(n)}>
-                {n}x
+            {(parcelasOpcoes.length
+              ? parcelasOpcoes
+              : [{ installments: 1, installment_amount: null, installment_rate: 0, total_amount: null }]
+            ).map((opcao) => (
+              <SelectItem key={opcao.installments} value={String(opcao.installments)}>
+                {formatarOpcaoParcelamento(opcao)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {carregandoParcelas && <p className="text-xs text-muted-foreground">Carregando opções do Mercado Pago…</p>}
+        {avisoParcelas && <p className="text-xs text-amber-700">{avisoParcelas}</p>}
       </div>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>
       <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos || !podePagar}>
         {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Pagar
