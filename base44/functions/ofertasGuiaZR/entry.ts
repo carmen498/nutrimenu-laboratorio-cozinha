@@ -3,6 +3,7 @@
 // Não devolve dados de usuário, nem de pagamento, nem chaves internas — só leitura.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { OFERTAS_ZR } from "../../shared/guiaTecnicoZR.ts";
+import { aplicarDescontoPixParaBaixo, lerCondicoesComerciaisZR } from "../../shared/condicoesComerciaisZR.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -11,6 +12,7 @@ export default async function(req: Request): Promise<Response> {
       produto: "guia_zr",
       venda_habilitada: true,
     });
+    const { descontoPix, parcelasSemJuros } = await lerCondicoesComerciaisZR(base44);
 
     const ofertas = (configs || [])
       .filter((c: any) => c.plano_id && c.nome && c.valor_cobranca != null)
@@ -22,6 +24,9 @@ export default async function(req: Request): Promise<Response> {
           nome: c.nome,
           subtitulo: c.subtitulo || null,
           preco: Number(c.valor_cobranca),
+          preco_pix: aplicarDescontoPixParaBaixo(Number(c.valor_cobranca), descontoPix),
+          desconto_pix: descontoPix,
+          parcelas_sem_juros: parcelasSemJuros,
           periodo_exibido: c.periodo_exibido || null,
           preco_detalhe: c.preco_detalhe || null,
           renovacao: ref?.renovacao ?? c.plano_id.endsWith("_renovacao"),
