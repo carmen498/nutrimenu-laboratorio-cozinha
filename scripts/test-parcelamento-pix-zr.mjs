@@ -11,6 +11,11 @@ const criar = fs.readFileSync("base44/functions/criarPagamentoMercadoPago/entry.
 const ofertas = fs.readFileSync("base44/functions/ofertasGuiaZR/entry.ts", "utf8");
 const estorno = fs.readFileSync("base44/shared/processarDesistencia.ts", "utf8");
 const admin = fs.readFileSync("src/components/comunicacao/CondicoesComerciaisZR.jsx", "utf8");
+const adminPlano = fs.readFileSync("src/components/comunicacao/ConfiguracaoPlanoDialog.jsx", "utf8");
+const checkout = fs.readFileSync("src/pages/ComprarZR.jsx", "utf8");
+const cardsZr = fs.readFileSync("src/components/planos/PlanosGuiaZR.jsx", "utf8");
+const guiaZr = fs.readFileSync("base44/shared/guiaTecnicoZR.ts", "utf8");
+const parcelasFrontend = fs.readFileSync("src/lib/parcelamentoPlanos.js", "utf8");
 
 assert.ok(cartao.includes("consultarParcelamentoMercadoPago"));
 assert.ok(cartao.includes("card_bin: cardNumberLimpo.slice(0, 6)"));
@@ -52,6 +57,13 @@ for (const campo of ["preco:", "preco_pix:", "desconto_pix:", "parcelas_sem_juro
 }
 assert.ok(admin.includes("espelha o “parcelado vendedor”"));
 assert.ok(admin.includes("Mudar um sem mudar o outro"));
+assert.ok(checkout.includes("oferta.parcelas_sem_juros"));
+assert.ok(cardsZr.includes("parcelas_sem_juros"));
+assert.ok(ofertas.includes("descricaoAcessoSemParcelamento(c.preco_detalhe)"));
+assert.ok(adminPlano.includes("Retire o parcelamento deste campo"));
+assert.ok(!/preco_detalhe\s*:\s*["'`][^\n"'`]*(?:sem\s+juros|até\s+\d+\s*x|\d+\s*x\s+de)/i.test(guiaZr));
+assert.ok(!/maxParcelas\s*:\s*\d+/.test(guiaZr));
+assert.ok(!parcelasFrontend.includes("MAX_PARCELAS_ZR"));
 
 const jsCondicoes = ts.transpileModule(condicoes, {
   compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 },
