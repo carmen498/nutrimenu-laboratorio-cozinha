@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { avaliarDadosFiscais } from "@/lib/dadosFiscais";
+import { mascararCpfCnpj, mascararCep } from "@/lib/mascaras";
+import { capitalizarNome } from "@/lib/capitalizarNome";
 
 // Sem CPF/CNPJ e endereço completo não há como emitir a nota fiscal — por isso
 // estes dados são exigidos no checkout, e o servidor revalida antes de cobrar.
@@ -14,10 +16,10 @@ export default function DadosNotaFiscalCheckout() {
   const { user, checkUserAuth } = useAuth();
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState({
-    nome_completo: user?.nome_completo || user?.full_name || "",
+    nome_completo: user?.nome_completo || "",
     razao_social: user?.razao_social || "",
-    cpf_cnpj: user?.cpf_cnpj || "",
-    cep: user?.cep || "",
+    cpf_cnpj: user?.cpf_cnpj ? mascararCpfCnpj(user.cpf_cnpj) : "",
+    cep: user?.cep ? mascararCep(user.cep) : "",
     logradouro: user?.logradouro || user?.endereco || "",
     numero: user?.numero || "",
     complemento: user?.complemento || "",
@@ -37,6 +39,7 @@ export default function DadosNotaFiscalCheckout() {
     try {
       await base44.auth.updateMe({
         ...form,
+        nome_completo: capitalizarNome(form.nome_completo),
         cidade_uf: [form.cidade, form.estado].filter(Boolean).join("/"),
         endereco: [form.logradouro, form.numero, form.complemento, form.bairro].filter(Boolean).join(", "),
       });
@@ -67,8 +70,8 @@ export default function DadosNotaFiscalCheckout() {
             <Input value={form.nome_completo} onChange={set("nome_completo")} placeholder="Seu nome completo" />
           </div>
         )}
-        <div className="space-y-1"><Label className="text-xs">CPF ou CNPJ *</Label><Input value={form.cpf_cnpj} onChange={set("cpf_cnpj")} placeholder="000.000.000-00" /></div>
-        <div className="space-y-1"><Label className="text-xs">CEP *</Label><Input value={form.cep} onChange={set("cep")} placeholder="00000-000" /></div>
+        <div className="space-y-1"><Label className="text-xs">CPF ou CNPJ *</Label><Input value={form.cpf_cnpj} onChange={set("cpf_cnpj", mascararCpfCnpj)} placeholder="000.000.000-00" /></div>
+        <div className="space-y-1"><Label className="text-xs">CEP *</Label><Input value={form.cep} onChange={set("cep", mascararCep)} placeholder="00000-000" /></div>
         <div className="space-y-1 sm:col-span-2"><Label className="text-xs">Logradouro *</Label><Input value={form.logradouro} onChange={set("logradouro")} placeholder="Rua, avenida..." /></div>
         <div className="space-y-1"><Label className="text-xs">Número *</Label><Input value={form.numero} onChange={set("numero")} /></div>
         <div className="space-y-1"><Label className="text-xs">Complemento</Label><Input value={form.complemento} onChange={set("complemento")} placeholder="Apto, sala..." /></div>

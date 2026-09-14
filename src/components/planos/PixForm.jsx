@@ -4,12 +4,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Copy, Check, XCircle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { mascararCpf, mascararTelefone } from "@/lib/mascaras";
 
 const INTERVALO_POLLING_MS = 4000;
 const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
 export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
-  const [cpf, setCpf] = useState("");
+  const { user } = useAuth();
+  const cpfInicial = String(user?.cpf_cnpj || "").replace(/\D/g, "").length === 11 ? mascararCpf(user.cpf_cnpj) : "";
+  const [cpf, setCpf] = useState(cpfInicial);
+  const [cpfEditavel, setCpfEditavel] = useState(!cpfInicial);
   const [telefone, setTelefone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -178,18 +183,28 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
         <Input
           id="pix-cpf"
           value={cpf}
-          onChange={(e) => setCpf(e.target.value)}
+          onChange={(e) => setCpf(mascararCpf(e.target.value))}
           placeholder="000.000.000-00"
           required
+          readOnly={!cpfEditavel}
           autoComplete="off"
         />
+        {!cpfEditavel ? (
+          <button type="button" className="text-xs text-primary underline" onClick={() => setCpfEditavel(true)}>
+            alterar
+          </button>
+        ) : (
+          <button type="button" className="text-xs text-primary underline" onClick={() => { setCpf(cpfInicial); setCpfEditavel(false); }}>
+            usar meu CPF
+          </button>
+        )}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="pix-telefone">Telefone com DDD</Label>
         <Input
           id="pix-telefone"
           value={telefone}
-          onChange={(e) => setTelefone(e.target.value)}
+          onChange={(e) => setTelefone(mascararTelefone(e.target.value))}
           placeholder="(00) 00000-0000"
           required
           autoComplete="off"

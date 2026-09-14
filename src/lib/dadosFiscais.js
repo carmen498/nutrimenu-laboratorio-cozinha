@@ -14,7 +14,7 @@ export function avaliarDadosFiscais(usuario = {}) {
   const cep = String(usuario.cep || "").replace(/\D/g, "");
   const [cidadeLegado = "", estadoLegado = ""] = String(usuario.cidade_uf || "").split("/");
   const ehCnpj = documento.length === 14;
-  const nomeResolvido = String(usuario.nome_completo || usuario.full_name || "").trim();
+  const nomeResolvido = String(usuario.nome_completo || "").trim();
   const temSobrenome = nomeResolvido.split(/\s+/).filter(Boolean).length >= 2;
 
   const validacoes = {

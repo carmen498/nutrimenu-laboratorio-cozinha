@@ -33,7 +33,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v29-2026-09-14-nome-fiscal-cnpj";
+const VERSAO_CODIGO = "v30-2026-09-14-full-name-removido";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -150,7 +150,7 @@ export default async function(req: Request): Promise<Response> {
     // prossiga com nome de uma palavra (CPF) ou razão social ausente (CNPJ).
     const documentoUsuario = String(user.cpf_cnpj || "").replace(/\D/g, "");
     const ehCnpj = documentoUsuario.length === 14;
-    const nomeResolvido = String(user.nome_completo || user.full_name || "").trim();
+    const nomeResolvido = String(user.nome_completo || "").trim();
     if (ehCnpj) {
       if (!String(user.razao_social || "").trim()) {
         return Response.json({
@@ -360,11 +360,11 @@ export default async function(req: Request): Promise<Response> {
       prazo_desistencia_em: calcularPrazoDesistencia(new Date()),
     });
 
-    // Em sandbox, o Mercado Pago só aceita e-mails de comprador de teste
-    // (terminados em @testuser.com). Como o e-mail real do usuário logado
-    // não serve para isso, usamos um comprador de teste fixo nesse ambiente.
+    // Em produção, o comprador no Mercado Pago deve ser o titular da conta,
+    // com e-mail verificado por OTP — nunca o digitado num formulário.
+    // Em sandbox, o MP só aceita compradores de teste (terminados em @testuser.com).
     const payerEmail = ambiente === "producao"
-      ? payer.email
+      ? user.email
       : "test@testuser.com";
 
     if (!accessToken) {

@@ -7,6 +7,8 @@ import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { carregarMercadoPagoDeviceId, carregarMercadoPagoSdk, MERCADOPAGO_PUBLIC_KEY } from "@/lib/mercadoPagoConfig";
 import { maxParcelasPlano } from "@/lib/parcelamentoPlanos";
+import { useAuth } from "@/lib/AuthContext";
+import { mascararCpf, mascararTelefone, mascararValidadeCartao, mascararNumeroCartao } from "@/lib/mascaras";
 
 const moeda = (valor) => Number(valor).toLocaleString("pt-BR", {
   style: "currency",
@@ -23,6 +25,7 @@ const formatarOpcaoParcelamento = (opcao) => {
 };
 
 export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
+  const { user } = useAuth();
   const planoEhZr = String(plano || "").startsWith("zr_");
   const parcelasFixasLegadas = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => ({
     installments: i + 1,
@@ -37,7 +40,9 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
   const [nome, setNome] = useState("");
   const [validade, setValidade] = useState("");
   const [cvv, setCvv] = useState("");
-  const [cpf, setCpf] = useState("");
+  const cpfInicial = String(user?.cpf_cnpj || "").replace(/\D/g, "").length === 11 ? mascararCpf(user.cpf_cnpj) : "";
+  const [cpf, setCpf] = useState(cpfInicial);
+  const [cpfEditavel, setCpfEditavel] = useState(!cpfInicial);
   const [telefone, setTelefone] = useState("");
   const [parcelas, setParcelas] = useState("1");
   const [loading, setLoading] = useState(false);
@@ -117,6 +122,10 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
       }
       if (!mes || !anoCompleto || mesNumero < 1 || mesNumero > 12 || !/^\d{4}$/.test(anoCompleto)) {
         throw new Error("Informe a validade no formato MM/AA.");
+      }
+      const agora = new Date();
+      if (Number(anoCompleto) < agora.getFullYear() || (Number(anoCompleto) === agora.getFullYear() && mesNumero < agora.getMonth() + 1)) {
+        throw new Error("O cartão está vencido. Confira a validade.");
       }
       if (!/^\d{3,4}$/.test(cvv)) {
         throw new Error("Confira o código de segurança do cartão.");
@@ -203,7 +212,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         <Input
           id="cartao-numero"
           value={numero}
-          onChange={(e) => setNumero(e.target.value)}
+          onChange={(e) => setNumero(mascararNumeroCartao(e.target.value))}
           placeholder="0000 0000 0000 0000"
           required
           autoComplete="off"
@@ -225,7 +234,7 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
           <Input
             id="cartao-validade"
             value={validade}
-            onChange={(e) => setValidade(e.target.value)}
+            onChange={(e) => setValidade(mascararValidadeCartao(e.target.value))}
             placeholder="MM/AA"
             required
             autoComplete="off"
@@ -248,18 +257,28 @@ export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = 
         <Input
           id="cartao-cpf"
           value={cpf}
-          onChange={(e) => setCpf(e.target.value)}
+          onChange={(e) => setCpf(mascararCpf(e.target.value))}
           placeholder="000.000.000-00"
           required
+          readOnly={!cpfEditavel}
           autoComplete="off"
         />
+        {!cpfEditavel ? (
+          <button type="button" className="text-xs text-primary underline" onClick={() => setCpfEditavel(true)}>
+            alterar
+          </button>
+        ) : (
+          <button type="button" className="text-xs text-primary underline" onClick={() => { setCpf(cpfInicial); setCpfEditavel(false); }}>
+            usar meu CPF
+          </button>
+        )}
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="cartao-telefone">Telefone com DDD</Label>
         <Input
           id="cartao-telefone"
           value={telefone}
-          onChange={(e) => setTelefone(e.target.value)}
+          onChange={(e) => setTelefone(mascararTelefone(e.target.value))}
           placeholder="(00) 00000-0000"
           required
           autoComplete="off"
