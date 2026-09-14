@@ -15,7 +15,7 @@ import DadosNotaFiscalCheckout from "@/components/planos/DadosNotaFiscalCheckout
 import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 const URL_GUIA = "https://zr.nutrimenu.com.br";
-const URL_GUIA_ENTRAR = "https://zr.nutrimenu.com.br/entrar?destino=%2F";
+const urlGuiaEntrar = (faixa) => `${URL_GUIA}/entrar?destino=${encodeURIComponent(`/ler/${faixa}`)}`;
 const URL_GUIA_PLANOS = "https://zr.nutrimenu.com.br/planos";
 
 const NOMES_FAIXA = {
@@ -71,7 +71,7 @@ export default function ComprarZR() {
 
   const handleSuccess = (resultado) => {
     if (!resultado || resultado.status === "approved") {
-      window.location.href = URL_GUIA_ENTRAR;
+      window.location.href = urlGuiaEntrar(faixaDaOferta);
       return;
     }
     setResultadoPendente(resultado);
