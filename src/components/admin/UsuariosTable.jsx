@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
 import { computeStatusUsuario, formatarData, formatarDataHora, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
+import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 import {
   getUltimoPagamento, formatarMoeda, FORMA_PAGAMENTO_LABEL,
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
@@ -80,7 +81,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             if (acessoCustos) {
               if (acessoCustos.status === "suspenso") statusCustos = "Suspenso";
               else if (acessoCustos.status === "cancelado") statusCustos = "Cancelado";
-              else if (acessoCustos.status === "expirado" || (acessoCustos.fim_em && new Date(acessoCustos.fim_em) < new Date())) statusCustos = "Expirado";
+              else if (acessoCustos.status === "expirado" || (acessoCustos.fim_em && dataHoraBase44(acessoCustos.fim_em) < new Date())) statusCustos = "Expirado";
               else if (acessoCustos.status === "pendente") statusCustos = "Pendente";
               else if (acessoCustos.status === "ativo" && acessoCustos.modalidade === "trial") statusCustos = "Trial ativo";
               else if (acessoCustos.status === "ativo") statusCustos = "Ativo";
