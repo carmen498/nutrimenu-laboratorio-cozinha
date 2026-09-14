@@ -15,8 +15,14 @@ import { capitalizarNome } from "@/lib/capitalizarNome";
 export default function DadosNotaFiscalCheckout() {
   const { user, checkUserAuth } = useAuth();
   const [salvando, setSalvando] = useState(false);
+  // Sugestão editável: se nome_completo estiver vazio, pré-preenche com
+  // full_name normalizado para a pessoa confirmar. O backend nunca lê
+  // full_name — este valor só vira nome_completo depois de salvo e
+  // validado pelo avaliarDadosFiscais + capitalizarNome.
+  const nomeSugerido = (user?.nome_completo || "").trim()
+    || capitalizarNome(String(user?.full_name || "").trim());
   const [form, setForm] = useState({
-    nome_completo: user?.nome_completo || "",
+    nome_completo: nomeSugerido,
     razao_social: user?.razao_social || "",
     cpf_cnpj: user?.cpf_cnpj ? mascararCpfCnpj(user.cpf_cnpj) : "",
     cep: user?.cep ? mascararCep(user.cep) : "",
@@ -66,7 +72,7 @@ export default function DadosNotaFiscalCheckout() {
           </div>
         ) : (
           <div className="space-y-1 sm:col-span-2">
-            <Label className="text-xs">Nome completo (nome e sobrenome) *</Label>
+            <Label className="text-xs">Confirme seu nome completo — vai na nota fiscal e no pagamento *</Label>
             <Input value={form.nome_completo} onChange={set("nome_completo")} placeholder="Seu nome completo" />
           </div>
         )}
