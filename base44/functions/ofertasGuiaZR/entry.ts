@@ -5,6 +5,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { OFERTAS_ZR } from "../../shared/guiaTecnicoZR.ts";
 import { aplicarDescontoPixParaBaixo, lerCondicoesComerciaisZR } from "../../shared/condicoesComerciaisZR.ts";
 
+export function descricaoAcessoSemParcelamento(valor: unknown): string | null {
+  const texto = typeof valor === "string" ? valor.trim() : "";
+  if (!texto) return null;
+  return texto.replace(/\s*[·•-]?\s*(?:até\s*)?\d+\s*x(?:\s+.*)?$/i, "").trim() || null;
+}
+
 export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
@@ -28,7 +34,7 @@ export default async function(req: Request): Promise<Response> {
           desconto_pix: descontoPix,
           parcelas_sem_juros: parcelasSemJuros,
           periodo_exibido: c.periodo_exibido || null,
-          preco_detalhe: c.preco_detalhe || null,
+          preco_detalhe: descricaoAcessoSemParcelamento(c.preco_detalhe),
           renovacao: ref?.renovacao ?? c.plano_id.endsWith("_renovacao"),
           upgrade: ref?.upgrade ?? false,
           requer_faixas: ref?.requer_faixas ?? [],
