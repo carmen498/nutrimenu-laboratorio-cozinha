@@ -6,6 +6,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Loader2, X, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
+import { formatarDataHoraBrasilia } from "@/lib/fusoBrasilia";
 
 const NOME_PLANO = {
   zr_tin: "ZR Tabela de Informação Nutricional",
@@ -19,17 +20,12 @@ const NOME_PLANO = {
   zr_full_upgrade_tin_arquitetura: "Upgrade para ZR Profissional (TIN + Arquitetura)",
 };
 
-const formatarDataHora = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-};
-
 export default function PedirNotaFiscalDialog({ pagamento, user, onClose }) {
   const docInicial = String(user?.cpf_cnpj || "").replace(/\D/g, "");
   const [tipo, setTipo] = useState(docInicial.length === 14 ? "pj" : "pf");
   const [cpfCnpj, setCpfCnpj] = useState(user?.cpf_cnpj || "");
   const [nomeRazao, setNomeRazao] = useState(
-    docInicial.length === 14 ? (user?.razao_social || "") : (user?.nome_completo || user?.full_name || "")
+    docInicial.length === 14 ? (user?.razao_social || "") : docInicial.length === 11 ? (user?.nome_completo || "") : ""
   );
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
   const [emailNf, setEmailNf] = useState(user?.email || "");
@@ -45,13 +41,16 @@ export default function PedirNotaFiscalDialog({ pagamento, user, onClose }) {
 
   const planoNome = NOME_PLANO[pagamento?.plano] || pagamento?.plano || "—";
   const valorTxt = `R$ ${Number(pagamento?.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-  const dataTxt = formatarDataHora(pagamento?.created_date);
+  const dataBase = pagamento?.pago_em || pagamento?.created_date;
+  const dataTxt = formatarDataHoraBrasilia(dataBase)
+    ? `${formatarDataHoraBrasilia(dataBase)} (horário de Brasília)`
+    : "Data não localizada";
   const formaTxt = pagamento?.forma_pagamento === "pix" ? "PIX" : "Cartão";
-  const transacaoMp = pagamento?.mercadopago_order_id || "—";
+  const transacaoMp = pagamento?.mercadopago_payment_id || pagamento?.mercadopago_order_id || "—";
 
   const handleTipoChange = (novoTipo) => {
     setTipo(novoTipo);
-    setNomeRazao(novoTipo === "pj" ? (user?.razao_social || "") : (user?.nome_completo || user?.full_name || ""));
+    setNomeRazao(novoTipo === "pj" ? (user?.razao_social || "") : (user?.nome_completo || ""));
   };
 
   const copiarDados = () => {
