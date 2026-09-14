@@ -31,7 +31,7 @@ const NOME_PLANOS: Record<string, string> = {
 // Identificador fixo desta versão do código — altere sempre que este arquivo for editado,
 // para confirmar (via campo versao_codigo do Pagamento) se uma tentativa real do usuário
 // rodou o deploy mais recente ou uma versão anterior ainda em propagação.
-const VERSAO_CODIGO = "v26-2026-09-14-prazo-desistencia-server";
+const VERSAO_CODIGO = "v27-2026-09-14-dados-comprovante";
 
 async function derivarIdempotencyKey(usuarioId: string, tentativaId: unknown): Promise<string> {
   const tentativa = typeof tentativaId === "string" && /^[0-9a-f-]{36}$/i.test(tentativaId)
@@ -535,8 +535,18 @@ export default async function(req: Request): Promise<Response> {
 
     const statusOrder = resolverStatusOrderMercadoPago(mpData);
 
+    const transacaoId = pagamentoTransacao?.id == null ? null : String(pagamentoTransacao.id);
+    const pagoEmBruto = pagamentoTransacao?.date_approved
+      || (statusOrder === "approved" ? pagamentoTransacao?.date_last_updated : null)
+      || null;
+    const pagoEm = pagoEmBruto && Number.isFinite(new Date(pagoEmBruto).getTime())
+      ? new Date(pagoEmBruto).toISOString()
+      : statusOrder === "approved" ? new Date().toISOString() : null;
+
     await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
       mercadopago_order_id: mpData?.id,
+      ...(transacaoId ? { mercadopago_payment_id: transacaoId } : {}),
+      ...(pagoEm ? { pago_em: pagoEm } : {}),
       status: statusOrder,
       qr_code: qrCode,
       qr_code_base64: qrCodeBase64,
@@ -552,6 +562,8 @@ export default async function(req: Request): Promise<Response> {
         ...pagamento,
         status: "approved",
         mercadopago_order_id: mpData?.id,
+        ...(transacaoId ? { mercadopago_payment_id: transacaoId } : {}),
+        ...(pagoEm ? { pago_em: pagoEm } : {}),
       });
     } else if (["rejected", "cancelled", "estornado"].includes(statusOrder)) {
       return Response.json({
