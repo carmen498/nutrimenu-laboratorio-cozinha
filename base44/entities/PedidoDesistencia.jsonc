@@ -54,12 +54,67 @@
       "type": "string",
       "enum": [
         "aberto",
-        "em_atendimento",
+        "processando",
+        "aguardando_confirmacao",
         "concluido",
-        "recusado"
+        "falha_reembolso"
       ],
       "default": "aberto",
       "description": "Situa\u00e7\u00e3o do pedido na fila administrativa."
+    },
+    "mercadopago_order_id": {
+      "type": "string",
+      "description": "Order do Mercado Pago associada ao estorno autom\u00e1tico."
+    },
+    "idempotency_key_reembolso": {
+      "type": "string",
+      "description": "Chave est\u00e1vel usada em todas as tentativas de estorno deste pedido."
+    },
+    "tentativas_reembolso": {
+      "type": "number",
+      "default": 0
+    },
+    "ultima_tentativa_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "proxima_tentativa_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "codigo_resultado_reembolso": {
+      "type": "string"
+    },
+    "detalhe_reembolso": {
+      "type": "string",
+      "description": "Resumo sanitizado do \u00faltimo resultado do Mercado Pago."
+    },
+    "suporte_aviso_status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "enviado",
+        "falhou"
+      ]
+    },
+    "suporte_avisado_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "suporte_aviso_erro": {
+      "type": "string"
+    },
+    "cliente_email_status": {
+      "type": "string",
+      "enum": [
+        "pendente",
+        "enviado",
+        "falhou"
+      ]
+    },
+    "cliente_email_enviado_em": {
+      "type": "string",
+      "format": "date-time"
     },
     "responsavel_nome": {
       "type": "string",
