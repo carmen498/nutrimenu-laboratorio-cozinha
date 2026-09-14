@@ -32,6 +32,14 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
   const setNum = (campo) => (e) => setForm((f) => ({ ...f, [campo]: e.target.value === "" ? "" : parseFloat(e.target.value) }));
 
   const handleSalvar = async () => {
+    if (plano.produto === "guia_zr" && /(\b\d+\s*x\b|sem\s+juros|parcel)/i.test(form.preco_detalhe || "")) {
+      toast({
+        title: "Retire o parcelamento deste campo",
+        description: "No Guia ZR, esta linha descreve apenas o acesso. As parcelas vêm das condições comerciais do Mercado Pago.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSalvando(true);
     try {
       const dados = {
@@ -98,7 +106,10 @@ export default function ConfiguracaoPlanoDialog({ open, onOpenChange, plano, onS
 
           <div className="space-y-1.5">
             <Label>Texto complementar (linha pequena abaixo do preço)</Label>
-            <Input value={form.preco_detalhe} onChange={set("preco_detalhe")} placeholder="Ex: R$ 198/ano" />
+            <Input value={form.preco_detalhe} onChange={set("preco_detalhe")} placeholder={plano.produto === "guia_zr" ? "Acesso por 12 meses" : "Ex: R$ 198/ano"} />
+            {plano.produto === "guia_zr" && (
+              <p className="text-xs text-muted-foreground">Parcelamento não entra aqui; ele vem das condições comerciais ligadas ao Mercado Pago.</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
