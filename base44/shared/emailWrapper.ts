@@ -4,6 +4,7 @@
 // laboratorio_custos e fallback usa identidade própria hardcoded via
 // identidadeProduto. Usado internamente por sendEmailViaResend.
 import { resolverIdentidadeProduto } from "./identidadeProduto.ts";
+import { DADOS_EMPRESA } from "./dadosEmpresa.ts";
 
 export async function buildEmailHtml(base44, corpoHtml, { marketing = false, produto } = {}) {
   const identidade = resolverIdentidadeProduto(produto);
@@ -47,6 +48,8 @@ export async function buildEmailHtml(base44, corpoHtml, { marketing = false, pro
         <div>${assinatura}</div>
         ${emailContato ? `<div>${emailContato}</div>` : ""}
         ${endereco ? `<div>${endereco}</div>` : ""}
+        <div>${DADOS_EMPRESA.razaoSocial} · CNPJ ${DADOS_EMPRESA.cnpj}</div>
+        <div>${DADOS_EMPRESA.enderecoCompleto}</div>
         ${marketing ? `<div style="margin-top:8px;"><a href="${hrefCancelamento}" style="color:#888;text-decoration:underline;">${textoCancelamento}</a></div>` : ""}
       </div>
     </div>
