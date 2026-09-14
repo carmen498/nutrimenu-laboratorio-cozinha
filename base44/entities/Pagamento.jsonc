@@ -110,6 +110,25 @@
       "type": "string",
       "description": "ID da order retornada pela Orders API do Mercado Pago"
     },
+    "mercadopago_payment_id": {
+      "type": "string",
+      "description": "N\u00famero da transa\u00e7\u00e3o de pagamento dentro da order do Mercado Pago"
+    },
+    "pago_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora efetiva da aprova\u00e7\u00e3o informada pelo Mercado Pago, sempre em UTC com sufixo Z"
+    },
+    "estornado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data/hora da confirma\u00e7\u00e3o do estorno pelo Mercado Pago, sempre em UTC com sufixo Z"
+    },
+    "valor_estornado": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Valor efetivamente devolvido segundo o Mercado Pago"
+    },
     "idempotency_key": {
       "type": "string",
       "description": "Chave de idempot\u00eancia derivada no servidor para identificar uma tentativa de checkout"
