@@ -15,7 +15,7 @@ import DadosNotaFiscalCheckout from "@/components/planos/DadosNotaFiscalCheckout
 import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
 
 const URL_GUIA = "https://zr.nutrimenu.com.br";
-const URL_GUIA_ENTRAR = "https://zr.nutrimenu.com.br/entrar";
+const URL_GUIA_ENTRAR = "https://zr.nutrimenu.com.br/entrar?destino=%2F";
 const URL_GUIA_PLANOS = "https://zr.nutrimenu.com.br/planos";
 
 const NOMES_FAIXA = {
