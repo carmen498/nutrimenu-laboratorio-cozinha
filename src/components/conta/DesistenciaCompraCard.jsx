@@ -6,20 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { dataHoraBase44, formatarDataHoraBrasilia, formatarPrazoBrasilia } from "@/lib/fusoBrasilia";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
-const PRAZO_DIAS = 7;
-
-const diasRestantes = (compraEm) => {
-  const compra = new Date(compraEm).getTime();
-  if (!Number.isFinite(compra)) return -1;
-  return Math.ceil((compra + PRAZO_DIAS * DIA_MS - Date.now()) / DIA_MS);
+const diasRestantes = (prazoEm) => {
+  const prazo = dataHoraBase44(prazoEm).getTime();
+  if (!Number.isFinite(prazo)) return -1;
+  return Math.max(0, Math.ceil((prazo - Date.now()) / DIA_MS));
 };
 
-const formatar = (iso) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
-};
+const formatar = (iso) => formatarDataHoraBrasilia(iso) || "—";
+const statusQueBloqueiamNovoPedido = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "concluido"]);
 
 // Direito de arrependimento: 7 dias corridos da compra, sem justificativa.
 // O que conta o prazo é o pedido — por isso a data/hora é gravada no servidor.
@@ -33,7 +30,7 @@ export default function DesistenciaCompraCard({ usuarioId, pagamentos = [] }) {
     enabled: !!usuarioId,
   });
   const pedidoPorPagamento = Object.fromEntries(pedidos.map((p) => [p.pagamento_id, p]));
-  const elegiveis = pagamentos.filter((p) => diasRestantes(p.created_date) > 0);
+  const elegiveis = pagamentos.filter((p) => diasRestantes(p.prazo_desistencia_em) > 0);
 
   const solicitar = async (pagamentoId) => {
     setEnviandoId(pagamentoId);
@@ -60,23 +57,28 @@ export default function DesistenciaCompraCard({ usuarioId, pagamentos = [] }) {
 
       {elegiveis.map((pagamento) => {
         const pedido = pedidoPorPagamento[pagamento.id];
-        const dias = diasRestantes(pagamento.created_date);
+        const dias = diasRestantes(pagamento.prazo_desistencia_em);
+        const pedidoBloqueia = pedido && statusQueBloqueiamNovoPedido.has(pedido.status);
         return (
           <div key={pagamento.id} className="rounded-lg border p-3 space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-foreground">{pagamento.plano}</p>
                 <p className="text-xs text-muted-foreground">
-                  R$ {Number(pagamento.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · comprado em {formatar(pagamento.created_date)}
+                  R$ {Number(pagamento.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} · comprado em {formatar(pagamento.created_date)} (horário de Brasília)
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Prazo para desistir: {formatarPrazoBrasilia(pagamento.prazo_desistencia_em)}
                 </p>
               </div>
               <Badge variant="outline">{dias} {dias === 1 ? "dia restante" : "dias restantes"}</Badge>
             </div>
-            {pedido ? (
+            {pedido && (
               <p className="text-xs text-primary font-medium">
-                Pedido registrado em {formatar(pedido.solicitado_em)} · situação: {pedido.status.replace("_", " ")}
+                Pedido registrado em {formatar(pedido.solicitado_em)} (horário de Brasília) · situação: {pedido.status.replace("_", " ")}
               </p>
-            ) : (
+            )}
+            {!pedidoBloqueia && (
               <Button variant="outline" size="sm" className="w-full" disabled={enviandoId === pagamento.id} onClick={() => solicitar(pagamento.id)}>
                 {enviandoId === pagamento.id && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Desistir da compra
@@ -90,8 +92,8 @@ export default function DesistenciaCompraCard({ usuarioId, pagamentos = [] }) {
         <div key={pedido.id} className="rounded-lg border border-dashed p-3">
           <p className="text-sm font-medium text-foreground">{pedido.plano_nome || pedido.plano}</p>
           <p className="text-xs text-muted-foreground">
-            Pedido em {formatar(pedido.solicitado_em)} · situação: {pedido.status.replace("_", " ")}
-            {pedido.concluido_em ? ` · concluído em ${formatar(pedido.concluido_em)}` : ""}
+            Pedido em {formatar(pedido.solicitado_em)} (horário de Brasília) · situação: {pedido.status.replace("_", " ")}
+            {pedido.concluido_em ? ` · concluído em ${formatar(pedido.concluido_em)} (horário de Brasília)` : ""}
           </p>
         </div>
       ))}
