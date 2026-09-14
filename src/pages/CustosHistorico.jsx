@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { normalizarNome } from "@/lib/normalizarNome";
+import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,7 @@ export default function CustosHistorico() {
     const mes = agora.getMonth();
     const ano = agora.getFullYear();
     const desteMes = calculos.filter((c) => {
-      const d = new Date(c.data_calculo || c.created_date);
+      const d = dataHoraBase44(c.data_calculo || c.created_date);
       return d.getMonth() === mes && d.getFullYear() === ano;
     }).length;
     const mediaCusto = calculos.length ? calculos.reduce((s, c) => s + Number(c.custo_unitario || 0), 0) / calculos.length : 0;
@@ -62,7 +63,7 @@ export default function CustosHistorico() {
     return calculos.filter((c) => {
       if (termo && !normalizarNome(c.origem_nome_snapshot).includes(termo)) return false;
       if (categoria && c.categoria_snapshot !== categoria) return false;
-      const d = new Date(c.data_calculo || c.created_date);
+      const d = dataHoraBase44(c.data_calculo || c.created_date);
       if (ini && d < ini) return false;
       if (fim && d > fim) return false;
       return true;
