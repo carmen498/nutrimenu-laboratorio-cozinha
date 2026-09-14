@@ -62,13 +62,6 @@ export default [
           message: "Campos de data/hora de entidades Base44 devem passar por dataHoraBase44(); campos automáticos podem chegar em UTC sem Z.",
         },
       ],
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "NewExpression[callee.name='Date'] MemberExpression[property.name=/^(created_date|updated_date|inicio_em|fim_em|solicitado_em|concluido_em|prazo_desistencia_em)$/]",
-          message: "Campos de data/hora de entidades Base44 devem passar por dataHoraBase44(); campos automáticos podem chegar em UTC sem Z.",
-        },
-      ],
     },
   },
 ];
