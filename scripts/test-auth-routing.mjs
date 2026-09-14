@@ -122,7 +122,7 @@ assert.ok(indexHtml.includes("base44_pending_password_reset_token"), "token de r
 assert.ok(indexHtml.includes("JSON.stringify({ value: pendingReturn, savedAt: Date.now() })"), "returnTo pendente não recebe carimbo de hora");
 assert.ok(registerPage.includes("resolveRegisterReturnTo"), "cadastro não usa a decisão testável de retorno");
 assert.ok(!registerPage.includes("navigationType"), "cadastro não deve depender do tipo de navegação do documento");
-assert.ok(comprarZR.includes("https://zr.nutrimenu.com.br/entrar?destino=%2F"), "pagamento aprovado não aponta para a abertura do Guia");
+assert.ok(comprarZR.includes("encodeURIComponent(`/ler/${faixa}`)"), "pagamento aprovado não aponta para o primeiro capítulo da faixa comprada");
 assert.ok(indexHtml.includes("qp.delete('token')"), "token de reset não é removido da URL");
 assert.ok(
   indexHtml.indexOf("window.location.replace(") < indexHtml.indexOf("base44_pending_password_reset_token"),
