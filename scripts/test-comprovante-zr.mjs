@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { resolverPagadorFiscal } from "../base44/shared/dadosFiscaisPagador.ts";
+import { resolverPagadorFiscal } from "../base44/shared/dadosFiscaisPagador.js";
 
 assert.deepEqual(resolverPagadorFiscal({ cpf_cnpj: "123.456.789-01", nome_completo: "Maria Fiscal", full_name: "comercial" }), {
   tipo: "pf", nome: "Maria Fiscal", cpf_cnpj: "123.456.789-01", documento_digitos: "12345678901", faltando: [],
