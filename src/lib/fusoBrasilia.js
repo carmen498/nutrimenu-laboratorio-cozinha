@@ -1,9 +1,34 @@
+// REGRA DE FUSO DO BASE44 — NÃO USAR new Date(campo_da_entidade) DIRETAMENTE.
+// Campos automáticos do Base44 chegam em UTC sem sufixo: 2026-09-14T13:11:34.034000.
+// Campos gravados pelo nosso código chegam com Z: 2026-09-14T14:06:31.225Z.
+// Exemplo real de 14/09/2026: a compra 13:11:34 UTC deve aparecer 10:11:34 em
+// Brasília; o pedido 14:06:31Z deve aparecer 11:06:31. Ambos passam por
+// dataHoraBase44 antes de qualquer formatação, comparação ou cálculo.
 export const FUSO_BRASILIA = "America/Sao_Paulo";
 
 const ISO_DATA_HORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+const TEM_FUSO = /(Z|[+-]\d{2}:?\d{2})$/i;
+
+export function dataHoraBase44(valor = new Date()) {
+  if (valor instanceof Date) return valor;
+  let texto = String(valor || "");
+  if (ISO_DATA_HORA.test(texto) && !TEM_FUSO.test(texto)) {
+    texto = texto.replace(/(\.\d{3})\d+$/, "$1") + "Z";
+  }
+  return new Date(texto);
+}
+
+export function formatarPrazoBrasilia(valor) {
+  const data = dataHoraBase44(valor);
+  if (Number.isNaN(data.getTime())) return null;
+  const texto = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: FUSO_BRASILIA, dateStyle: "short", timeStyle: "short", hour12: false,
+  }).format(data);
+  return `até ${texto} (horário de Brasília)`;
+}
 
 export function partesDataBrasilia(valor = new Date()) {
-  const data = valor instanceof Date ? valor : new Date(valor);
+  const data = dataHoraBase44(valor);
   if (Number.isNaN(data.getTime())) return null;
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone: FUSO_BRASILIA, year: "numeric", month: "2-digit", day: "2-digit",
@@ -17,14 +42,14 @@ export function formatarDataBrasilia(valor) {
     const [ano, mes, dia] = valor.split("-");
     return `${dia}/${mes}/${ano}`;
   }
-  const data = new Date(valor);
+  const data = dataHoraBase44(valor);
   if (Number.isNaN(data.getTime())) return null;
   return new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO_BRASILIA }).format(data);
 }
 
 export function formatarDataHoraBrasilia(valor) {
   if (!valor) return null;
-  const data = new Date(valor);
+  const data = dataHoraBase44(valor);
   if (Number.isNaN(data.getTime())) return null;
   return new Intl.DateTimeFormat("pt-BR", {
     timeZone: FUSO_BRASILIA, dateStyle: "short", timeStyle: "medium", hour12: false,
@@ -32,7 +57,7 @@ export function formatarDataHoraBrasilia(valor) {
 }
 
 export function paraIsoBrasilia(valor) {
-  const data = valor instanceof Date ? valor : new Date(valor);
+  const data = dataHoraBase44(valor);
   if (Number.isNaN(data.getTime())) return valor;
   const formatador = new Intl.DateTimeFormat("en-CA", {
     timeZone: FUSO_BRASILIA, year: "numeric", month: "2-digit", day: "2-digit",
