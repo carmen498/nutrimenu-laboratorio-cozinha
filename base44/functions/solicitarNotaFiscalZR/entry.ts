@@ -6,6 +6,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.48';
 import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { OFERTAS_ZR } from "../../shared/guiaTecnicoZR.ts";
+import { DADOS_EMPRESA } from "../../shared/dadosEmpresa.ts";
+import { resolverPagadorFiscal } from "../../shared/dadosFiscaisPagador.ts";
+import { dataHoraUtcBase44 } from "../../shared/prazoDesistencia.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -22,6 +25,9 @@ export default async function(req: Request): Promise<Response> {
     const cpfCnpj = String(dados.cpf_cnpj || "").replace(/\D/g, "");
     if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
       return Response.json({ error: "CPF ou CNPJ inválido" }, { status: 400 });
+    }
+    if (!String(dados.nome_razao || "").trim()) {
+      return Response.json({ error: dados.tipo === "pj" ? "Razão social não informada" : "Nome completo não informado" }, { status: 400 });
     }
     if (!dados.email_nf || !dados.cep || !dados.logradouro || !dados.numero || !dados.bairro || !dados.cidade || !dados.estado) {
       return Response.json({ error: "Dados fiscais incompletos" }, { status: 400 });
@@ -55,17 +61,31 @@ export default async function(req: Request): Promise<Response> {
       updateData.razao_social = dados.nome_razao;
     }
     await base44.asServiceRole.entities.User.update(user.id, updateData);
+    const pagadorFiscal = resolverPagadorFiscal({ ...user, ...updateData });
+    if (pagadorFiscal.faltando.length) {
+      return Response.json({
+        error: `Dados fiscais incompletos: ${pagadorFiscal.faltando.join(", ")}.`,
+        code: "dados_fiscais_incompletos",
+        faltando: pagadorFiscal.faltando,
+      }, { status: 409 });
+    }
 
     // Resolve nome do plano e dados da compra para a notificação
     const planoNome = OFERTAS_ZR[pagamento.plano]?.nome || pagamento.plano;
     const valorTxt = `R$ ${Number(pagamento.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-    const dataTxt = new Date(pagamento.created_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+    const dataPagamento = dataHoraUtcBase44(pagamento.pago_em || pagamento.created_date);
+    const dataTxt = Number.isFinite(dataPagamento.getTime())
+      ? `${dataPagamento.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "short" })} (horário de Brasília)`
+      : "Data não localizada";
     const formaTxt = pagamento.forma_pagamento === "pix" ? "PIX" : "Cartão";
 
     const assunto = `[Guia Técnico ZR] Pedido de nota fiscal — ${pagamento_id}`;
     const html =
       `<p><strong>Pedido de nota fiscal — Guia Técnico ZR</strong></p>` +
-      `<p><strong>Cliente:</strong> ${user.full_name || ""}<br>` +
+      `<p><strong>Emitente:</strong> ${DADOS_EMPRESA.razaoSocial}<br>` +
+      `<strong>CNPJ:</strong> ${DADOS_EMPRESA.cnpj}<br>` +
+      `${DADOS_EMPRESA.enderecoCompleto}</p>` +
+      `<p><strong>Cliente:</strong> ${pagadorFiscal.nome}<br>` +
       `<strong>E-mail da conta:</strong> ${user.email || ""}</p>` +
       `<h3>Dados para emissão</h3>` +
       `<p><strong>Tipo:</strong> ${tipo === "pf" ? "Pessoa Física" : "Pessoa Jurídica"}<br>` +
@@ -91,7 +111,7 @@ export default async function(req: Request): Promise<Response> {
 
     const mensagemWpp =
       `Pedido de NF — Guia Técnico ZR\n` +
-      `Cliente: ${user.full_name || ""}\n` +
+      `Cliente: ${pagadorFiscal.nome}\n` +
       `Plano: ${planoNome}\n` +
       `Valor: ${valorTxt}\n` +
       `Transação MP: ${pagamento.mercadopago_order_id || "—"}`;
