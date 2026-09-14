@@ -13,6 +13,8 @@
         "plano_vencendo",
         "nota_fiscal_solicitada",
         "pagamento_estornado",
+        "pagamento_contestado",
+        "pagamento_encerrado",
         "pagamento_pendente_lembrete",
         "onboarding_dia2",
         "onboarding_dia5",
