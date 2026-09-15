@@ -19,6 +19,7 @@ import { APP_SITE_URLS } from "@/lib/publicUrls";
 import { capitalizarNome } from "@/lib/capitalizarNome";
 import { navegarAutenticacao } from "@/lib/authNavigation";
 import { traduzirErroAutenticacao } from "@/lib/authErrors";
+import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
 
 
 export default function Register() {
@@ -114,6 +115,7 @@ export default function Register() {
     } catch (err) {
       const traduzido = traduzirErroAutenticacao(err);
       setEmailJaCadastrado(traduzido.tipo === "email_ja_cadastrado");
+      auditarErroDesconhecido({ traduzido, error: err, tela: "cadastro", email: emailLimpo });
       setError(traduzido.mensagem);
     } finally {
       setLoading(false);
@@ -133,7 +135,9 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
       }
     } catch (err) {
-      setError(traduzirErroAutenticacao(err).mensagem);
+      const traduzido = traduzirErroAutenticacao(err);
+      auditarErroDesconhecido({ traduzido, error: err, tela: "codigo_otp", email });
+      setError(traduzido.mensagem);
       setLoading(false);
       return;
     }
@@ -192,7 +196,9 @@ export default function Register() {
         description: "Verifique seu e-mail para o novo código.",
       });
     } catch (err) {
-      setError(traduzirErroAutenticacao(err).mensagem);
+      const traduzido = traduzirErroAutenticacao(err);
+      auditarErroDesconhecido({ traduzido, error: err, tela: "codigo_otp", email });
+      setError(traduzido.mensagem);
     } finally {
       setResending(false);
     }
@@ -213,6 +219,8 @@ export default function Register() {
       const destinoOAuth = new URL(returnTo, window.location.origin).toString();
       await base44.auth.loginWithProvider("google", destinoOAuth);
     } catch (err) {
+      const traduzido = traduzirErroAutenticacao(err);
+      auditarErroDesconhecido({ traduzido, error: err, tela: "google", email });
       sessionStorage.removeItem("base44_pending_terms_acceptance");
       setGoogleLoading(false);
       setError("Não foi possível iniciar o cadastro com Google. Tente novamente.");
