@@ -7,9 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { withAuthTimeout } from "@/lib/authTimeout";
+import { safeReturnTo } from "@/lib/authReturnTo";
+import { navegarAutenticacao } from "@/lib/authNavigation";
 
 export default function ForgotPassword() {
-  const [email, setEmail] = useState("");
+  const [returnTo] = useState(() => safeReturnTo());
+  const [email, setEmail] = useState(() => new URLSearchParams(window.location.search).get("email") || "");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -34,7 +37,7 @@ export default function ForgotPassword() {
       title="Recuperar senha"
       subtitle="Enviaremos um link para redefinir"
       footer={
-        <Link to="/login" className="text-primary font-medium hover:underline">
+        <Link to={navegarAutenticacao("/login", { returnTo, email })} className="text-primary font-medium hover:underline">
           <ArrowLeft className="w-3 h-3 inline mr-1" />Voltar ao login
         </Link>
       }
