@@ -4,30 +4,40 @@
   "properties": {
     "ocorreu_em": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Data e hora UTC em que o erro ocorreu"
     },
     "tela_origem": {
-      "type": "string"
+      "type": "string",
+      "description": "Tela de autentica\u00e7\u00e3o onde o erro ocorreu"
     },
     "codigo_mensagem_original": {
-      "type": "string"
+      "type": "string",
+      "description": "C\u00f3digo e mensagem originais j\u00e1 sanitizados"
     },
     "email_digitado": {
-      "type": "string"
+      "type": "string",
+      "format": "email",
+      "description": "E-mail digitado, quando v\u00e1lido"
+    },
+    "ip_hash": {
+      "type": "string",
+      "description": "Hash SHA-256 do IP; o IP original nunca \u00e9 persistido"
     }
   },
   "required": [
     "ocorreu_em",
     "tela_origem",
-    "codigo_mensagem_original"
+    "codigo_mensagem_original",
+    "ip_hash"
   ],
   "rls": {
+    "create": false,
     "read": {
       "user_condition": {
         "role": "admin"
       }
     },
-    "create": false,
     "update": false,
     "delete": {
       "user_condition": {
