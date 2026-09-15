@@ -10,7 +10,7 @@ import { mascararCpf, mascararTelefone } from "@/lib/mascaras";
 const INTERVALO_POLLING_MS = 4000;
 const TEMPO_MAXIMO_POLLING_MS = 10 * 60 * 1000; // 10 minutos
 
-export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
+export default function PixForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade = undefined, aceiteTermos = false, podePagar = true }) {
   const { user } = useAuth();
   const cpfInicial = String(user?.cpf_cnpj || "").replace(/\D/g, "").length === 11 ? mascararCpf(user.cpf_cnpj) : "";
   const [cpf, setCpf] = useState(cpfInicial);
