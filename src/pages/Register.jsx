@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { consoleErrorSeguro } from "@/lib/securityHardening";
 import { formatarTelefone } from "@/lib/formatarTelefone";
 import PasswordRequirements from "@/components/auth/PasswordRequirements";
-import { mensagemErroCadastro, validarSenhaForte, validarTelefoneBrasileiro } from "@/lib/registerValidation";
+import { validarSenhaForte, validarTelefoneBrasileiro } from "@/lib/registerValidation";
 import { readFreshReturnTo, resolveRegisterReturnTo, safeReturnTo, serializeReturnTo } from "@/lib/authReturnTo";
 import { APP_SITE_URLS } from "@/lib/publicUrls";
 import { capitalizarNome } from "@/lib/capitalizarNome";
