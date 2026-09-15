@@ -289,6 +289,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
           pagamentosPorUsuarioPeriodo={pagamentosPorUsuarioPeriodo}
           acessoCustosPorUsuario={acessoCustosPorUsuario}
           movimentacaoPorUsuario={movimentacaoPorUsuario}
+          origemCadastroFiltro={origemCadastroFiltro}
         />
       )}
 

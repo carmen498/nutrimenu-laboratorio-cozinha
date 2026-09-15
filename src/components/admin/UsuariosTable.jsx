@@ -11,13 +11,17 @@ import { base44 } from "@/api/base44Client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
-import { computeStatusUsuario, formatarData, formatarDataHora, PLANO_LABEL, ORIGEM_CADASTRO_LABEL } from "@/lib/statusAssinaturaUsuario";
+import { computeStatusUsuario, formatarData, formatarDataHora, labelPlano, ORIGEM_CADASTRO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 import {
   getUltimoPagamento, formatarMoeda, FORMA_PAGAMENTO_LABEL,
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
 } from "@/lib/pagamentosUsuario";
 import { isPagamentoTeste } from "@/lib/pagamentosTeste";
+
+const STICKY_CHECKBOX = "sticky left-0 z-20 bg-card";
+const STICKY_EXPAND = "sticky left-10 z-20 bg-card";
+const STICKY_NOME = "sticky left-[72px] z-20 bg-card border-r border-border";
 
 function CampoNF({ rotulo, valor }) {
   if (valor === undefined || valor === null || valor === "") return null;
@@ -29,13 +33,16 @@ function CampoNF({ rotulo, valor }) {
   );
 }
 
-export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map() }) {
+export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map(), origemCadastroFiltro = "todos" }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [expandidos, setExpandidos] = useState(new Set());
   const [usuarioAberto, setUsuarioAberto] = useState(null);
   const [dadosNFAbertos, setDadosNFAbertos] = useState(false);
   const [marcandoTeste, setMarcandoTeste] = useState(false);
+
+  const isGuiaZR = origemCadastroFiltro === "guia_zr";
+  const colSpan = isGuiaZR ? 12 : 15;
 
   const alterarContaTeste = async (usuario, contaTeste) => {
     setMarcandoTeste(true);
@@ -66,25 +73,35 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
   };
 
   return (
-    <div className="border rounded-lg overflow-x-auto">
-      <Table>
+    <div className="border rounded-lg overflow-auto max-h-[70vh]">
+      <Table className="border-separate border-spacing-0">
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">
+          <TableRow className="sticky top-0">
+            <TableHead className={`w-10 ${STICKY_CHECKBOX} z-30`}>
               <Checkbox checked={todosSelecionados} onCheckedChange={(checked) => onToggleAll(!!checked)} />
             </TableHead>
-            <TableHead className="w-8" />
-            <TableHead>Nome</TableHead>
-            <TableHead className="text-center">Receitas</TableHead>
-            <TableHead className="text-center">Refeições</TableHead>
-            <TableHead className="text-center">Cardápios</TableHead>
-            <TableHead className="text-center">Eventos</TableHead>
-            <TableHead>Plano</TableHead>
+            <TableHead className={`w-8 ${STICKY_EXPAND}`} />
+            <TableHead className={STICKY_NOME}>Nome</TableHead>
+            {isGuiaZR ? (
+              <>
+                <TableHead>Plano</TableHead>
+                <TableHead>Data da compra</TableHead>
+                <TableHead>Situação</TableHead>
+              </>
+            ) : (
+              <>
+                <TableHead className="text-center">Receitas</TableHead>
+                <TableHead className="text-center">Refeições</TableHead>
+                <TableHead className="text-center">Cardápios</TableHead>
+                <TableHead className="text-center">Eventos</TableHead>
+              </>
+            )}
+            {!isGuiaZR && <TableHead>Plano</TableHead>}
             <TableHead>Expira em</TableHead>
             <TableHead>Produto</TableHead>
             <TableHead>Lab. Custos</TableHead>
             <TableHead>Último pagamento</TableHead>
-            <TableHead>Situação</TableHead>
+            {!isGuiaZR && <TableHead>Situação</TableHead>}
             <TableHead>Contato</TableHead>
             <TableHead className="text-right">Status</TableHead>
           </TableRow>
@@ -109,10 +126,10 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             return (
               <Fragment key={u.id}>
                 <TableRow>
-                  <TableCell>
+                  <TableCell className={STICKY_CHECKBOX}>
                     <Checkbox checked={selecionados.has(u.id)} onCheckedChange={() => onToggle(u.id)} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className={STICKY_EXPAND}>
                     <button
                       onClick={() => toggleExpandir(u.id)}
                       className="text-muted-foreground hover:text-primary transition-colors"
@@ -121,17 +138,33 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       {expandido ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </button>
                   </TableCell>
-                  <TableCell className="font-medium">
+                  <TableCell className={`${STICKY_NOME} font-medium`}>
                     <button className="text-left text-primary hover:underline" onClick={() => { setUsuarioAberto(u); setDadosNFAbertos(false); }} title="Abrir conta do usuário">
                       {u.nome_completo || u.full_name || "—"}
                     </button>
                     {u.conta_teste && <Badge variant="secondary" className="ml-2">Teste</Badge>}
                   </TableCell>
-                  <TableCell className="text-center">{movimentacao.receitas}</TableCell>
-                  <TableCell className="text-center">{movimentacao.refeicoes}</TableCell>
-                  <TableCell className="text-center">{movimentacao.cardapios}</TableCell>
-                  <TableCell className="text-center">{movimentacao.eventos}</TableCell>
-                  <TableCell>{PLANO_LABEL[u.plano_atual] || "—"}</TableCell>
+                  {isGuiaZR ? (
+                    <>
+                      <TableCell>{labelPlano(u.plano_atual)}</TableCell>
+                      <TableCell>{ultimoPagamento ? (formatarData(ultimoPagamento.created_date) || "—") : "—"}</TableCell>
+                      <TableCell>
+                        {ultimoPagamento ? (
+                          <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>
+                            {STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}
+                          </Badge>
+                        ) : "—"}
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell className="text-center">{movimentacao.receitas}</TableCell>
+                      <TableCell className="text-center">{movimentacao.refeicoes}</TableCell>
+                      <TableCell className="text-center">{movimentacao.cardapios}</TableCell>
+                      <TableCell className="text-center">{movimentacao.eventos}</TableCell>
+                    </>
+                  )}
+                  {!isGuiaZR && <TableCell>{labelPlano(u.plano_atual)}</TableCell>}
                   <TableCell>{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</TableCell>
                   <TableCell><Badge variant="outline">{ORIGEM_CADASTRO_LABEL[u.origem_cadastro] || "Não informado"}</Badge></TableCell>
                   <TableCell><Badge variant="outline">{statusCustos}</Badge></TableCell>
@@ -146,13 +179,15 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       </span>
                     ) : "—"}
                   </TableCell>
-                  <TableCell>
-                    {ultimoPagamento ? (
-                      <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>
-                        {STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}
-                      </Badge>
-                    ) : "—"}
-                  </TableCell>
+                  {!isGuiaZR && (
+                    <TableCell>
+                      {ultimoPagamento ? (
+                        <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>
+                          {STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}
+                        </Badge>
+                      ) : "—"}
+                    </TableCell>
+                  )}
                   <TableCell><ContatoIcones email={u.email} telefone={u.telefone_whatsapp} nome={u.nome_completo || u.full_name} /></TableCell>
                   <TableCell className="text-right">
                     <Badge variant="outline" className={status.className}>{status.label}</Badge>
@@ -160,15 +195,19 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 </TableRow>
                 {expandido && (
                   <TableRow>
-                    <TableCell colSpan={15} className="bg-muted/30 p-0">
+                    <TableCell colSpan={colSpan} className="bg-muted/30 p-0">
                       <div className="px-4 pt-4">
-                        <p className="text-sm font-semibold mb-2">Movimentação no Laboratório de Cozinha</p>
-                        <div className="flex flex-wrap gap-2 text-xs">
-                          <Badge variant="secondary">{movimentacao.receitas} receitas</Badge>
-                          <Badge variant="secondary">{movimentacao.refeicoes} refeições</Badge>
-                          <Badge variant="secondary">{movimentacao.cardapios} cardápios</Badge>
-                          <Badge variant="secondary">{movimentacao.eventos} eventos</Badge>
-                        </div>
+                        {!isGuiaZR && (
+                          <>
+                            <p className="text-sm font-semibold mb-2">Movimentação no Laboratório de Cozinha</p>
+                            <div className="flex flex-wrap gap-2 text-xs">
+                              <Badge variant="secondary">{movimentacao.receitas} receitas</Badge>
+                              <Badge variant="secondary">{movimentacao.refeicoes} refeições</Badge>
+                              <Badge variant="secondary">{movimentacao.cardapios} cardápios</Badge>
+                              <Badge variant="secondary">{movimentacao.eventos} eventos</Badge>
+                            </div>
+                          </>
+                        )}
                       </div>
                       <HistoricoPagamentosLinha pagamentos={historico} />
                     </TableCell>
@@ -212,7 +251,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 estado && `Estado: ${estado}`,
                 plano ? "" : null,
                 plano ? "📌 PLANO" : null,
-                plano && `Plano: ${PLANO_LABEL[plano] || plano}`,
+                plano && `Plano: ${labelPlano(plano)}`,
                 ultimoPagamento?.created_date && `Data/hora da contratação: ${formatarDataHora(ultimoPagamento.created_date)}`,
                 ultimoPagamento && `Valor: ${formatarMoeda(ultimoPagamento.valor)}`,
                 periodoPlano[plano] && `Período: ${periodoPlano[plano]}`,
@@ -305,7 +344,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       <div className="border-t pt-4">
                         <h3 className="font-semibold mb-3">📌 Plano</h3>
                         <dl className="grid gap-3 sm:grid-cols-2">
-                          <CampoNF rotulo="Plano" valor={PLANO_LABEL[ultimoPagamento?.plano || usuarioAberto.plano_atual] || ultimoPagamento?.plano || usuarioAberto.plano_atual} />
+                          <CampoNF rotulo="Plano" valor={labelPlano(ultimoPagamento?.plano || usuarioAberto.plano_atual)} />
                           <CampoNF rotulo="Data/hora da contratação" valor={formatarDataHora(ultimoPagamento?.created_date)} />
                           <CampoNF rotulo="Valor" valor={ultimoPagamento ? formatarMoeda(ultimoPagamento.valor) : null} />
                           <CampoNF rotulo="Período" valor={periodoPlano[ultimoPagamento?.plano || usuarioAberto.plano_atual]} />
@@ -320,7 +359,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 <section className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-lg border p-3">
                     <p className="text-xs text-muted-foreground">Plano</p>
-                    <p className="font-medium">{PLANO_LABEL[usuarioAberto.plano_atual] || "—"}</p>
+                    <p className="font-medium">{labelPlano(usuarioAberto.plano_atual)}</p>
                   </div>
                   <div className="rounded-lg border p-3">
                     <p className="text-xs text-muted-foreground">Expira em</p>

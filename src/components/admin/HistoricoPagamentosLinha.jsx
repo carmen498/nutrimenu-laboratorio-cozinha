@@ -1,7 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { formatarDataHora, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
+import { formatarDataHora, labelPlano } from "@/lib/statusAssinaturaUsuario";
 import { formatarMoeda, FORMA_PAGAMENTO_LABEL, STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME } from "@/lib/pagamentosUsuario";
 import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 import { urlHttpsSegura } from "@/lib/securityHardening";
@@ -39,7 +39,7 @@ export default function HistoricoPagamentosLinha({ pagamentos }) {
                   {STATUS_PAGAMENTO_LABEL[p.status] || p.status}
                 </Badge>
               </TableCell>
-              <TableCell>{PLANO_LABEL[p.plano] || "—"}</TableCell>
+              <TableCell>{labelPlano(p.plano)}</TableCell>
               <TableCell>
                 <span className="inline-flex items-center gap-1">
                   {formatarMoeda(p.valor)}

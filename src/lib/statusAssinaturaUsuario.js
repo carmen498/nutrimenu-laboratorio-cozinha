@@ -40,6 +40,10 @@ export function whatsappHref(telefone) {
   return `https://wa.me/55${digits}`;
 }
 
+export function labelPlano(plano) {
+  return PLANO_LABEL[plano] || plano || "—";
+}
+
 export const PLANO_LABEL = {
   trial: "Trial",
   diario: "Diário",
