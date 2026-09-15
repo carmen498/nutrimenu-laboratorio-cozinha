@@ -3,7 +3,7 @@ import { formatarMoeda } from "@/lib/pagamentosUsuario";
 const CARDS = [
   { status: "approved", label: "Aprovado", className: "border-green-200 bg-green-50" },
   { status: "pending", label: "Aguardando pagamento", className: "border-yellow-200 bg-yellow-50" },
-  { status: "rejected", label: "Expirado", className: "border-orange-200 bg-orange-50" },
+  { status: "rejected", label: "Recusado", className: "border-orange-200 bg-orange-50" },
   { status: "cancelled", label: "Cancelado", className: "border-gray-200 bg-gray-50" },
 ];
 
