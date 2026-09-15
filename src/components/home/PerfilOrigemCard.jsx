@@ -13,7 +13,7 @@ const CHAVE_DISPENSA = "perfil_origem_dispensado";
  * Plano 4.4 — rastreabilidade de canal: pergunta origem e segmento (opcional)
  * a quem ainda não tem esses dados preenchidos. Some após salvar ou dispensar.
  */
-export default function PerfilOrigemCard({ user, onSalvo }) {
+export default function PerfilOrigemCard({ user, onSalvo = undefined }) {
   const [origem, setOrigem] = useState("");
   const [segmento, setSegmento] = useState("");
   const [salvando, setSalvando] = useState(false);
