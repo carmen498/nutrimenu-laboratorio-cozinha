@@ -4,7 +4,8 @@ import { limparSensivel } from "./sanitizacao.js";
 const TELAS = new Set(["login", "cadastro", "codigo_otp", "esqueci_senha", "redefinir_senha", "google"]);
 const MAX_IP_MINUTO = 5;
 const MAX_GLOBAL_MINUTO = 30;
-const RETENCAO_DIAS = 30;
+const RETENCAO_LOG_DIAS = 30;
+const RETENCAO_LIMITE_MINUTOS = 5;
 
 function ipCliente(req: Request): string {
   return (
@@ -21,14 +22,27 @@ async function sha256(valor: string): Promise<string> {
   return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function apagarExpirados(logs: any, agora = new Date()) {
-  const limite = new Date(agora.getTime() - RETENCAO_DIAS * 24 * 60 * 60 * 1000).toISOString();
+async function apagarEmLotes(entity: any, filtro: Record<string, unknown>, ordenacao: string) {
   for (;;) {
-    const expirados = await logs.filter({ ocorreu_em: { $lt: limite } }, "ocorreu_em", 100);
+    const expirados = await entity.filter(filtro, ordenacao, 100);
     if (!expirados?.length) return;
-    await Promise.all(expirados.map((registro: any) => logs.delete(registro.id)));
+    await Promise.all(expirados.map((registro: any) => entity.delete(registro.id)));
     if (expirados.length < 100) return;
   }
+}
+
+async function limparRetencao(logs: any, limites: any, agora = new Date()) {
+  const limiteLogs = new Date(
+    agora.getTime() - RETENCAO_LOG_DIAS * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const limiteJanelas = new Date(
+    agora.getTime() - RETENCAO_LIMITE_MINUTOS * 60 * 1000,
+  ).toISOString().slice(0, 16);
+
+  await Promise.all([
+    apagarEmLotes(logs, { ocorreu_em: { $lt: limiteLogs } }, "ocorreu_em"),
+    apagarEmLotes(limites, { janela_minuto: { $lt: limiteJanelas } }, "janela_minuto"),
+  ]);
 }
 
 Deno.serve(async (req) => {
@@ -37,11 +51,11 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const logs = base44.asServiceRole.entities.LogErroAutenticacao;
+    const limites = base44.asServiceRole.entities.LimiteAuditoriaAutenticacao;
     const body = await req.json().catch(() => ({}));
 
-    // A mesma function nova executa a retenção pelo agendamento diário.
     if (body?.acao === "limpar_retencao") {
-      await apagarExpirados(logs);
+      await limparRetencao(logs, limites);
       return Response.json({ ok: true });
     }
 
@@ -52,19 +66,29 @@ Deno.serve(async (req) => {
     if (!erro) return Response.json({ ok: true });
 
     const agora = new Date();
-    const umMinutoAtras = new Date(agora.getTime() - 60_000).toISOString();
+    const janela = agora.toISOString().slice(0, 16);
     const ipHash = await sha256(ipCliente(req));
 
-    // A própria tabela é a fonte dos dois limites; não há entidade auxiliar.
-    const recentes = await logs.filter(
-      { ocorreu_em: { $gte: umMinutoAtras } },
-      "-ocorreu_em",
+    const atuais = await limites.filter(
+      { janela_minuto: janela },
+      "-created_date",
       MAX_GLOBAL_MINUTO + 1,
     );
-    const totalGlobal = recentes?.length || 0;
-    const totalIp = (recentes || []).filter((registro: any) => registro.ip_hash === ipHash).length;
-    if (totalGlobal >= MAX_GLOBAL_MINUTO || totalIp >= MAX_IP_MINUTO) {
+    const totalGlobal = (atuais || []).reduce(
+      (soma: number, registro: any) => soma + Number(registro.quantidade || 0),
+      0,
+    );
+    const registroIp = (atuais || []).find((registro: any) => registro.ip_hash === ipHash);
+    if (totalGlobal >= MAX_GLOBAL_MINUTO || Number(registroIp?.quantidade || 0) >= MAX_IP_MINUTO) {
       return Response.json({ ok: true, limitado: true });
+    }
+
+    if (registroIp) {
+      await limites.update(registroIp.id, {
+        quantidade: Number(registroIp.quantidade || 0) + 1,
+      });
+    } else {
+      await limites.create({ janela_minuto: janela, ip_hash: ipHash, quantidade: 1 });
     }
 
     await logs.create({
@@ -74,6 +98,11 @@ Deno.serve(async (req) => {
       ...(email ? { email_digitado: email } : {}),
       ip_hash: ipHash,
     });
+
+    // Retenção oportunística: mesmo sem agenda ativa, cada erro desconhecido
+    // remove logs >30 dias e janelas de limite >5 minutos. Como o cliente não
+    // aguarda esta function, o fluxo de autenticação nunca fica bloqueado.
+    await limparRetencao(logs, limites, agora);
     return Response.json({ ok: true });
   } catch (error) {
     console.error("Falha isolada na auditoria de autenticação", {
