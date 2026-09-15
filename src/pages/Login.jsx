@@ -10,6 +10,7 @@ import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { navegarAutenticacao } from "@/lib/authNavigation";
 import { traduzirErroAutenticacao } from "@/lib/authErrors";
+import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
 import { APP_SITE_URLS, buildAppLoginUrl, isPublicSiteHost } from "@/lib/publicUrls";
 import { withAuthTimeout } from "@/lib/authTimeout";
 
@@ -63,7 +64,9 @@ export default function Login() {
       base44.auth.setToken(response.access_token);
       window.location.href = returnTo;
     } catch (err) {
-      setError(traduzirErroAutenticacao(err).mensagem);
+      const traduzido = traduzirErroAutenticacao(err);
+      auditarErroDesconhecido({ traduzido, error: err, tela: "login", email });
+      setError(traduzido.mensagem);
     } finally {
       setLoading(false);
     }
@@ -77,6 +80,8 @@ export default function Login() {
       const destinoOAuth = new URL(returnTo, window.location.origin).toString();
       await withAuthTimeout(base44.auth.loginWithProvider("google", destinoOAuth));
     } catch (err) {
+      const traduzido = traduzirErroAutenticacao(err);
+      auditarErroDesconhecido({ traduzido, error: err, tela: "google", email });
       setError(
         "Não foi possível entrar com o Google agora. Use seu e-mail e senha abaixo — se ainda não tem senha, clique em \"Esqueceu a senha?\" para criar uma."
       );
