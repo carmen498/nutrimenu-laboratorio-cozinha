@@ -53,16 +53,17 @@ Deno.serve(async (req) => {
     const logs = base44.asServiceRole.entities.LogErroAutenticacao;
     const limites = base44.asServiceRole.entities.LimiteAuditoriaAutenticacao;
     const body = await req.json().catch(() => ({}));
+    const args = body?.args ?? body;
 
-    if (body?.acao === "limpar_retencao") {
+    if (args?.acao === "limpar_retencao") {
       await limparRetencao(logs, limites);
       return Response.json({ ok: true });
     }
 
-    const tela = TELAS.has(String(body.tela)) ? String(body.tela) : "desconhecida";
-    const emailInformado = String(body.email || "").trim().toLowerCase().slice(0, 254);
+    const tela = TELAS.has(String(args.tela)) ? String(args.tela) : "desconhecida";
+    const emailInformado = String(args.email || "").trim().toLowerCase().slice(0, 254);
     const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInformado) ? emailInformado : "";
-    const erro = limparSensivel(body.erro);
+    const erro = limparSensivel(args.erro);
     if (!erro) return Response.json({ ok: true });
 
     const agora = new Date();
