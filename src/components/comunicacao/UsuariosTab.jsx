@@ -113,7 +113,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, pagamentosPorUsuario]);
 
   const pagamentosParaCards = useMemo(() => {
-    const ids = new Set(usuariosFiltrados.map((u) => u.id));
+    const ids = new Set(usuariosFiltrados.filter((u) => !u.conta_teste).map((u) => u.id));
     return pagamentosPeriodo.filter((p) => ids.has(p.usuario_id));
   }, [pagamentosPeriodo, usuariosFiltrados]);
 
