@@ -45,6 +45,12 @@ export const PLANO_LABEL = { trial: "Trial", mensal: "30 dias", anual: "Anual", 
 export const SEGMENTOS = ["Nutricionista", "Chef de Cozinha", "Cozinha Industrial", "Estudante", "Fabricante de Produtos"];
 export const ORIGENS = ["Google", "Instagram", "Indicação de amigos", "Site", "Outros"];
 
+export const ORIGEM_CADASTRO_LABEL = {
+  guia_zr: "Guia ZR",
+  laboratorio_cozinha: "Laboratório de Cozinha",
+  nao_informado: "Não informado",
+};
+
 export const TIPOS_USUARIO = [
   { value: "todos", label: "Todos" },
   { value: "assinante", label: "Assinante" },

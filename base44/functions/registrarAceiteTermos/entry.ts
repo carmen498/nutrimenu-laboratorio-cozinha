@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { VERSAO_TERMOS_ATUAL, VERSAO_PRIVACIDADE_ATUAL } from "../../shared/versaoDocumentosLegais.ts";
+import { normalizarOrigemCadastro, ORIGEM_LABORATORIO } from "../../shared/origemCadastro.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -27,10 +28,18 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const aceitoEm = new Date().toISOString();
+
+    // Origem de cadastro: o frontend grava no sessionStorage quando o usuário
+    // passa pela ponte /entrar-no-guia. Quem não vier pela ponte não envia
+    // o campo — neste caso, origem = laboratorio_cozinha (cadastro direto).
+    const origemRecebida = normalizarOrigemCadastro(body.origem_cadastro);
+    const origemCadastro = origemRecebida || ORIGEM_LABORATORIO;
+
     await base44.asServiceRole.entities.User.update(user.id, {
       termos_aceitos_em: aceitoEm,
       termos_versao_aceita: VERSAO_TERMOS_ATUAL,
       privacidade_versao_aceita: VERSAO_PRIVACIDADE_ATUAL,
+      origem_cadastro: origemCadastro,
     });
 
     return Response.json({
@@ -39,6 +48,7 @@ export default async function(req: Request): Promise<Response> {
       aceito_em: aceitoEm,
       versao: VERSAO_TERMOS_ATUAL,
       privacidade_versao: VERSAO_PRIVACIDADE_ATUAL,
+      origem_cadastro: origemCadastro,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

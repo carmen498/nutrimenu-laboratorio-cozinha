@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { appParams } from "@/lib/app-params";
+import { marcarOrigemCadastro, ORIGEM_GUIA_ZR } from "@/lib/origemCadastro";
 
 const DESTINO_PADRAO = "https://zr.nutrimenu.com.br/entrar";
 
@@ -21,6 +22,13 @@ function validarVolta(volta) {
 
 export default function EntrarNoGuia() {
   useEffect(() => {
+    // Quem chega em /entrar-no-guia veio do Guia ZR, sempre. Essa página é o
+    // marcador — parâmetro de URL se perde; a ponte não. Se o visitante ainda
+    // não está autenticado, o ProtectedRoute vai mandá-lo para o login/cadastro.
+    // Gravamos a origem no sessionStorage ANTES do redirecionamento, para que
+    // ela sobreviva até o pós-OTP, onde registrarAceiteTermos consome e persiste.
+    marcarOrigemCadastro(ORIGEM_GUIA_ZR);
+
     const urlParams = new URLSearchParams(window.location.search);
     const endereco = validarVolta(urlParams.get("volta"));
     const token = (typeof localStorage !== "undefined" && localStorage.getItem("base44_access_token")) || appParams.token;

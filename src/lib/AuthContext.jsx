@@ -6,6 +6,7 @@ import { consoleErrorSeguro } from '@/lib/securityHardening';
 import { termosAtuaisAceitos } from '@/lib/termosVersao';
 import { APP_SITE_URLS, buildAppLoginUrl, currentInternalPath } from '@/lib/publicUrls';
 import { withAuthTimeout } from '@/lib/authTimeout';
+import { consumirOrigemCadastro } from '@/lib/origemCadastro';
 
 const AuthContext = createContext(null);
 
@@ -114,6 +115,7 @@ export const AuthProvider = ({ children }) => {
             await base44.functions.invoke('registrarAceiteTermos', {
               aceitou_termos: true,
               aceitou_privacidade: true,
+              origem_cadastro: consumirOrigemCadastro(),
             });
             currentUser = await withAuthTimeout(base44.auth.me());
           }

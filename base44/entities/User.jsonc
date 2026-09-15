@@ -230,6 +230,16 @@
       ],
       "description": "Canal de origem/aquisi\u00e7\u00e3o do usu\u00e1rio"
     },
+    "origem_cadastro": {
+      "type": "string",
+      "enum": [
+        "guia_zr",
+        "laboratorio_cozinha",
+        "nao_informado"
+      ],
+      "default": "nao_informado",
+      "description": "Produto pelo qual o usu\u00e1rio entrou na plataforma. 'guia_zr' = veio pela ponte /entrar-no-guia; 'laboratorio_cozinha' = cadastro direto no Laborat\u00f3rio; 'nao_informado' = origem n\u00e3o determinada (usu\u00e1rios j\u00e1 cadastrados antes do marcador)."
+    },
     "data_login": {
       "type": "string",
       "format": "date-time",

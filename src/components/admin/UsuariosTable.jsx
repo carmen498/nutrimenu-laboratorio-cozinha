@@ -11,7 +11,7 @@ import { base44 } from "@/api/base44Client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
-import { computeStatusUsuario, formatarData, formatarDataHora, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
+import { computeStatusUsuario, formatarData, formatarDataHora, PLANO_LABEL, ORIGEM_CADASTRO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import { dataHoraBase44 } from "@/lib/fusoBrasilia";
 import {
   getUltimoPagamento, formatarMoeda, FORMA_PAGAMENTO_LABEL,
@@ -80,6 +80,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             <TableHead className="text-center">Eventos</TableHead>
             <TableHead>Plano</TableHead>
             <TableHead>Expira em</TableHead>
+            <TableHead>Produto</TableHead>
             <TableHead>Lab. Custos</TableHead>
             <TableHead>Último pagamento</TableHead>
             <TableHead>Situação</TableHead>
@@ -131,6 +132,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                   <TableCell className="text-center">{movimentacao.eventos}</TableCell>
                   <TableCell>{PLANO_LABEL[u.plano_atual] || "—"}</TableCell>
                   <TableCell>{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</TableCell>
+                  <TableCell><Badge variant="outline">{ORIGEM_CADASTRO_LABEL[u.origem_cadastro] || "Não informado"}</Badge></TableCell>
                   <TableCell><Badge variant="outline">{statusCustos}</Badge></TableCell>
                   <TableCell>
                     {ultimoPagamento ? (
@@ -154,7 +156,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 </TableRow>
                 {expandido && (
                   <TableRow>
-                    <TableCell colSpan={14} className="bg-muted/30 p-0">
+                    <TableCell colSpan={15} className="bg-muted/30 p-0">
                       <div className="px-4 pt-4">
                         <p className="text-sm font-semibold mb-2">Movimentação no Laboratório de Cozinha</p>
                         <div className="flex flex-wrap gap-2 text-xs">

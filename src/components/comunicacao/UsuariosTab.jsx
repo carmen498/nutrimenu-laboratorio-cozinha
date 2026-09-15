@@ -33,6 +33,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [origemFiltro, setOrigemFiltro] = useState("todos");
   const [tipoUsuarioFiltro, setTipoUsuarioFiltro] = useState("todos");
   const [situacaoPagamentoFiltro, setSituacaoPagamentoFiltro] = useState("todos");
+  const [origemCadastroFiltro, setOrigemCadastroFiltro] = useState("todos");
   const [periodoFiltro, setPeriodoFiltro] = useState(PERIODO_PADRAO);
   const [dataInicioCustom, setDataInicioCustom] = useState("");
   const [dataFimCustom, setDataFimCustom] = useState("");
@@ -104,13 +105,14 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
       if (segmentoFiltro !== "todos" && u.segmento !== segmentoFiltro) return false;
       if (origemFiltro !== "todos" && u.origem !== origemFiltro) return false;
       if (tipoUsuarioFiltro !== "todos" && !usuarioMatchTipo(u, tipoUsuarioFiltro)) return false;
+      if (origemCadastroFiltro !== "todos" && u.origem_cadastro !== origemCadastroFiltro) return false;
       if (situacaoPagamentoFiltro !== "todos") {
         const ultimo = getUltimoPagamento(pagamentosPorUsuario, u.id);
         if (!ultimo || ultimo.status !== situacaoPagamentoFiltro) return false;
       }
       return true;
     });
-  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, pagamentosPorUsuario]);
+  }, [usuarios, busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro, tipoUsuarioFiltro, situacaoPagamentoFiltro, origemCadastroFiltro, pagamentosPorUsuario]);
 
   const pagamentosParaCards = useMemo(() => {
     const ids = new Set(usuariosFiltrados.filter((u) => !u.conta_teste).map((u) => u.id));
@@ -213,6 +215,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         origemFiltro={origemFiltro} setOrigemFiltro={setOrigemFiltro}
         tipoUsuarioFiltro={tipoUsuarioFiltro} setTipoUsuarioFiltro={setTipoUsuarioFiltro}
         situacaoPagamentoFiltro={situacaoPagamentoFiltro} setSituacaoPagamentoFiltro={setSituacaoPagamentoFiltro}
+        origemCadastroFiltro={origemCadastroFiltro} setOrigemCadastroFiltro={setOrigemCadastroFiltro}
       />
 
       <div className="flex justify-end">

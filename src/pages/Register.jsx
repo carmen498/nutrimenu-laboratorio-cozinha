@@ -20,6 +20,7 @@ import { capitalizarNome } from "@/lib/capitalizarNome";
 import { navegarAutenticacao } from "@/lib/authNavigation";
 import { traduzirErroAutenticacao } from "@/lib/authErrors";
 import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
+import { consumirOrigemCadastro } from "@/lib/origemCadastro";
 
 
 export default function Register() {
@@ -161,6 +162,7 @@ export default function Register() {
       await base44.functions.invoke("registrarAceiteTermos", {
         aceitou_termos: true,
         aceitou_privacidade: true,
+        origem_cadastro: consumirOrigemCadastro(),
       });
       sessionStorage.removeItem("base44_pending_terms_acceptance");
     } catch (e) {
