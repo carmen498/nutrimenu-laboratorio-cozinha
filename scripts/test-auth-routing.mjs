@@ -8,6 +8,7 @@ import {
   validarReturnToInterno,
 } from "../src/lib/authReturnTo.js";
 import { APP_SITE_URLS, buildAppLoginUrl, getCanonicalAppRedirectUrl } from "../src/lib/publicUrls.js";
+import { limparSensivel } from "../base44/functions/auditarErroAutenticacao/sanitizacao.js";
 
 const ORIGIN = "https://app.laboratoriodecozinha.com.br";
 
@@ -217,16 +218,29 @@ assert.ok(!resetPage.includes('setError(err.message'), "Redefinição ainda exp�
 const auditClient = fs.readFileSync("src/lib/auditoriaAuth.js", "utf8");
 const auditFunction = fs.readFileSync("base44/functions/auditarErroAutenticacao/entry.ts", "utf8");
 const auditEntity = fs.readFileSync("base44/entities/LogErroAutenticacao.jsonc", "utf8");
+const auditConfig = fs.readFileSync("base44/functions/auditarErroAutenticacao/function.jsonc", "utf8");
+const auditSanitizer = fs.readFileSync("base44/functions/auditarErroAutenticacao/sanitizacao.js", "utf8");
 assert.ok(auditClient.includes('traduzido?.tipo !== "desconhecido"'), "auditoria deve registrar somente erro não mapeado");
 assert.ok(auditClient.includes("void base44.functions.invoke") && auditClient.includes(".catch(() => {})"), "auditoria do cliente não é dispare e esqueça");
 assert.ok(auditFunction.includes("MAX_IP_MINUTO = 5"), "function de auditoria não limita chamadas por IP");
 assert.ok(auditFunction.includes("MAX_GLOBAL_MINUTO = 30"), "function de auditoria não limita gravações globais por minuto");
 for (const proibido of ["otp", "password", "senha", "token", "session", "credential", "secret"]) {
-  assert.ok(auditFunction.includes(proibido), `sanitização não cobre dado sensível: ${proibido}`);
+  assert.ok(auditSanitizer.includes(proibido), `sanitização não cobre dado sensível: ${proibido}`);
 }
-for (const permitido of ["ocorreu_em", "tela_origem", "codigo_mensagem_original", "email_digitado"]) {
+const erroLimpo = limparSensivel(
+  'OTP: 123456 password="MinhaSenha!" token=abc123 Authorization: Bearer eyJabcdefghijk.abcdefghijk.abcdefghijk',
+);
+for (const segredo of ["123456", "MinhaSenha", "abc123", "eyJabcdefghijk"]) {
+  assert.ok(!erroLimpo.includes(segredo), `sanitização deixou dado sensível no log: ${segredo}`);
+}
+for (const permitido of ["ocorreu_em", "tela_origem", "codigo_mensagem_original", "email_digitado", "ip_hash"]) {
   assert.ok(auditEntity.includes(`"${permitido}"`), `campo permitido ausente no log: ${permitido}`);
 }
+assert.ok(!fs.existsSync("base44/entities/LimiteAuditoriaAutenticacao.jsonc"), "limite não pode usar uma segunda entidade");
+assert.ok(auditFunction.includes('{ ocorreu_em: { $gte: umMinutoAtras } }'), "limites não consultam a própria tabela no último minuto");
+assert.ok(auditFunction.includes("registro.ip_hash === ipHash"), "limite por IP não usa o hash persistido");
+assert.ok(auditConfig.includes('"retencao_logs_autenticacao_30_dias"') && auditConfig.includes('"repeat_unit": "days"'), "retenção de 30 dias não está agendada");
+assert.ok(auditFunction.includes('{ ocorreu_em: { $lt: limite } }'), "rotina de retenção não busca registros vencidos");
 assert.ok(loginPage.includes('tela: "google"'), "retorno do Google não está coberto pela auditoria segura");
 assert.ok(loginPage.includes("safeReturnTo()") && registerPage.includes("safeReturnTo()"), "Google deve receber returnTo já validado");
 
