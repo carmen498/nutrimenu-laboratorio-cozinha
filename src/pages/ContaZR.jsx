@@ -6,7 +6,7 @@ import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchAllFilteredPages } from "@/lib/fetchAllPages";
-import { Loader2, ShieldCheck, FileText, ReceiptText, ArrowLeft, BookOpen, Clock, Infinity as InfinityIcon } from "lucide-react";
+import { Loader2, ShieldCheck, FileText, ReceiptText, ArrowLeft, BookOpen, Clock, Infinity as InfinityIcon, ArrowUpCircle } from "lucide-react";
 import { toast } from "sonner";
 import PedirNotaFiscalDialog from "@/components/conta-zr/PedirNotaFiscalDialog";
 import ComprovantePagamentoDialog from "@/components/conta-zr/ComprovantePagamentoDialog";
@@ -137,16 +137,22 @@ export default function ContaZR() {
           </div>
         ) : (
           <>
-            {temAcessoAtivo && (
-              <div>
+            <div className="flex flex-wrap gap-3">
+              {temAcessoAtivo && (
                 <a
                   href={URL_GUIA_ENTRAR}
                   className="inline-flex items-center justify-center gap-2 rounded-md bg-[#1F1B16] px-5 py-3 text-sm font-semibold text-[#F4F1EA] shadow-sm hover:bg-[#2A2420]"
                 >
                   <BookOpen className="w-4 h-4" /> Acessar o Guia Técnico ZR
                 </a>
-              </div>
-            )}
+              )}
+              <a
+                href="/planos"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-[#8A6D3B] bg-white px-5 py-3 text-sm font-semibold text-[#6B5530] shadow-sm hover:bg-[#FBF8F1]"
+              >
+                <ArrowUpCircle className="w-4 h-4" /> Fazer upgrade
+              </a>
+            </div>
 
             {/* 1. Compras / faixas */}
             <section className="space-y-3">
