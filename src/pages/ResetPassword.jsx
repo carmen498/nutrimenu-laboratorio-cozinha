@@ -10,6 +10,7 @@ import { withAuthTimeout } from "@/lib/authTimeout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { navegarAutenticacao } from "@/lib/authNavigation";
 import { traduzirErroAutenticacao } from "@/lib/authErrors";
+import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
 
 function tokenResetInvalidoOuExpirado(err) {
   const status = err?.response?.status ?? err?.status;
@@ -62,7 +63,9 @@ export default function ResetPassword() {
         setLinkInvalid(true);
         setError("");
       } else {
-        setError(traduzirErroAutenticacao(err).mensagem);
+        const traduzido = traduzirErroAutenticacao(err);
+        auditarErroDesconhecido({ traduzido, error: err, tela: "redefinir_senha", email });
+        setError(traduzido.mensagem);
       }
     } finally {
       setLoading(false);
