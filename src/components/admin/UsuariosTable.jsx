@@ -17,6 +17,7 @@ import {
   getUltimoPagamento, formatarMoeda, FORMA_PAGAMENTO_LABEL,
   STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME,
 } from "@/lib/pagamentosUsuario";
+import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 
 function CampoNF({ rotulo, valor }) {
   if (valor === undefined || valor === null || valor === "") return null;
@@ -139,6 +140,9 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       <span className="text-sm">
                         <span className="font-medium">{formatarMoeda(ultimoPagamento.valor)}</span>
                         <span className="text-muted-foreground"> · {FORMA_PAGAMENTO_LABEL[ultimoPagamento.forma_pagamento] || "—"}</span>
+                        {isPagamentoTeste(ultimoPagamento) && (
+                          <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-800 border-amber-300">TESTE</Badge>
+                        )}
                       </span>
                     ) : "—"}
                   </TableCell>

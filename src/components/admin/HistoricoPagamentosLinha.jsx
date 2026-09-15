@@ -3,6 +3,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Badge } from "@/components/ui/badge";
 import { formatarDataHora, PLANO_LABEL } from "@/lib/statusAssinaturaUsuario";
 import { formatarMoeda, FORMA_PAGAMENTO_LABEL, STATUS_PAGAMENTO_LABEL, STATUS_PAGAMENTO_CLASSNAME } from "@/lib/pagamentosUsuario";
+import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 import { urlHttpsSegura } from "@/lib/securityHardening";
 
 export default function HistoricoPagamentosLinha({ pagamentos }) {
@@ -39,7 +40,14 @@ export default function HistoricoPagamentosLinha({ pagamentos }) {
                 </Badge>
               </TableCell>
               <TableCell>{PLANO_LABEL[p.plano] || "—"}</TableCell>
-              <TableCell>{formatarMoeda(p.valor)}</TableCell>
+              <TableCell>
+                <span className="inline-flex items-center gap-1">
+                  {formatarMoeda(p.valor)}
+                  {isPagamentoTeste(p) && (
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-800 border-amber-300">TESTE</Badge>
+                  )}
+                </span>
+              </TableCell>
               <TableCell>{formatarMoeda(p.valor_liquido ?? p.valor)}</TableCell>
               <TableCell>
                 {urlHttpsSegura(p.nota_fiscal_url) ? (

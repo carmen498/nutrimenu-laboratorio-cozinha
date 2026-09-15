@@ -16,6 +16,7 @@ import {
   FORMA_PAGAMENTO_LABEL,
   STATUS_PAGAMENTO_LABEL,
 } from "@/lib/pagamentosUsuario";
+import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 
 const HEADERS = [
   "Nome",
@@ -74,7 +75,7 @@ export function exportarUsuariosCsv(usuariosFiltrados, pagamentosPorUsuario, fil
       ultimo ? formatarMoeda(ultimo.valor) : "",
       ultimo ? (FORMA_PAGAMENTO_LABEL[ultimo.forma_pagamento] || "") : "",
       ultimo ? (STATUS_PAGAMENTO_LABEL[ultimo.status] || ultimo.status || "") : "",
-      u.conta_teste ? "Sim" : "Não",
+      ultimo && isPagamentoTeste(ultimo) ? "Sim (pagamento teste)" : (u.conta_teste ? "Sim" : "Não"),
       formatarDataHora(u.created_date),
     ];
   });
