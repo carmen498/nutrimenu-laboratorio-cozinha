@@ -8,7 +8,7 @@ function limparSensivel(valor: unknown): string {
   let texto = String(valor || "").slice(0, 2000);
   texto = texto
     .replace(/\bBearer\s+[A-Za-z0-9._~+\/-]+=*/gi, "Bearer [REMOVIDO]")
-    .replace(/\b(?:otp|one[_ -]?time[_ -]?code|password|senha|passphrase|token|access[_ -]?token|refresh[_ -]?token|session|cookie|authorization|credential|credencial|secret)\b\s*[:=]\s*[^\s,;}]*/gi, "$1=[REMOVIDO]")
+    .replace(/\b(otp|one[_ -]?time[_ -]?code|password|senha|passphrase|token|access[_ -]?token|refresh[_ -]?token|session|cookie|authorization|credential|credencial|secret)\b\s*[:=]\s*[^\s,;}]*/gi, "$1=[REMOVIDO]")
     .replace(/\b\d{6}\b/g, "[CÓDIGO REMOVIDO]")
     .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}(?:\.[A-Za-z0-9_-]{10,})?\b/g, "[TOKEN REMOVIDO]")
     .replace(/[A-Fa-f0-9]{32,}/g, "[CREDENCIAL REMOVIDA]");
@@ -36,7 +36,8 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const tela = TELAS.has(String(body.tela)) ? String(body.tela) : "desconhecida";
-    const email = String(body.email || "").trim().toLowerCase().slice(0, 254);
+    const emailInformado = String(body.email || "").trim().toLowerCase().slice(0, 254);
+    const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInformado) ? emailInformado : "";
     const erro = limparSensivel(body.erro);
     if (!erro) return Response.json({ ok: true });
 
