@@ -1,3 +1,5 @@
+import { filtrarPagamentosReais } from "@/lib/pagamentosTeste";
+
 const SETE_DIAS = 7 * 24 * 60 * 60 * 1000;
 const TRINTA_MINUTOS = 30 * 60 * 1000;
 
@@ -7,12 +9,13 @@ const recentes = (itens, campo) => itens.filter((item) => {
 });
 
 export function calcularSaudeOperacional({ pagamentos = [], webhooks = [], emails = [] }) {
-  const pagamentos7d = recentes(pagamentos, "created_date");
+  const pagamentosReais = filtrarPagamentosReais(pagamentos, false);
+  const pagamentos7d = recentes(pagamentosReais, "created_date");
   const webhooks7d = recentes(webhooks, "created_date");
   const emails7d = recentes(emails, "enviado_em");
   const webhooksFalhos = webhooks7d.filter((log) => !["processado", "status_nao_final"].includes(log.resultado));
   const emailsFalhos = emails7d.filter((log) => log.status === "falhou");
-  const pendentesAntigos = pagamentos.filter((pagamento) => pagamento.status === "pending"
+  const pendentesAntigos = pagamentosReais.filter((pagamento) => pagamento.status === "pending"
     && new Date(pagamento.created_date).getTime() < Date.now() - TRINTA_MINUTOS);
 
   return [

@@ -182,11 +182,6 @@
       "default": false,
       "description": "true quando o lembrete de pagamento pendente j\u00e1 foi disparado"
     },
-    "is_sample": {
-      "type": "boolean",
-      "default": false,
-      "description": "true para pagamentos de teste/sandbox (ex.: orders ORDTST) que n\u00e3o devem contar nas m\u00e9tricas de vendas reais."
-    },
     "prazo_desistencia_em": {
       "type": "string",
       "format": "date-time",

@@ -9,6 +9,8 @@ import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from "lucide-react";
 import { exportarUsuariosCsv } from "@/lib/exportarUsuariosCsv";
+import { filtrarPagamentosReais } from "@/lib/pagamentosTeste";
+import { Switch } from "@/components/ui/switch";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
@@ -42,6 +44,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [excluindo, setExcluindo] = useState(false);
   const [sincronizandoPagamentos, setSincronizandoPagamentos] = useState(false);
   const [exportando, setExportando] = useState(false);
+  const [mostrarTestes, setMostrarTestes] = useState(false);
 
   const { data: pagamentos = [], isLoading: carregandoPagamentos, isError: erroPagamentos, error: detalheErroPagamentos } = useQuery({
     queryKey: ["admin-pagamentos"],
@@ -82,15 +85,17 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
     return map;
   }, [acessosCustos]);
 
-  const pagamentosPorUsuario = useMemo(() => agruparPagamentosPorUsuario(pagamentos), [pagamentos]);
+  const pagamentosVisiveis = useMemo(() => filtrarPagamentosReais(pagamentos, mostrarTestes), [pagamentos, mostrarTestes]);
+
+  const pagamentosPorUsuario = useMemo(() => agruparPagamentosPorUsuario(pagamentosVisiveis), [pagamentosVisiveis]);
 
   const intervaloPeriodo = useMemo(
     () => calcularIntervaloPeriodo(periodoFiltro, dataInicioCustom, dataFimCustom),
     [periodoFiltro, dataInicioCustom, dataFimCustom]
   );
   const pagamentosPeriodo = useMemo(
-    () => filtrarPagamentosPorPeriodo(pagamentos, intervaloPeriodo),
-    [pagamentos, intervaloPeriodo]
+    () => filtrarPagamentosPorPeriodo(pagamentosVisiveis, intervaloPeriodo),
+    [pagamentosVisiveis, intervaloPeriodo]
   );
   const pagamentosPorUsuarioPeriodo = useMemo(() => agruparPagamentosPorUsuario(pagamentosPeriodo), [pagamentosPeriodo]);
 
@@ -149,6 +154,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
       const resultado = exportarUsuariosCsv(usuariosFiltrados, pagamentosPorUsuario, {
         busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro,
         tipoUsuarioFiltro, situacaoPagamentoFiltro, origemCadastroFiltro,
+        mostrarTestes,
       });
       if (resultado.ok) {
         toast({ title: "Exportação concluída", description: `${resultado.count} usuário(s) exportado(s).` });
@@ -243,7 +249,11 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         origemCadastroFiltro={origemCadastroFiltro} setOrigemCadastroFiltro={setOrigemCadastroFiltro}
       />
 
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer mr-auto">
+          <Switch checked={mostrarTestes} onCheckedChange={setMostrarTestes} />
+          Mostrar pagamentos de teste
+        </label>
         <Button variant="outline" size="sm" onClick={handleExportarCsv} disabled={exportando || isLoading || carregandoPagamentos}>
           <Download className="w-4 h-4" />
           {exportando ? "Exportando..." : "Exportar CSV"}
