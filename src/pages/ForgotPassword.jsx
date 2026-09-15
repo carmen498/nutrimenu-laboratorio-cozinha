@@ -9,6 +9,8 @@ import AuthLayout from "@/components/AuthLayout";
 import { withAuthTimeout } from "@/lib/authTimeout";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { navegarAutenticacao } from "@/lib/authNavigation";
+import { traduzirErroAutenticacao } from "@/lib/authErrors";
+import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
 
 export default function ForgotPassword() {
   const [returnTo] = useState(() => safeReturnTo());
@@ -23,8 +25,10 @@ export default function ForgotPassword() {
       await withAuthTimeout(
         base44.auth.resetPasswordRequest(email.trim().toLowerCase())
       );
-    } catch {
-      // Always show success regardless
+    } catch (err) {
+      // A resposta continua indistinguível para não revelar se a conta existe.
+      const traduzido = traduzirErroAutenticacao(err);
+      auditarErroDesconhecido({ traduzido, error: err, tela: "esqueci_senha", email });
     } finally {
       setLoading(false);
       setSent(true);
