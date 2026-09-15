@@ -1,0 +1,33 @@
+{
+  "name": "LimiteAuditoriaAutenticacao",
+  "type": "object",
+  "properties": {
+    "janela_minuto": {
+      "type": "string",
+      "description": "Minuto UTC usado pelo controle de taxa"
+    },
+    "ip_hash": {
+      "type": "string",
+      "description": "Hash SHA-256 do IP; o IP original nunca \u00e9 persistido"
+    },
+    "quantidade": {
+      "type": "integer",
+      "description": "Quantidade registrada na janela"
+    }
+  },
+  "required": [
+    "janela_minuto",
+    "ip_hash",
+    "quantidade"
+  ],
+  "rls": {
+    "create": false,
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": false,
+    "delete": false
+  }
+}
