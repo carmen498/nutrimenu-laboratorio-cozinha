@@ -7,7 +7,8 @@ import { agruparPagamentosPorUsuario, getUltimoPagamento } from "@/lib/pagamento
 import { calcularIntervaloPeriodo, filtrarPagamentosPorPeriodo, PERIODO_PADRAO } from "@/lib/periodoFiltro";
 import { fetchAllPages, withTimeout } from "@/lib/fetchAllPages";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { Download, RefreshCw } from "lucide-react";
+import { exportarUsuariosCsv } from "@/lib/exportarUsuariosCsv";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
@@ -40,6 +41,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
   const [sincronizandoPagamentos, setSincronizandoPagamentos] = useState(false);
+  const [exportando, setExportando] = useState(false);
 
   const { data: pagamentos = [], isLoading: carregandoPagamentos, isError: erroPagamentos, error: detalheErroPagamentos } = useQuery({
     queryKey: ["admin-pagamentos"],
@@ -137,6 +139,29 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
 
   const quantidadeSelecionada = usuarios.filter((u) => selecionados.has(u.id)).length;
 
+  const handleExportarCsv = () => {
+    if (usuariosFiltrados.length === 0) {
+      toast({ title: "Nada para exportar", description: "Não há usuários no filtro atual." });
+      return;
+    }
+    setExportando(true);
+    try {
+      const resultado = exportarUsuariosCsv(usuariosFiltrados, pagamentosPorUsuario, {
+        busca, planoFiltro, statusFiltro, segmentoFiltro, origemFiltro,
+        tipoUsuarioFiltro, situacaoPagamentoFiltro, origemCadastroFiltro,
+      });
+      if (resultado.ok) {
+        toast({ title: "Exportação concluída", description: `${resultado.count} usuário(s) exportado(s).` });
+      } else if (resultado.motivo === "vazio") {
+        toast({ title: "Nada para exportar", description: "Não há usuários no filtro atual." });
+      }
+    } catch (err) {
+      toast({ title: "Erro ao exportar", description: err.message, variant: "destructive" });
+    } finally {
+      setExportando(false);
+    }
+  };
+
   const handleDispararWhatsapp = () => {
     toast({ title: "Em breve", description: "O disparo de WhatsApp em massa ainda está em desenvolvimento." });
   };
@@ -218,7 +243,11 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         origemCadastroFiltro={origemCadastroFiltro} setOrigemCadastroFiltro={setOrigemCadastroFiltro}
       />
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={handleExportarCsv} disabled={exportando || isLoading || carregandoPagamentos}>
+          <Download className="w-4 h-4" />
+          {exportando ? "Exportando..." : "Exportar CSV"}
+        </Button>
         <Button variant="outline" size="sm" onClick={sincronizarPagamentos} disabled={sincronizandoPagamentos}>
           <RefreshCw className={`w-4 h-4 ${sincronizandoPagamentos ? "animate-spin" : ""}`} />
           {sincronizandoPagamentos ? "Sincronizando..." : "Sincronizar pagamentos"}
