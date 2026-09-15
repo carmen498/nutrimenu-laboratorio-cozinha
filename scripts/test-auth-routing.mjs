@@ -91,8 +91,8 @@ assert.deepEqual(
 );
 assert.equal(
   evaluate("?returnTo=%2Freceitas%3Fapp_base_url%3Dhttps%253A%252F%252Fevil.example%26app_id%3Datacante%26x%3D1"),
-  "/receitas?x=1",
-  "parâmetros bootstrap sensíveis devem ser removidos do returnTo",
+  "/",
+  "returnTo com esquema deve ser rejeitado antes mesmo de remover parâmetros bootstrap",
 );
 
 const indexHtml = fs.readFileSync("index.html", "utf8");
