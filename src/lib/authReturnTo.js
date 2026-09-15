@@ -10,6 +10,40 @@
 // resolved path to be exactly one leading slash (no "//" prefix, no backslash).
 export const RETURN_TO_MAX_AGE_MS = 30 * 60 * 1000;
 
+const ESQUEMA = /[a-z][a-z0-9+.-]*:/i;
+
+function contemEsquema(valor) {
+  let atual = String(valor || "");
+  for (let i = 0; i < 3; i += 1) {
+    if (ESQUEMA.test(atual)) return true;
+    try {
+      const decodificado = decodeURIComponent(atual);
+      if (decodificado === atual) break;
+      atual = decodificado;
+    } catch {
+      break;
+    }
+  }
+  return false;
+}
+
+// Contrato único para todo retorno pós-autenticação: somente caminho interno.
+// Rejeita URLs absolutas (inclusive da própria origem), referências // ou /\,
+// barras invertidas e qualquer esquema, mesmo codificado.
+export function validarReturnToInterno(raw, fallback = "/") {
+  const value = String(raw || "");
+  if (
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.startsWith("/\\") ||
+    value.includes("\\") ||
+    contemEsquema(value)
+  ) {
+    return fallback;
+  }
+  return value;
+}
+
 export function serializeReturnTo(value, savedAt = Date.now()) {
   return JSON.stringify({ value, savedAt });
 }
@@ -63,11 +97,10 @@ export function safeReturnTo() {
   const raw = params.get("returnTo") || params.get("from_url") || stored;
   if (storedRaw) sessionStorage.removeItem("base44_pending_return_to");
   if (!raw) return "/";
-  // Aceita somente caminho interno literal. URLs absolutas, inclusive da mesma
-  // origem, não fazem parte do contrato e são rejeitadas antes do parse.
-  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/";
+  const seguro = validarReturnToInterno(raw);
+  if (seguro === "/") return "/";
   try {
-    const url = new URL(raw, window.location.origin);
+    const url = new URL(seguro, window.location.origin);
     // Strip app-bootstrap params: app-params.js persists these from the URL into
     // localStorage before the SDK initializes, so a crafted returnTo could
     // otherwise poison the freshly issued session — repointing the app at an
@@ -79,8 +112,7 @@ export function safeReturnTo() {
       url.searchParams.delete(p);
     }
     const path = url.pathname + url.search;
-    if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return "/";
-    return path;
+    return validarReturnToInterno(path);
   } catch {
     return "/";
   }
