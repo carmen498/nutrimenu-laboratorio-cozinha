@@ -1,4 +1,5 @@
 import { Fragment, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Copy, FileText } from "lucide-react";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
@@ -6,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import ContatoIcones from "@/components/admin/ContatoIcones";
 import HistoricoPagamentosLinha from "@/components/admin/HistoricoPagamentosLinha";
@@ -28,9 +30,25 @@ function CampoNF({ rotulo, valor }) {
 
 export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map() }) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [expandidos, setExpandidos] = useState(new Set());
   const [usuarioAberto, setUsuarioAberto] = useState(null);
   const [dadosNFAbertos, setDadosNFAbertos] = useState(false);
+  const [marcandoTeste, setMarcandoTeste] = useState(false);
+
+  const alterarContaTeste = async (usuario, contaTeste) => {
+    setMarcandoTeste(true);
+    try {
+      await base44.entities.User.update(usuario.id, { conta_teste: contaTeste });
+      setUsuarioAberto((atual) => atual?.id === usuario.id ? { ...atual, conta_teste: contaTeste } : atual);
+      await qc.invalidateQueries({ queryKey: ["admin-usuarios"] });
+      toast.success(contaTeste ? "Conta marcada como teste" : "Marcação de teste removida");
+    } catch (err) {
+      toast.error(err?.message || "Não foi possível alterar a marcação de teste.");
+    } finally {
+      setMarcandoTeste(false);
+    }
+  };
 
   if (usuarios.length === 0) {
     return <p className="text-sm text-muted-foreground text-center py-10">Nenhum usuário encontrado.</p>;
@@ -105,6 +123,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                     <button className="text-left text-primary hover:underline" onClick={() => { setUsuarioAberto(u); setDadosNFAbertos(false); }} title="Abrir conta do usuário">
                       {u.nome_completo || u.full_name || "—"}
                     </button>
+                    {u.conta_teste && <Badge variant="secondary" className="ml-2">Teste</Badge>}
                   </TableCell>
                   <TableCell className="text-center">{movimentacao.receitas}</TableCell>
                   <TableCell className="text-center">{movimentacao.refeicoes}</TableCell>
@@ -214,6 +233,17 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                   <div>
                     <p className="text-xs text-muted-foreground">Nome</p>
                     <p className="font-semibold">{usuarioAberto.nome_completo || usuarioAberto.full_name || "—"}</p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                    <Checkbox
+                      id="conta-teste"
+                      checked={!!usuarioAberto.conta_teste}
+                      disabled={marcandoTeste}
+                      onCheckedChange={(checked) => alterarContaTeste(usuarioAberto, checked === true)}
+                    />
+                    <label htmlFor="conta-teste" className="text-sm font-medium cursor-pointer">
+                      Conta de teste — excluir dos números de vendas
+                    </label>
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div>
