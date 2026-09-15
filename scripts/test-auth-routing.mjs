@@ -141,4 +141,55 @@ assert.ok(authContext.includes("buildAppLoginUrl(currentInternalPath())"), "rota
 assert.ok(topBar.includes("logout()") && sidebar.includes("logout()"), "algum controle de saída ainda sobrescreve o destino canônico");
 assert.ok(landing.includes("APP_SITE_URLS.login"), "landing não usa a URL centralizada de login");
 
-console.log("OK: roteamento de autenticação, returnTo e proteção do token de reset aprovados.");
+
+
+const { navegarAutenticacao } = await import("../src/lib/authNavigation.js");
+const { traduzirErroAutenticacao, MENSAGEM_ERRO_AUTENTICACAO_GENERICA } = await import("../src/lib/authErrors.js");
+
+assert.equal(
+  navegarAutenticacao("/login", { returnTo: "/comprar-zr?plano=zr_tin", email: " Pessoa@Email.com " }),
+  "/login?returnTo=%2Fcomprar-zr%3Fplano%3Dzr_tin&email=pessoa%40email.com",
+  "navegação deve preservar somente returnTo e e-mail normalizado",
+);
+assert.equal(
+  navegarAutenticacao("/forgot-password", { returnTo: "/conta-zr" }),
+  "/forgot-password?returnTo=%2Fconta-zr",
+  "toda transição de autenticação deve carregar returnTo",
+);
+assert.throws(() => navegarAutenticacao("/admin", { returnTo: "/app" }), /Rota de autenticação inválida/);
+
+const casosErro = [
+  ["User already exists", "Este e-mail já possui uma conta."],
+  ["Invalid verification code", "Código inválido. Confira os seis dígitos e tente novamente."],
+  ["OTP expired", "O código expirou. Solicite um novo código."],
+  ["Password is too short", "Crie uma senha com pelo menos 8 caracteres, incluindo maiúscula, minúscula e número."],
+  ["Invalid email address", "Informe um endereço de e-mail válido."],
+  ["Too many attempts", "Muitas tentativas. Aguarde alguns minutos e tente novamente."],
+  ["Invalid email or password", "E-mail ou senha incorretos."],
+  ["Reset token expired", "Este link está inválido ou expirado. Solicite um novo."],
+  ["Network request failed", "Não foi possível conectar agora. Verifique sua internet e tente novamente."],
+  ["Forbidden", "Não foi possível validar seus dados de acesso."],
+];
+for (const [sdkMessage, esperado] of casosErro) {
+  assert.equal(traduzirErroAutenticacao(new Error(sdkMessage)).mensagem, esperado, `erro não traduzido: ${sdkMessage}`);
+}
+assert.equal(
+  traduzirErroAutenticacao(new Error("opaque sdk internals")).mensagem,
+  MENSAGEM_ERRO_AUTENTICACAO_GENERICA,
+  "erro desconhecido nunca deve chegar cru à tela",
+);
+
+const loginPage = fs.readFileSync("src/pages/Login.jsx", "utf8");
+const forgotPage = fs.readFileSync("src/pages/ForgotPassword.jsx", "utf8");
+assert.ok(loginPage.includes('navegarAutenticacao("/register", { returnTo })'), "Login→Cadastro não usa navegação central");
+assert.ok(loginPage.includes('navegarAutenticacao("/forgot-password", { returnTo, email })'), "Login→Esqueci não preserva retorno");
+assert.ok(registerPage.includes('navegarAutenticacao("/login", { returnTo, email })'), "Cadastro→Login não preserva retorno e e-mail");
+assert.ok(forgotPage.includes('navegarAutenticacao("/login", { returnTo, email })'), "Esqueci→Login não preserva retorno");
+assert.ok(resetPage.includes('navegarAutenticacao("/login", { returnTo, email })'), "Redefinir→Login não preserva retorno");
+assert.ok(resetPage.includes('navegarAutenticacao("/forgot-password", { returnTo, email })'), "Redefinir→Esqueci não preserva retorno");
+assert.ok(registerPage.includes("O assunto chega em inglês, em nome de Nutrimenu."), "aviso do e-mail OTP ausente");
+assert.ok(!loginPage.includes('setError(err.message'), "Login ainda expõe mensagem crua do SDK");
+assert.ok(!registerPage.includes('setError(err.message'), "Cadastro ainda expõe mensagem crua do SDK");
+assert.ok(!resetPage.includes('setError(err.message'), "Redefinição ainda expõe mensagem crua do SDK");
+
+console.log("OK: roteamento de autenticação, returnTo, mensagens seguras e proteção do token de reset aprovados.");
