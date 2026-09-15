@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { withAuthTimeout } from "@/lib/authTimeout";
+import { safeReturnTo } from "@/lib/authReturnTo";
+import { navegarAutenticacao } from "@/lib/authNavigation";
+import { traduzirErroAutenticacao } from "@/lib/authErrors";
 
 function tokenResetInvalidoOuExpirado(err) {
   const status = err?.response?.status ?? err?.status;
@@ -19,6 +22,8 @@ function tokenResetInvalidoOuExpirado(err) {
 }
 
 export default function ResetPassword() {
+  const [returnTo] = useState(() => safeReturnTo());
+  const [email] = useState(() => new URLSearchParams(window.location.search).get("email") || "");
   const [resetToken] = useState(() => {
     try {
       return sessionStorage.getItem("base44_pending_password_reset_token") || "";
@@ -50,14 +55,14 @@ export default function ResetPassword() {
     try {
       await withAuthTimeout(base44.auth.resetPassword({ resetToken, newPassword }));
       try { sessionStorage.removeItem("base44_pending_password_reset_token"); } catch {}
-      window.location.href = "/login";
+      window.location.href = navegarAutenticacao("/login", { returnTo, email });
     } catch (err) {
       if (tokenResetInvalidoOuExpirado(err)) {
         try { sessionStorage.removeItem("base44_pending_password_reset_token"); } catch {}
         setLinkInvalid(true);
         setError("");
       } else {
-        setError("Não foi possível redefinir a senha. Verifique os dados e tente novamente.");
+        setError(traduzirErroAutenticacao(err).mensagem);
       }
     } finally {
       setLoading(false);
@@ -71,7 +76,7 @@ export default function ResetPassword() {
         title="Link inválido"
         subtitle="Este link de redefinição está ausente, inválido ou expirado"
         footer={
-          <Link to="/forgot-password" className="text-primary font-medium hover:underline">
+          <Link to={navegarAutenticacao("/forgot-password", { returnTo, email })} className="text-primary font-medium hover:underline">
             Solicitar novo link
           </Link>
         }
