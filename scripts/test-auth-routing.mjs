@@ -5,6 +5,7 @@ import {
   resolveRegisterReturnTo,
   safeReturnTo,
   serializeReturnTo,
+  validarReturnToInterno,
 } from "../src/lib/authReturnTo.js";
 import { APP_SITE_URLS, buildAppLoginUrl, getCanonicalAppRedirectUrl } from "../src/lib/publicUrls.js";
 
@@ -36,7 +37,13 @@ assert.equal(evaluate("?returnTo=%2Freceitas%3Ffiltro%3Dminhas"), "/receitas?fil
 assert.equal(evaluate("?returnTo=https%3A%2F%2Fevil.example%2Froubo"), "/", "returnTo cross-origin deve ser rejeitado");
 assert.equal(evaluate(`?returnTo=${encodeURIComponent(`${ORIGIN}/receitas`)}`), "/", "returnTo absoluto same-origin deve ser rejeitado");
 assert.equal(evaluate("?returnTo=%2F%2Fevil.example%2Froubo"), "/", "returnTo protocol-relative deve ser rejeitado");
-assert.equal(evaluate("?returnTo=%2F%5Cevil.example%2Froubo"), "/", "returnTo com backslash deve ser rejeitado");
+assert.equal(evaluate("?returnTo=%2F%5Cevil.example%2Froubo"), "/", "returnTo iniciado por /\\ deve ser rejeitado");
+assert.equal(evaluate("?returnTo=http%3A%2F%2Fevil.example"), "/", "esquema http deve ser rejeitado");
+assert.equal(evaluate("?returnTo=https%3A%2F%2Fevil.example"), "/", "esquema https deve ser rejeitado");
+assert.equal(evaluate("?returnTo=%2Fjavascript%3Aalert(1)"), "/", "esquema javascript deve ser rejeitado mesmo após /");
+assert.equal(evaluate("?returnTo=%2Fdata%3Atext%2Fhtml%2Cteste"), "/", "esquema data deve ser rejeitado mesmo após /");
+assert.equal(evaluate(`?returnTo=${encodeURIComponent(`${ORIGIN}/conta`)}`), "/", "URL absoluta da própria origem deve ser rejeitada");
+assert.equal(validarReturnToInterno("/conta-zr?aba=planos"), "/conta-zr?aba=planos", "caminho interno deve ser aceito");
 assert.equal(evaluate("", "/cardapios?origem=email"), "/cardapios?origem=email", "returnTo salvo em sessionStorage deve ser aceito");
 assert.equal(evaluate("", "/formato-antigo", { legacy: true }), "/", "returnTo legado em string pura deve ser tratado como ausente");
 assert.equal(evaluate("?returnTo=%2Fcheckout-novo", "/destino-antigo"), "/checkout-novo", "returnTo novo da URL deve vencer o persistido");
@@ -157,6 +164,21 @@ assert.equal(
   "toda transição de autenticação deve carregar returnTo",
 );
 assert.throws(() => navegarAutenticacao("/admin", { returnTo: "/app" }), /Rota de autenticação inválida/);
+for (const inseguro of [
+  "//evil.example",
+  "/\\evil.example",
+  "http://evil.example",
+  "https://evil.example",
+  "javascript:alert(1)",
+  "data:text/html,teste",
+  `${ORIGIN}/receitas`,
+]) {
+  assert.equal(
+    navegarAutenticacao("/login", { returnTo: inseguro }),
+    "/login?returnTo=%2Fapp",
+    `fábrica de navegação deve ignorar returnTo inseguro: ${inseguro}`,
+  );
+}
 
 const casosErro = [
   ["User already exists", "Este e-mail já possui uma conta."],
@@ -192,4 +214,20 @@ assert.ok(!loginPage.includes('setError(err.message'), "Login ainda expõe mensa
 assert.ok(!registerPage.includes('setError(err.message'), "Cadastro ainda expõe mensagem crua do SDK");
 assert.ok(!resetPage.includes('setError(err.message'), "Redefinição ainda expõe mensagem crua do SDK");
 
-console.log("OK: roteamento de autenticação, returnTo, mensagens seguras e proteção do token de reset aprovados.");
+const auditClient = fs.readFileSync("src/lib/auditoriaAuth.js", "utf8");
+const auditFunction = fs.readFileSync("base44/functions/auditarErroAutenticacao/entry.ts", "utf8");
+const auditEntity = fs.readFileSync("base44/entities/LogErroAutenticacao.jsonc", "utf8");
+assert.ok(auditClient.includes('traduzido?.tipo !== "desconhecido"'), "auditoria deve registrar somente erro não mapeado");
+assert.ok(auditClient.includes("void base44.functions.invoke") && auditClient.includes(".catch(() => {})"), "auditoria do cliente não é dispare e esqueça");
+assert.ok(auditFunction.includes("MAX_IP_MINUTO = 5"), "function de auditoria não limita chamadas por IP");
+assert.ok(auditFunction.includes("MAX_GLOBAL_MINUTO = 30"), "function de auditoria não limita gravações globais por minuto");
+for (const proibido of ["otp", "password", "senha", "token", "session", "credential", "secret"]) {
+  assert.ok(auditFunction.includes(proibido), `sanitização não cobre dado sensível: ${proibido}`);
+}
+for (const permitido of ["ocorreu_em", "tela_origem", "codigo_mensagem_original", "email_digitado"]) {
+  assert.ok(auditEntity.includes(`"${permitido}"`), `campo permitido ausente no log: ${permitido}`);
+}
+assert.ok(loginPage.includes('tela: "google"'), "retorno do Google não está coberto pela auditoria segura");
+assert.ok(loginPage.includes("safeReturnTo()") && registerPage.includes("safeReturnTo()"), "Google deve receber returnTo já validado");
+
+console.log("OK: autenticação, returnTo estrito, mensagens seguras e auditoria limitada aprovados.");
