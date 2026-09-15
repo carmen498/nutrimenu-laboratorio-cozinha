@@ -40,7 +40,24 @@ export function whatsappHref(telefone) {
   return `https://wa.me/55${digits}`;
 }
 
-export const PLANO_LABEL = { trial: "Trial", mensal: "30 dias", anual: "Anual", renovacao: "Renovação" };
+export const PLANO_LABEL = {
+  trial: "Trial",
+  diario: "Diário",
+  mensal: "30 dias",
+  anual: "Anual",
+  renovacao: "Renovação",
+  custos_mensal: "Custos — Mensal",
+  custos_anual: "Custos — Anual",
+  zr_tin: "ZR — TIN",
+  zr_tin_renovacao: "ZR — TIN (Renovação)",
+  zr_full: "ZR — Full",
+  zr_full_renovacao: "ZR — Full (Renovação)",
+  zr_arquitetura: "ZR — Arquitetura",
+  zr_arquitetura_renovacao: "ZR — Arquitetura (Renovação)",
+  zr_full_upgrade_tin: "ZR — Full (Upgrade TIN)",
+  zr_full_upgrade_arquitetura: "ZR — Full (Upgrade Arquitetura)",
+  zr_full_upgrade_tin_arquitetura: "ZR — Full (Upgrade TIN + Arquitetura)",
+};
 
 export const SEGMENTOS = ["Nutricionista", "Chef de Cozinha", "Cozinha Industrial", "Estudante", "Fabricante de Produtos"];
 export const ORIGENS = ["Google", "Instagram", "Indicação de amigos", "Site", "Outros"];
