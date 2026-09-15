@@ -1,43 +1,30 @@
 import React, { useEffect } from "react";
 import { appParams } from "@/lib/app-params";
 import { marcarOrigemCadastro, ORIGEM_GUIA_ZR } from "@/lib/origemCadastro";
-
-const DESTINO_PADRAO = "https://zr.nutrimenu.com.br/entrar";
-
-function validarVolta(volta) {
-  if (typeof volta !== "string" || !volta.startsWith("https://")) return DESTINO_PADRAO;
-  try {
-    const url = new URL(volta);
-    if (url.protocol !== "https:") return DESTINO_PADRAO;
-    const host = url.hostname;
-    if (host === "zr.nutrimenu.com.br" || host.endsWith(".vercel.app")) {
-      // Descarta qualquer fragmento pré-existente antes de anexar o token.
-      return `${url.origin}${url.pathname}${url.search}`;
-    }
-    return DESTINO_PADRAO;
-  } catch {
-    return DESTINO_PADRAO;
-  }
-}
+import { validarVolta } from "@/lib/voltaGuiaZR";
 
 export default function EntrarNoGuia() {
   useEffect(() => {
     // Quem chega em /entrar-no-guia veio do Guia ZR, sempre. Essa página é o
-    // marcador — parâmetro de URL se perde; a ponte não. Se o visitante ainda
-    // não está autenticado, o ProtectedRoute vai mandá-lo para o login/cadastro.
-    // Gravamos a origem no sessionStorage ANTES do redirecionamento, para que
-    // ela sobreviva até o pós-OTP, onde registrarAceiteTermos consome e persiste.
+    // marcador — parâmetro de URL se perde; a ponte não. Gravamos a origem no
+    // sessionStorage ANTES de qualquer redirecionamento, para que ela sobreviva
+    // até o pós-OTP, onde registrarAceiteTermos consome e persiste.
     marcarOrigemCadastro(ORIGEM_GUIA_ZR);
 
     const urlParams = new URLSearchParams(window.location.search);
     const endereco = validarVolta(urlParams.get("volta"));
     const token = (typeof localStorage !== "undefined" && localStorage.getItem("base44_access_token")) || appParams.token;
+
     if (!token) {
-      // Sem token de sessão: o ProtectedRoute já cuidou do login. Se chegamos
-      // aqui sem token, não há o que repassar — recarrega para reaplicar o guard.
-      window.location.reload();
+      // Visitante não autenticado: manda para o login preservando o caminho
+      // completo (incluindo ?volta=...) como returnTo. Após login/cadastro,
+      // o usuário volta aqui autenticado e é redirecionado para o Guia.
+      const currentPath = window.location.pathname + window.location.search;
+      window.location.replace(`/login?returnTo=${encodeURIComponent(currentPath)}`);
       return;
     }
+
+    // Autenticado: redireciona para o Guia com o token.
     window.location.replace(`${endereco}#access_token=${encodeURIComponent(token)}`);
   }, []);
 

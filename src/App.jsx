@@ -92,7 +92,7 @@ const Produto = lazy(() => import('@/pages/Produto'));
 // when the app-level check reports 'auth_required', otherwise a genuinely
 // fresh visitor (no token yet) gets redirected to /login and then hits a
 // permanent blank screen, since the error never clears on that same page.
-const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto', '/sair-do-guia'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto', '/sair-do-guia', '/entrar-no-guia'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -146,6 +146,7 @@ const AuthenticatedApp = () => {
         <Route path="/contato" element={<Contato />} />
         <Route path="/produto" element={<Produto />} />
         <Route path="/sair-do-guia" element={<SairDoGuia />} />
+        <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
         <Route path="/" element={<LandingOrRedirect />} />
         <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<AppLoginRedirect />} />}>
@@ -206,7 +207,6 @@ const AuthenticatedApp = () => {
             <Route path="/planejamento/:id/dossie" element={<DossieEvento />} />
             <Route path="/planejamento/:id/orcamento" element={<OrcamentoEvento />} />
           </Route>
-          <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
           <Route path="/conta-zr" element={<ContaZR />} />
           <Route path="/comprar-zr" element={<ComprarZR />} />
           <Route element={<CustosRoute />}>

@@ -36,11 +36,17 @@ export function validarReturnToInterno(raw, fallback = "/") {
     !value.startsWith("/") ||
     value.startsWith("//") ||
     value.startsWith("/\\") ||
-    value.includes("\\") ||
-    contemEsquema(value)
+    value.includes("\\")
   ) {
     return fallback;
   }
+  // Valida APENAS o caminho, não a query string. A query pode conter
+  // legitimamente URLs externas (ex.: ?volta=https://zr.nutrimenu.com.br/...)
+  // que são validadas pelo consumidor. Separar aqui evita rejeições falsas
+  // enquanto ainda bloqueia injeção de esquema no próprio path.
+  const queryIndex = value.indexOf("?");
+  const path = queryIndex >= 0 ? value.slice(0, queryIndex) : value;
+  if (contemEsquema(path)) return fallback;
   return value;
 }
 
