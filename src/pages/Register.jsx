@@ -17,11 +17,14 @@ import { mensagemErroCadastro, validarSenhaForte, validarTelefoneBrasileiro } fr
 import { readFreshReturnTo, resolveRegisterReturnTo, safeReturnTo, serializeReturnTo } from "@/lib/authReturnTo";
 import { APP_SITE_URLS } from "@/lib/publicUrls";
 import { capitalizarNome } from "@/lib/capitalizarNome";
+import { navegarAutenticacao } from "@/lib/authNavigation";
+import { traduzirErroAutenticacao } from "@/lib/authErrors";
 
 
 export default function Register() {
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => new URLSearchParams(window.location.search).get("email") || "");
+  const [emailJaCadastrado, setEmailJaCadastrado] = useState(false);
   const [telefone, setTelefone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -76,6 +79,7 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setEmailJaCadastrado(false);
     const nomeLimpo = fullName.trim();
     const emailLimpo = email.trim().toLowerCase();
     const telefoneDigitos = telefone.replace(/\D/g, "");
@@ -108,7 +112,9 @@ export default function Register() {
       setShowOtp(true);
       setResendCooldown(30);
     } catch (err) {
-      setError(mensagemErroCadastro(err, "Não foi possível criar a conta. Tente novamente."));
+      const traduzido = traduzirErroAutenticacao(err);
+      setEmailJaCadastrado(traduzido.tipo === "email_ja_cadastrado");
+      setError(traduzido.mensagem);
     } finally {
       setLoading(false);
     }
@@ -127,7 +133,7 @@ export default function Register() {
         base44.auth.setToken(result.access_token);
       }
     } catch (err) {
-      setError(mensagemErroCadastro(err, "Não foi possível verificar o código. Tente novamente."));
+      setError(traduzirErroAutenticacao(err).mensagem);
       setLoading(false);
       return;
     }
@@ -186,7 +192,7 @@ export default function Register() {
         description: "Verifique seu e-mail para o novo código.",
       });
     } catch (err) {
-      setError(mensagemErroCadastro(err, "Não foi possível reenviar o código. Tente novamente."));
+      setError(traduzirErroAutenticacao(err).mensagem);
     } finally {
       setResending(false);
     }
@@ -226,7 +232,7 @@ export default function Register() {
           </div>
         )}
         <p className="mb-3 text-center text-sm text-muted-foreground">Digite o código de 6 dígitos.</p>
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center mb-3">
           <InputOTP
             maxLength={6}
             value={otpCode}
@@ -244,6 +250,10 @@ export default function Register() {
             </InputOTPGroup>
           </InputOTP>
         </div>
+        <p className="mb-6 text-center text-xs leading-relaxed text-muted-foreground">
+          Enviamos um código para seu e-mail. O assunto chega em inglês, em nome de Nutrimenu.<br />
+          Verifique também a caixa de spam.
+        </p>
         <Button
           className="w-full h-12 font-medium"
           onClick={handleVerify}
@@ -289,7 +299,7 @@ export default function Register() {
       footer={
         <>
           Já tem conta?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">
+          <Link to={navegarAutenticacao("/login", { returnTo, email })} className="text-primary font-medium hover:underline">
             Entrar
           </Link>
         </>
@@ -317,6 +327,13 @@ export default function Register() {
       {error && (
         <div role="alert" aria-live="polite" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
+          {emailJaCadastrado && (
+            <div className="mt-2">
+              <Link to={navegarAutenticacao("/login", { returnTo, email })} className="font-medium underline">
+                Já tem conta? Entrar
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
