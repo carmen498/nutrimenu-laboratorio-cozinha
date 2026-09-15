@@ -1,0 +1,38 @@
+{
+  "name": "LogErroAutenticacao",
+  "type": "object",
+  "properties": {
+    "ocorreu_em": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tela_origem": {
+      "type": "string"
+    },
+    "codigo_mensagem_original": {
+      "type": "string"
+    },
+    "email_digitado": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "ocorreu_em",
+    "tela_origem",
+    "codigo_mensagem_original"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
