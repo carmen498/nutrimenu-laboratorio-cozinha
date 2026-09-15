@@ -236,11 +236,14 @@ for (const segredo of ["123456", "MinhaSenha", "abc123", "eyJabcdefghijk"]) {
 for (const permitido of ["ocorreu_em", "tela_origem", "codigo_mensagem_original", "email_digitado", "ip_hash"]) {
   assert.ok(auditEntity.includes(`"${permitido}"`), `campo permitido ausente no log: ${permitido}`);
 }
-assert.ok(!fs.existsSync("base44/entities/LimiteAuditoriaAutenticacao.jsonc"), "limite não pode usar uma segunda entidade");
-assert.ok(auditFunction.includes('{ ocorreu_em: { $gte: umMinutoAtras } }'), "limites não consultam a própria tabela no último minuto");
-assert.ok(auditFunction.includes("registro.ip_hash === ipHash"), "limite por IP não usa o hash persistido");
-assert.ok(auditConfig.includes('"retencao_logs_autenticacao_30_dias"') && auditConfig.includes('"repeat_unit": "days"'), "retenção de 30 dias não está agendada");
-assert.ok(auditFunction.includes('{ ocorreu_em: { $lt: limite } }'), "rotina de retenção não busca registros vencidos");
+const limitEntity = fs.readFileSync("base44/entities/LimiteAuditoriaAutenticacao.jsonc", "utf8");
+assert.ok(limitEntity.includes('"janela_minuto"') && limitEntity.includes('"ip_hash"'), "entidade de limite não corresponde ao esquema remoto");
+assert.ok(auditFunction.includes("RETENCAO_LOG_DIAS = 30"), "retenção dos logs não está fixada em 30 dias");
+assert.ok(auditFunction.includes("RETENCAO_LIMITE_MINUTOS = 5"), "janelas vencidas não são removidas após poucos minutos");
+assert.ok(auditFunction.includes('{ ocorreu_em: { $lt: limiteLogs } }'), "retenção não busca logs com mais de 30 dias");
+assert.ok(auditFunction.includes('{ janela_minuto: { $lt: limiteJanelas } }'), "retenção não busca janelas de minuto vencidas");
+assert.ok(auditFunction.includes("await limparRetencao(logs, limites, agora)"), "retenção oportunística não é executada");
+assert.ok(auditConfig.includes('"retencao_logs_autenticacao_30_dias"'), "configuração declarativa da agenda está ausente");
 assert.ok(loginPage.includes('tela: "google"'), "retorno do Google não está coberto pela auditoria segura");
 assert.ok(loginPage.includes("safeReturnTo()") && registerPage.includes("safeReturnTo()"), "Google deve receber returnTo já validado");
 
