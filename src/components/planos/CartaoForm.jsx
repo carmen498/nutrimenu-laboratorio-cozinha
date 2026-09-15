@@ -24,7 +24,7 @@ const formatarOpcaoParcelamento = (opcao) => {
     : `${parcela} sem juros`;
 };
 
-export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade, aceiteTermos = false, podePagar = true }) {
+export default function CartaoForm({ plano, addonPlanoId = null, somenteAddon = false, email, onClose, onSuccess, onErroUpgrade = undefined, aceiteTermos = false, podePagar = true }) {
   const { user } = useAuth();
   const planoEhZr = String(plano || "").startsWith("zr_");
   const parcelasFixasLegadas = Array.from({ length: maxParcelasPlano(plano) }, (_, i) => ({
