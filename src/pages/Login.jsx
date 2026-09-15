@@ -8,11 +8,13 @@ import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import { navegarAutenticacao } from "@/lib/authNavigation";
+import { traduzirErroAutenticacao } from "@/lib/authErrors";
 import { APP_SITE_URLS, buildAppLoginUrl, isPublicSiteHost } from "@/lib/publicUrls";
 import { withAuthTimeout } from "@/lib/authTimeout";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => new URLSearchParams(window.location.search).get("email") || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -61,7 +63,7 @@ export default function Login() {
       base44.auth.setToken(response.access_token);
       window.location.href = returnTo;
     } catch (err) {
-      setError(err.message || "Invalid email or password");
+      setError(traduzirErroAutenticacao(err).mensagem);
     } finally {
       setLoading(false);
     }
@@ -90,7 +92,7 @@ export default function Login() {
       footer={
         <>
           Não tem conta?{" "}
-          <Link to={`/register?returnTo=${encodeURIComponent(returnTo)}`} className="text-primary font-medium hover:underline">
+          <Link to={navegarAutenticacao("/register", { returnTo })} className="text-primary font-medium hover:underline">
             Criar conta
           </Link>
         </>
@@ -143,7 +145,7 @@ export default function Login() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Senha</Label>
-            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+            <Link to={navegarAutenticacao("/forgot-password", { returnTo, email })} className="text-xs text-primary hover:underline">
               Esqueceu a senha?
             </Link>
           </div>
