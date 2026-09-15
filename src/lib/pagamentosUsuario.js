@@ -3,7 +3,7 @@
 export const STATUS_PAGAMENTO_LABEL = {
   pending: "Aguardando pagamento",
   approved: "Aprovado",
-  rejected: "Expirado",
+  rejected: "Recusado",
   cancelled: "Cancelado",
   estornado: "Estornado",
 };
