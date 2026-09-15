@@ -251,6 +251,23 @@
         }
       }
     },
+    "conta_teste": {
+      "type": "boolean",
+      "default": false,
+      "description": "Marca administrativa. Pagamentos desta conta n\u00e3o entram nos n\u00fameros de vendas.",
+      "rls": {
+        "read": {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        "write": {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      }
+    },
     "termos_aceitos_em": {
       "type": "string",
       "format": "date-time",
