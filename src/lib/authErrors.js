@@ -27,14 +27,14 @@ export function traduzirErroAutenticacao(error) {
   if (/weak|password.*short|password.*length|too short/.test(raw)) {
     return { tipo: "senha_fraca", mensagem: "Crie uma senha com pelo menos 8 caracteres, incluindo maiúscula, minúscula e número." };
   }
+  if (/user not found|account not found|no user|invalid credentials|invalid email or password|wrong password/.test(raw)) {
+    return { tipo: "credenciais_invalidas", mensagem: "E-mail ou senha incorretos." };
+  }
   if (/invalid.*email|email.*invalid|malformed.*email/.test(raw)) {
     return { tipo: "email_invalido", mensagem: "Informe um endereço de e-mail válido." };
   }
   if (status === 429 || /too many|rate.?limit|attempts|temporarily blocked/.test(raw)) {
     return { tipo: "muitas_tentativas", mensagem: "Muitas tentativas. Aguarde alguns minutos e tente novamente." };
-  }
-  if (/user not found|account not found|no user|invalid credentials|invalid email or password|wrong password/.test(raw)) {
-    return { tipo: "credenciais_invalidas", mensagem: "E-mail ou senha incorretos." };
   }
   if (/token/.test(raw) && /invalid|expired|used/.test(raw)) {
     return { tipo: "link_invalido", mensagem: "Este link está inválido ou expirado. Solicite um novo." };
