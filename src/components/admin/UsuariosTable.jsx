@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight, Copy, FileText } from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, FileText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import {
 import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 
 const ROW_H = "h-[45px]";
-const LEFT_W = 40 + 32 + 180; // checkbox + expand + nome
+const LEFT_W = 40 + 32 + 180 + 28; // checkbox + expand + nome + excluir
 
 // Abreviação dos selos de produto para a coluna "Produto" da tabela.
 // "Laboratório de Cozinha" → "Lab. Cozinha" para não transbordar a célula.
@@ -39,7 +39,7 @@ function CampoNF({ rotulo, valor }) {
   );
 }
 
-export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map(), origemCadastroFiltro = "todos" }) {
+export default function UsuariosTable({ usuarios, selecionados, onToggle, onToggleAll, pagamentosPorUsuario, pagamentosPorUsuarioPeriodo, acessoCustosPorUsuario = new Map(), movimentacaoPorUsuario = new Map(), origemCadastroFiltro = "todos", onExcluirUsuario }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [expandidos, setExpandidos] = useState(new Set());
@@ -97,6 +97,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             </div>
             <div style={{ width: 32 }} />
             <div className="text-left font-medium text-muted-foreground text-sm whitespace-nowrap" style={{ width: 180, minWidth: 180 }}>Nome</div>
+            <div style={{ width: 28 }} />
           </div>
           {/* Linhas */}
           {usuarios.map((u) => {
@@ -121,6 +122,15 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       {u.nome_completo || u.full_name || "—"}
                     </button>
                     {u.conta_teste && <Badge variant="secondary" className="ml-2">Teste</Badge>}
+                  </div>
+                  <div className="flex items-center justify-center" style={{ width: 28 }}>
+                    <button
+                      onClick={() => onExcluirUsuario?.(u)}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      title="Excluir cadastro"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
                 {expandido && <div className="border-b bg-muted/30" style={{ minWidth: LEFT_W }} />}

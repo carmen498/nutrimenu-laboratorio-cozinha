@@ -16,16 +16,7 @@ import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
 import ResumoPagamentosCards from "@/components/admin/ResumoPagamentosCards";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+import ExcluirUsuarioDialog from "@/components/admin/ExcluirUsuarioDialog";
 
 export default function UsuariosTab({ usuarios, isLoading, isError, error, selecionados, setSelecionados, onDispararEmail }) {
   const qc = useQueryClient();
@@ -40,7 +31,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [periodoFiltro, setPeriodoFiltro] = useState(PERIODO_PADRAO);
   const [dataInicioCustom, setDataInicioCustom] = useState("");
   const [dataFimCustom, setDataFimCustom] = useState("");
-  const [confirmExcluirOpen, setConfirmExcluirOpen] = useState(false);
+  const [usuariosParaExcluir, setUsuariosParaExcluir] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
   const [sincronizandoPagamentos, setSincronizandoPagamentos] = useState(false);
   const [exportando, setExportando] = useState(false);
@@ -209,18 +200,45 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
     }
   };
 
+  const handleExcluirUsuario = (usuario) => {
+    setUsuariosParaExcluir([usuario]);
+  };
+
+  const handleExcluirSelecionados = () => {
+    const selecionadosArray = usuarios.filter((u) => selecionados.has(u.id));
+    setUsuariosParaExcluir(selecionadosArray);
+  };
+
   const confirmarExclusao = async () => {
-    const ids = Array.from(selecionados);
-    if (ids.length === 0) return;
+    if (!usuariosParaExcluir || usuariosParaExcluir.length === 0) return;
     setExcluindo(true);
     try {
-      for (const id of ids) {
-        await base44.entities.User.delete(id);
+      const response = await base44.functions.invoke("excluirUsuarioAdmin", {
+        usuario_ids: usuariosParaExcluir.map((u) => u.id),
+      });
+      const resultados = response.data?.resultados || [];
+      const sucessos = resultados.filter((r) => r.sucesso);
+      const erros = resultados.filter((r) => r.erro);
+
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-usuarios"] }),
+        qc.invalidateQueries({ queryKey: ["admin-pagamentos"] }),
+        qc.invalidateQueries({ queryKey: ["admin-acessos-laboratorio-custos"] }),
+        qc.invalidateQueries({ queryKey: ["admin-movimentacao-laboratorio"] }),
+      ]);
+
+      if (erros.length > 0) {
+        toast({
+          title: `${erros.length} exclusão(ões) falhou(aram)`,
+          description: erros.map((e) => `${e.nome || e.userId}: ${e.erro}`).join("; "),
+          variant: "destructive",
+        });
       }
-      await qc.invalidateQueries({ queryKey: ["admin-usuarios"] });
+      if (sucessos.length > 0) {
+        toast({ title: `${sucessos.length} usuário(s) excluído(s) permanentemente` });
+      }
       setSelecionados(new Set());
-      setConfirmExcluirOpen(false);
-      toast({ title: "Usuário(s) excluído(s) permanentemente" });
+      setUsuariosParaExcluir(null);
     } catch (err) {
       toast({ title: "Erro ao excluir usuários", description: err.message, variant: "destructive" });
     } finally {
@@ -270,7 +288,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         onDispararWhatsapp={handleDispararWhatsapp}
         onAtivar={handleAtivar}
         onDesativar={handleDesativar}
-        onExcluir={() => setConfirmExcluirOpen(true)}
+        onExcluir={handleExcluirSelecionados}
       />
 
       {isLoading || carregandoPagamentos || carregandoAcessosCustos || carregandoMovimentacoes ? (
@@ -290,30 +308,19 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
           acessoCustosPorUsuario={acessoCustosPorUsuario}
           movimentacaoPorUsuario={movimentacaoPorUsuario}
           origemCadastroFiltro={origemCadastroFiltro}
+          onExcluirUsuario={handleExcluirUsuario}
         />
       )}
 
-      <AlertDialog open={confirmExcluirOpen} onOpenChange={setConfirmExcluirOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O cadastro de {quantidadeSelecionada} usuário(s) será removido
-              permanentemente da plataforma, incluindo dados de conta e histórico de acesso.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={excluindo}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmarExclusao}
-              disabled={excluindo}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {excluindo ? "Excluindo..." : "Excluir definitivamente"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ExcluirUsuarioDialog
+        open={!!usuariosParaExcluir}
+        onOpenChange={(open) => { if (!open) setUsuariosParaExcluir(null); }}
+        usuarios={usuariosParaExcluir || []}
+        pagamentosPorUsuario={pagamentosPorUsuario}
+        movimentacaoPorUsuario={movimentacaoPorUsuario}
+        onConfirm={confirmarExclusao}
+        excluindo={excluindo}
+      />
     </div>
   );
 }

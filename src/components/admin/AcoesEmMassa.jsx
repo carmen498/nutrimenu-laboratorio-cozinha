@@ -35,7 +35,7 @@ export default function AcoesEmMassa({ quantidade, onDispararEmail, onDispararWh
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onExcluir} className="text-destructive focus:text-destructive">
-            <Trash2 className="w-4 h-4 mr-2" /> Excluir
+            <Trash2 className="w-4 h-4 mr-2" /> Excluir selecionados
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
