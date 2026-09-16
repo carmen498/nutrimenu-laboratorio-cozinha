@@ -16,9 +16,7 @@ const PRODUTO_LINK: Record<string, string> = {
   laboratorio_cozinha: "https://app.laboratoriodecozinha.com.br",
   cozinha_mais_custos: "https://app.laboratoriodecozinha.com.br",
   guia_zr: "https://zr.nutrimenu.com.br/entrar?destino=%2Fminha-conta",
-  // TODO: URL do Laboratório de Custos pendente de confirmação — usando URL do
-  // Laboratório de Cozinha como placeholder temporário.
-  laboratorio_custos: "https://app.laboratoriodecozinha.com.br",
+  laboratorio_custos: "https://app.laboratoriodecozinha.com.br/custos",
 };
 
 const FALLBACK = {

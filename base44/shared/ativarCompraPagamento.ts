@@ -5,6 +5,7 @@ import { renderTemplateEmail } from "./templateEmail.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
 import { ativarGuiaZR, ofertaZR } from "./guiaTecnicoZR.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
+import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
 
 const MODULO = "laboratorio_custos";
 
@@ -88,11 +89,51 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
   }
 }
 
+async function enviarEmailAprovadoZR(base44: any, pagamento: any): Promise<void> {
+  const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+  if (!usuario?.email) return;
+
+  const nome = usuario.nome_completo || usuario.full_name || "";
+  const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
+
+  // Busca o acesso ZR concedido por este pagamento para extrair a data de expiração.
+  const oferta = ofertaZR(pagamento.plano);
+  const acessos = await base44.asServiceRole.entities.AcessoGuiaTecnicoZR.filter({
+    user_id: pagamento.usuario_id,
+    faixa: oferta?.faixa,
+  });
+  const acesso = (acessos || []).find((a: any) => a.referencia_pagamento_id === pagamento.id);
+  const dataExpiracaoBR = acesso?.fim_em
+    ? new Date(acesso.fim_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    : "";
+  const nomePlano = oferta?.nome || pagamento.plano;
+
+  const defaultAssunto = "Pagamento aprovado";
+  const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} do <strong>${produto}</strong> já está ativo${dataExpiracaoBR ? ` e válido até ${dataExpiracaoBR}` : ""}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
+
+  const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo, {
+    plano: nomePlano,
+    data_expiracao: dataExpiracaoBR,
+    produto,
+    link_produto,
+  });
+
+  if (ativo) {
+    const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
+    const htmlComPrazo = `${html}<p><strong>Direito de arrependimento:</strong> ${prazoLegal}.</p>`;
+    const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html: htmlComPrazo, produto: pagamento.produto_compra });
+    await registrarLogEmail(base44, { usuarioId: usuario.id, email: usuario.email, tipo: "pagamento_aprovado", resultado });
+  } else {
+    console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado (ZR).');
+  }
+}
+
 export async function ativarCompraPagamento(base44: any, pagamento: any): Promise<void> {
   const tipo = pagamento?.produto_compra || "laboratorio_cozinha";
   // Faixa do Guia Técnico ZR: produto independente, não mexe na assinatura da plataforma.
   if (tipo === "guia_zr" || ofertaZR(pagamento?.plano)) {
     await ativarGuiaZR(base44, pagamento);
+    await enviarEmailAprovadoZR(base44, pagamento);
     return;
   }
   if (["laboratorio_cozinha", "cozinha_mais_custos"].includes(tipo)) {
