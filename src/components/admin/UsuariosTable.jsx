@@ -21,6 +21,14 @@ import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 const ROW_H = "h-[45px]";
 const LEFT_W = 40 + 32 + 180; // checkbox + expand + nome
 
+// Abreviação dos selos de produto para a coluna "Produto" da tabela.
+// "Laboratório de Cozinha" → "Lab. Cozinha" para não transbordar a célula.
+const PRODUTO_BADGE_LABEL = {
+  guia_zr: "Guia ZR",
+  laboratorio_cozinha: "Lab. Cozinha",
+  nao_informado: "Não informado",
+};
+
 function CampoNF({ rotulo, valor }) {
   if (valor === undefined || valor === null || valor === "") return null;
   return (
@@ -127,7 +135,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             {/* Cabeçalho */}
             <div className={`flex items-center ${ROW_H} border-b`}>
               {rightHeaders.map((h, i) => (
-                <div key={i} className="px-2 text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0" style={{ width: h === "Último pagamento" ? 160 : h === "Status" ? 100 : h === "Contato" ? 120 : 90 }}>
+                <div key={i} className="px-2 text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0" style={{ width: h === "Último pagamento" ? 160 : h === "Produto" ? 120 : h === "Status" ? 100 : h === "Contato" ? 120 : 90 }}>
                   {h}
                 </div>
               ))}
@@ -155,7 +163,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 <span className="text-sm">{ultimoPagamento ? (formatarData(ultimoPagamento.created_date) || "—") : "—"}</span>,
                 ultimoPagamento ? <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>{STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}</Badge> : <span className="text-sm">—</span>,
                 <span className="text-sm">{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</span>,
-                <Badge variant="outline">{ORIGEM_CADASTRO_LABEL[u.origem_cadastro] || "Não informado"}</Badge>,
+                <Badge variant="outline" className="whitespace-nowrap">{PRODUTO_BADGE_LABEL[u.origem_cadastro] || "Não informado"}</Badge>,
                 <Badge variant="outline">{statusCustos}</Badge>,
                 ultimoPagamento ? (
                   <span className="text-sm">
@@ -173,7 +181,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 <span className="text-sm text-center block">{movimentacao.eventos}</span>,
                 <span className="text-sm">{labelPlano(u.plano_atual)}</span>,
                 <span className="text-sm">{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</span>,
-                <Badge variant="outline">{ORIGEM_CADASTRO_LABEL[u.origem_cadastro] || "Não informado"}</Badge>,
+                <Badge variant="outline" className="whitespace-nowrap">{PRODUTO_BADGE_LABEL[u.origem_cadastro] || "Não informado"}</Badge>,
                 <Badge variant="outline">{statusCustos}</Badge>,
                 ultimoPagamento ? (
                   <span className="text-sm">
@@ -191,7 +199,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 <Fragment key={u.id}>
                   <div className={`flex items-center ${ROW_H} border-b hover:bg-muted/50 transition-colors`}>
                     {cells.map((cell, i) => (
-                      <div key={i} className="px-2 whitespace-nowrap flex-shrink-0" style={{ width: rightHeaders[i] === "Último pagamento" ? 160 : rightHeaders[i] === "Status" ? 100 : rightHeaders[i] === "Contato" ? 120 : 90 }}>
+                      <div key={i} className="px-2 whitespace-nowrap flex-shrink-0" style={{ width: rightHeaders[i] === "Último pagamento" ? 160 : rightHeaders[i] === "Produto" ? 120 : rightHeaders[i] === "Status" ? 100 : rightHeaders[i] === "Contato" ? 120 : 90 }}>
                         {cell}
                       </div>
                     ))}
