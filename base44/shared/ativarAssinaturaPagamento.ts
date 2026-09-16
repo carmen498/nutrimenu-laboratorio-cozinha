@@ -17,6 +17,7 @@ import { calcularExpiracaoInclusiva } from "./datasAssinatura.ts";
 import { registrarLogEmail } from "./governancaLogs.ts";
 import { proximoCicloRenovacao } from "./regraRenovacao.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
+import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365, renovacao: 365 };
 const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual", renovacao: "Renovação anual" };
@@ -84,8 +85,9 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
 
   if (usuario.email) {
     const nome = usuario.nome_completo || usuario.full_name || "";
+    const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
     const defaultAssunto = "Pagamento aprovado";
-    const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} já está ativo e válido até {{data_expiracao}}.</p><p><a href="https://laboratoriodecozinha.com.br/login" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
+    const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} do <strong>${produto}</strong> já está ativo e válido até {{data_expiracao}}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
 
     const [ano, mes, dia] = dataExpiracaoFormatada.split("-");
     const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
@@ -94,6 +96,8 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
     const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo, {
       plano: nomePlano,
       data_expiracao: dataExpiracaoBR,
+      produto,
+      link_produto,
     });
 
     if (ativo) {

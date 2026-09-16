@@ -24,6 +24,7 @@ import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
 import { registrarLogEmail, resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from "../../shared/statusMercadoPago.ts";
+import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
 
 // Versão persistida apenas como metadado técnico; o corpo bruto da notificação
 // não é armazenado por política de minimização de dados.
@@ -235,10 +236,11 @@ export default async function(req: Request): Promise<Response> {
       if (tipoEmail) {
         if (usuario?.email) {
           const nome = usuario.nome_completo || usuario.full_name || "";
+          const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
           const DEFAULTS: Record<string, { assunto: string; corpo: string }> = {
             pagamento_recusado: {
               assunto: "Não conseguimos aprovar seu pagamento",
-              corpo: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao Laboratório de Cozinha.</p>`,
+              corpo: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao ${produto}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Tentar novamente</a></p>`,
             },
             pagamento_estornado: {
               assunto: "Seu pagamento foi estornado",
@@ -247,7 +249,10 @@ export default async function(req: Request): Promise<Response> {
           };
           const { assunto: defaultAssunto, corpo: defaultCorpo } = DEFAULTS[tipoEmail];
 
-          const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
+          const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo, {
+            produto,
+            link_produto,
+          });
 
           if (ativo) {
             const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });

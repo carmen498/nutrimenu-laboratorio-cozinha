@@ -8,9 +8,10 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
+import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
 
 const ASSUNTO_PADRAO = "Podemos ajudar com seu pagamento?";
-const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento no Laboratório de Cozinha ainda não foi confirmado.</p>
+const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento ainda não foi confirmado.</p>
 <p>Podemos ajudar em algo? Se preferir, você pode gerar um novo pagamento na aba Planos do app.</p>`;
 
 export default async function(req: Request): Promise<Response> {
@@ -41,7 +42,11 @@ export default async function(req: Request): Promise<Response> {
         const nome = usuario.nome_completo || usuario.full_name || "";
 
         if (usuario.email) {
-          const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_pendente_lembrete", nome, ASSUNTO_PADRAO, CORPO_PADRAO);
+          const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
+          const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_pendente_lembrete", nome, ASSUNTO_PADRAO, CORPO_PADRAO, {
+            produto,
+            link_produto,
+          });
 
           if (ativo) {
             const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });

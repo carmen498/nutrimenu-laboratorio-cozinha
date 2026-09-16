@@ -9,10 +9,11 @@ import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/ace
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
+import { resolverProdutoPorOrigem } from "../../shared/resolverProdutoEmail.ts";
 
 const ASSUNTO_PADRAO = "Seu plano está perto de vencer";
 const CORPO_PADRAO = `<p>Olá {{nome}}, seu plano {{plano}} vence em {{dias_restantes}} dias, no dia {{data_expiracao}}.</p>
-<p>Lembrando que não há renovação automática — para continuar usando o Laboratório de Cozinha sem interrupção, é só renovar manualmente quando quiser.</p>`;
+<p>Lembrando que não há renovação automática — para continuar com acesso sem interrupção, é só renovar manualmente quando quiser.</p>`;
 
 const NOME_PLANO: Record<string, string> = {
   mensal: "30 dias",
@@ -53,6 +54,7 @@ export default async function(req: Request): Promise<Response> {
       if (usuario.email) {
         const [ano, mes, dia] = (usuario.data_expiracao || dataAlvo).split("-");
         const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
+        const { produto, link_produto } = resolverProdutoPorOrigem(usuario.origem_cadastro);
         const { assunto, html, ativo } = await renderTemplateEmail(
           base44,
           "plano_vencendo",
@@ -63,6 +65,8 @@ export default async function(req: Request): Promise<Response> {
             plano: NOME_PLANO[usuario.plano_atual] || usuario.plano_atual || "contratado",
             dias_restantes: 5,
             data_expiracao: dataExpiracaoBR,
+            produto,
+            link_produto,
           },
         );
 
