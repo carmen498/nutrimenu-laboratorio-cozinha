@@ -17,6 +17,7 @@ import UsuariosTable from "@/components/admin/UsuariosTable";
 import ResumoPagamentosCards from "@/components/admin/ResumoPagamentosCards";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
 import ExcluirUsuarioDialog from "@/components/admin/ExcluirUsuarioDialog";
+import ConcederAcessoGuiaZRDialog from "@/components/admin/ConcederAcessoGuiaZRDialog";
 
 export default function UsuariosTab({ usuarios, isLoading, isError, error, selecionados, setSelecionados, onDispararEmail }) {
   const qc = useQueryClient();
@@ -33,6 +34,7 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
   const [dataFimCustom, setDataFimCustom] = useState("");
   const [usuariosParaExcluir, setUsuariosParaExcluir] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
+  const [concederAcessoZROpen, setConcederAcessoZROpen] = useState(false);
   const [sincronizandoPagamentos, setSincronizandoPagamentos] = useState(false);
   const [exportando, setExportando] = useState(false);
   const [mostrarTestes, setMostrarTestes] = useState(false);
@@ -280,6 +282,9 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
           <RefreshCw className={`w-4 h-4 ${sincronizandoPagamentos ? "animate-spin" : ""}`} />
           {sincronizandoPagamentos ? "Sincronizando..." : "Sincronizar pagamentos"}
         </Button>
+        <Button variant="outline" size="sm" onClick={() => setConcederAcessoZROpen(true)}>
+          Conceder acesso ZR
+        </Button>
       </div>
 
       <AcoesEmMassa
@@ -320,6 +325,12 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         movimentacaoPorUsuario={movimentacaoPorUsuario}
         onConfirm={confirmarExclusao}
         excluindo={excluindo}
+      />
+
+      <ConcederAcessoGuiaZRDialog
+        open={concederAcessoZROpen}
+        onOpenChange={setConcederAcessoZROpen}
+        usuarios={usuarios}
       />
     </div>
   );
