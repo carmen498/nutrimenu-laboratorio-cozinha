@@ -21,6 +21,7 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [manterConectado, setManterConectado] = useState(true);
   const emailInputRef = useRef(null);
   // Captured once on mount, before the URL is cleaned up below — used for the
   // post-login redirect instead of re-reading window.location later.
@@ -55,13 +56,29 @@ export default function Login() {
     setEmail(e.target.value);
   };
 
+  const registrarPreferenciaDeSessao = (persistir) => {
+    sessionStorage.setItem("base44_remember_session", persistir ? "true" : "false");
+  };
+
+  const aplicarPersistenciaDoToken = (token) => {
+    base44.auth.setToken(token);
+    if (manterConectado) {
+      localStorage.setItem("base44_access_token", token);
+      sessionStorage.removeItem("base44_access_token");
+    } else {
+      sessionStorage.setItem("base44_access_token", token);
+      localStorage.removeItem("base44_access_token");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    registrarPreferenciaDeSessao(manterConectado);
     try {
       const response = await withAuthTimeout(base44.auth.loginViaEmailPassword(email, password));
-      base44.auth.setToken(response.access_token);
+      aplicarPersistenciaDoToken(response.access_token);
       window.location.href = returnTo;
     } catch (err) {
       const traduzido = traduzirErroAutenticacao(err);
@@ -76,6 +93,7 @@ export default function Login() {
     if (googleLoading) return;
     setError("");
     setGoogleLoading(true);
+    registrarPreferenciaDeSessao(manterConectado);
     try {
       const destinoOAuth = new URL(returnTo, window.location.origin).toString();
       await withAuthTimeout(base44.auth.loginWithProvider("google", destinoOAuth));
@@ -176,6 +194,18 @@ export default function Login() {
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            id="manter-conectado"
+            type="checkbox"
+            checked={manterConectado}
+            onChange={(e) => setManterConectado(e.target.checked)}
+            className="h-4 w-4 rounded border-border accent-primary"
+          />
+          <Label htmlFor="manter-conectado" className="text-sm font-normal cursor-pointer">
+            Manter-me conectado neste dispositivo
+          </Label>
         </div>
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
