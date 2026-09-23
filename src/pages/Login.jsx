@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
-import { safeReturnTo } from "@/lib/authReturnTo";
+import { readFreshReturnTo, safeReturnTo, validarReturnToInterno } from "@/lib/authReturnTo";
 import { navegarAutenticacao } from "@/lib/authNavigation";
 import { traduzirErroAutenticacao } from "@/lib/authErrors";
 import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
@@ -31,6 +31,15 @@ export default function Login() {
   // /app como destino pós-login padrão.
   const [returnTo] = useState(() => {
     const dest = safeReturnTo();
+    const retornoGuia = readFreshReturnTo(
+      sessionStorage.getItem("base44_pending_guia_bridge")
+    );
+    const retornoGuiaSeguro = validarReturnToInterno(retornoGuia, "/");
+
+    // A ponte do Guia tem precedência sobre o destino padrão /app. Assim, mesmo
+    // que o SDK remova returnTo durante login/cadastro/Google, a sessão termina
+    // novamente em /entrar-no-guia e de lá retorna ao produto ZR.
+    if (retornoGuiaSeguro !== "/") return retornoGuiaSeguro;
     return dest === "/" ? new URL(APP_SITE_URLS.appHome).pathname : dest;
   });
 
