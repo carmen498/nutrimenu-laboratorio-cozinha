@@ -2,6 +2,9 @@ import React, { useEffect } from "react";
 import { appParams } from "@/lib/app-params";
 import { marcarOrigemCadastro, ORIGEM_GUIA_ZR } from "@/lib/origemCadastro";
 import { validarVolta } from "@/lib/voltaGuiaZR";
+import { serializeReturnTo } from "@/lib/authReturnTo";
+
+const CHAVE_RETORNO_GUIA = "base44_pending_guia_bridge";
 
 export default function EntrarNoGuia() {
   useEffect(() => {
@@ -13,17 +16,22 @@ export default function EntrarNoGuia() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const endereco = validarVolta(urlParams.get("volta"));
-    const token = (typeof localStorage !== "undefined" && localStorage.getItem("base44_access_token")) || appParams.token;
+    const token =
+      (typeof localStorage !== "undefined" && localStorage.getItem("base44_access_token")) ||
+      (typeof sessionStorage !== "undefined" && sessionStorage.getItem("base44_access_token")) ||
+      appParams.token;
 
     if (!token) {
-      // Visitante não autenticado: manda para o login preservando o caminho
-      // completo (incluindo ?volta=...) como returnTo. Após login/cadastro,
-      // o usuário volta aqui autenticado e é redirecionado para o Guia.
+      // Guarda uma segunda via do retorno. Alguns saltos do SDK/OAuth limpam a
+      // query do login; sem esta chave, o fallback seria /app e a pessoa cairia
+      // no Laboratório de Cozinha em vez de voltar ao Guia.
       const currentPath = window.location.pathname + window.location.search;
+      sessionStorage.setItem(CHAVE_RETORNO_GUIA, serializeReturnTo(currentPath));
       window.location.replace(`/login?returnTo=${encodeURIComponent(currentPath)}`);
       return;
     }
 
+    sessionStorage.removeItem(CHAVE_RETORNO_GUIA);
     // Autenticado: redireciona para o Guia com o token.
     window.location.replace(`${endereco}#access_token=${encodeURIComponent(token)}`);
   }, []);
