@@ -18,6 +18,7 @@ import { registrarLogEmail } from "./governancaLogs.ts";
 import { proximoCicloRenovacao } from "./regraRenovacao.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
+import { registrarLogSupressao } from "./governancaLogs.ts";
 
 const DIAS_PLANO: Record<string, number> = { diario: 1, mensal: 30, anual: 365, renovacao: 365 };
 const NOME_PLANO: Record<string, string> = { diario: "Diário", mensal: "30 dias", anual: "Anual", renovacao: "Renovação anual" };
@@ -39,7 +40,7 @@ async function enviarBoasVindasSeNecessario(base44: any, usuario: any): Promise<
   );
   if (!ativo) return;
 
-  const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento?.produto_compra });
+  const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
   await registrarLogEmail(base44, {
     usuarioId: usuario.id,
     email: usuario.email,
@@ -85,33 +86,44 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
 
   if (usuario.email) {
     const nome = usuario.nome_completo || usuario.full_name || "";
-    const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
-    const defaultAssunto = "Pagamento aprovado";
-    const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} do <strong>${produto}</strong> já está ativo e válido até {{data_expiracao}}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
-
-    const [ano, mes, dia] = dataExpiracaoFormatada.split("-");
-    const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
-    const nomePlano = NOME_PLANO[pagamento.plano] || pagamento.plano;
-
-    const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo, {
-      plano: nomePlano,
-      data_expiracao: dataExpiracaoBR,
-      produto,
-      link_produto,
-    });
-
-    if (ativo) {
-      const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
-      const htmlComPrazo = `${html}<p><strong>Direito de arrependimento:</strong> ${prazoLegal}.</p>`;
-      const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html: htmlComPrazo, produto: pagamento.produto_compra });
-      await registrarLogEmail(base44, {
+    const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
+    if (!resolvido) {
+      await registrarLogSupressao(base44, {
         usuarioId: usuario.id,
         email: usuario.email,
         tipo: "pagamento_aprovado",
-        resultado,
+        motivo: `produto_compra ausente ou não mapeado: "${pagamento.produto_compra || "(vazio)"}" — e-mail de compra aprovada não enviado.`,
+        pagamentoId: pagamento.id,
+        origem: "ativarPlanoEEnviarEmail",
       });
     } else {
-      console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
+      const { produto, link_produto } = resolvido;
+      const defaultAssunto = "Pagamento aprovado";
+      const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} do <strong>{{produto}}</strong> já está ativo e válido até {{data_expiracao}}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
+
+      const [ano, mes, dia] = dataExpiracaoFormatada.split("-");
+      const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
+      const nomePlano = NOME_PLANO[pagamento.plano] || pagamento.plano;
+
+      const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo, {
+        plano: nomePlano,
+        data_expiracao: dataExpiracaoBR,
+        produto,
+      });
+
+      if (ativo) {
+        const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
+        const htmlComPrazo = `${html}<p><strong>Direito de arrependimento:</strong> ${prazoLegal}.</p>`;
+        const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html: htmlComPrazo, produto: pagamento.produto_compra });
+        await registrarLogEmail(base44, {
+          usuarioId: usuario.id,
+          email: usuario.email,
+          tipo: "pagamento_aprovado",
+          resultado,
+        });
+      } else {
+        console.log('Template "pagamento_aprovado" está em rascunho — e-mail não enviado.');
+      }
     }
   }
 

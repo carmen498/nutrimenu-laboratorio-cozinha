@@ -42,6 +42,7 @@ export async function registrarLogEmail(
     pedidoDesistenciaId?: string | null;
     eventoChave?: string | null;
     origem?: string | null;
+    detalhe?: string | null;
   },
 ): Promise<void> {
   const status = params.resultado?.ok ? "enviado" : "falhou";
@@ -57,7 +58,36 @@ export async function registrarLogEmail(
     status,
     detalhe_erro: status === "falhou"
       ? resumirErroOperacional(params.resultado?.detalhe_completo || params.resultado?.error)
-      : undefined,
+      : params.detalhe || undefined,
+  });
+}
+
+// Registra que um e-mail transacional foi suprimido (n\u00e3o enviado) ou enviado
+// com reda\u00e7\u00e3o neutra por falta de produto_compra. Aparece no SaudeOperacionalTab.
+export async function registrarLogSupressao(
+  base44: any,
+  params: {
+    usuarioId?: string | null;
+    email?: string | null;
+    tipo: string;
+    motivo: string;
+    pagamentoId?: string | null;
+    pedidoDesistenciaId?: string | null;
+    eventoChave?: string | null;
+    origem?: string | null;
+  },
+): Promise<void> {
+  await base44.asServiceRole.entities.LogEmail.create({
+    usuario_id: params.usuarioId || "",
+    pagamento_id: params.pagamentoId || "",
+    pedido_desistencia_id: params.pedidoDesistenciaId || "",
+    evento_chave: params.eventoChave || "",
+    origem: params.origem || "",
+    destinatario_email: mascararEmail(params.email || ""),
+    tipo: params.tipo,
+    enviado_em: new Date().toISOString(),
+    status: "suprimido",
+    detalhe_erro: params.motivo,
   });
 }
 

@@ -95,6 +95,7 @@ async function enviarEmailEventoUmaVez(base44: any, params: {
     produto: pagamento.produto_compra,
     idempotencyKey: eventoChave,
   });
+  const produtoVazio = !pagamento.produto_compra;
   await registrarLogEmail(base44, {
     usuarioId: usuario.id,
     email: usuario.email,
@@ -104,6 +105,7 @@ async function enviarEmailEventoUmaVez(base44: any, params: {
     pedidoDesistenciaId: pedido?.id,
     eventoChave,
     origem,
+    detalhe: produtoVazio ? `produto_compra ausente — e-mail enviado com redação neutra (estorno/contestado/encerrado).` : null,
   });
   return resultado;
 }

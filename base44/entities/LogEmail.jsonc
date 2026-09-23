@@ -45,27 +45,29 @@
         "onboarding_dia5",
         "onboarding_resumo_oferta",
         "reativacao_d3",
-        "reativacao_d7"
+        "reativacao_d7",
+        "custos_pagamento_aprovado"
       ],
       "description": "Tipo do e-mail transacional disparado"
     },
     "enviado_em": {
       "type": "string",
       "format": "date-time",
-      "description": "Data/hora do envio"
+      "description": "Data/hora do envio ou da supress\u00e3o"
     },
     "status": {
       "type": "string",
       "enum": [
         "enviado",
-        "falhou"
+        "falhou",
+        "suprimido"
       ],
       "default": "enviado",
-      "description": "Status do envio"
+      "description": "Status do envio. 'suprimido' = e-mail n\u00e3o enviado por motivo t\u00e9cnico (ex.: produto_compra ausente em gatilho de compra aprovada) ou enviado com reda\u00e7\u00e3o neutra por falta de produto (recusa/estorno/contesta\u00e7\u00e3o)."
     },
     "detalhe_erro": {
       "type": "string",
-      "description": "Resumo sanitizado do erro de envio, sem payload bruto, token, e-mail ou telefone"
+      "description": "Resumo sanitizado do erro de envio ou do motivo da supress\u00e3o, sem payload bruto, token, e-mail ou telefone"
     }
   },
   "required": [

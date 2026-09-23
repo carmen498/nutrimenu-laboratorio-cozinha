@@ -9,6 +9,7 @@ import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { registrarLogEmail } from "../../shared/governancaLogs.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
+import { registrarLogSupressao } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Podemos ajudar com seu pagamento?";
 const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento ainda não foi confirmado.</p>
@@ -42,23 +43,35 @@ export default async function(req: Request): Promise<Response> {
         const nome = usuario.nome_completo || usuario.full_name || "";
 
         if (usuario.email) {
-          const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
-          const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_pendente_lembrete", nome, ASSUNTO_PADRAO, CORPO_PADRAO, {
-            produto,
-            link_produto,
-          });
-
-          if (ativo) {
-            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
-            await registrarLogEmail(base44, {
+          const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
+          if (!resolvido) {
+            await registrarLogSupressao(base44, {
               usuarioId: usuario.id,
               email: usuario.email,
               tipo: "pagamento_pendente_lembrete",
-              resultado,
+              motivo: `produto_compra ausente ou não mapeado: "${pagamento.produto_compra || "(vazio)"}" — lembrete de pendência não enviado.`,
+              pagamentoId: pagamento.id,
+              origem: "enviarLembretePendencia",
             });
-            if (resultado.ok) enviados++;
           } else {
-            console.log('Template "pagamento_pendente_lembrete" está em rascunho — e-mail não enviado.');
+            const { produto, link_produto } = resolvido;
+            const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_pendente_lembrete", nome, ASSUNTO_PADRAO, CORPO_PADRAO, {
+              produto,
+              link_produto,
+            });
+
+            if (ativo) {
+              const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
+              await registrarLogEmail(base44, {
+                usuarioId: usuario.id,
+                email: usuario.email,
+                tipo: "pagamento_pendente_lembrete",
+                resultado,
+              });
+              if (resultado.ok) enviados++;
+            } else {
+              console.log('Template "pagamento_pendente_lembrete" está em rascunho — e-mail não enviado.');
+            }
           }
         }
 

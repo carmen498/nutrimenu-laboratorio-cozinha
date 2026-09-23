@@ -22,7 +22,7 @@ import {
 import { notificarAdminEventoWebhook } from "../../shared/notificarAdminWebhook.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
-import { registrarLogEmail, resumirErroOperacional } from "../../shared/governancaLogs.ts";
+import { registrarLogEmail, registrarLogSupressao, resumirErroOperacional } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
 
@@ -236,34 +236,44 @@ export default async function(req: Request): Promise<Response> {
       if (tipoEmail) {
         if (usuario?.email) {
           const nome = usuario.nome_completo || usuario.full_name || "";
-          const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
-          const DEFAULTS: Record<string, { assunto: string; corpo: string }> = {
-            pagamento_recusado: {
-              assunto: "Não conseguimos aprovar seu pagamento",
-              corpo: `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao ${produto}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Tentar novamente</a></p>`,
-            },
-            pagamento_estornado: {
-              assunto: "Seu pagamento foi estornado",
-              corpo: `<p>Olá {{nome}}, informamos que o valor do seu pagamento foi estornado.</p><p>O reembolso será processado pelo Mercado Pago e deve aparecer no seu extrato em alguns dias, conforme o prazo do seu banco ou operadora de cartão.</p><p>Se tiver dúvidas, é só nos chamar.</p>`,
-            },
-          };
-          const { assunto: defaultAssunto, corpo: defaultCorpo } = DEFAULTS[tipoEmail];
-
-          const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo, {
-            produto,
-            link_produto,
-          });
-
-          if (ativo) {
-            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
-            await registrarLogEmail(base44, {
-              usuarioId: usuario.id,
-              email: usuario.email,
-              tipo: tipoEmail,
-              resultado,
-            });
+          const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
+          if (!resolvido) {
+            // Emenda 1: recusa nunca é calada. Envia com redação neutra (sem nomear produto).
+            const defaultAssunto = "Não conseguimos aprovar seu pagamento";
+            const defaultCorpo = `<p>Olá {{nome}}, não conseguimos aprovar o seu pagamento.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso.</p>`;
+            const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo);
+            if (ativo) {
+              const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+              await registrarLogEmail(base44, {
+                usuarioId: usuario.id,
+                email: usuario.email,
+                tipo: tipoEmail,
+                resultado,
+                detalhe: `produto_compra ausente ou não mapeado: "${pagamento.produto_compra || "(vazio)"}" — e-mail enviado com redação neutra.`,
+              });
+            } else {
+              console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
+            }
           } else {
-            console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
+            const { produto, link_produto } = resolvido;
+            const defaultAssunto = "Não conseguimos aprovar seu pagamento";
+            const defaultCorpo = `<p>Olá {{nome}}, não conseguimos aprovar o pagamento da sua assinatura.</p><p>Verifique os dados do cartão ou tente outra forma de pagamento para continuar com acesso ao {{produto}}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Tentar novamente</a></p>`;
+
+            const { assunto, html, ativo } = await renderTemplateEmail(base44, tipoEmail, nome, defaultAssunto, defaultCorpo, {
+              produto,
+            });
+
+            if (ativo) {
+              const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html, produto: pagamento.produto_compra });
+              await registrarLogEmail(base44, {
+                usuarioId: usuario.id,
+                email: usuario.email,
+                tipo: tipoEmail,
+                resultado,
+              });
+            } else {
+              console.log(`Template "${tipoEmail}" está em rascunho — e-mail não enviado.`);
+            }
           }
         }
 

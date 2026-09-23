@@ -6,6 +6,7 @@ import { registrarLogEmail } from "./governancaLogs.ts";
 import { ativarGuiaZR, ofertaZR } from "./guiaTecnicoZR.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
+import { registrarLogSupressao } from "./governancaLogs.ts";
 
 const MODULO = "laboratorio_custos";
 
@@ -94,7 +95,19 @@ async function enviarEmailAprovadoZR(base44: any, pagamento: any): Promise<void>
   if (!usuario?.email) return;
 
   const nome = usuario.nome_completo || usuario.full_name || "";
-  const { produto, link_produto } = resolverProdutoPorCompra(pagamento.produto_compra);
+  const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
+  if (!resolvido) {
+    await registrarLogSupressao(base44, {
+      usuarioId: usuario.id,
+      email: usuario.email,
+      tipo: "pagamento_aprovado",
+      motivo: `produto_compra ausente ou não mapeado: "${pagamento.produto_compra || "(vazio)"}" — e-mail de compra aprovada (ZR) não enviado.`,
+      pagamentoId: pagamento.id,
+      origem: "enviarEmailAprovadoZR",
+    });
+    return;
+  }
+  const { produto, link_produto } = resolvido;
 
   // Busca o acesso ZR concedido por este pagamento para extrair a data de expiração.
   const oferta = ofertaZR(pagamento.plano);
@@ -109,13 +122,12 @@ async function enviarEmailAprovadoZR(base44: any, pagamento: any): Promise<void>
   const nomePlano = oferta?.nome || pagamento.plano;
 
   const defaultAssunto = "Pagamento aprovado";
-  const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} do <strong>${produto}</strong> já está ativo${dataExpiracaoBR ? ` e válido até ${dataExpiracaoBR}` : ""}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
+  const defaultCorpo = `<p>Olá {{nome}}, seu pagamento foi aprovado com sucesso!</p><p>Seu plano {{plano}} do <strong>{{produto}}</strong> já está ativo${dataExpiracaoBR ? ` e válido até ${dataExpiracaoBR}` : ""}.</p><p><a href="${link_produto}" style="background-color:#5c7a5f; color:#ffffff; padding:10px 20px; border-radius:6px; text-decoration:none; display:inline-block;">Acessar minha conta</a></p>`;
 
   const { assunto, html, ativo } = await renderTemplateEmail(base44, "pagamento_aprovado", nome, defaultAssunto, defaultCorpo, {
     plano: nomePlano,
     data_expiracao: dataExpiracaoBR,
     produto,
-    link_produto,
   });
 
   if (ativo) {
