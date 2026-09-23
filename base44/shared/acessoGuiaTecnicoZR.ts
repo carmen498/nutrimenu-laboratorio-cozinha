@@ -2,7 +2,7 @@
 // As faixas ACUMULAM: devolvemos a lista do que foi comprado e está vigente.
 // "acesso-livre" nunca aparece aqui — é o piso de todos, aplicado pelo próprio Guia.
 
-const ORDEM_FAIXAS = ["tin", "full", "arquitetura-do-rotulo"];
+const ORDEM_FAIXAS = ["tin", "full", "arquitetura-do-rotulo", "teste-lancamento"];
 
 function dataISO(valor: any): string | null {
   const ms = Date.parse(valor || "");
@@ -28,7 +28,10 @@ function maisFavoravel(a: any, b: any) {
 }
 
 export async function faixasGuiaTecnicoZR(base44: any, userId: string, agora = new Date()) {
-  const registros = await base44.asServiceRole.entities.AcessoGuiaTecnicoZR.filter({ user_id: userId });
+  const [registros, testesLancamento] = await Promise.all([
+    base44.asServiceRole.entities.AcessoGuiaTecnicoZR.filter({ user_id: userId }),
+    base44.asServiceRole.entities.TesteLancamentoGuiaZR.filter({ user_id: userId }),
+  ]);
 
   const porFaixa = new Map<string, any>();
   for (const registro of registros || []) {
@@ -40,6 +43,17 @@ export async function faixasGuiaTecnicoZR(base44: any, userId: string, agora = n
     };
     const atual = porFaixa.get(item.faixa);
     porFaixa.set(item.faixa, atual ? maisFavoravel(atual, item) : item);
+  }
+
+  for (const teste of testesLancamento || []) {
+    if (!vigente(teste, agora)) continue;
+    const fim = Date.parse(teste.fim_em || "");
+    if (!Number.isFinite(fim)) continue;
+    porFaixa.set("teste-lancamento", {
+      faixa: "teste-lancamento",
+      vence_em: new Date(fim).toISOString(),
+      vitalicio: false,
+    });
   }
 
   return ORDEM_FAIXAS.filter((f) => porFaixa.has(f)).map((f) => porFaixa.get(f));
