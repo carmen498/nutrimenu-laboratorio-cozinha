@@ -646,7 +646,7 @@ export default async function(req: Request): Promise<Response> {
         ...(transacaoId ? { mercadopago_payment_id: transacaoId } : {}),
         ...(pagoEm ? { pago_em: pagoEm } : {}),
       });
-    } else if (["rejected", "cancelled", "estornado"].includes(statusOrder)) {
+    } else if (["rejected", "cancelled", "estornado", "estornado_parcial", "contestado"].includes(statusOrder)) {
       return Response.json({
         error: statusOrder === "rejected" ? "Pagamento recusado" : "Pagamento não concluído",
         pagamentoId: pagamento.id,

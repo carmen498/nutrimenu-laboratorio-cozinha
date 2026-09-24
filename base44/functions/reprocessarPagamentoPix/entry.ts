@@ -6,6 +6,7 @@ import { secrets } from "base44:runtime";
 import { ativarCompraPagamento } from "../../shared/ativarCompraPagamento.ts";
 import { revogarCompraEstorno } from "../../shared/revogarCompraEstorno.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
+import { notificarAdminEventoWebhook } from "../../shared/notificarAdminWebhook.ts";
 
 async function consultarOrder(orderId: string, tokens: string[]) {
   for (const token of tokens) {
@@ -78,6 +79,24 @@ export default async function(req: Request): Promise<Response> {
       } else if (!dry_run && statusReal === "estornado") {
         await revogarCompraEstorno(base44, { ...pagamento, status: "estornado" });
         if (!mudou) resumo.reparados++;
+      } else if (!dry_run && ["contestado", "cancelled", "estornado_parcial"].includes(statusReal)) {
+        // Contestação e cancelamento revogam o acesso (como o webhook faz).
+        // Estorno parcial NÃO revoga — apenas registra e notifica o admin.
+        // Silêncio aqui é proibido: o status mudou e ninguém foi avisado.
+        if (statusReal !== "estornado_parcial") {
+          await revogarCompraEstorno(base44, { ...pagamento, status: statusReal });
+          if (!mudou) resumo.reparados++;
+        }
+        const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+        await notificarAdminEventoWebhook(base44, {
+          status_resolvido: statusReal,
+          pagamento_id: pagamento.id,
+          usuario_id: pagamento.usuario_id,
+          usuario_nome: usuario?.nome_completo || usuario?.full_name || "",
+          plano: pagamento.plano,
+          valor: pagamento.valor,
+          produto_compra: pagamento.produto_compra,
+        }).catch((e: any) => console.log("Falha ao notificar admin:", e?.message || "erro"));
       }
 
       detalhes.push({ pagamentoId: pagamento.id, statusAnterior: pagamento.status, statusReal, alterado: mudou });

@@ -84,7 +84,10 @@ export default async function(req: Request): Promise<Response> {
       const atualizacao: Record<string, any> = {};
       if (transacaoId && transacaoId !== pagamento.mercadopago_payment_id) atualizacao.mercadopago_payment_id = transacaoId;
       if (pagoEm && pagoEm !== pagamento.pago_em) atualizacao.pago_em = pagoEm;
-      if (statusReal === "estornado") {
+      // Preenche estornado_em e valor_estornado tanto no estorno integral quanto
+      // no parcial — o comprovante nunca pode apresentar o valor cheio como pago
+      // quando parte foi devolvida.
+      if (statusReal === "estornado" || statusReal === "estornado_parcial") {
         if (estornadoEm && estornadoEm !== pagamento.estornado_em) atualizacao.estornado_em = estornadoEm;
         if (valorEstornado && valorEstornado !== pagamento.valor_estornado) atualizacao.valor_estornado = valorEstornado;
       }
@@ -100,18 +103,27 @@ export default async function(req: Request): Promise<Response> {
     const acesso = acessos?.[0] || null;
     const oferta = ofertaZR(pagamento.plano);
 
+    // O comprovante declara: valor total cobrado, valor efetivamente pago (líquido
+    // de devolução), valor devolvido e a data da devolução. Nunca apresenta o valor
+    // cheio como pago quando parte foi devolvida — mesmo no estorno parcial.
+    const valorTotal = Number(pagamento.valor || 0);
+    const valorDevolvido = valorEstornado || (statusReal === "estornado" ? valorTotal : 0);
+    const valorEfetivamenteCobrado = Math.max(valorTotal - valorDevolvido, 0);
+    const estornadoEmFinal = valorDevolvido > 0 ? estornadoEm : null;
+
     return Response.json({
       emitente: DADOS_EMPRESA,
       pagador: { tipo: pagador.tipo, nome: pagador.nome, cpf_cnpj: pagador.cpf_cnpj },
       plano: oferta?.nome || pagamento.plano,
       acesso: { inicio_em: acesso?.inicio_em || null, fim_em: acesso?.fim_em || null, vitalicio: !!acesso?.vitalicio },
-      valor_pago: Number(pagamento.valor || 0),
+      valor_total: valorTotal,
+      valor_pago: valorEfetivamenteCobrado,
+      valor_estornado: valorDevolvido,
+      estornado_em: estornadoEmFinal,
       forma_pagamento: pagamento.forma_pagamento,
       parcelas: Number(pagamento.parcelas || 1),
       pago_em: pagoEm,
       situacao: statusReal,
-      estornado_em: estornadoEm,
-      valor_estornado: valorEstornado || (statusReal === "estornado" ? Number(pagamento.valor || 0) : 0),
       transacao: pagamento.mercadopago_order_id,
     });
   } catch (error) {
