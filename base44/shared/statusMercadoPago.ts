@@ -27,6 +27,17 @@ export function resolverStatusOrderMercadoPago(order: any): StatusPagamentoInter
   if (["failed", "rejected"].includes(orderStatus)) return "rejected";
   if (["failed", "rejected"].includes(txStatus)) return "rejected";
 
+  // Reembolso pode estar refletido apenas no valor, não no status da order.
+  // Algumas orders retornam status "processed" mesmo após estorno, com o valor
+  // devolvido em total_refunded_amount / amount_refunded.
+  const valorRefundOrder = Number(order?.total_refunded_amount ?? 0);
+  const valorRefundTx = Number(order?.transactions?.payments?.[0]?.amount_refunded ?? 0);
+  if (valorRefundOrder > 0 || valorRefundTx > 0) {
+    const valorTotal = Number(order?.total_amount ?? order?.transactions?.payments?.[0]?.total_amount ?? 0);
+    if (valorTotal > 0 && (valorRefundOrder >= valorTotal || valorRefundTx >= valorTotal)) return "estornado";
+    return "estornado_parcial";
+  }
+
   if (orderStatus === "processed" || txStatus === "processed") return "approved";
 
   return "pending";
@@ -34,10 +45,17 @@ export function resolverStatusOrderMercadoPago(order: any): StatusPagamentoInter
 
 export function resolverStatusPaymentMercadoPago(payment: any): StatusPagamentoInterno {
   const status = String(payment?.status || "").toLowerCase();
-  if (status === "approved") return "approved";
   if (status === "refunded") return "estornado";
   if (status === "charged_back") return "contestado";
   if (status === "partially_refunded") return "estornado_parcial";
+  // Reembolso pode estar refletido apenas no valor, não no status.
+  const valorRefund = Number(payment?.amount_refunded ?? 0);
+  if (valorRefund > 0) {
+    const valorTotal = Number(payment?.transaction_amount ?? 0);
+    if (valorTotal > 0 && valorRefund >= valorTotal) return "estornado";
+    return "estornado_parcial";
+  }
+  if (status === "approved") return "approved";
   if (["cancelled", "canceled", "expired"].includes(status)) return "cancelled";
   if (["rejected", "failed"].includes(status)) return "rejected";
   return "pending";
