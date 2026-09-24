@@ -6,6 +6,7 @@ export const STATUS_PAGAMENTO_LABEL = {
   rejected: "Recusado",
   cancelled: "Cancelado",
   estornado: "Estornado",
+  estornado_parcial: "Estorno parcial",
 };
 
 export const STATUS_PAGAMENTO_CLASSNAME = {
@@ -14,9 +15,10 @@ export const STATUS_PAGAMENTO_CLASSNAME = {
   rejected: "bg-orange-100 text-orange-700 border-orange-200",
   cancelled: "bg-gray-100 text-gray-600 border-gray-200",
   estornado: "bg-red-100 text-red-700 border-red-200",
+  estornado_parcial: "bg-amber-100 text-amber-800 border-amber-200",
 };
 
-export const SITUACOES_PAGAMENTO = ["pending", "approved", "rejected", "cancelled", "estornado"];
+export const SITUACOES_PAGAMENTO = ["pending", "approved", "rejected", "cancelled", "estornado", "estornado_parcial"];
 
 export const FORMA_PAGAMENTO_LABEL = { cartao: "Cartão", pix: "Pix" };
 

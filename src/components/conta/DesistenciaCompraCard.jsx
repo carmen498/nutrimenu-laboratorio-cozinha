@@ -24,7 +24,7 @@ const STATUS_PEDIDO_LABEL = {
   aguardando_confirmacao: "Aguardando confirmação",
   concluido: "Concluído",
   falha_reembolso: "Falha no estorno",
-  reembolso_parcial: "Reembolso parcial em tratamento",
+  reembolso_parcial: "Reembolso parcial",
 };
 
 // Direito de arrependimento: 7 dias corridos da compra, sem justificativa.
