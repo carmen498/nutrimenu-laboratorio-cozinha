@@ -18,6 +18,7 @@ const STATUS_LABEL = {
   aguardando_confirmacao: "Aguardando confirmação",
   concluido: "Concluído",
   falha_reembolso: "Falha no estorno",
+  reembolso_parcial: "Reembolso parcial",
 };
 
 // Painel de acompanhamento do direito de arrependimento e do estorno automático.
@@ -49,7 +50,7 @@ export default function DesistenciasTab() {
     return <div className="flex justify-center py-10"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
   }
 
-  const requerAtencao = pedidos.filter((p) => p.status === "falha_reembolso").length;
+  const requerAtencao = pedidos.filter((p) => p.status === "falha_reembolso" || p.status === "reembolso_parcial").length;
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
@@ -66,13 +67,16 @@ export default function DesistenciasTab() {
       {!pedidos.length && <p className="text-sm text-muted-foreground py-6 text-center">Nenhum pedido de desistência registrado.</p>}
 
       {pedidos.map((pedido) => (
-        <div key={pedido.id} className={`rounded-lg border p-4 space-y-3 ${pedido.status === "falha_reembolso" ? "border-destructive/50 bg-destructive/5" : ""}`}>
+        <div key={pedido.id} className={`rounded-lg border p-4 space-y-3 ${pedido.status === "falha_reembolso" ? "border-destructive/50 bg-destructive/5" : pedido.status === "reembolso_parcial" ? "border-amber-300 bg-amber-50" : ""}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="font-semibold text-foreground">{pedido.usuario_nome || pedido.usuario_id}</p>
               <p className="text-sm text-muted-foreground">{pedido.plano_nome || pedido.plano} · R$ {Number(pedido.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</p>
             </div>
-            <Badge variant={pedido.status === "falha_reembolso" ? "destructive" : pedido.status === "concluido" ? "outline" : "secondary"}>
+            <Badge
+              variant={pedido.status === "falha_reembolso" ? "destructive" : pedido.status === "concluido" ? "outline" : "secondary"}
+              className={pedido.status === "reembolso_parcial" ? "bg-amber-100 text-amber-800 border-amber-300" : ""}
+            >
               {STATUS_LABEL[pedido.status] || pedido.status}
             </Badge>
           </div>

@@ -41,7 +41,7 @@ export default async function(req: Request): Promise<Response> {
     }
 
     const jaExistentes = await base44.asServiceRole.entities.PedidoDesistencia.filter({ pagamento_id });
-    const statusQueBloqueiam = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "concluido"]);
+    const statusQueBloqueiam = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "reembolso_parcial", "concluido"]);
     const pedidoEmAndamento = (jaExistentes || []).find((item: any) => statusQueBloqueiam.has(item.status));
     if (pedidoEmAndamento) {
       return Response.json({ pedidoId: pedidoEmAndamento.id, status: pedidoEmAndamento.status, duplicado: true });

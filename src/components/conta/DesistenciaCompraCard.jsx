@@ -16,7 +16,16 @@ const diasRestantes = (prazoEm) => {
 };
 
 const formatar = (iso) => formatarDataHoraBrasilia(iso) || "—";
-const statusQueBloqueiamNovoPedido = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "concluido"]);
+const statusQueBloqueiamNovoPedido = new Set(["processando", "aguardando_confirmacao", "falha_reembolso", "reembolso_parcial", "concluido"]);
+
+const STATUS_PEDIDO_LABEL = {
+  aberto: "Aberto",
+  processando: "Processando",
+  aguardando_confirmacao: "Aguardando confirmação",
+  concluido: "Concluído",
+  falha_reembolso: "Falha no estorno",
+  reembolso_parcial: "Reembolso parcial em tratamento",
+};
 
 // Direito de arrependimento: 7 dias corridos da compra, sem justificativa.
 // O que conta o prazo é o pedido — por isso a data/hora é gravada no servidor.
@@ -75,7 +84,7 @@ export default function DesistenciaCompraCard({ usuarioId, pagamentos = [] }) {
             </div>
             {pedido && (
               <p className="text-xs text-primary font-medium">
-                Pedido registrado em {formatar(pedido.solicitado_em)} (horário de Brasília) · situação: {pedido.status.replace("_", " ")}
+                Pedido registrado em {formatar(pedido.solicitado_em)} (horário de Brasília) · situação: {STATUS_PEDIDO_LABEL[pedido.status] || pedido.status.replace(/_/g, " ")}
               </p>
             )}
             {!pedidoBloqueia && (
@@ -92,7 +101,7 @@ export default function DesistenciaCompraCard({ usuarioId, pagamentos = [] }) {
         <div key={pedido.id} className="rounded-lg border border-dashed p-3">
           <p className="text-sm font-medium text-foreground">{pedido.plano_nome || pedido.plano}</p>
           <p className="text-xs text-muted-foreground">
-            Pedido em {formatar(pedido.solicitado_em)} (horário de Brasília) · situação: {pedido.status.replace("_", " ")}
+            Pedido em {formatar(pedido.solicitado_em)} (horário de Brasília) · situação: {STATUS_PEDIDO_LABEL[pedido.status] || pedido.status.replace(/_/g, " ")}
             {pedido.concluido_em ? ` · concluído em ${formatar(pedido.concluido_em)} (horário de Brasília)` : ""}
           </p>
         </div>

@@ -57,10 +57,11 @@
         "processando",
         "aguardando_confirmacao",
         "concluido",
-        "falha_reembolso"
+        "falha_reembolso",
+        "reembolso_parcial"
       ],
       "default": "aberto",
-      "description": "Situa\u00e7\u00e3o do pedido na fila administrativa."
+      "description": "Situa\u00e7\u00e3o do pedido na fila administrativa. 'reembolso_parcial' = o Mercado Pago devolveu apenas parte do valor; o acesso N\u00c3O \u00e9 revogado automaticamente e o pedido fica aguardando avalia\u00e7\u00e3o manual do administrador."
     },
     "mercadopago_order_id": {
       "type": "string",
@@ -80,7 +81,8 @@
     },
     "proxima_tentativa_em": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Quando vazio, o job de 15 min N\u00c3O retenta \u2014 \u00e9 o caso de 'reembolso_parcial'."
     },
     "codigo_resultado_reembolso": {
       "type": "string"

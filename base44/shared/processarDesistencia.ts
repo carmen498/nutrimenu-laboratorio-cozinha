@@ -2,7 +2,8 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { revogarCompraEstorno } from "./revogarCompraEstorno.ts";
-import { registrarLogEmail, resumirErroOperacional, suprimirSePagamentoTeste } from "./governancaLogs.ts";
+import { registrarLogEmail, resumirErroOperacional, suprimirSePagamentoTeste, isPagamentoTeste } from "./governancaLogs.ts";
+import { notificarAdminEventoWebhook } from "./notificarAdminWebhook.ts";
 import { resolverStatusOrderMercadoPago } from "./statusMercadoPago.ts";
 import { dataHoraUtcBase44, formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 
@@ -311,6 +312,45 @@ export async function processarReembolsoDesistencia(
   if (response.ok && resolverStatusOrderMercadoPago(data) === "estornado") {
     await finalizarEstornoConfirmado(base44, pagamento, pedido, origem);
     return { status: "concluido", resultado: "refund_confirmed_by_post" };
+  }
+
+  // Estorno PARCIAL: o Mercado Pago devolveu apenas parte do valor.
+  // NÃO revoga o acesso (condição 1), NÃO envia e-mail ao cliente (condição 1),
+  // NÃO agenda proxima_tentativa_em (condição 3) — o job de 15 min não retenta.
+  // Apenas notifica o admin, passando pela supressão de pagamento de teste (condição 2).
+  if (resolverStatusOrderMercadoPago(data) === "estornado_parcial") {
+    const transacao = data?.transactions?.payments?.[0];
+    const valorEstornado = Number(transacao?.amount_refunded ?? 0);
+    const estornadoEmBruto = transacao?.date_last_updated || data?.last_updated_date || null;
+    const estornadoEm = estornadoEmBruto && Number.isFinite(new Date(estornadoEmBruto).getTime())
+      ? new Date(estornadoEmBruto).toISOString()
+      : new Date().toISOString();
+    await base44.asServiceRole.entities.Pagamento.update(pagamento.id, {
+      status: "estornado_parcial",
+      estornado_em: estornadoEm,
+      valor_estornado: valorEstornado,
+    });
+    await base44.asServiceRole.entities.PedidoDesistencia.update(pedido.id, {
+      status: "reembolso_parcial",
+      tentativas_reembolso: tentativas,
+      ultima_tentativa_em: new Date().toISOString(),
+      proxima_tentativa_em: null,
+      codigo_resultado_reembolso: "partial_refund",
+      detalhe_reembolso: "Estorno parcial confirmado pelo Mercado Pago — acesso mantido, avaliação manual necessária.",
+    });
+    if (!isPagamentoTeste(pagamento)) {
+      const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+      await notificarAdminEventoWebhook(base44, {
+        status_resolvido: "estornado_parcial",
+        pagamento_id: pagamento.id,
+        usuario_id: pagamento.usuario_id,
+        usuario_nome: usuario?.nome_completo || usuario?.full_name || "",
+        plano: pagamento.plano,
+        valor: pagamento.valor,
+        produto_compra: pagamento.produto_compra,
+      }).catch((e: any) => console.log("Falha ao notificar admin sobre estorno parcial:", e?.message || "erro"));
+    }
+    return { status: "reembolso_parcial", resultado: "partial_refund_confirmed" };
   }
 
   const codigo = String(data?.code || data?.error || `http_${response.status}`);
