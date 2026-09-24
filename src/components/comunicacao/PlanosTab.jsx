@@ -14,6 +14,60 @@ const formatarPreco = (plano) => {
   return `R$ ${valor}${sufixo}`;
 };
 
+const PRODUTOS_CONHECIDOS = ["laboratorio_cozinha", "laboratorio_custos", "guia_zr"];
+
+const GRUPOS = [
+  {
+    produto: "laboratorio_cozinha",
+    titulo: "Laboratório de Cozinha",
+    descricao: "Produto-base e ofertas já comercializadas.",
+    badge: "Produto-base",
+    badgeVariant: "outline",
+    labelCobranca: "cobrado",
+  },
+  {
+    produto: "laboratorio_custos",
+    titulo: "Laboratório de Custos",
+    descricao: "Complemento opcional em preparação. Checkout e venda permanecem desligados.",
+    badge: "Homologação",
+    badgeVariant: "secondary",
+    labelCobranca: "futuro checkout",
+    sempreDesligada: true,
+  },
+  {
+    produto: "guia_zr",
+    titulo: "Guia Técnico ZR",
+    descricao: "Faixas do livro, vendidas na mesma página de Planos. As faixas acumulam; cada compra vale 12 meses. \"Acesso livre\" não é produto.",
+    badge: null,
+    badgeVariant: "secondary",
+    labelCobranca: "cobrado",
+  },
+  {
+    produto: null,
+    titulo: "Sem produto",
+    descricao: "Planos sem produto preenchido — precisam ser classificados antes de entrar em produção.",
+    badge: "Revisão",
+    badgeVariant: "outline",
+    labelCobranca: "cobrado",
+  },
+];
+
+function estiloLinha(grupo, plano) {
+  if (grupo.produto === "guia_zr") {
+    return plano.venda_habilitada ? "border p-4" : "border border-dashed p-4 bg-muted/20";
+  }
+  if (grupo.produto === "laboratorio_custos") {
+    return "border border-dashed p-4 bg-muted/20";
+  }
+  return "border p-4";
+}
+
+function mostrarDesligada(grupo, plano) {
+  if (grupo.sempreDesligada) return true;
+  if (grupo.produto === "guia_zr" && !plano.venda_habilitada) return true;
+  return false;
+}
+
 export default function PlanosTab() {
   const [planoEdicao, setPlanoEdicao] = useState(null);
   const [sincronizando, setSincronizando] = useState(false);
@@ -23,10 +77,12 @@ export default function PlanosTab() {
     queryFn: () => base44.entities.ConfiguracaoPlano.list("ordem"),
   });
 
-  const planosCozinha = planos.filter((p) => !p.produto || p.produto === "laboratorio_cozinha");
-  const planosCustos = planos.filter((p) => p.produto === "laboratorio_custos");
-  const planosZr = planos.filter((p) => p.produto === "guia_zr");
-  const renovacoes = planosCozinha.filter((p) => p.plano_id === "renovacao");
+  const planosPorProduto = (produto) =>
+    produto === null
+      ? planos.filter((p) => !PRODUTOS_CONHECIDOS.includes(p.produto))
+      : planos.filter((p) => p.produto === produto);
+
+  const renovacoes = planos.filter((p) => p.plano_id === "renovacao");
   const renovacao = renovacoes[0];
   const renovacaoInvalida =
     renovacoes.length !== 1 ||
@@ -91,47 +147,45 @@ export default function PlanosTab() {
         </div>
       )}
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-3 pt-2"><div><h3 className="font-semibold">Laboratório de Cozinha</h3><p className="text-xs text-muted-foreground">Produto-base e ofertas já comercializadas.</p></div><Badge variant="outline">Produto-base</Badge></div>
-        {planosCozinha.map((plano) => (
-          <div key={plano.id} className="flex items-center justify-between gap-4 rounded-lg border p-4">
-            <div>
-              <div className="flex items-center gap-2"><p className="font-semibold text-foreground">{plano.nome}</p>{plano.mais_popular && <Badge className="gap-1"><Star className="w-3 h-3" /> Mais popular</Badge>}</div>
-              <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
-              <p className="text-sm mt-1"><span className="font-medium">{formatarPreco(plano)}</span>{plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}<span className="text-muted-foreground"> · cobrado: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span></p>
+      {GRUPOS.map((grupo, idx) => {
+        const itens = planosPorProduto(grupo.produto);
+        const badgeTexto = grupo.produto === "guia_zr"
+          ? (itens.some((p) => p.venda_habilitada) ? "Venda ligada" : "Venda desligada")
+          : grupo.badge;
+        return (
+          <div key={grupo.produto || "sem-produto"} className={`space-y-3 ${idx > 0 ? "pt-5 border-t" : "pt-2"}`}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">{grupo.titulo}</h3>
+                <p className="text-xs text-muted-foreground">{grupo.descricao}</p>
+              </div>
+              {badgeTexto && <Badge variant={grupo.badgeVariant}>{badgeTexto}</Badge>}
             </div>
-            <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
+            {itens.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic py-2">Nenhum plano neste produto.</p>
+            ) : (
+              itens.map((plano) => (
+                <div key={plano.id} className={`flex items-center justify-between gap-4 rounded-lg ${estiloLinha(grupo, plano)}`}>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-foreground">{plano.nome}</p>
+                      {plano.mais_popular && <Badge className="gap-1"><Star className="w-3 h-3" /> Mais popular</Badge>}
+                      {mostrarDesligada(grupo, plano) && <Badge variant="outline" className="text-[10px]">Venda desligada</Badge>}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
+                    <p className="text-sm mt-1">
+                      <span className="font-medium">{formatarPreco(plano)}</span>
+                      {plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}
+                      <span className="text-muted-foreground"> · {grupo.labelCobranca}: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span>
+                    </p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
+                </div>
+              ))
+            )}
           </div>
-        ))}
-      </div>
-
-      <div className="space-y-3 pt-5 border-t">
-        <div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">Laboratório de Custos</h3><p className="text-xs text-muted-foreground">Complemento opcional em preparação. Checkout e venda permanecem desligados.</p></div><Badge variant="secondary">Homologação</Badge></div>
-        {planosCustos.map((plano) => (
-          <div key={plano.id} className="flex items-center justify-between gap-4 rounded-lg border border-dashed p-4 bg-muted/20">
-            <div>
-              <div className="flex items-center gap-2"><p className="font-semibold text-foreground">{plano.nome}</p>{plano.mais_popular && <Badge className="gap-1"><Star className="w-3 h-3" /> Mais popular</Badge>}<Badge variant="outline" className="text-[10px]">Venda desligada</Badge></div>
-              <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
-              <p className="text-sm mt-1"><span className="font-medium">{formatarPreco(plano)}</span>{plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}<span className="text-muted-foreground"> · futuro checkout: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span></p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-3 pt-5 border-t">
-        <div className="flex items-center justify-between gap-3"><div><h3 className="font-semibold">Guia Técnico ZR</h3><p className="text-xs text-muted-foreground">Faixas do livro, vendidas na mesma página de Planos. As faixas acumulam; cada compra vale 12 meses. "Acesso livre" não é produto.</p></div><Badge variant="secondary">{planosZr.some((p) => p.venda_habilitada) ? "Venda ligada" : "Venda desligada"}</Badge></div>
-        {planosZr.map((plano) => (
-          <div key={plano.id} className={`flex items-center justify-between gap-4 rounded-lg border p-4 ${plano.venda_habilitada ? "" : "border-dashed bg-muted/20"}`}>
-            <div>
-              <div className="flex items-center gap-2"><p className="font-semibold text-foreground">{plano.nome}</p>{plano.mais_popular && <Badge className="gap-1"><Star className="w-3 h-3" /> Mais popular</Badge>}{!plano.venda_habilitada && <Badge variant="outline" className="text-[10px]">Venda desligada</Badge>}</div>
-              <p className="text-sm text-muted-foreground">{plano.subtitulo}</p>
-              <p className="text-sm mt-1"><span className="font-medium">{formatarPreco(plano)}</span>{plano.preco_detalhe && <span className="text-muted-foreground"> · {plano.preco_detalhe}</span>}<span className="text-muted-foreground"> · cobrado: R$ {(plano.valor_cobranca || 0).toFixed(2)}</span></p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setPlanoEdicao(plano)}><Pencil className="w-4 h-4 mr-1.5" /> Editar</Button>
-          </div>
-        ))}
-      </div>
+        );
+      })}
 
       {planoEdicao && (
         <ConfiguracaoPlanoDialog
