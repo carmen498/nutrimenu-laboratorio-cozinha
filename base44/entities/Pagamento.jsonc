@@ -107,10 +107,11 @@
         "cancelled",
         "estornado",
         "contestado",
-        "estornado_parcial"
+        "estornado_parcial",
+        "expirada"
       ],
       "default": "pending",
-      "description": "Status do pagamento. 'contestado' = chargeback; 'estornado_parcial' = estorno parcial (sem revoga\u00e7\u00e3o autom\u00e1tica)."
+      "description": "Status do pagamento. 'contestado' = chargeback; 'estornado_parcial' = estorno parcial (sem revoga\u00e7\u00e3o autom\u00e1tica); 'expirada' = cobran\u00e7a PIX pendente h\u00e1 mais de 72h, encerrada pela rotina de expira\u00e7\u00e3o ap\u00f3s reconfirma\u00e7\u00e3o no provedor."
     },
     "mercadopago_order_id": {
       "type": "string",
