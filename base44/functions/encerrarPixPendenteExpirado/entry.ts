@@ -45,6 +45,10 @@ export default async function(req: Request): Promise<Response> {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const simular = body?.simular !== false;
+    // pular_filtro_teste=true inclui pagamentos de teste (ORDTST) no escopo da
+    // rotina — só para diagnóstico manual. Por padrão (false/ausente) os testes
+    // continuam excluídos, como em produção.
+    const pularFiltroTeste = body?.pular_filtro_teste === true;
 
     // Em modo simulação, pula o gate (sem cooldown/janela) para permitir
     // chamadas manuais de diagnóstico a qualquer momento.
@@ -83,7 +87,8 @@ export default async function(req: Request): Promise<Response> {
       // Pagamentos de teste (ORDTST) são excluídos do escopo da rotina: não são
       // consultados no provedor nem encerrados. O critério é o mesmo usado em
       // todo o app (isPagamentoTeste: prefixo ORDTST no mercadopago_order_id).
-      if (isPagamentoTeste(pagamento)) {
+      // pular_filtro_teste=true (diagnóstico manual) ignora esta exclusão.
+      if (isPagamentoTeste(pagamento) && !pularFiltroTeste) {
         ignoradasTeste++;
         resultados.push({
           pagamento_id: pagamento.id,
