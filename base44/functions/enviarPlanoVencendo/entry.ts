@@ -7,7 +7,7 @@ import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { hojeSaoPauloISO, normalizarAssinaturasVencidas } from "../../shared/acessoAssinatura.ts";
 import { notificacaoJaProcessadaHoje } from "../../shared/protecoesAutomacao.ts";
-import { registrarLogEmail, suprimirWhatsappSePagamentoTeste } from "../../shared/governancaLogs.ts";
+import { registrarLogEmail, suprimirSePagamentoTeste, suprimirWhatsappSePagamentoTeste } from "../../shared/governancaLogs.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 import { resolverProdutoPorOrigem } from "../../shared/resolverProdutoEmail.ts";
 
@@ -51,6 +51,13 @@ export default async function(req: Request): Promise<Response> {
       if (await notificacaoJaProcessadaHoje(base44, "plano_vencendo", usuario)) continue;
       const nome = usuario.nome_completo || usuario.full_name || "";
 
+      let pagamentoAtivo = null;
+      if (usuario.pagamento_ativo_id) {
+        pagamentoAtivo = await base44.asServiceRole.entities.Pagamento
+          .get(usuario.pagamento_ativo_id)
+          .catch(() => null);
+      }
+
       if (usuario.email) {
         const [ano, mes, dia] = (usuario.data_expiracao || dataAlvo).split("-");
         const dataExpiracaoBR = `${dia}/${mes}/${ano}`;
@@ -71,25 +78,23 @@ export default async function(req: Request): Promise<Response> {
         );
 
         if (ativo) {
-          const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
-          await registrarLogEmail(base44, {
-            usuarioId: usuario.id,
-            email: usuario.email,
-            tipo: "plano_vencendo",
-            resultado,
-          });
-          if (resultado.ok) enviados++;
+          if (await suprimirSePagamentoTeste(base44, pagamentoAtivo, "plano_vencendo", "enviarPlanoVencendo", usuario)) {
+            // Pagamento de teste: e-mail suprimido, não incrementa enviados.
+          } else {
+            const resultado = await sendEmailViaResend(base44, { to: usuario.email, subject: assunto, html });
+            await registrarLogEmail(base44, {
+              usuarioId: usuario.id,
+              email: usuario.email,
+              tipo: "plano_vencendo",
+              resultado,
+            });
+            if (resultado.ok) enviados++;
+          }
         } else {
           console.log('Template "plano_vencendo" está em rascunho — e-mail não enviado.');
         }
       }
 
-      let pagamentoAtivo = null;
-      if (usuario.pagamento_ativo_id) {
-        pagamentoAtivo = await base44.asServiceRole.entities.Pagamento
-          .get(usuario.pagamento_ativo_id)
-          .catch(() => null);
-      }
       if (!(await suprimirWhatsappSePagamentoTeste(base44, pagamentoAtivo, "plano_vencendo", "enviarPlanoVencendo", usuario))) {
         await enviarNotificacaoWhatsapp(base44, "plano_vencendo", usuario).catch((e: any) =>
           console.log("Falha ao enviar WhatsApp de plano vencendo:", e.message)
