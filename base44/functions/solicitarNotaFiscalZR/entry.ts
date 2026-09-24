@@ -9,6 +9,7 @@ import { OFERTAS_ZR } from "../../shared/guiaTecnicoZR.ts";
 import { DADOS_EMPRESA } from "../../shared/dadosEmpresa.ts";
 import { resolverPagadorFiscal } from "../../shared/dadosFiscaisPagador.js";
 import { dataHoraUtcBase44 } from "../../shared/prazoDesistencia.ts";
+import { suprimirSePagamentoTeste, suprimirWhatsappSePagamentoTeste } from "../../shared/governancaLogs.ts";
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -117,14 +118,23 @@ export default async function(req: Request): Promise<Response> {
       `Transação MP: ${pagamento.mercadopago_order_id || "—"}`;
 
     const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }).catch(() => []);
+
+    // Guard de pagamento de teste (ORDTST): se o pagamento que originou o pedido
+    // de NF for de teste, suprime ambos os canais e registra em LogEmail/LogWhatsapp
+    // com status "suprimido" — igual aos outros dez caminhos transacionais.
+    if (await suprimirSePagamentoTeste(base44, pagamento, "nota_fiscal_solicitada", "solicitarNotaFiscalZR", user)) {
+      return Response.json({ ok: true, suprimido: true });
+    }
+
     for (const admin of admins || []) {
       if (admin.email) {
         await sendEmailViaResend(base44, { to: admin.email, subject: assunto, html, produto: "guia_zr" }).catch((e: any) =>
           console.log(`Falha ao enviar e-mail admin (${admin.email}):`, e?.message || "erro")
         );
       }
+
       const telefone = admin.telefone_whatsapp;
-      if (telefone) {
+      if (telefone && !(await suprimirWhatsappSePagamentoTeste(base44, pagamento, "nota_fiscal_solicitada", "solicitarNotaFiscalZR", admin))) {
         const digits = String(telefone).replace(/\D/g, "");
         const numero = digits.length <= 11 ? `55${digits}` : digits;
         const modoTeste = secrets.get("WASCRIPT_MODO_TESTE") !== "false";
