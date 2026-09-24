@@ -14,7 +14,7 @@ import { renderTemplateEmail } from "./templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 import { hojeSaoPauloISO } from "./acessoAssinatura.ts";
 import { calcularExpiracaoInclusiva } from "./datasAssinatura.ts";
-import { registrarLogEmail } from "./governancaLogs.ts";
+import { registrarLogEmail, suprimirSePagamentoTeste } from "./governancaLogs.ts";
 import { proximoCicloRenovacao } from "./regraRenovacao.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
@@ -84,7 +84,12 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
   const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
   if (!usuario) return;
 
-  if (usuario.email) {
+  const suprimidoTeste = await suprimirSePagamentoTeste(base44, pagamento, "pagamento_aprovado", "ativarPlanoEEnviarEmail", usuario);
+  if (suprimidoTeste) {
+    await suprimirSePagamentoTeste(base44, pagamento, "boas_vindas", "ativarPlanoEEnviarEmail", usuario);
+  }
+
+  if (!suprimidoTeste && usuario.email) {
     const nome = usuario.nome_completo || usuario.full_name || "";
     const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
     if (!resolvido) {
@@ -129,7 +134,10 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
 
   // Garante as boas-vindas no primeiro pagamento quando a inicialização do trial
   // não conseguiu concluir o envio. O LogEmail evita duplicar quem já recebeu.
-  await enviarBoasVindasSeNecessario(base44, usuario);
+  // Suprimido quando o pagamento é de teste — o cliente real ainda não recebeu.
+  if (!suprimidoTeste) {
+    await enviarBoasVindasSeNecessario(base44, usuario);
+  }
 
   await enviarNotificacaoWhatsapp(base44, "pagamento_aprovado", usuario).catch((e: any) =>
     console.log("Falha ao enviar WhatsApp de pagamento aprovado:", e.message)

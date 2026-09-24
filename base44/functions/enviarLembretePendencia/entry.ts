@@ -6,10 +6,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
-import { registrarLogEmail } from "../../shared/governancaLogs.ts";
+import { registrarLogEmail, registrarLogSupressao, suprimirSePagamentoTeste } from "../../shared/governancaLogs.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
-import { registrarLogSupressao } from "../../shared/governancaLogs.ts";
 
 const ASSUNTO_PADRAO = "Podemos ajudar com seu pagamento?";
 const CORPO_PADRAO = `<p>Olá {{nome}}, notamos que seu pagamento ainda não foi confirmado.</p>
@@ -42,7 +41,7 @@ export default async function(req: Request): Promise<Response> {
       if (usuario) {
         const nome = usuario.nome_completo || usuario.full_name || "";
 
-        if (usuario.email) {
+        if (usuario.email && !(await suprimirSePagamentoTeste(base44, pagamento, "pagamento_pendente_lembrete", "enviarLembretePendencia", usuario))) {
           const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
           if (!resolvido) {
             await registrarLogSupressao(base44, {

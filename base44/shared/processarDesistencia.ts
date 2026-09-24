@@ -2,7 +2,7 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { revogarCompraEstorno } from "./revogarCompraEstorno.ts";
-import { registrarLogEmail, resumirErroOperacional } from "./governancaLogs.ts";
+import { registrarLogEmail, resumirErroOperacional, suprimirSePagamentoTeste } from "./governancaLogs.ts";
 import { resolverStatusOrderMercadoPago } from "./statusMercadoPago.ts";
 import { dataHoraUtcBase44, formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 
@@ -62,6 +62,7 @@ async function enviarEmailEventoUmaVez(base44: any, params: {
 }) {
   const { usuario, pagamento, pedido, tipo, origem } = params;
   if (!usuario?.email) return { ok: false, error: "Usuário sem e-mail cadastrado" };
+  if (await suprimirSePagamentoTeste(base44, pagamento, tipo, origem, usuario)) return { ok: false, error: "Pagamento de teste — e-mail suprimido" };
 
   const eventoChave = `${tipo}:${pagamento.id}`;
   const existentes = await base44.asServiceRole.entities.LogEmail.filter({ evento_chave: eventoChave }).catch(() => []);
@@ -175,6 +176,7 @@ export async function finalizarEstornoConfirmado(
 }
 
 export async function avisarSuporteDesistencia(base44: any, pedido: any, pagamento: any, usuario: any) {
+  if (await suprimirSePagamentoTeste(base44, pagamento, "desistencia_solicitada_suporte", "avisarSuporteDesistencia", usuario)) return { ok: true };
   const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }).catch(() => []);
   const dataHora = dataHoraUtcBase44(pedido.solicitado_em).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const prazoLegal = formatarPrazoDesistenciaBrasilia(pagamento.prazo_desistencia_em);
@@ -216,6 +218,7 @@ export async function avisarSuporteDesistencia(base44: any, pedido: any, pagamen
 }
 
 async function avisarFalhaReembolso(base44: any, pedido: any, pagamento: any, detalhe: string) {
+  if (await suprimirSePagamentoTeste(base44, pagamento, "desistencia_falha_reembolso_suporte", "avisarFalhaReembolso")) return;
   const admins = await base44.asServiceRole.entities.User.filter({ role: "admin" }).catch(() => []);
   for (const admin of admins || []) {
     if (!admin.email) continue;

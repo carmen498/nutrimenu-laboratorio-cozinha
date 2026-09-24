@@ -22,7 +22,7 @@ import {
 import { notificarAdminEventoWebhook } from "../../shared/notificarAdminWebhook.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
 import { validarAssinatura } from "../../shared/validarAssinaturaMercadoPago.ts";
-import { registrarLogEmail, registrarLogSupressao, resumirErroOperacional } from "../../shared/governancaLogs.ts";
+import { registrarLogEmail, registrarLogSupressao, resumirErroOperacional, suprimirSePagamentoTeste } from "../../shared/governancaLogs.ts";
 import { resolverStatusOrderMercadoPago, resolverStatusPaymentMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
 
@@ -234,7 +234,8 @@ export default async function(req: Request): Promise<Response> {
       // Estorno, contestação e pagamento encerrado usam o emissor idempotente compartilhado.
 
       if (tipoEmail) {
-        if (usuario?.email) {
+        const suprimidoTeste = await suprimirSePagamentoTeste(base44, pagamento, tipoEmail, "webhook_mercado_pago", usuario);
+        if (!suprimidoTeste && usuario?.email) {
           const nome = usuario.nome_completo || usuario.full_name || "";
           const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);
           if (!resolvido) {

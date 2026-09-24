@@ -6,7 +6,7 @@ import { registrarLogEmail } from "./governancaLogs.ts";
 import { ativarGuiaZR, ofertaZR } from "./guiaTecnicoZR.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
-import { registrarLogSupressao } from "./governancaLogs.ts";
+import { registrarLogSupressao, suprimirSePagamentoTeste } from "./governancaLogs.ts";
 
 const MODULO = "laboratorio_custos";
 
@@ -69,7 +69,7 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
     observacao: "Acesso concedido por pagamento aprovado.",
   });
 
-  if (usuario.email) {
+  if (usuario.email && !(await suprimirSePagamentoTeste(base44, pagamento, "custos_pagamento_aprovado", "ativarCustos", usuario))) {
     const nome = usuario.nome_completo || usuario.full_name || "";
     const dataExpiracao = fim.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const nomePlano = planoId === "custos_anual" ? "Anual" : "30 dias";
@@ -93,6 +93,7 @@ async function ativarCustos(base44: any, pagamento: any): Promise<void> {
 async function enviarEmailAprovadoZR(base44: any, pagamento: any): Promise<void> {
   const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
   if (!usuario?.email) return;
+  if (await suprimirSePagamentoTeste(base44, pagamento, "pagamento_aprovado", "enviarEmailAprovadoZR", usuario)) return;
 
   const nome = usuario.nome_completo || usuario.full_name || "";
   const resolvido = resolverProdutoPorCompra(pagamento.produto_compra);

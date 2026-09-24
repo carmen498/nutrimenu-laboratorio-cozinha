@@ -91,6 +91,36 @@ export async function registrarLogSupressao(
   });
 }
 
+// Um pagamento é de teste quando o mercadopago_order_id começa com "ORDTST".
+// Em caso de dúvida (campo vazio, formato inesperado), retorna false — o e-mail
+// sai, porque nenhum pagamento real pode deixar de receber notificação.
+export function isPagamentoTeste(pagamento: any): boolean {
+  const orderId = String(pagamento?.mercadopago_order_id || "").trim();
+  return orderId.startsWith("ORDTST");
+}
+
+// Verifica se o pagamento é de teste e, se for, registra a supressão do e-mail
+// transacional e retorna true (o chamador deve abortar o envio). Se não for
+// teste, retorna false e o envio prossegue normalmente.
+export async function suprimirSePagamentoTeste(
+  base44: any,
+  pagamento: any,
+  tipo: string,
+  origem: string,
+  usuario?: any,
+): Promise<boolean> {
+  if (!isPagamentoTeste(pagamento)) return false;
+  await registrarLogSupressao(base44, {
+    usuarioId: usuario?.id || pagamento?.usuario_id || null,
+    email: usuario?.email || null,
+    tipo,
+    motivo: `Pagamento de teste (mercadopago_order_id "${pagamento?.mercadopago_order_id}" começa com ORDTST) — e-mail transacional suprimido.`,
+    pagamentoId: pagamento?.id,
+    origem,
+  });
+  return true;
+}
+
 export async function registrarLogWhatsapp(
   base44: any,
   params: {
