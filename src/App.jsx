@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { Toaster as SonnerToaster } from "sonner"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -97,12 +97,21 @@ const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-pa
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const isPublicPath = PUBLIC_PATHS.includes(location.pathname);
   const canonicalAppRedirectUrl = getCanonicalAppRedirectUrl(window.location);
 
   useEffect(() => {
     if (canonicalAppRedirectUrl) window.location.replace(canonicalAppRedirectUrl);
   }, [canonicalAppRedirectUrl]);
+
+  // Domínio administrativo: admin.nutrimenu.com.br/ cai em /admin/comunicacao.
+  // Só a raiz; qualquer outro caminho do mesmo hostname preserva o comportamento normal.
+  useEffect(() => {
+    if (window.location.hostname === 'admin.nutrimenu.com.br' && window.location.pathname === '/') {
+      navigate('/admin/comunicacao', { replace: true });
+    }
+  }, [navigate]);
 
   // Redirect is a side effect — must run in an effect, not during render. Doing it in
   // render body fired again on every re-render while authError stayed 'auth_required',
@@ -148,6 +157,9 @@ const AuthenticatedApp = () => {
         <Route path="/sair-do-guia" element={<SairDoGuia />} />
         <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
         <Route path="/" element={<LandingOrRedirect />} />
+    {/* admin.nutrimenu.com.br/ é redirecionado para /admin/comunicacao pelo
+        efeito de hostname no AuthenticatedApp. Os demais domínios conectados
+        continuam caindo na Landing em "/". */}
         <Route path="/landing" element={<Navigate to="/" replace />} />
         <Route element={<ProtectedRoute unauthenticatedElement={<AppLoginRedirect />} />}>
           <Route element={<AppLayout />}>
