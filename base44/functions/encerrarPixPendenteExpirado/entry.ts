@@ -12,6 +12,9 @@
 //    foi gerada, quando expirou, qual estado conferido na origem.
 // 5. Idempotente: a query filtra status=pending; após encerrar, o status vira
 //    "expirada" e uma segunda execução não encontra o registro.
+// 6. Log idempotente: antes de gravar LogEncerramentoPix, verifica se já existe
+//    registro para aquele pagamento_id + acao. Havendo, pula em silêncio — evita
+//    ruído diário no ramo aprovada_fora_prazo sem alterar o Pagamento.
 //
 // Modo simulação: simular=true (padrão) apenas reporta o que faria, sem gravar.
 // Modo execução: simular=false aplica o gate de automação (janela + cooldown)
@@ -23,7 +26,17 @@ import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.t
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 import { isPagamentoTeste } from "../../shared/governancaLogs.ts";
 
-const VERSAO_CODIGO = "encerrar-pix-v1-2026-09-24";
+const VERSAO_CODIGO = "encerrar-pix-v2-2026-09-24";
+
+// Verifica se já existe LogEncerramentoPix para este pagamento_id + acao.
+// Havendo, pula em silêncio — evita ruído diário sem alterar o Pagamento.
+async function logJaExiste(base44: any, pagamentoId: string, acao: string): Promise<boolean> {
+  const existentes = await base44.asServiceRole.entities.LogEncerramentoPix.filter({
+    pagamento_id: pagamentoId,
+    acao,
+  }).catch(() => []);
+  return (existentes || []).length > 0;
+}
 const LIMITE_HORAS = 72;
 const MP_ORDER_URL = "https://api.mercadopago.com/v1/orders";
 
@@ -82,7 +95,7 @@ export default async function(req: Request): Promise<Response> {
           status_origem: null,
           detalhe: "Pagamento de teste (ORDTST) — excluído do escopo da rotina.",
         });
-        if (!simular) {
+        if (!simular && !(await logJaExiste(base44, pagamento.id, "ignorado_teste"))) {
           await base44.asServiceRole.entities.LogEncerramentoPix.create({
             pagamento_id: pagamento.id,
             mercadopago_order_id: pagamento.mercadopago_order_id || "",
@@ -149,7 +162,7 @@ export default async function(req: Request): Promise<Response> {
           status_origem: null,
           detalhe: detalheErro,
         });
-        if (!simular) {
+        if (!simular && !(await logJaExiste(base44, pagamento.id, "erro_consulta"))) {
           await base44.asServiceRole.entities.LogEncerramentoPix.create({
             pagamento_id: pagamento.id,
             mercadopago_order_id: orderId,
@@ -176,7 +189,7 @@ export default async function(req: Request): Promise<Response> {
           acao: "aprovada_fora_prazo",
           status_origem: statusOrigem,
         });
-        if (!simular) {
+        if (!simular && !(await logJaExiste(base44, pagamento.id, "aprovada_fora_prazo"))) {
           await base44.asServiceRole.entities.LogEncerramentoPix.create({
             pagamento_id: pagamento.id,
             mercadopago_order_id: orderId,
@@ -207,16 +220,18 @@ export default async function(req: Request): Promise<Response> {
         });
         if (!simular) {
           await base44.asServiceRole.entities.Pagamento.update(pagamento.id, { status: "expirada" });
-          await base44.asServiceRole.entities.LogEncerramentoPix.create({
-            pagamento_id: pagamento.id,
-            mercadopago_order_id: orderId,
-            acao: "expirada",
-            status_origem: statusOrigem,
-            gerada_em: geradaEm,
-            expirada_em: expiradaEm,
-            versao_codigo: VERSAO_CODIGO,
-            detalhe: "Cobrança PIX pendente há mais de 72h — encerrada após reconfirmação no provedor.",
-          });
+          if (!(await logJaExiste(base44, pagamento.id, "expirada"))) {
+            await base44.asServiceRole.entities.LogEncerramentoPix.create({
+              pagamento_id: pagamento.id,
+              mercadopago_order_id: orderId,
+              acao: "expirada",
+              status_origem: statusOrigem,
+              gerada_em: geradaEm,
+              expirada_em: expiradaEm,
+              versao_codigo: VERSAO_CODIGO,
+              detalhe: "Cobrança PIX pendente há mais de 72h — encerrada após reconfirmação no provedor.",
+            });
+          }
         }
         continue;
       }
@@ -233,7 +248,7 @@ export default async function(req: Request): Promise<Response> {
         acao: "ignorada_status_origem",
         status_origem: statusOrigem,
       });
-      if (!simular) {
+      if (!simular && !(await logJaExiste(base44, pagamento.id, "ignorada_status_origem"))) {
         await base44.asServiceRole.entities.LogEncerramentoPix.create({
           pagamento_id: pagamento.id,
           mercadopago_order_id: orderId,

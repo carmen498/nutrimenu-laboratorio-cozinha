@@ -45,6 +45,25 @@ export default async function(req: Request): Promise<Response> {
 
         const contagem: any = { pagamentos: 0, acessos: 0, logs_email: 0, receitas: 0, cardapios: 0, eventos: 0, fichas: 0 };
 
+        // 0. Linha de auditoria ANTES de qualquer exclusão — se tudo falhar depois,
+        // o rastro de auditoria já existe. O desfecho é registrado depois, no
+        // mesmo registro.
+        const logAuditoria = await base44.asServiceRole.entities.LogExclusaoUsuario.create({
+          usuario_excluido_id: userId,
+          usuario_excluido_nome: usuario.nome_completo || usuario.full_name || "—",
+          usuario_excluido_email: usuario.email || "—",
+          excluido_por_id: admin.id,
+          excluido_por_nome: admin.nome_completo || admin.full_name || "—",
+          excluido_por_email: admin.email || "—",
+          pagamentos_apagados: 0,
+          acessos_apagados: 0,
+          logs_email_apagados: 0,
+          receitas_apagadas: 0,
+          cardapios_apagados: 0,
+          eventos_apagados: 0,
+          fichas_apagadas: 0,
+        });
+
         // 1. Pagamentos vinculados
         await base44.asServiceRole.entities.Pagamento.deleteMany({ usuario_id: userId });
         contagem.pagamentos = pagamentos?.length || 0;
@@ -111,14 +130,10 @@ export default async function(req: Request): Promise<Response> {
         // 5. Usuário (por último)
         await base44.asServiceRole.entities.User.delete(userId);
 
-        // Registro de auditoria
-        await base44.asServiceRole.entities.LogExclusaoUsuario.create({
-          usuario_excluido_id: userId,
-          usuario_excluido_nome: usuario.nome_completo || usuario.full_name || "—",
-          usuario_excluido_email: usuario.email || "—",
-          excluido_por_id: admin.id,
-          excluido_por_nome: admin.nome_completo || admin.full_name || "—",
-          excluido_por_email: admin.email || "—",
+        // Desfecho da auditoria: atualiza o registro criado antes das exclusões
+        // com as contagens finais. Se a exclusão falhou no meio, o registro já
+        // existe com as contagens parciais — melhor sobrar linha do que faltar.
+        await base44.asServiceRole.entities.LogExclusaoUsuario.update(logAuditoria.id, {
           pagamentos_apagados: contagem.pagamentos,
           acessos_apagados: contagem.acessos,
           logs_email_apagados: contagem.logs_email,
