@@ -16,9 +16,10 @@
         "expirada",
         "aprovada_fora_prazo",
         "ignorada_status_origem",
+        "ignorado_teste",
         "erro_consulta"
       ],
-      "description": "Resultado da an\u00e1lise: 'expirada' = cobran\u00e7a encerrada; 'aprovada_fora_prazo' = provedor retornou aprovado, n\u00e3o tocada; 'ignorada_status_origem' = provedor retornou status terminal n\u00e3o-aprovado; 'erro_consulta' = n\u00e3o foi poss\u00edvel consultar o provedor."
+      "description": "Resultado da an\u00e1lise: 'expirada' = cobran\u00e7a encerrada; 'aprovada_fora_prazo' = provedor retornou aprovado, n\u00e3o tocada; 'ignorada_status_origem' = provedor retornou status terminal n\u00e3o-aprovado; 'ignorado_teste' = pagamento de teste (ORDTST) exclu\u00eddo do escopo; 'erro_consulta' = n\u00e3o foi poss\u00edvel consultar o provedor."
     },
     "status_origem": {
       "type": "string",

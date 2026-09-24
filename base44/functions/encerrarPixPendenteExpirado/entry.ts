@@ -21,6 +21,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { obterCredencialMercadoPago } from "../../shared/mercadoPagoCredencial.ts";
 import { resolverStatusOrderMercadoPago } from "../../shared/statusMercadoPago.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
+import { isPagamentoTeste } from "../../shared/governancaLogs.ts";
 
 const VERSAO_CODIGO = "encerrar-pix-v1-2026-09-24";
 const LIMITE_HORAS = 72;
@@ -63,8 +64,39 @@ export default async function(req: Request): Promise<Response> {
     let aprovadasForaPrazo = 0;
     let ignoradas = 0;
     let errosConsulta = 0;
+    let ignoradasTeste = 0;
 
     for (const pagamento of alvos) {
+      // Pagamentos de teste (ORDTST) são excluídos do escopo da rotina: não são
+      // consultados no provedor nem encerrados. O critério é o mesmo usado em
+      // todo o app (isPagamentoTeste: prefixo ORDTST no mercadopago_order_id).
+      if (isPagamentoTeste(pagamento)) {
+        ignoradasTeste++;
+        resultados.push({
+          pagamento_id: pagamento.id,
+          mercadopago_order_id: pagamento.mercadopago_order_id,
+          plano: pagamento.plano,
+          valor: pagamento.valor,
+          gerada_em: pagamento.created_date,
+          acao: "ignorado_teste",
+          status_origem: null,
+          detalhe: "Pagamento de teste (ORDTST) — excluído do escopo da rotina.",
+        });
+        if (!simular) {
+          await base44.asServiceRole.entities.LogEncerramentoPix.create({
+            pagamento_id: pagamento.id,
+            mercadopago_order_id: pagamento.mercadopago_order_id || "",
+            acao: "ignorado_teste",
+            status_origem: "",
+            gerada_em: pagamento.created_date,
+            expirada_em: null,
+            versao_codigo: VERSAO_CODIGO,
+            detalhe: "Pagamento de teste (ORDTST) — excluído do escopo da rotina de encerramento.",
+          });
+        }
+        continue;
+      }
+
       const orderId = String(pagamento.mercadopago_order_id || "").trim();
       const geradaEm = pagamento.created_date || null;
 
@@ -223,6 +255,7 @@ export default async function(req: Request): Promise<Response> {
       aprovadas_fora_prazo: aprovadasForaPrazo,
       ignoradas,
       erros_consulta: errosConsulta,
+      ignoradas_teste: ignoradasTeste,
       resultados,
     });
   } catch (error) {
