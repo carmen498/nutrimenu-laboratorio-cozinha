@@ -79,14 +79,9 @@ export default async function(req: Request): Promise<Response> {
       } else if (!dry_run && statusReal === "estornado") {
         await revogarCompraEstorno(base44, { ...pagamento, status: "estornado" });
         if (!mudou) resumo.reparados++;
-      } else if (!dry_run && ["contestado", "cancelled", "estornado_parcial"].includes(statusReal)) {
-        // Contestação e cancelamento revogam o acesso (como o webhook faz).
-        // Estorno parcial NÃO revoga — apenas registra e notifica o admin.
-        // Silêncio aqui é proibido: o status mudou e ninguém foi avisado.
-        if (statusReal !== "estornado_parcial") {
-          await revogarCompraEstorno(base44, { ...pagamento, status: statusReal });
-          if (!mudou) resumo.reparados++;
-        }
+      } else if (!dry_run && statusReal === "estornado_parcial") {
+        // Estorno parcial NÃO revoga acesso — apenas registra e notifica o admin,
+        // como o webhook já faz. Silêncio aqui é proibido.
         const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
         await notificarAdminEventoWebhook(base44, {
           status_resolvido: statusReal,
