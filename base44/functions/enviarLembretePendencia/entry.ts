@@ -6,7 +6,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sendEmailViaResend } from "../../shared/resendEmail.ts";
 import { renderTemplateEmail } from "../../shared/templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "../../shared/notificarWascript.ts";
-import { registrarLogEmail, registrarLogSupressao, suprimirSePagamentoTeste } from "../../shared/governancaLogs.ts";
+import { registrarLogEmail, registrarLogSupressao, suprimirSePagamentoTeste, suprimirWhatsappSePagamentoTeste } from "../../shared/governancaLogs.ts";
 import { protegerExecucaoAgendada } from "../../shared/protecoesAutomacao.ts";
 import { resolverProdutoPorCompra } from "../../shared/resolverProdutoEmail.ts";
 
@@ -74,9 +74,11 @@ export default async function(req: Request): Promise<Response> {
           }
         }
 
-        await enviarNotificacaoWhatsapp(base44, "pagamento_pendente_lembrete", usuario).catch((e: any) =>
-          console.log("Falha ao enviar WhatsApp de lembrete de pendência:", e.message)
-        );
+        if (!(await suprimirWhatsappSePagamentoTeste(base44, pagamento, "pagamento_pendente_lembrete", "enviarLembretePendencia", usuario))) {
+          await enviarNotificacaoWhatsapp(base44, "pagamento_pendente_lembrete", usuario).catch((e: any) =>
+            console.log("Falha ao enviar WhatsApp de lembrete de pendência:", e.message)
+          );
+        }
       }
 
       // Marca como enviado independente do resultado, para nunca reenviar diariamente ao mesmo pagamento.

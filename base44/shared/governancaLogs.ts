@@ -128,14 +128,42 @@ export async function registrarLogWhatsapp(
     telefone: string;
     tipo: string;
     modoTeste: boolean;
-    status: "enviado" | "falhou" | "simulado";
+    status: "enviado" | "falhou" | "simulado" | "suprimido";
+    pagamentoId?: string | null;
+    detalhe?: string | null;
   },
 ): Promise<void> {
   await base44.asServiceRole.entities.LogWhatsapp.create({
     usuario_id: params.usuarioId || "",
+    pagamento_id: params.pagamentoId || "",
     destinatario_telefone: mascararTelefone(params.telefone),
     tipo: params.tipo,
     modo_teste: params.modoTeste,
     status: params.status,
+    detalhe_erro: params.detalhe || "",
   });
+}
+
+// Verifica se o pagamento é de teste e, se for, registra a supressão do WhatsApp
+// transacional e retorna true (o chamador deve abortar o envio). Se não for
+// teste, retorna false e o envio prossegue normalmente.
+export async function suprimirWhatsappSePagamentoTeste(
+  base44: any,
+  pagamento: any,
+  tipo: string,
+  origem: string,
+  usuario?: any,
+): Promise<boolean> {
+  if (!isPagamentoTeste(pagamento)) return false;
+  const telefone = usuario?.telefone_whatsapp || "";
+  await registrarLogWhatsapp(base44, {
+    usuarioId: usuario?.id || pagamento?.usuario_id || null,
+    pagamentoId: pagamento?.id || null,
+    telefone: telefone || "***",
+    tipo,
+    modoTeste: false,
+    status: "suprimido",
+    detalhe: `Pagamento de teste (mercadopago_order_id "${pagamento?.mercadopago_order_id}" começa com ORDTST) — WhatsApp transacional suprimido. (origem: ${origem})`,
+  });
+  return true;
 }

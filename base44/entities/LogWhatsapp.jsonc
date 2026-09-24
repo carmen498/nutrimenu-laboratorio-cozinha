@@ -6,6 +6,10 @@
       "type": "string",
       "description": "ID t\u00e9cnico do usu\u00e1rio destinat\u00e1rio, quando dispon\u00edvel; usado para deduplica\u00e7\u00e3o sem depender do telefone em claro"
     },
+    "pagamento_id": {
+      "type": "string",
+      "description": "Pagamento que originou o evento, quando aplic\u00e1vel."
+    },
     "destinatario_telefone": {
       "type": "string",
       "description": "Telefone mascarado do destinat\u00e1rio (somente os 4 \u00faltimos d\u00edgitos); novos registros n\u00e3o persistem o n\u00famero completo"
@@ -32,9 +36,14 @@
       "enum": [
         "enviado",
         "falhou",
-        "simulado"
+        "simulado",
+        "suprimido"
       ],
-      "description": "Resultado do envio"
+      "description": "Resultado do envio. 'suprimido' = mensagem n\u00e3o enviada por motivo t\u00e9cnico (ex.: pagamento de teste ORDTST)."
+    },
+    "detalhe_erro": {
+      "type": "string",
+      "description": "Resumo sanitizado do motivo da supress\u00e3o ou do erro de envio, sem payload bruto, token, e-mail ou telefone"
     }
   },
   "required": [

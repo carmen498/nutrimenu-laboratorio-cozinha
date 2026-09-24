@@ -14,7 +14,7 @@ import { renderTemplateEmail } from "./templateEmail.ts";
 import { enviarNotificacaoWhatsapp } from "./notificarWascript.ts";
 import { hojeSaoPauloISO } from "./acessoAssinatura.ts";
 import { calcularExpiracaoInclusiva } from "./datasAssinatura.ts";
-import { registrarLogEmail, suprimirSePagamentoTeste } from "./governancaLogs.ts";
+import { registrarLogEmail, suprimirSePagamentoTeste, suprimirWhatsappSePagamentoTeste } from "./governancaLogs.ts";
 import { proximoCicloRenovacao } from "./regraRenovacao.ts";
 import { formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
 import { resolverProdutoPorCompra } from "./resolverProdutoEmail.ts";
@@ -139,7 +139,9 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
     await enviarBoasVindasSeNecessario(base44, usuario);
   }
 
-  await enviarNotificacaoWhatsapp(base44, "pagamento_aprovado", usuario).catch((e: any) =>
-    console.log("Falha ao enviar WhatsApp de pagamento aprovado:", e.message)
-  );
+  if (!(await suprimirWhatsappSePagamentoTeste(base44, pagamento, "pagamento_aprovado", "ativarPlanoEEnviarEmail", usuario))) {
+    await enviarNotificacaoWhatsapp(base44, "pagamento_aprovado", usuario).catch((e: any) =>
+      console.log("Falha ao enviar WhatsApp de pagamento aprovado:", e.message)
+    );
+  }
 }
