@@ -191,7 +191,7 @@ export default async function(req: Request): Promise<Response> {
     if (somente_addon && !addonId) {
       return Response.json({ error: "Informe o plano do Laboratório de Custos" }, { status: 400 });
     }
-    if (somente_addon && !avaliarAcessoAssinaturaServer(user).temAcesso) {
+    if (addonId && !planoBaseId && !avaliarAcessoAssinaturaServer(user).temAcesso) {
       return Response.json({ error: "É necessário ter Laboratório de Cozinha ativo para contratar o Laboratório de Custos", code: "base_plan_required" }, { status: 409 });
     }
 
