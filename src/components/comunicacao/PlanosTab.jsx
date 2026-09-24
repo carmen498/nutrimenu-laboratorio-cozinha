@@ -16,7 +16,7 @@ const formatarPreco = (plano) => {
 
 const PRODUTOS_CONHECIDOS = ["laboratorio_cozinha", "laboratorio_custos", "guia_zr"];
 
-const GRUPOS = [
+const GRUPOS_BASE = [
   {
     produto: "laboratorio_cozinha",
     titulo: "Laboratório de Cozinha",
@@ -42,15 +42,37 @@ const GRUPOS = [
     badgeVariant: "secondary",
     labelCobranca: "cobrado",
   },
-  {
-    produto: null,
-    titulo: "Sem produto",
-    descricao: "Planos sem produto preenchido — precisam ser classificados antes de entrar em produção.",
-    badge: "Revisão",
-    badgeVariant: "outline",
-    labelCobranca: "cobrado",
-  },
 ];
+
+const GRUPO_SEM_PRODUTO = {
+  produto: null,
+  titulo: "Sem produto",
+  descricao: "Planos sem produto preenchido — precisam ser classificados antes de entrar em produção.",
+  badge: "Revisão",
+  badgeVariant: "outline",
+  labelCobranca: "cobrado",
+};
+
+function montarGrupos(planos) {
+  const grupos = [...GRUPOS_BASE];
+  const produtosEncontrados = new Set(
+    planos
+      .map((p) => p.produto)
+      .filter((v) => v != null && v !== "" && !PRODUTOS_CONHECIDOS.includes(v))
+  );
+  for (const produto of produtosEncontrados) {
+    grupos.push({
+      produto,
+      titulo: produto,
+      descricao: "Produto novo — ainda não nomeado na tela. Classifique para exibir o título correto.",
+      badge: "Novo produto",
+      badgeVariant: "outline",
+      labelCobranca: "cobrado",
+    });
+  }
+  grupos.push(GRUPO_SEM_PRODUTO);
+  return grupos;
+}
 
 function estiloLinha(grupo, plano) {
   if (grupo.produto === "guia_zr") {
@@ -147,7 +169,7 @@ export default function PlanosTab() {
         </div>
       )}
 
-      {GRUPOS.map((grupo, idx) => {
+      {montarGrupos(planos).map((grupo, idx) => {
         const itens = planosPorProduto(grupo.produto);
         const badgeTexto = grupo.produto === "guia_zr"
           ? (itens.some((p) => p.venda_habilitada) ? "Venda ligada" : "Venda desligada")
