@@ -20,6 +20,7 @@ const MENSAGEM_MOTIVO = {
   comercial_indisponivel: "A contratação comercial deste complemento ainda não foi liberada.",
   addon_nao_contratado: "Seu plano atual não inclui o Laboratório de Custos.",
   addon_ainda_nao_iniciado: "Seu acesso ao Laboratório de Custos ainda não iniciou.",
+  plano_base_inativo: "Sua assinatura do Laboratório de Cozinha venceu. É o plano principal que precisa ser renovado — o Laboratório de Custos é um complemento e não funciona sem ele.",
   addon_expirado: "O acesso ao Laboratório de Custos expirou.",
   addon_suspenso: "O acesso ao Laboratório de Custos está suspenso.",
   addon_cancelado: "O acesso ao Laboratório de Custos foi cancelado.",
