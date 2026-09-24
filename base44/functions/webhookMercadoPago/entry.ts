@@ -223,6 +223,7 @@ export default async function(req: Request): Promise<Response> {
           plano: pagamento.plano,
           valor: pagamento.valor,
           produto_compra: pagamento.produto_compra,
+          mercadopago_order_id: pagamento.mercadopago_order_id,
         }).catch((e: any) => console.log("Falha ao notificar admin:", e?.message || "erro"));
       }
 

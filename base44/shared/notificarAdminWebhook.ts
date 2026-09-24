@@ -2,6 +2,7 @@
 // do Mercado Pago: contestação (chargeback), estorno parcial e cancelamento.
 // Falhas de envio são apenas logadas — nunca abortam o processamento do webhook.
 import { sendEmailViaResend } from "./resendEmail.ts";
+import { isPagamentoTeste } from "./governancaLogs.ts";
 import { secrets } from "base44:runtime";
 
 const TITULOS: Record<string, string> = {
@@ -20,8 +21,12 @@ export async function notificarAdminEventoWebhook(
     plano?: string;
     valor?: number;
     produto_compra?: string;
+    mercadopago_order_id?: string;
   }
 ): Promise<void> {
+  // Guard interno: pagamento de teste (ORDTST) nunca notifica o admin.
+  // Estar dentro da função garante que todo chamador é protegido automaticamente.
+  if (isPagamentoTeste({ mercadopago_order_id: evento.mercadopago_order_id })) return;
   const titulo = TITULOS[evento.status_resolvido] || evento.status_resolvido;
   const valorTxt = evento.valor != null ? `R$ ${Number(evento.valor).toFixed(2)}` : "—";
   const nome = evento.usuario_nome || evento.usuario_id;

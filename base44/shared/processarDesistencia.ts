@@ -2,7 +2,7 @@ import { secrets } from "base44:runtime";
 import { sendEmailViaResend } from "./resendEmail.ts";
 import { renderTemplateEmail } from "./templateEmail.ts";
 import { revogarCompraEstorno } from "./revogarCompraEstorno.ts";
-import { registrarLogEmail, resumirErroOperacional, suprimirSePagamentoTeste, isPagamentoTeste } from "./governancaLogs.ts";
+import { registrarLogEmail, resumirErroOperacional, suprimirSePagamentoTeste } from "./governancaLogs.ts";
 import { notificarAdminEventoWebhook } from "./notificarAdminWebhook.ts";
 import { resolverStatusOrderMercadoPago } from "./statusMercadoPago.ts";
 import { dataHoraUtcBase44, formatarPrazoDesistenciaBrasilia } from "./prazoDesistencia.ts";
@@ -338,18 +338,17 @@ export async function processarReembolsoDesistencia(
       codigo_resultado_reembolso: "partial_refund",
       detalhe_reembolso: "Estorno parcial confirmado pelo Mercado Pago — acesso mantido, avaliação manual necessária.",
     });
-    if (!isPagamentoTeste(pagamento)) {
-      const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
-      await notificarAdminEventoWebhook(base44, {
-        status_resolvido: "estornado_parcial",
-        pagamento_id: pagamento.id,
-        usuario_id: pagamento.usuario_id,
-        usuario_nome: usuario?.nome_completo || usuario?.full_name || "",
-        plano: pagamento.plano,
-        valor: pagamento.valor,
-        produto_compra: pagamento.produto_compra,
-      }).catch((e: any) => console.log("Falha ao notificar admin sobre estorno parcial:", e?.message || "erro"));
-    }
+    const usuario = await base44.asServiceRole.entities.User.get(pagamento.usuario_id).catch(() => null);
+    await notificarAdminEventoWebhook(base44, {
+      status_resolvido: "estornado_parcial",
+      pagamento_id: pagamento.id,
+      usuario_id: pagamento.usuario_id,
+      usuario_nome: usuario?.nome_completo || usuario?.full_name || "",
+      plano: pagamento.plano,
+      valor: pagamento.valor,
+      produto_compra: pagamento.produto_compra,
+      mercadopago_order_id: pagamento.mercadopago_order_id,
+    }).catch((e: any) => console.log("Falha ao notificar admin sobre estorno parcial:", e?.message || "erro"));
     return { status: "reembolso_parcial", resultado: "partial_refund_confirmed" };
   }
 
