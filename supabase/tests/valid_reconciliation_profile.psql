@@ -1,0 +1,76 @@
+-- Synthetic data only. Values are deliberately non-production and deterministic.
+insert into auth.users (
+  id,
+  last_sign_in_at,
+  raw_app_meta_data
+)
+values (
+  '10000000-0000-4000-8000-000000000001',
+  '2026-08-31 12:00:00+00',
+  '{"role":"admin"}'::jsonb
+);
+
+insert into labcozinha.profiles_legacy (
+  id,
+  source_user_id,
+  full_name,
+  email,
+  role,
+  telefone_whatsapp,
+  empresa,
+  plano_atual,
+  status_assinatura,
+  data_inicio,
+  data_expiracao,
+  trial_modelo,
+  trial_dias_uso,
+  data_proxima_cobranca,
+  ciclo_renovacao,
+  pagamento_ativo_id,
+  cpf_cnpj,
+  razao_social,
+  cep,
+  cidade_uf,
+  endereco,
+  segmento,
+  origem,
+  termos_aceitos_em,
+  termos_versao_aceita,
+  privacidade_versao_aceita,
+  force_password_reset,
+  source_created_at,
+  source_updated_at,
+  migrated_at
+)
+values (
+  '10000000-0000-4000-8000-000000000001',
+  'fixture-profile-001',
+  '  Perfil Sintético  ',
+  'profile@example.invalid',
+  'admin',
+  '+550000000000',
+  'Empresa Sintética',
+  'plano-fixture',
+  'status-fixture',
+  '2026-07-01',
+  '2026-09-30',
+  'trial-fixture',
+  '[1, 3]'::jsonb,
+  '2026-09-15',
+  2,
+  'payment-fixture',
+  '00000000000',
+  'Razão Social Sintética',
+  '00000000',
+  'Cidade/UF',
+  'Endereço Sintético',
+  'Nutricionista',
+  'Google',
+  '2026-07-02 10:00:00+00',
+  'terms-fixture',
+  'privacy-fixture',
+  false,
+  null,
+  '2026-08-02 09:30:00+00',
+  '2026-08-01 08:00:00+00'
+);

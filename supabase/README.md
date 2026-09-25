@@ -1,35 +1,41 @@
-# Supabase database bootstrap
+# Supabase database migrations
 
-This directory is the reproducible, local-only database foundation and target
-operational model for the Base44 to Supabase migration.
+This directory is the reproducible database foundation and target operational
+model for the Base44 to Supabase migration.
 
 ## Scope
 
 The database project contains:
 
 - the Supabase CLI configuration;
+- the pulled remote schema baseline already recorded in the production ledger;
+- a fail-closed reconciliation that preserves the 30-column legacy profile
+  table in the private `labcozinha` schema;
+- the approved legacy-to-canonical profile mapping;
 - a private landing and reconciliation schema;
 - the typed operational schema in `public`;
 - explicit grants and row-level security policies for every operational table;
 - database tests and CI.
 
-It does not migrate production data, configure secrets, link a remote project,
-or authorize a remote migration. In particular, the 25,263 exported records
-remain outside this change.
+The reconciliation copies only the approved profile fields. It does not import,
+alter, or delete the 25,263 exported legacy records, and it does not transform
+subscriptions, payments, trials, or entitlements. Those commercial profile
+fields remain in the private legacy snapshot until a separate mapping is
+reviewed. No migration in this directory authorizes a production deployment.
 
 The `labcozinha_migration` schema is intentionally absent from the Data API
-schema list. `anon` and `authenticated` receive no privileges. The server-side
-`service_role` may update only operational batch state, completion counters,
-finish time, and notes. Batch identity and provenance remain immutable; raw
-records, ID mappings, and rejects are append-only. Its key must never be
-exposed to the browser. Default privileges keep future tables and sequences
-closed until a later migration grants access explicitly. This bootstrap creates
-no routines; any later routine must revoke its default `PUBLIC` execution grant
-in the same migration that creates it.
+schema list. `anon` and `authenticated` receive no privileges. The
+server-side `service_role` may update only operational batch state, completion
+counters, finish time, and notes. Batch identity and provenance remain
+immutable; raw records, ID mappings, and rejects are append-only. Its key must
+never be exposed to the browser. Default privileges keep future tables and
+sequences closed until a later migration grants access explicitly. A migration
+that creates a routine must revoke its default `PUBLIC` execution grant in the
+same migration.
 
-All non-database local services are disabled in this bootstrap. Auth, Storage,
-Realtime, Edge Runtime, Studio, SMTP, Analytics, and the Data API remain out of
-scope until their respective migration phases are reviewed.
+All non-database local services are disabled. Auth, Storage, Realtime, Edge
+Runtime, Studio, SMTP, Analytics, and the Data API remain out of scope until
+their respective integration phases are reviewed.
 
 ## Operational access model
 
@@ -63,14 +69,18 @@ supabase test db
 supabase stop --no-backup
 ```
 
+CI additionally resets to approved intermediate migration versions and uses
+synthetic records to prove fail-closed ACL/domain checks plus every approved
+profile mapping. Production data is never used in these tests.
+
 `db reset --local` is destructive only to the local development database. Do
 not replace it with `--linked` or a database URL.
 
 ## Guardrails
 
-The following commands are outside this bootstrap and require a separately
-reviewed runbook, a sealed target project, backup/restore evidence, and an
-explicitly authorized operator and window:
+The following commands are outside this repository's automatic CI and require a
+separately reviewed runbook, a sealed target project, backup/restore evidence,
+and an explicitly authorized operator and window:
 
 ```text
 supabase link

@@ -1,0 +1,25 @@
+-- Synthetic data only. This fixture must be rejected before any canonical copy.
+insert into auth.users (id, raw_app_meta_data)
+values (
+  '10000000-0000-4000-8000-000000000002',
+  '{"role":"user"}'::jsonb
+);
+
+insert into labcozinha.profiles_legacy (
+  id,
+  source_user_id,
+  full_name,
+  email,
+  role,
+  segmento,
+  origem
+)
+values (
+  '10000000-0000-4000-8000-000000000002',
+  'fixture-invalid-domain',
+  'Perfil Sintético Inválido',
+  'invalid-profile@example.invalid',
+  'user',
+  'Domínio inválido',
+  'Google'
+);
