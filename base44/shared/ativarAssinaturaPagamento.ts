@@ -114,6 +114,7 @@ export async function ativarPlanoEEnviarEmail(base44: any, pagamento: { id?: str
         plano: nomePlano,
         data_expiracao: dataExpiracaoBR,
         produto,
+        link_produto,
       });
 
       if (ativo) {
