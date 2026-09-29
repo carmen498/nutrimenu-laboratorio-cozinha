@@ -129,8 +129,18 @@ export default function ContaZR() {
             <Loader2 className="w-6 h-6 animate-spin text-[#8A6D3B]" />
           </div>
         ) : !temAlgumaCompra ? (
-          <div className="space-y-8">
-            <p className="text-base text-[#4A4338]">Você ainda não tem plano do Guia Técnico ZR.</p>
+          <div className="space-y-4">
+            <div>
+              <p className="text-base text-[#4A4338]">Não encontramos plano do Guia Técnico ZR nesta conta.</p>
+              <p className="text-sm text-[#6B6358] mt-2">
+                Se você comprou com outro e-mail, entre com ele. Se acabou de comprar e a confirmação ainda não apareceu, aguarde alguns minutos e recarregue.
+              </p>
+            </div>
+            {user?.email && (
+              <p className="text-xs text-[#6B6358]">
+                Conta logada: <span className="font-medium text-[#4A4338]">{user.email}</span>
+              </p>
+            )}
             <a href="https://zr.nutrimenu.com.br" className="inline-flex items-center gap-2 text-sm font-medium text-[#8A6D3B] hover:underline">
               <ArrowLeft className="w-4 h-4" /> Voltar ao Guia Técnico ZR
             </a>
