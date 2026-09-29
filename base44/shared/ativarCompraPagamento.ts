@@ -129,6 +129,7 @@ async function enviarEmailAprovadoZR(base44: any, pagamento: any): Promise<void>
     plano: nomePlano,
     data_expiracao: dataExpiracaoBR,
     produto,
+    link_produto,
   });
 
   if (ativo) {
