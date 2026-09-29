@@ -16,10 +16,10 @@ export default function Block2TrabalhoReal() {
         <li>onde posicionar cada informação na embalagem;</li>
         <li>como manter coerência entre formulação, Tabela de Informação Nutricional, lista de ingredientes, alegações e rotulagem frontal.</li>
       </ul>
-      <ZRTexto className="mb-6">
+      <ZRTexto className="mb-6" full>
         A legislação está distribuída entre resoluções, instruções normativas, anexos e normas complementares. Consultar um documento isolado raramente revela como os critérios se relacionam no produto real.
       </ZRTexto>
-      <p className="zr-carlito text-[#E9EFF7] text-[18px] leading-[1.65] max-w-[65ch]">
+      <p className="zr-carlito text-[#E9EFF7] text-[18px] leading-[1.65]">
         O problema não é encontrar a norma. É transformar a norma em decisão técnica coerente, verificável e aplicável ao rótulo.
       </p>
       <img src={ZR_IMAGES.img1} alt="Mesa de trabalho técnica com documentos e calculadora" className="max-w-[65ch] w-full rounded mt-10" />
