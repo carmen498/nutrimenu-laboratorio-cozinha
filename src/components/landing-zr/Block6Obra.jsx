@@ -27,9 +27,9 @@ export default function Block6Obra() {
       <ZROlho>A obra</ZROlho>
       <ZRTitulo>125 itens editoriais para consultar durante o trabalho</ZRTitulo>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-12">
         {NUMEROS.map((n, i) => (
-          <div key={i}>
+          <div key={i} className="bg-[#0E1E33] border border-[#1B3150] rounded p-[22px] flex flex-col items-start">
             <p className="zr-archivo text-3xl md:text-4xl text-[#7DBE3C]">{n.num}</p>
             <p className="zr-mono uppercase text-[#93A6BF] text-xs tracking-[0.14em] mt-1">{n.label}</p>
           </div>
