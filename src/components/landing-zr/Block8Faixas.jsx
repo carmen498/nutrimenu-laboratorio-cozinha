@@ -33,7 +33,7 @@ export default function Block8Faixas() {
     <ZRSection id="faixas">
       <ZROlho>Faixas de acesso</ZROlho>
       <ZRTitulo>Escolha a faixa adequada ao seu trabalho</ZRTitulo>
-      <ZRTexto className="mb-4">
+      <ZRTexto className="mb-4" full>
         Planos, valores, condições de pagamento e datas promocionais são apresentados e atualizados na Plataforma ZR.
       </ZRTexto>
       <p className="zr-carlito text-[#93A6BF] text-sm mb-8">IMPORTANTE: nenhum preço, nenhum valor e nenhuma data promocional nesta página. Os três botões abaixo levam à Plataforma ZR.</p>

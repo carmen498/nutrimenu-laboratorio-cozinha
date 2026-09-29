@@ -16,7 +16,7 @@ export default function Block3Capitulo() {
     <ZRSection id="capitulo">
       <ZROlho>Um capítulo, como ele é</ZROlho>
       <ZRTitulo>Cada afirmação carrega a norma que a sustenta</ZRTitulo>
-      <ZRTexto className="mb-8">
+      <ZRTexto className="mb-8" full>
         Abaixo, o começo do Capítulo 44, sem edição para esta página — inclusive no traje que ele tem por dentro da obra.
       </ZRTexto>
 

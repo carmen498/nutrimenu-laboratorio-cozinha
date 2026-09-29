@@ -6,7 +6,7 @@ export default function Block2TrabalhoReal() {
     <ZRSection id="trabalho-real">
       <ZROlho>O trabalho real</ZROlho>
       <ZRTitulo>Rotulagem não é cumprir tabela. É sustentar decisão técnica.</ZRTitulo>
-      <ZRTexto className="mb-4">Antes de preencher qualquer campo, é preciso decidir:</ZRTexto>
+      <ZRTexto className="mb-4" full>Antes de preencher qualquer campo, é preciso decidir:</ZRTexto>
       <ul className="zr-carlito text-[#E9EFF7] max-w-[65ch] text-[18px] leading-[1.65] space-y-1 mb-6 list-disc pl-5">
         <li>quais informações são obrigatórias para aquele produto;</li>
         <li>como calcular e declarar cada nutriente;</li>

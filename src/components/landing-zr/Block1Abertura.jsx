@@ -6,7 +6,7 @@ export default function Block1Abertura() {
     <ZRSection id="abertura">
       <ZROlho>Obra digital de consulta profissional</ZROlho>
       <ZRTitulo>Estrutura técnica para cada decisão de rotulagem</ZRTitulo>
-      <ZRTexto className="mb-8">
+      <ZRTexto className="mb-8" full>
         Da legislação ao rótulo: critérios organizados, aplicação prática e fundamentação normativa, para reduzir improviso, inconsistência e retrabalho.
       </ZRTexto>
       <div className="flex flex-wrap gap-3 mb-10">

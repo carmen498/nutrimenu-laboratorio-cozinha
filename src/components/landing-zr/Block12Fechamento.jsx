@@ -7,7 +7,7 @@ export default function Block12Fechamento() {
       <div className="max-w-[1180px] mx-auto px-5 py-16 md:py-20">
         <ZROlho>Da norma ao rótulo</ZROlho>
         <ZRTitulo>Não se trata de substituir a análise profissional</ZRTitulo>
-        <ZRTexto className="mb-8">
+        <ZRTexto className="mb-8" full>
           Trata-se de oferecer uma estrutura para que cada decisão seja mais clara, coerente e fundamentada.
         </ZRTexto>
         <div className="flex flex-wrap gap-3 mb-12">

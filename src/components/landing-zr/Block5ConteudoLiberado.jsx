@@ -6,7 +6,7 @@ export default function Block5ConteudoLiberado() {
     <ZRSection id="conteudo-gratuito">
       <ZROlho>Antes de escolher um plano</ZROlho>
       <ZRTitulo>Entre e leia três capítulos</ZRTitulo>
-      <ZRTexto className="mb-6">
+      <ZRTexto className="mb-6" full>
         Você pode entrar no ambiente real do Guia, ver como ele está organizado e ler três conteúdos liberados. Sem cartão, sem compromisso, acesso imediato.
       </ZRTexto>
       <ul className="zr-carlito text-[#E9EFF7] max-w-[65ch] text-[18px] leading-[1.65] space-y-2 mb-8 list-disc pl-5">

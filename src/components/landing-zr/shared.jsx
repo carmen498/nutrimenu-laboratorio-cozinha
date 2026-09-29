@@ -28,8 +28,8 @@ export function ZRTitulo({ children }) {
   return <h2 className="zr-archivo text-3xl md:text-4xl text-[#E9EFF7] mb-6 leading-tight">{children}</h2>;
 }
 
-export function ZRTexto({ children, className = "" }) {
-  return <p className={`zr-carlito text-[#E9EFF7] max-w-[65ch] text-[18px] leading-[1.65] ${className}`}>{children}</p>;
+export function ZRTexto({ children, className = "", full = false }) {
+  return <p className={`zr-carlito text-[#E9EFF7] ${full ? "" : "max-w-[65ch]"} text-[18px] leading-[1.65] ${className}`}>{children}</p>;
 }
 
 export function ZRBotaoCheio({ href, children, className = "" }) {
