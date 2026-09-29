@@ -87,12 +87,13 @@ const Privacidade = lazy(() => import('@/pages/Privacidade'));
 const SobrePublico = lazy(() => import('@/pages/SobrePublico'));
 const Contato = lazy(() => import('@/pages/Contato'));
 const Produto = lazy(() => import('@/pages/Produto'));
+const LandingZR = lazy(() => import('@/pages/LandingZR'));
 
 // Routes reachable without a valid session — these must keep rendering even
 // when the app-level check reports 'auth_required', otherwise a genuinely
 // fresh visitor (no token yet) gets redirected to /login and then hits a
 // permanent blank screen, since the error never clears on that same page.
-const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto', '/sair-do-guia', '/entrar-no-guia'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/termos', '/privacidade', '/aceitar-termos', '/sobre', '/contato', '/produto', '/zr', '/sair-do-guia', '/entrar-no-guia'];
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -154,6 +155,7 @@ const AuthenticatedApp = () => {
         <Route path="/SobrePublico" element={<Navigate to="/sobre" replace />} />
         <Route path="/contato" element={<Contato />} />
         <Route path="/produto" element={<Produto />} />
+        <Route path="/zr" element={<LandingZR />} />
         <Route path="/sair-do-guia" element={<SairDoGuia />} />
         <Route path="/entrar-no-guia" element={<EntrarNoGuia />} />
         <Route path="/" element={<LandingOrRedirect />} />
