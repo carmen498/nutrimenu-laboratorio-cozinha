@@ -211,10 +211,12 @@ export default function PixForm({ plano, addonPlanoId = null, somenteAddon = fal
         />
       </div>
       {error && <p className="text-sm text-destructive">{error}</p>}
-      <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos || !podePagar}>
-        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Gerar QR Code PIX
-      </Button>
+      <div className="sticky bottom-0 -mx-6 px-6 pb-4 pt-2 bg-background">
+        <Button type="submit" className="w-full h-11" disabled={loading || !aceiteTermos || !podePagar}>
+          {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Gerar QR Code PIX
+        </Button>
+      </div>
     </form>
   );
 }
