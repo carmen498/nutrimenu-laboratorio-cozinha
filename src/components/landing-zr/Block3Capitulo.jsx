@@ -61,11 +61,12 @@ export default function Block3Capitulo() {
 
       <p className="zr-carlito text-[#93A6BF] text-sm mb-8">Revisão de 08/09/2026. O capítulo continua por mais treze seções — exceções, campo vazio, erros críticos e conferência final.</p>
 
-      <img src={ZR_IMAGES.img3} alt="Prancha didática do rótulo de barra de cereal" className="w-full rounded" />
-
-      <p className="zr-carlito text-[#93A6BF] max-w-[65ch] leading-relaxed mt-4 text-sm">
-        "O mesmo critério aplicado a um produto. Açúcares adicionados de 26 g por 100 g acionam a lupa, e a denominação vai no singular, ALTO EM AÇÚCAR ADICIONADO (<span className="zr-mono text-[#7DBE3C]">Cap. 4, §14</span>). A célula de %VD dos açúcares totais fica vazia, porque não há valor diário de referência para eles — vazio não é traço e não é zero (<span className="zr-mono text-[#7DBE3C]">Cap. 44, §6 e §13</span>). E a lupa não elimina a alegação de fibras: o critério precisa ser comprovado, o termo tem que ser autorizado e a alegação fica fora da metade superior do painel, em corpo não superior ao da lupa (<span className="zr-mono text-[#7DBE3C]">Cap. 67, §9</span>)."
-      </p>
+      <div>
+        <img src={ZR_IMAGES.img3} alt="Prancha didática do rótulo de barra de cereal" className="w-full rounded" />
+        <p className="zr-carlito text-[#93A6BF] leading-relaxed mt-4 text-sm">
+          "O mesmo critério aplicado a um produto. Açúcares adicionados de 26 g por 100 g acionam a lupa, e a denominação vai no singular, ALTO EM AÇÚCAR ADICIONADO (<span className="zr-mono text-[#7DBE3C]">Cap. 4, §14</span>). A célula de %VD dos açúcares totais fica vazia, porque não há valor diário de referência para eles — vazio não é traço e não é zero (<span className="zr-mono text-[#7DBE3C]">Cap. 44, §6 e §13</span>). E a lupa não elimina a alegação de fibras: o critério precisa ser comprovado, o termo tem que ser autorizado e a alegação fica fora da metade superior do painel, em corpo não superior ao da lupa (<span className="zr-mono text-[#7DBE3C]">Cap. 67, §9</span>)."
+        </p>
+      </div>
     </ZRSection>
   );
 }

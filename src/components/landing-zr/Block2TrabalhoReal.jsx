@@ -22,9 +22,7 @@ export default function Block2TrabalhoReal() {
       <p className="zr-carlito text-[#E9EFF7] text-lg max-w-[65ch] leading-relaxed">
         O problema não é encontrar a norma. É transformar a norma em decisão técnica coerente, verificável e aplicável ao rótulo.
       </p>
-      <div className="flex justify-center mt-10">
-        <img src={ZR_IMAGES.img1} alt="Mesa de trabalho técnica com documentos e calculadora" className="max-w-[860px] w-full rounded" />
-      </div>
+      <img src={ZR_IMAGES.img1} alt="Mesa de trabalho técnica com documentos e calculadora" className="max-w-[65ch] w-full rounded mt-10" />
     </ZRSection>
   );
 }
