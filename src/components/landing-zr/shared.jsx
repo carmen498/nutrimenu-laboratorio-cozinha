@@ -29,7 +29,7 @@ export function ZRTitulo({ children }) {
 }
 
 export function ZRTexto({ children, className = "" }) {
-  return <p className={`zr-carlito text-[#E9EFF7] max-w-[65ch] leading-relaxed ${className}`}>{children}</p>;
+  return <p className={`zr-carlito text-[#E9EFF7] max-w-[65ch] text-[18px] leading-[1.65] ${className}`}>{children}</p>;
 }
 
 export function ZRBotaoCheio({ href, children, className = "" }) {

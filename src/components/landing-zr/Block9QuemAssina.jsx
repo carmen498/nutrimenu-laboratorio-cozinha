@@ -11,13 +11,13 @@ export default function Block9QuemAssina() {
         <div>
           <p className="zr-archivo text-[#E9EFF7] text-lg mb-3">Carmen S. Reinstein</p>
           <p className="zr-carlito text-[#93A6BF] text-sm mb-4">Nutricionista, empresária, professora, consultora de alimentos e criadora do Nutrimenu.</p>
-          <p className="zr-carlito text-[#E9EFF7] max-w-[65ch] leading-relaxed mb-4">
+          <p className="zr-carlito text-[#E9EFF7] max-w-[65ch] text-[18px] leading-[1.65] mb-4">
             Mais de três décadas entre nutrição, tecnologia, desenvolvimento de sistemas, produção de alimentos e rotulagem nutricional. Criou o dietWin em 1994, pioneiro em software de nutrição no Brasil, e desenvolveu o Nutrimenu como sistema de cálculo e rotulagem para a indústria alimentícia.
           </p>
-          <p className="zr-carlito text-[#E9EFF7] max-w-[65ch] leading-relaxed mb-4">
+          <p className="zr-carlito text-[#E9EFF7] max-w-[65ch] text-[18px] leading-[1.65] mb-4">
             O ZR nasce dessa trajetória: não de teoria, mas de décadas lidando com cálculos, inconsistências, retrabalho e responsabilidade técnica real.
           </p>
-          <p className="zr-carlito text-[#E9EFF7] text-lg max-w-[65ch] leading-relaxed">
+          <p className="zr-carlito text-[#E9EFF7] text-[18px] leading-[1.65] max-w-[65ch]">
             O conhecimento que normalmente se aprende em 30 anos — organizado em método estudável.
           </p>
         </div>
