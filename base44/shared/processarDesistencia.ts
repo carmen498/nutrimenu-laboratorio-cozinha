@@ -239,12 +239,14 @@ async function avisarFalhaReembolso(base44: any, pedido: any, pagamento: any, de
   }
 }
 
-async function atualizarPendente(base44: any, pedido: any, status: "aguardando_confirmacao" | "falha_reembolso", tentativas: number, codigo: string, detalhe: string) {
+async function atualizarPendente(base44: any, pedido: any, status: "aguardando_confirmacao" | "falha_reembolso", tentativas: number, codigo: string, detalhe: string, semRetentativa = false) {
   const dados = {
     status,
     tentativas_reembolso: tentativas,
     ultima_tentativa_em: new Date().toISOString(),
-    proxima_tentativa_em: proximaTentativa(tentativas),
+    // 403 = bloqueio de política do Mercado Pago (PolicyAgent). Retentar é inútil
+    // e só gera ruído contra uma API que já recusou na origem. Reporta e encerra.
+    proxima_tentativa_em: semRetentativa ? null : proximaTentativa(tentativas),
     codigo_resultado_reembolso: codigo,
     detalhe_reembolso: detalhe,
   };
@@ -278,7 +280,7 @@ export async function processarReembolsoDesistencia(
         return { status: "concluido", resultado: "refund_confirmed_by_get" };
       }
       if (!consulta.response.ok) {
-        return atualizarPendente(base44, pedido, "aguardando_confirmacao", tentativas, "get_ambiguous", resumoMp(consulta.response.status, consulta.data));
+        return atualizarPendente(base44, pedido, "aguardando_confirmacao", tentativas, "get_ambiguous", resumoMp(consulta.response.status, consulta.data), consulta.response.status === 403);
       }
     } catch (error) {
       return atualizarPendente(base44, pedido, "aguardando_confirmacao", tentativas, "get_timeout", resumirErroOperacional(error));
@@ -369,7 +371,7 @@ export async function processarReembolsoDesistencia(
   }
 
   const detalhe = resumoMp(response.status, data);
-  const resultado = await atualizarPendente(base44, pedido, "falha_reembolso", tentativas, codigo, detalhe);
+  const resultado = await atualizarPendente(base44, pedido, "falha_reembolso", tentativas, codigo, detalhe, response.status === 403);
   await avisarFalhaReembolso(base44, { ...pedido, tentativas_reembolso: tentativas }, pagamento, detalhe);
   return resultado;
 }
