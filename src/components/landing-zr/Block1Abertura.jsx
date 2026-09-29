@@ -13,14 +13,14 @@ export default function Block1Abertura() {
         <ZRBotaoCheio href="#faixas">Conhecer o Guia Técnico ZR</ZRBotaoCheio>
         <ZRBotaoVazado href="#conteudo-gratuito">Ler três capítulos, sem cartão</ZRBotaoVazado>
       </div>
-      <div className="zr-carlito max-w-[65ch]">
+      <div>
         <img
           src={ZR_IMAGES.img5}
           alt="Mesa de trabalho do rotulador"
           className="w-full rounded border border-[#1B3150]"
         />
         <p className="zr-carlito text-[#93A6BF] leading-relaxed mt-4 text-sm">
-          "A assinatura do Rotulador não libera o rótulo. Ela registra o que foi decidido e o que ficou pendente. Assinatura e identificação valem em parecer, memória de cálculo, laudo e termo de responsabilidade técnica — a responsabilidade decorre da lei, do papel, do vínculo e da conduta, não apenas de uma assinatura gráfica." <span className="zr-mono text-[#7DBE3C]">Cap. 88, §13</span>
+          A assinatura do Rotulador não libera o rótulo. Ela registra o que foi decidido e o que ficou pendente. Assinatura e identificação valem em parecer, memória de cálculo, laudo e termo de responsabilidade técnica — a responsabilidade decorre da lei, do papel, do vínculo e da conduta, não apenas de uma assinatura gráfica. <span className="zr-mono text-[#7DBE3C]">Cap. 88, §13</span>
         </p>
       </div>
     </ZRSection>
