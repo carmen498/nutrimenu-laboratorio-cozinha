@@ -24,7 +24,10 @@ export default function CheckoutDialog({ open, onOpenChange, plano, planoNome, e
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent
+        className="sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain"
+        onInteractOutside={(event) => event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="font-heading">{somenteAddon ? "Adicionar Laboratório de Custos" : `Assinar plano ${planoNome}`}</DialogTitle>
         </DialogHeader>
