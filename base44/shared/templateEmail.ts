@@ -26,7 +26,13 @@ export async function renderTemplateEmail(base44, tipo, nome, defaultAssunto, de
   const htmlResolvido = substituir(corpo);
   const pendentes = [...`${assuntoResolvido}\n${htmlResolvido}`.matchAll(/{{\s*([\w.-]+)\s*}}/g)].map((m) => m[1]);
   if (pendentes.length > 0) {
-    throw new Error(`Template de e-mail ${tipo} possui variáveis sem valor: ${[...new Set(pendentes)].join(", ")}`);
+    const msg = `Template de e-mail ${tipo} possui variáveis sem valor: ${[...new Set(pendentes)].join(", ")} — usando texto padrão de código como fallback.`;
+    console.warn(msg);
+    // Fallback para o texto padrão de código, que sempre tem todas as variáveis
+    // já interpoladas (ex.: link_produto é embutido na string JS, não como
+    // placeholder). Assim o e-mail sai corretamente e o erro interno nunca
+    // chega ao cliente — apenas fica registrado no log da função.
+    return { assunto: substituir(defaultAssunto), html: substituir(defaultCorpo), ativo };
   }
 
   return { assunto: assuntoResolvido, html: htmlResolvido, ativo };
