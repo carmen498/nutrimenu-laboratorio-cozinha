@@ -29,7 +29,7 @@ export default function Block3Capitulo() {
           <p className="zr-carlito text-sm text-[#3A342B]"><strong>OBJETIVO</strong> — Calcular, expressar e conferir o %VD na TIN, selecionando o valor diário de referência (VDR) correto e distinguindo valor zero, campo vazio e hipótese de não aplicação.</p>
         </div>
 
-        <p className="zr-carlito text-[#1F1B16] max-w-[65ch] leading-relaxed mb-6">
+        <p className="zr-carlito text-[#1F1B16] leading-relaxed mb-6">
           O percentual de valores diários informa quanto a quantidade declarada de valor energético ou de um nutriente na porção representa em relação ao VDR aplicável. Ele é uma informação derivada: não mede a qualidade global do alimento, não substitui a quantidade em gramas ou miligramas e não deve ser calculado diretamente a partir da formulação bruta.
         </p>
 
