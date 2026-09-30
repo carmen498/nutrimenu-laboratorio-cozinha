@@ -14,9 +14,10 @@ export default function Block12Fechamento() {
           <ZRBotaoCheio href="#faixas">Conhecer os planos</ZRBotaoCheio>
           <ZRBotaoVazado href="#conteudo-gratuito">Acessar os conteúdos gratuitos</ZRBotaoVazado>
         </div>
-        <p className="zr-carlito text-[#93A6BF] text-xs max-w-[65ch]">
-          Material de apoio técnico e educacional. Não substitui as normas oficiais nem a responsabilidade individual do profissional habilitado. © 2026 NUTRIMENU LTDA. Todos os direitos reservados.
-        </p>
+        <div className="zr-carlito text-[#93A6BF] text-xs">
+          <p>Material de apoio técnico e educacional. Não substitui as normas oficiais nem a responsabilidade individual do profissional habilitado.</p>
+          <p>© 2026 NUTRIMENU LTDA. Todos os direitos reservados.</p>
+        </div>
       </div>
     </section>
   );
