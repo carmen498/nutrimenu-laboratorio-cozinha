@@ -1,4 +1,5 @@
 import { criarCardapioInsumo, criarCardapioReceita } from '@/lib/secureChildEntities';
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { criarCardapioSeguro } from '@/lib/secureRootEntities';
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -43,6 +44,7 @@ const LABEL_UNIDADE = {
 };
 
 export default function Cardapios() {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -148,9 +150,15 @@ export default function Cardapios() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm("Excluir esta refeição?")) return;
-    await base44.entities.Cardapio.delete(id);
-    qc.invalidateQueries({ queryKey: ["cardapios"] });
+    await confirm({
+      title: "Excluir refeição",
+      description: "A refeição vai para a lixeira e pode ser restaurada em Restaurar entidades.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await base44.entities.Cardapio.delete(id);
+        qc.invalidateQueries({ queryKey: ["cardapios"] });
+      },
+    });
   };
 
   const handleDuplicate = async (c) => {

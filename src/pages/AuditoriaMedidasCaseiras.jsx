@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { diagnosticarMedidaCaseira } from "@/lib/medidaCaseiraModel";
 const numeroTexto = (v) => (Number(v) > 0 ? String(v) : "");
 
 export default function AuditoriaMedidasCaseiras() {
+  const confirm = useConfirm();
   const [normalizando, setNormalizando] = useState(false);
   const [acaoId, setAcaoId] = useState(null);
   const [editando, setEditando] = useState(null);
@@ -152,7 +154,12 @@ export default function AuditoriaMedidasCaseiras() {
   };
 
   const separarPronto = async (row) => {
-    if (!window.confirm("Separar a equivalência pronta em um novo registro e manter a origem como cru?")) return;
+    const ok = await confirm({
+      title: "Separar equivalência pronta",
+      description: "Um novo registro será criado com a equivalência pronta e a origem será mantida como cru.",
+      confirmLabel: "Separar",
+    });
+    if (!ok) return;
     setAcaoId(`pronto:${row.mc.id}`);
     try {
       await base44.functions.invoke("sanearMedidaCaseira", { acao: "separar_pronto", medida_id: row.mc.id });
@@ -167,7 +174,12 @@ export default function AuditoriaMedidasCaseiras() {
 
   const consolidarGrupo = async (grupo, manterId) => {
     const removerIds = grupo.rows.map(r => r.mc.id).filter(id => id !== manterId);
-    if (!window.confirm(`Manter este registro e consolidar ${removerIds.length} duplicado(s)? As receitas serão repontadas antes da exclusão.`)) return;
+    const ok = await confirm({
+      title: "Consolidar duplicados",
+      description: `Manter este registro e consolidar ${removerIds.length} duplicado(s)? As receitas serão repontadas antes da exclusão.`,
+      confirmLabel: "Consolidar",
+    });
+    if (!ok) return;
     setAcaoId(`merge:${manterId}`);
     try {
       const res = await base44.functions.invoke("sanearMedidaCaseira", {

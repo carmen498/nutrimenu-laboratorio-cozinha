@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchAllPages } from "@/lib/fetchAllPages";
@@ -67,6 +68,7 @@ function GrupoCard({ grupo, onCurar }) {
 }
 
 export default function CuradoriaDivergenciasIngrediente() {
+  const confirm = useConfirm();
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [workflow, setWorkflow] = useState("todos");
@@ -193,7 +195,12 @@ export default function CuradoriaDivergenciasIngrediente() {
     const texto = decisao === "manter_pendente"
       ? `Registrar este grupo como mantido pendente?`
       : `${DECISAO_LABEL[decisao]} em ${simulacao.impacto_fontes || 0} fonte(s) / ${simulacao.impacto_receitas || 0} receita(s)?`;
-    if (!window.confirm(texto)) return;
+    const ok = await confirm({
+      title: "Aplicar decisão de curadoria",
+      description: texto,
+      confirmLabel: "Aplicar",
+    });
+    if (!ok) return;
     setProcessando(true);
     try {
       const res = await base44.functions.invoke("curadoriaDivergenciasIngrediente", {

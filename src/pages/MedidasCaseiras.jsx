@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import { fetchAllPages } from "@/lib/fetchAllPages";
 import { useAuth } from "@/lib/AuthContext";
 
 export default function MedidasCaseiras() {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
@@ -107,14 +109,17 @@ export default function MedidasCaseiras() {
   };
 
   const deleteUte = async (u) => {
-    if (!confirm(`Excluir utensílio "${u.simbolo}"?`)) return;
-    try {
-      await base44.entities.UtensilioPadrao.delete(u.id);
-      queryClient.invalidateQueries({ queryKey: ["utensilios-padrao"] });
-      toast.success("Utensílio excluído");
-    } catch (err) {
-      toast.error("Erro ao excluir: " + (err.message || ""));
-    }
+    await confirm({
+      title: "Excluir utensílio",
+      highlight: u.simbolo,
+      description: "O utensílio vai para a lixeira e pode ser restaurado em Restaurar entidades.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await base44.entities.UtensilioPadrao.delete(u.id);
+        queryClient.invalidateQueries({ queryKey: ["utensilios-padrao"] });
+        toast.success("Utensílio excluído");
+      },
+    });
   };
 
   // --- MedidaCaseira CRUD ---
@@ -165,14 +170,17 @@ export default function MedidasCaseiras() {
   };
 
   const deleteMedida = async (m) => {
-    if (!confirm(`Excluir a medida "${m.nome}"?`)) return;
-    try {
-      await base44.entities.MedidaCaseira.delete(m.id);
-      queryClient.invalidateQueries({ queryKey: ["medidas-caseiras"] });
-      toast.success("Medida excluída");
-    } catch (err) {
-      toast.error("Erro ao excluir: " + (err.message || ""));
-    }
+    await confirm({
+      title: "Excluir medida caseira",
+      highlight: m.nome,
+      description: "A medida vai para a lixeira e pode ser restaurada em Restaurar entidades.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await base44.entities.MedidaCaseira.delete(m.id);
+        queryClient.invalidateQueries({ queryKey: ["medidas-caseiras"] });
+        toast.success("Medida excluída");
+      },
+    });
   };
 
   // --- Filters ---

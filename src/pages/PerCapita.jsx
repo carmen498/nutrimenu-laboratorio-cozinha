@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,6 +15,7 @@ const nomesGrupos = [...new Set(percapitaData.filter(i => i.tipo === "grupo").ma
 const prepSet = new Set(todosItens.map(i => i.prep));
 
 export default function PerCapita() {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filtroGrupo, setFiltroGrupo] = useState("");
@@ -205,10 +207,17 @@ export default function PerCapita() {
   }, [sobreposicaoMap, queryClient]);
 
   const deletarUserItem = useCallback(async (item) => {
-    if (!confirm(`Excluir "${item.data.prep_nome}"?`)) return;
-    await base44.entities.PerCapitaUsuario.delete(item.data.id);
-    queryClient.invalidateQueries({ queryKey: ["percapita-usuario"] });
-  }, [queryClient]);
+    await confirm({
+      title: "Excluir per capita",
+      highlight: item.data.prep_nome,
+      description: "O registro vai para a lixeira e pode ser restaurado em Restaurar entidades.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await base44.entities.PerCapitaUsuario.delete(item.data.id);
+        queryClient.invalidateQueries({ queryKey: ["percapita-usuario"] });
+      },
+    });
+  }, [queryClient, confirm]);
 
   const handleAddItem = useCallback(async () => {
     const g = parseFloat(addG);

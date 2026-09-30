@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { fetchAllPages } from "@/lib/fetchAllPages";
@@ -72,6 +73,7 @@ function GrupoCard({ grupo, onCurar }) {
 }
 
 export default function CuradoriaCustosPendentes() {
+  const confirm = useConfirm();
   const qc = useQueryClient();
   const [busca, setBusca] = useState("");
   const [tipo, setTipo] = useState("todos");
@@ -207,7 +209,12 @@ export default function CuradoriaCustosPendentes() {
 
   const aplicar = async () => {
     if (!simulacao?.assinatura) return;
-    const ok = window.confirm(`${DECISAO_LABEL[simulacao.decisao] || simulacao.decisao}: aplicar em ${simulacao.impacto_receitas || 0} receita(s)? Impacto total previsto no catálogo: ${simulacao.impacto_total_catalogo || 0} receita(s).`);
+    const ok = await confirm({
+      title: "Aplicar decisão de curadoria",
+      highlight: DECISAO_LABEL[simulacao.decisao] || simulacao.decisao,
+      description: `Aplicar em ${simulacao.impacto_receitas || 0} receita(s). Impacto total previsto no catálogo: ${simulacao.impacto_total_catalogo || 0} receita(s).`,
+      confirmLabel: "Aplicar",
+    });
     if (!ok) return;
     setProcessando(true);
     try {

@@ -1,4 +1,5 @@
 import { criarCardapioInsumo, criarCardapioReceita, criarCardapioTag } from '@/lib/secureChildEntities';
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { criarCardapioSeguro } from '@/lib/secureRootEntities';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -81,6 +82,7 @@ function normalizarBusca(s) {
 }
 
 export default function CardapioAberto() {
+  const confirm = useConfirm();
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -326,11 +328,17 @@ export default function CardapioAberto() {
   };
 
   const removeReceita = async (recId) => {
-    if (!confirm("Remover esta receita do refeição?")) return;
-    const { mapReceitaItemId } = await ensureEditavel();
-    const newId = mapReceitaItemId(recId);
-    await base44.entities.CardapioReceita.delete(newId);
-    setReceitas(prev => prev.filter(r => r.id !== newId));
+    await confirm({
+      title: "Remover receita do cardápio",
+      description: "A receita será removida deste cardápio. Você pode adicioná-la novamente depois.",
+      confirmLabel: "Remover",
+      onConfirm: async () => {
+        const { mapReceitaItemId } = await ensureEditavel();
+        const newId = mapReceitaItemId(recId);
+        await base44.entities.CardapioReceita.delete(newId);
+        setReceitas(prev => prev.filter(r => r.id !== newId));
+      },
+    });
   };
 
   // Aceita um único campo ({field, value}) ou múltiplos campos de uma vez (objeto),

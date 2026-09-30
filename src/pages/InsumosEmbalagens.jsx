@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ const UNIDADES = ["Folha", "Cm", "Metro", "Unidade", "Pacote"];
 const emptyForm = { nome: "", categoria: "embalagem", unidade: "Unidade", preco_embalagem: "", quantidade_embalagem: "", comportamento_custo_padrao: "por_lote" };
 
 export default function InsumosEmbalagens() {
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -94,14 +96,17 @@ export default function InsumosEmbalagens() {
   };
 
   const remove = async (i) => {
-    if (!confirm(`Excluir "${i.nome}"?`)) return;
-    try {
-      await base44.entities.Insumo.delete(i.id);
-      queryClient.invalidateQueries({ queryKey: ["insumos-db"] });
-      toast.success("Insumo excluído");
-    } catch (err) {
-      toast.error("Erro ao excluir: " + (err.message || ""));
-    }
+    await confirm({
+      title: "Excluir insumo",
+      highlight: i.nome,
+      description: "O insumo vai para a lixeira e pode ser restaurado em Restaurar entidades.",
+      confirmLabel: "Excluir",
+      onConfirm: async () => {
+        await base44.entities.Insumo.delete(i.id);
+        queryClient.invalidateQueries({ queryKey: ["insumos-db"] });
+        toast.success("Insumo excluído");
+      },
+    });
   };
 
   const fmtPreco = (i) => i.preco_unitario > 0 ? `R$ ${Number(i.preco_unitario).toFixed(2).replace(".", ",")}` : "—";

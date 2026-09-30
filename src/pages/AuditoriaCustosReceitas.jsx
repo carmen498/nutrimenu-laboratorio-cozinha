@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -33,6 +34,7 @@ const MOTIVO_LABEL = {
 };
 
 export default function AuditoriaCustosReceitas() {
+  const confirm = useConfirm();
   const qc = useQueryClient();
   const [processando, setProcessando] = useState(false);
   const [preview, setPreview] = useState(null);
@@ -145,10 +147,11 @@ export default function AuditoriaCustosReceitas() {
       toast.error("Execute a análise das pendências antes de aplicar correções.");
       return;
     }
-    const ok = window.confirm(
-      `Aplicar somente as correções determinísticas encontradas? ` +
-      `${saneamentoPreview.receitas_potencialmente_resolvidas || 0} receita(s) podem ficar completas; casos ambíguos permanecerão para revisão manual.`
-    );
+    const ok = await confirm({
+      title: "Aplicar correções determinísticas",
+      description: `${saneamentoPreview.receitas_potencialmente_resolvidas || 0} receita(s) podem ficar completas; casos ambíguos permanecerão para revisão manual.`,
+      confirmLabel: "Aplicar",
+    });
     if (!ok) return;
 
     setProcessando(true);
@@ -224,7 +227,12 @@ export default function AuditoriaCustosReceitas() {
       return;
     }
     const automaticas = (divergenciaPreview.nomes_cache_normalizaveis || 0) + (divergenciaPreview.ids_reapontaveis_exatos || 0);
-    if (!window.confirm(`Aplicar ${automaticas} correção(ões) determinística(s)? Casos sem evidência exata continuarão manuais.`)) return;
+    const ok = await confirm({
+      title: "Aplicar correções determinísticas",
+      description: `Aplicar ${automaticas} correção(ões) determinística(s)? Casos sem evidência exata continuarão manuais.`,
+      confirmLabel: "Aplicar",
+    });
+    if (!ok) return;
 
     setProcessando(true);
     try {
@@ -284,10 +292,11 @@ export default function AuditoriaCustosReceitas() {
       toast.error("Execute a análise antes de aplicar a migração.");
       return;
     }
-    const ok = window.confirm(
-      `Aplicar a migração em ${preview.migraveis || 0} receita(s) completas? ` +
-      `${preview.incompletas || 0} receita(s) incompletas terão apenas o diagnóstico atualizado e manterão seus valores monetários atuais.`
-    );
+    const ok = await confirm({
+      title: "Aplicar migração",
+      description: `Aplicar em ${preview.migraveis || 0} receita(s) completas. ${preview.incompletas || 0} receita(s) incompletas terão apenas o diagnóstico atualizado e manterão seus valores monetários atuais.`,
+      confirmLabel: "Aplicar",
+    });
     if (!ok) return;
 
     setProcessando(true);

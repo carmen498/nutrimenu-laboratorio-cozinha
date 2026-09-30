@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { base44 } from "@/api/base44Client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,13 +16,19 @@ const PRAZOS = [
 ];
 
 export default function RetencaoLogsAdmin() {
+  const confirm = useConfirm();
   const [executando, setExecutando] = useState("");
   const [resultado, setResultado] = useState(null);
 
   const executar = async (modo) => {
-    if (modo === "aplicar" && !window.confirm(
-      "Aplicar a política de retenção agora? Registros fora do prazo serão excluídos e dados transitórios antigos serão minimizados."
-    )) return;
+    if (modo === "aplicar") {
+      const ok = await confirm({
+        title: "Aplicar política de retenção",
+        description: "Registros fora do prazo serão excluídos e dados transitórios antigos serão minimizados.",
+        confirmLabel: "Aplicar",
+      });
+      if (!ok) return;
+    }
 
     setExecutando(modo);
     try {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -23,6 +24,7 @@ const n = (v) => { const x = Number(String(v ?? "").replace(",", ".")); return N
 const RASCUNHO_CUSTOS_KEY = "laboratorio-custos:calculo-em-andamento";
 
 export default function CustosCalcular() {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const qc = useQueryClient();
@@ -304,16 +306,18 @@ export default function CustosCalcular() {
 
   const removerDaReceita = async (entityName, tipo, id) => {
     if (!receita || !podeAlterarReceitaOrigem) return toast.error("Esta receita não pode ser alterada diretamente. Personalize-a no Laboratório de Cozinha para remover o item da origem.");
-    if (!window.confirm("Remover este item da receita? Essa alteração também afetará os próximos cálculos desta receita.")) return;
-    try {
-      await base44.entities[entityName].delete(id);
-      await invalidarCustosDependentesSeguro({ receitaIds: [receita.id], motivo: "item_removido_no_laboratorio_custos", origem: "laboratorio_custos" });
-      setExclusoesTecnicas((atual) => ({ ...atual, [tipo]: (atual[tipo] || []).filter((x) => x !== id) }));
-      await qc.invalidateQueries({ queryKey: ["custos-contexto-receita", receita.id] });
-      toast.success("Item removido da receita.");
-    } catch (err) {
-      toast.error("Não foi possível remover o item: " + (err?.message || "erro inesperado"));
-    }
+    await confirm({
+      title: "Remover item da receita",
+      description: "Essa alteração também afetará os próximos cálculos desta receita.",
+      confirmLabel: "Remover",
+      onConfirm: async () => {
+        await base44.entities[entityName].delete(id);
+        await invalidarCustosDependentesSeguro({ receitaIds: [receita.id], motivo: "item_removido_no_laboratorio_custos", origem: "laboratorio_custos" });
+        setExclusoesTecnicas((atual) => ({ ...atual, [tipo]: (atual[tipo] || []).filter((x) => x !== id) }));
+        await qc.invalidateQueries({ queryKey: ["custos-contexto-receita", receita.id] });
+        toast.success("Item removido da receita.");
+      },
+    });
   };
   const pendenciasDetalhadas = useMemo(() => {
     if (!tecnico || !receita || !contexto) return [];

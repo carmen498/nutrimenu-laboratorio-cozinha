@@ -1,5 +1,6 @@
 import { criarIngredienteReceita } from '@/lib/secureChildEntities';
 import { criarReceitaSegura } from '@/lib/secureRootEntities';
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
@@ -58,6 +59,7 @@ const CORES_CATEGORIA = {
 };
 
 export default function Receitas() {
+  const confirm = useConfirm();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
   const [busca, setBusca] = useState("");
@@ -691,8 +693,14 @@ export default function Receitas() {
                     <DropdownMenuItem onClick={() => toggleRevisarMut.mutate({ id: r.id, revisar: !r.revisar })}>
                       <AlertTriangle className="w-4 h-4 mr-2" /> {r.revisar ? "Remover de A revisar" : "Marcar A revisar"}
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive" onClick={() => {
-                      if (confirm("Excluir " + r.nome + "?")) deleteMut.mutate(r.id);
+                    <DropdownMenuItem className="text-destructive" onClick={async () => {
+                      await confirm({
+                        title: "Excluir receita",
+                        highlight: r.nome,
+                        description: "A receita vai para a lixeira e pode ser restaurada em Restaurar entidades.",
+                        confirmLabel: "Excluir",
+                        onConfirm: async () => { await deleteMut.mutateAsync(r.id); },
+                      });
                     }}>
                       <Trash2 className="w-4 h-4 mr-2" /> Excluir
                     </DropdownMenuItem>
