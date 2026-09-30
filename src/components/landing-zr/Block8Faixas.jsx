@@ -45,9 +45,9 @@ export default function Block8Faixas() {
             <p className="zr-carlito text-[#E9EFF7] text-sm mb-4">{f.desc}</p>
             <p className="zr-mono text-[#93A6BF] text-xs mb-6">{f.detalhes}</p>
             {f.destaque ? (
-              <ZRBotaoCheio href={PLATAFORMA_ZR} className="w-full">{f.botao}</ZRBotaoCheio>
+              <ZRBotaoCheio href="https://zr.nutrimenu.com.br/planos" external className="w-full">{f.botao}</ZRBotaoCheio>
             ) : (
-              <ZRBotaoVazado href={PLATAFORMA_ZR} className="w-full">{f.botao}</ZRBotaoVazado>
+              <ZRBotaoVazado href="https://zr.nutrimenu.com.br/planos" external className="w-full">{f.botao}</ZRBotaoVazado>
             )}
           </div>
         ))}
