@@ -11,7 +11,7 @@ export default function Block1Abertura() {
       </ZRTexto>
       <div className="flex flex-wrap gap-3 mb-10">
         <ZRBotaoCheio href="#faixas">Conhecer o Guia Técnico ZR</ZRBotaoCheio>
-        <ZRBotaoVazado href="#conteudo-gratuito">Ler três capítulos, sem cartão</ZRBotaoVazado>
+        <ZRBotaoVazado href="https://zr.nutrimenu.com.br/apresentacao" external>Ler três capítulos, sem cartão</ZRBotaoVazado>
       </div>
       <div>
         <img

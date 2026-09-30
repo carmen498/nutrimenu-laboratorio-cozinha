@@ -1,5 +1,5 @@
 import React from "react";
-import { ZRSection, ZROlho, ZRTitulo, ZRTexto, ZRBotaoCheio, PLATAFORMA_ZR } from "./shared";
+import { ZRSection, ZROlho, ZRTitulo, ZRTexto, ZRBotaoCheio } from "./shared";
 
 export default function Block5ConteudoLiberado() {
   return (
@@ -14,7 +14,7 @@ export default function Block5ConteudoLiberado() {
         <li>Valor energético — fundamentos, fatores de conversão, declaração, arredondamento, %VD e coerência regulatória.</li>
         <li>Açúcares totais — definição, identificação nas fontes de composição, relação com açúcares adicionados e cuidados na declaração.</li>
       </ul>
-      <ZRBotaoCheio href={PLATAFORMA_ZR}>Acessar os conteúdos gratuitos</ZRBotaoCheio>
+      <ZRBotaoCheio href="https://zr.nutrimenu.com.br/apresentacao" external>Acessar os conteúdos gratuitos</ZRBotaoCheio>
     </ZRSection>
   );
 }

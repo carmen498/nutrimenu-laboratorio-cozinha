@@ -12,7 +12,7 @@ export default function Block12Fechamento() {
         </ZRTexto>
         <div className="flex flex-wrap gap-3 mb-12">
           <ZRBotaoCheio href="#faixas">Conhecer os planos</ZRBotaoCheio>
-          <ZRBotaoVazado href="#conteudo-gratuito">Acessar os conteúdos gratuitos</ZRBotaoVazado>
+          <ZRBotaoVazado href="https://zr.nutrimenu.com.br/apresentacao" external>Acessar os conteúdos gratuitos</ZRBotaoVazado>
         </div>
         <div className="zr-carlito text-[#93A6BF] text-xs">
           <p>Material de apoio técnico e educacional. Não substitui as normas oficiais nem a responsabilidade individual do profissional habilitado.</p>

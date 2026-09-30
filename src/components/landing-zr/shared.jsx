@@ -32,17 +32,17 @@ export function ZRTexto({ children, className = "", full = false }) {
   return <p className={`zr-carlito text-[#E9EFF7] text-[18px] leading-[1.65] ${className}`}>{children}</p>;
 }
 
-export function ZRBotaoCheio({ href, children, className = "" }) {
+export function ZRBotaoCheio({ href, children, className = "", external = false }) {
   return (
-    <a href={href} className={`zr-carlito inline-flex items-center justify-center gap-2 rounded-md bg-[#7DBE3C] px-6 py-3 text-sm font-semibold text-[#0A1524] hover:bg-[#8FD14F] transition-colors ${className}`}>
+    <a href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={`zr-carlito inline-flex items-center justify-center gap-2 rounded-md bg-[#7DBE3C] px-6 py-3 text-sm font-semibold text-[#0A1524] hover:bg-[#8FD14F] transition-colors ${className}`}>
       {children}
     </a>
   );
 }
 
-export function ZRBotaoVazado({ href, children, className = "" }) {
+export function ZRBotaoVazado({ href, children, className = "", external = false }) {
   return (
-    <a href={href} className={`zr-carlito inline-flex items-center justify-center gap-2 rounded-md border border-[#7DBE3C] px-6 py-3 text-sm font-semibold text-[#7DBE3C] hover:bg-[#7DBE3C]/10 transition-colors ${className}`}>
+    <a href={href} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})} className={`zr-carlito inline-flex items-center justify-center gap-2 rounded-md border border-[#7DBE3C] px-6 py-3 text-sm font-semibold text-[#7DBE3C] hover:bg-[#7DBE3C]/10 transition-colors ${className}`}>
       {children}
     </a>
   );
