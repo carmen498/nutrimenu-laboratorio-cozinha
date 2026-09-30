@@ -21,6 +21,7 @@ import { navegarAutenticacao } from "@/lib/authNavigation";
 import { traduzirErroAutenticacao } from "@/lib/authErrors";
 import { auditarErroDesconhecido } from "@/lib/auditoriaAuth";
 import { consumirOrigemCadastro } from "@/lib/origemCadastro";
+import { marcarOrigemAquisicao } from "@/lib/capturarOrigemAquisicao";
 
 
 export default function Register() {
@@ -109,6 +110,7 @@ export default function Register() {
     setFullName(nomeCapitalizado);
     setEmail(emailLimpo);
     setLoading(true);
+    marcarOrigemAquisicao();
     try {
       await base44.auth.register({ email: emailLimpo, password });
       setShowOtp(true);
@@ -217,6 +219,7 @@ export default function Register() {
     // iniciado após a ação explícita na checkbox; o aceite é persistido pelo backend
     // somente depois que o Google devolver uma sessão autenticada.
     sessionStorage.setItem("base44_pending_terms_acceptance", "true");
+    marcarOrigemAquisicao();
     try {
       const destinoOAuth = new URL(returnTo, window.location.origin).toString();
       await base44.auth.loginWithProvider("google", destinoOAuth);

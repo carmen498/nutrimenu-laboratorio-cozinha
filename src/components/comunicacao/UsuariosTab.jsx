@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
 import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
+import ResumoProdutosBar from "@/components/admin/ResumoProdutosBar";
 import ResumoPagamentosCards from "@/components/admin/ResumoPagamentosCards";
 import AcoesEmMassa from "@/components/admin/AcoesEmMassa";
 import ExcluirUsuarioDialog from "@/components/admin/ExcluirUsuarioDialog";
@@ -303,18 +304,21 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
           {error?.message || detalheErroPagamentos?.message || detalheErroMovimentacoes?.message || "Não foi possível carregar os dados administrativos."}
         </div>
       ) : (
-        <UsuariosTable
-          usuarios={usuariosFiltrados}
-          selecionados={selecionados}
-          onToggle={handleToggle}
-          onToggleAll={handleToggleAll}
-          pagamentosPorUsuario={pagamentosPorUsuario}
-          pagamentosPorUsuarioPeriodo={pagamentosPorUsuarioPeriodo}
-          acessoCustosPorUsuario={acessoCustosPorUsuario}
-          movimentacaoPorUsuario={movimentacaoPorUsuario}
-          origemCadastroFiltro={origemCadastroFiltro}
-          onExcluirUsuario={handleExcluirUsuario}
-        />
+        <>
+          <ResumoProdutosBar usuariosFiltrados={usuariosFiltrados} />
+          <UsuariosTable
+            usuarios={usuariosFiltrados}
+            selecionados={selecionados}
+            onToggle={handleToggle}
+            onToggleAll={handleToggleAll}
+            pagamentosPorUsuario={pagamentosPorUsuario}
+            pagamentosPorUsuarioPeriodo={pagamentosPorUsuarioPeriodo}
+            acessoCustosPorUsuario={acessoCustosPorUsuario}
+            movimentacaoPorUsuario={movimentacaoPorUsuario}
+            origemCadastroFiltro={origemCadastroFiltro}
+            onExcluirUsuario={handleExcluirUsuario}
+          />
+        </>
       )}
 
       <ExcluirUsuarioDialog

@@ -115,12 +115,32 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
     });
   };
 
-  // Colunas do painel direito
-  const rightHeaders = isGuiaZR
-    ? ["Plano", "Data da compra", "Situação", "Expira em", "Produto", "Lab. Custos", "Último pagamento", "Contato", "Status"]
-    : ["Receitas", "Refeições", "Cardápios", "Eventos", "Plano", "Expira em", "Produto", "Lab. Custos", "Último pagamento", "Situação", "Contato", "Status"];
+  // Largura por nome de coluna (cabeçalho do painel direito).
+  const COL_WIDTH = {
+    "Produto": 120,
+    "Plano": 90,
+    "Pagamento": 160,
+    "Situação": 110,
+    "Dt. compra": 110,
+    "Expira em": 100,
+    "Último acesso": 150,
+    "Receitas": 90,
+    "Refeições": 90,
+    "Cardápios": 90,
+    "Eventos": 90,
+    "Origem": 110,
+    "Contato": 120,
+    "Status": 100,
+  };
+  const colWidth = (h) => COL_WIDTH[h] || 90;
 
-  const minRightWidth = rightHeaders.length * 90;
+  // Colunas do painel direito. Guia ZR omite as colunas de movimentação do
+  // Laboratório, pois usuários do Guia não possuem receitas/refeições/etc.
+  const rightHeaders = isGuiaZR
+    ? ["Produto", "Plano", "Pagamento", "Situação", "Dt. compra", "Expira em", "Último acesso", "Origem", "Contato", "Status"]
+    : ["Produto", "Plano", "Pagamento", "Situação", "Dt. compra", "Expira em", "Último acesso", "Receitas", "Refeições", "Cardápios", "Eventos", "Origem", "Contato", "Status"];
+
+  const minRightWidth = rightHeaders.reduce((acc, h) => acc + colWidth(h), 0);
 
   return (
     <div className="border rounded-lg">
@@ -194,7 +214,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
             {/* Cabeçalho */}
             <div className={`flex items-center ${ROW_H} border-b`}>
               {rightHeaders.map((h, i) => (
-                <div key={i} className="px-2 text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0" style={{ width: h === "Último pagamento" ? 160 : h === "Produto" ? 120 : h === "Status" ? 100 : h === "Contato" ? 120 : 90 }}>
+                <div key={i} className="px-2 text-sm font-medium text-muted-foreground whitespace-nowrap flex-shrink-0" style={{ width: colWidth(h) }}>
                   {h}
                 </div>
               ))}
@@ -217,48 +237,62 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 else if (acessoCustos.status === "ativo") statusCustos = "Ativo";
               }
 
+              const origemLabel = u.origem_aquisicao || u.origem || "—";
+
+              const cellPagamento = ultimoPagamento ? (
+                <span className="text-sm">
+                  <span className="font-medium">{formatarMoeda(ultimoPagamento.valor)}</span>
+                  <span className="text-muted-foreground"> · {FORMA_PAGAMENTO_LABEL[ultimoPagamento.forma_pagamento] || "—"}</span>
+                  {isPagamentoTeste(ultimoPagamento) && <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-800 border-amber-300">TESTE</Badge>}
+                </span>
+              ) : <span className="text-sm">—</span>;
+
+              const cellSituacao = ultimoPagamento
+                ? <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>{STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}</Badge>
+                : <span className="text-sm">—</span>;
+
+              const cellDtCompra = <span className="text-sm">{ultimoPagamento ? (formatarData(ultimoPagamento.created_date) || "—") : "—"}</span>;
+              const cellExpira = <span className="text-sm">{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</span>;
+              const cellUltimoAcesso = <span className="text-sm">{u.data_login ? (formatarDataHora(u.data_login) || "—") : "—"}</span>;
+              const cellProduto = <Badge variant="outline" className="whitespace-nowrap">{PRODUTO_BADGE_LABEL[u.origem_cadastro] || "Não informado"}</Badge>;
+              const cellPlano = <span className="text-sm">{labelPlano(u.plano_atual)}</span>;
+              const cellOrigem = <span className="text-sm">{origemLabel}</span>;
+              const cellContato = <ContatoIcones email={u.email} telefone={u.telefone_whatsapp} nome={u.nome_completo || u.full_name} />;
+              const cellStatus = <Badge variant="outline" className={status.className}>{status.label}</Badge>;
+
               const cells = isGuiaZR ? [
-                <span className="text-sm">{labelPlano(u.plano_atual)}</span>,
-                <span className="text-sm">{ultimoPagamento ? (formatarData(ultimoPagamento.created_date) || "—") : "—"}</span>,
-                ultimoPagamento ? <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>{STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}</Badge> : <span className="text-sm">—</span>,
-                <span className="text-sm">{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</span>,
-                <Badge variant="outline" className="whitespace-nowrap">{PRODUTO_BADGE_LABEL[u.origem_cadastro] || "Não informado"}</Badge>,
-                <Badge variant="outline">{statusCustos}</Badge>,
-                ultimoPagamento ? (
-                  <span className="text-sm">
-                    <span className="font-medium">{formatarMoeda(ultimoPagamento.valor)}</span>
-                    <span className="text-muted-foreground"> · {FORMA_PAGAMENTO_LABEL[ultimoPagamento.forma_pagamento] || "—"}</span>
-                    {isPagamentoTeste(ultimoPagamento) && <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-800 border-amber-300">TESTE</Badge>}
-                  </span>
-                ) : <span className="text-sm">—</span>,
-                <ContatoIcones email={u.email} telefone={u.telefone_whatsapp} nome={u.nome_completo || u.full_name} />,
-                <Badge variant="outline" className={status.className}>{status.label}</Badge>,
+                cellProduto,
+                cellPlano,
+                cellPagamento,
+                cellSituacao,
+                cellDtCompra,
+                cellExpira,
+                cellUltimoAcesso,
+                cellOrigem,
+                cellContato,
+                cellStatus,
               ] : [
+                cellProduto,
+                cellPlano,
+                cellPagamento,
+                cellSituacao,
+                cellDtCompra,
+                cellExpira,
+                cellUltimoAcesso,
                 <span className="text-sm text-center block">{movimentacao.receitas}</span>,
                 <span className="text-sm text-center block">{movimentacao.refeicoes}</span>,
                 <span className="text-sm text-center block">{movimentacao.cardapios}</span>,
                 <span className="text-sm text-center block">{movimentacao.eventos}</span>,
-                <span className="text-sm">{labelPlano(u.plano_atual)}</span>,
-                <span className="text-sm">{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</span>,
-                <Badge variant="outline" className="whitespace-nowrap">{PRODUTO_BADGE_LABEL[u.origem_cadastro] || "Não informado"}</Badge>,
-                <Badge variant="outline">{statusCustos}</Badge>,
-                ultimoPagamento ? (
-                  <span className="text-sm">
-                    <span className="font-medium">{formatarMoeda(ultimoPagamento.valor)}</span>
-                    <span className="text-muted-foreground"> · {FORMA_PAGAMENTO_LABEL[ultimoPagamento.forma_pagamento] || "—"}</span>
-                    {isPagamentoTeste(ultimoPagamento) && <Badge variant="secondary" className="ml-1 bg-amber-100 text-amber-800 border-amber-300">TESTE</Badge>}
-                  </span>
-                ) : <span className="text-sm">—</span>,
-                ultimoPagamento ? <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>{STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}</Badge> : <span className="text-sm">—</span>,
-                <ContatoIcones email={u.email} telefone={u.telefone_whatsapp} nome={u.nome_completo || u.full_name} />,
-                <Badge variant="outline" className={status.className}>{status.label}</Badge>,
+                cellOrigem,
+                cellContato,
+                cellStatus,
               ];
 
               return (
                 <Fragment key={u.id}>
                   <div className={`flex items-center ${ROW_H} border-b hover:bg-muted/50 transition-colors`}>
                     {cells.map((cell, i) => (
-                      <div key={i} className="px-2 whitespace-nowrap flex-shrink-0" style={{ width: rightHeaders[i] === "Último pagamento" ? 160 : rightHeaders[i] === "Produto" ? 120 : rightHeaders[i] === "Status" ? 100 : rightHeaders[i] === "Contato" ? 120 : 90 }}>
+                      <div key={i} className="px-2 whitespace-nowrap flex-shrink-0" style={{ width: colWidth(rightHeaders[i]) }}>
                         {cell}
                       </div>
                     ))}

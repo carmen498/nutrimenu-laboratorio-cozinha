@@ -7,6 +7,8 @@ import { termosAtuaisAceitos } from '@/lib/termosVersao';
 import { APP_SITE_URLS, buildAppLoginUrl, currentInternalPath } from '@/lib/publicUrls';
 import { withAuthTimeout } from '@/lib/authTimeout';
 import { consumirOrigemCadastro } from '@/lib/origemCadastro';
+import { registrarUltimoLogin } from '@/lib/registrarUltimoLogin';
+import { registrarOrigemAquisicaoSePendente } from '@/lib/capturarOrigemAquisicao';
 
 const AuthContext = createContext(null);
 
@@ -173,7 +175,8 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       setIsLoadingAuth(false);
       setAuthChecked(true);
-      base44.auth.updateMe({ data_login: new Date().toISOString() }).catch(() => {});
+      registrarUltimoLogin();
+      registrarOrigemAquisicaoSePendente();
     } catch (error) {
       consoleErrorSeguro('User auth check failed', error);
       setIsLoadingAuth(false);

@@ -228,7 +228,15 @@
         "Site",
         "Outros"
       ],
-      "description": "Canal de origem/aquisi\u00e7\u00e3o do usu\u00e1rio"
+      "description": "Canal de origem/aquisi\u00e7\u00e3o informado manualmente pelo usu\u00e1rio no cadastro"
+    },
+    "origem_aquisicao_raw": {
+      "type": "string",
+      "description": "Valor bruto da origem de aquisi\u00e7\u00e3o capturada automaticamente no cadastro: utm_source, hostname do referrer ou 'direto'. Gravado uma \u00fanica vez, nunca sobrescrito."
+    },
+    "origem_aquisicao": {
+      "type": "string",
+      "description": "Classifica\u00e7\u00e3o leg\u00edvel da origem de aquisi\u00e7\u00e3o (Instagram, Google, Facebook, Indica\u00e7\u00e3o, Direto etc.). Gravada uma \u00fanica vez no cadastro, nunca sobrescrita."
     },
     "origem_cadastro": {
       "type": "string",
