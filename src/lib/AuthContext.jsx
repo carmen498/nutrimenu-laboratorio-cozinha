@@ -176,7 +176,11 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(false);
       setAuthChecked(true);
       registrarUltimoLogin();
-      registrarOrigemAquisicaoSePendente();
+      // Só persiste a origem de aquisição (primeiro toque) se o usuário ainda
+      // não a tem gravada — uma vez gravada, nunca é sobrescrita.
+      if (!currentUser?.origem_aquisicao) {
+        registrarOrigemAquisicaoSePendente();
+      }
     } catch (error) {
       consoleErrorSeguro('User auth check failed', error);
       setIsLoadingAuth(false);
