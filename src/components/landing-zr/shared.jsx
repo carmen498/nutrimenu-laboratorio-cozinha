@@ -3,7 +3,7 @@ import React from "react";
 export const ZR_IMAGES = {
   img1: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/8466cfbc6_1.png",
   img2: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/01e7cce7c_2.png",
-  img3: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/b9ed1b773_3Mockup_TIN_Barra_de_Cereal.png",
+  img3: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/be4ae9d69_3Mockup_TIN_Barra_de_Cereal.png",
   img5: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/6632278f3_5.png",
   img16: "https://media.base44.com/images/public/6a2b263c4c1cb1e47d54d8b7/81c9700ed_16.png",
 };
