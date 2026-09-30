@@ -18,7 +18,7 @@ import {
 } from "@/lib/pagamentosUsuario";
 import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 
-const ROW_H = "min-h-[45px]";
+const ROW_H = "h-[45px] overflow-hidden";
 const LEFT_W = 40 + 32 + 180 + 28; // checkbox + expand + nome + excluir
 
 // Abreviação dos selos de produto para a coluna "Produto" da tabela.
@@ -129,7 +129,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
     "Cardápios": 90,
     "Eventos": 90,
     "Origem": 110,
-    "Contato": 120,
+    "Contato": 180,
     "Status": 100,
   };
   const colWidth = (h) => COL_WIDTH[h] || 90;
@@ -175,7 +175,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                       {expandido ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                     </button>
                   </div>
-                  <div className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: 180, minWidth: 180 }}>
+                  <div className="font-medium text-sm whitespace-nowrap overflow-hidden text-ellipsis" style={{ width: 180, minWidth: 180 }} title={u.nome_completo || u.full_name || "—"}>
                     <button className="text-left text-primary hover:underline" onClick={() => { setUsuarioAberto(u); setDadosNFAbertos(false); }} title="Abrir conta do usuário">
                       {u.nome_completo || u.full_name || "—"}
                     </button>
@@ -251,12 +251,16 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 ? <Badge variant="outline" className={STATUS_PAGAMENTO_CLASSNAME[ultimoPagamento.status]}>{STATUS_PAGAMENTO_LABEL[ultimoPagamento.status] || ultimoPagamento.status}</Badge>
                 : <span className="text-sm">—</span>;
 
-              const cellDtCompra = <span className="text-sm">{ultimoPagamento ? (formatarData(ultimoPagamento.created_date) || "—") : "—"}</span>;
-              const cellExpira = <span className="text-sm">{u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—")}</span>;
-              const cellUltimoAcesso = <span className="text-sm">{u.data_login ? (formatarDataHora(u.data_login) || "—") : "—"}</span>;
+              const dtCompraTxt = ultimoPagamento ? (formatarData(ultimoPagamento.created_date) || "—") : "—";
+              const expiraTxt = u.role === "admin" ? "Sem vencimento" : (formatarData(u.data_expiracao) || "—");
+              const acessoTxt = u.data_login ? (formatarDataHora(u.data_login) || "—") : "—";
+              const planoTxt = labelPlano(u.plano_atual);
+              const cellDtCompra = <span className="text-sm truncate block" title={dtCompraTxt}>{dtCompraTxt}</span>;
+              const cellExpira = <span className="text-sm truncate block" title={expiraTxt}>{expiraTxt}</span>;
+              const cellUltimoAcesso = <span className="text-sm truncate block" title={acessoTxt}>{acessoTxt}</span>;
               const cellProduto = <Badge variant="outline" className="whitespace-nowrap">{PRODUTO_BADGE_LABEL[u.origem_cadastro] || "Não informado"}</Badge>;
-              const cellPlano = <span className="text-sm">{labelPlano(u.plano_atual)}</span>;
-              const cellOrigem = <span className="text-sm">{origemLabel}</span>;
+              const cellPlano = <span className="text-sm truncate block" title={planoTxt}>{planoTxt}</span>;
+              const cellOrigem = <span className="text-sm truncate block" title={origemLabel}>{origemLabel}</span>;
               const cellContato = <ContatoIcones email={u.email} telefone={u.telefone_whatsapp} nome={u.nome_completo || u.full_name} />;
               const cellStatus = <Badge variant="outline" className={status.className}>{status.label}</Badge>;
 
@@ -292,7 +296,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 <Fragment key={u.id}>
                   <div className={`flex items-center ${ROW_H} border-b hover:bg-muted/50 transition-colors`}>
                     {cells.map((cell, i) => (
-                      <div key={i} className="px-2 whitespace-nowrap flex-shrink-0" style={{ width: colWidth(rightHeaders[i]) }}>
+                      <div key={i} className="px-2 whitespace-nowrap flex-shrink-0 overflow-hidden flex items-center" style={{ width: colWidth(rightHeaders[i]) }}>
                         {cell}
                       </div>
                     ))}
