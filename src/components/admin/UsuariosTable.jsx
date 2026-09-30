@@ -60,7 +60,10 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
     const topBar = topBarRef.current;
     if (!bottom || !spacer || !topBar) return;
     const sw = bottom.scrollWidth;
-    spacer.style.width = sw + "px";
+    // A barra superior agora atravessa a largura toda (painel congelado +
+    // área rolável). Para que sua faixa de rolagem corresponda 1:1 à da área
+    // de dados, o spacer inclui a largura do painel congelado.
+    spacer.style.width = (LEFT_W + sw) + "px";
     topBar.style.display = sw > bottom.clientWidth + 1 ? "" : "none";
   }, []);
 
@@ -144,6 +147,19 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
 
   return (
     <div className="border rounded-lg">
+      {/* Barra de rolagem superior sincronizada — faixa única acima das duas
+          metades, para que o painel congelado (Nome) e o painel rolável
+          comecem exatamente na mesma altura. */}
+      <div
+        ref={topBarRef}
+        onScroll={handleTopScroll}
+        className="sticky top-0 z-10 overflow-x-auto bg-card border-b"
+        style={{ height: 14 }}
+        aria-hidden="true"
+        tabIndex={-1}
+      >
+        <div ref={topSpacerRef} style={{ height: 1 }} />
+      </div>
       {/* Container de dois painéis: esquerdo fixo + direito rolável */}
       <div className="flex">
         {/* Painel esquerdo fixo: checkbox, expandir, nome */}
@@ -197,19 +213,8 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
           })}
         </div>
 
-        {/* Painel direito: barra superior sincronizada + área rolável */}
-        <div className="flex-1 flex flex-col min-w-0">
-          <div
-            ref={topBarRef}
-            onScroll={handleTopScroll}
-            className="sticky top-0 z-10 overflow-x-auto bg-card border-b"
-            style={{ height: 14 }}
-            aria-hidden="true"
-            tabIndex={-1}
-          >
-            <div ref={topSpacerRef} style={{ height: 1 }} />
-          </div>
-          <div ref={bottomRef} onScroll={handleBottomScroll} className="overflow-x-auto flex-1">
+        {/* Painel direito: área rolável (a barra superior ficou acima das duas metades) */}
+        <div ref={bottomRef} onScroll={handleBottomScroll} className="overflow-x-auto flex-1">
           <div style={{ minWidth: minRightWidth }}>
             {/* Cabeçalho */}
             <div className={`flex items-center ${ROW_H} border-b`}>
@@ -322,7 +327,6 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 </Fragment>
               );
             })}
-          </div>
           </div>
         </div>
       </div>
