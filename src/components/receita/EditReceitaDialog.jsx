@@ -49,6 +49,7 @@ function valuesEqual(a, b) {
 
 export default function EditReceitaDialog({ open, onClose, receita, itens = [] }) {
   const campoRendimentoAlteradoRef = useRef(null);
+  const camposTocadosRef = useRef({});
   const [form, setForm] = useState({
     ...receita,
     nome: receita?.nome?.toUpperCase() || "",
@@ -63,19 +64,17 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
 
   useEffect(() => {
     const pdp = receita?.peso_pos_preparo_total || receita?.rendimento_total || 0;
-    const metricas = calcularMetricasReceita({
-      receita,
-      itens,
-      perCapitaAlvo: receita?.per_capita_g || 0,
-      pesoPosPreparoAlvo: pdp,
-    });
     campoRendimentoAlteradoRef.current = null;
+    camposTocadosRef.current = {};
+    // O formulário carrega os valores ORIGINAIS do registro. Campos de
+    // rendimento não são recalculados ao montar — só quem o usuário
+    // alterar de propósito no diálogo é persistido no salvar.
     setForm({
       ...receita,
       nome: receita?.nome?.toUpperCase() || "",
       peso_pos_preparo_total: pdp,
       rendimento_total: pdp,
-      porcoes_base: metricas.porcoes || receita?.porcoes_base || 1,
+      porcoes_base: receita?.porcoes_base ?? 1,
     });
   }, [receita?.id, open, itens]);
 
@@ -125,6 +124,7 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
 
   const atualizarParametroRendimento = (campo, valor) => {
     campoRendimentoAlteradoRef.current = campo;
+    camposTocadosRef.current = { ...camposTocadosRef.current, [campo]: true };
     setForm((atual) => {
       const proximo = { ...atual, [campo]: valor };
       const pc = Number(proximo.per_capita_g) || 0;
@@ -155,35 +155,20 @@ export default function EditReceitaDialog({ open, onClose, receita, itens = [] }
       const passos = formatarModoPreparo(rest.modo_preparo);
       if (passos.length > 0) rest.modo_preparo = juntarPassos(passos);
 
-      // PC ou PDP alterados mudam a quantidade de porções, sem mudar o lote.
-      // Alterar porções diretamente representa uma nova escala do lote.
-      const preservarLote = campoRendimentoAlteradoRef.current !== "porcoes_base";
-      const pesoPre = calcularPesoPrePreparo(preservarLote ? receita : rest, itens);
-      const pdp = Number(rest.peso_pos_preparo_total) || 0;
-      const pdpOriginal = Number(receita?.peso_pos_preparo_total || receita?.rendimento_total) || 0;
-      const pdpFoiAlterado = Math.abs(pdp - pdpOriginal) > 0.001;
-
-      rest.peso_pre_preparo_total = pesoPre;
-      rest.peso_pos_preparo_total = pdp;
-      rest.rendimento_total = pdp; // cache legado durante a transição
-
-      if (pdp > 0 && pdpFoiAlterado) {
-        rest.rendimento_origem = "medido";
-        rest.rendimento_status = "confirmado";
-        rest.rendimento_medido_em = new Date().toISOString();
-      } else if (pdp > 0) {
-        rest.rendimento_origem = receita?.rendimento_origem || (receita?.peso_pos_preparo_total ? "medido" : "legado");
-        rest.rendimento_status = receita?.rendimento_status || (receita?.peso_pos_preparo_total ? "a_validar" : "a_validar");
-      } else {
-        rest.rendimento_origem = "estimado";
-        rest.rendimento_status = "pendente";
+      // Salvar altera só o que o usuário mudou. Campos de rendimento que ele
+      // não tocou no diálogo são preservados como estão no registro — nunca
+      // recalculados como efeito colateral de salvar um nome.
+      const CAMPOS_RENDIMENTO = ["porcoes_base", "peso_pre_preparo_total", "peso_pos_preparo_total", "rendimento_total", "per_capita_g"];
+      for (const campo of CAMPOS_RENDIMENTO) {
+        if (!camposTocadosRef.current[campo]) delete rest[campo];
       }
 
       const { rid: receitaId, mapItemId } = await ensureFork();
       const forked = receitaId !== receita.id;
       const porcoesAnteriores = Number(receita?.porcoes_base) || 1;
       const novasPorcoes = Number(rest.porcoes_base) || porcoesAnteriores;
-      if (preservarLote && novasPorcoes > 0 && Math.abs(novasPorcoes - porcoesAnteriores) > 0.0001) {
+      const usuarioAlterouPorcoes = !!camposTocadosRef.current.porcoes_base;
+      if (usuarioAlterouPorcoes && novasPorcoes > 0 && Math.abs(novasPorcoes - porcoesAnteriores) > 0.0001) {
         const updates = itens
           .filter((item) => item.tipo !== "grupo")
           .map((item) => ({
