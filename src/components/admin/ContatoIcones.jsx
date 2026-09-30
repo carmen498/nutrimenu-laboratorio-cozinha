@@ -10,7 +10,7 @@ export default function ContatoIcones({ email, telefone, nome }) {
     : emailLimpo;
   const wpp = whatsappHref(telefone);
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-col gap-1.5 py-1">
       {emailLimpo && (
         <Button variant="outline" size="sm" className="h-8 gap-1.5 px-2.5" asChild>
           <a href={`mailto:${destinatario}`} title={`Enviar e-mail para ${emailLimpo}`}>

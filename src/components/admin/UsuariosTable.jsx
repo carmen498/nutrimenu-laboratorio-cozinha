@@ -18,7 +18,7 @@ import {
 } from "@/lib/pagamentosUsuario";
 import { isPagamentoTeste } from "@/lib/pagamentosTeste";
 
-const ROW_H = "h-[45px]";
+const ROW_H = "min-h-[45px]";
 const LEFT_W = 40 + 32 + 180 + 28; // checkbox + expand + nome + excluir
 
 // Abreviação dos selos de produto para a coluna "Produto" da tabela.
