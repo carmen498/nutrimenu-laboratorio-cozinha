@@ -73,7 +73,7 @@ export const ORIGEM_CADASTRO_LABEL = {
 };
 
 export const TIPOS_USUARIO = [
-  { value: "todos", label: "Todos" },
+  { value: "todos", label: "Todos os tipos de usuário" },
   { value: "assinante", label: "Assinante" },
   { value: "assinante_expirado", label: "Assinante expirado" },
   { value: "todos_assinantes", label: "Todos assinantes" },

@@ -12,7 +12,6 @@ import { exportarUsuariosCsv } from "@/lib/exportarUsuariosCsv";
 import { filtrarPagamentosReais } from "@/lib/pagamentosTeste";
 import { Switch } from "@/components/ui/switch";
 import UsuariosFiltros from "@/components/admin/UsuariosFiltros";
-import PeriodoFiltro from "@/components/admin/PeriodoFiltro";
 import UsuariosTable from "@/components/admin/UsuariosTable";
 import ResumoProdutosBar from "@/components/admin/ResumoProdutosBar";
 import ResumoPagamentosCards from "@/components/admin/ResumoPagamentosCards";
@@ -253,12 +252,6 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
     <div className="space-y-4">
       <ResumoPagamentosCards pagamentos={pagamentosParaCards} />
 
-      <PeriodoFiltro
-        periodoFiltro={periodoFiltro} setPeriodoFiltro={setPeriodoFiltro}
-        dataInicioCustom={dataInicioCustom} setDataInicioCustom={setDataInicioCustom}
-        dataFimCustom={dataFimCustom} setDataFimCustom={setDataFimCustom}
-      />
-
       <UsuariosFiltros
         busca={busca} setBusca={setBusca}
         planoFiltro={planoFiltro} setPlanoFiltro={setPlanoFiltro}
@@ -268,6 +261,9 @@ export default function UsuariosTab({ usuarios, isLoading, isError, error, selec
         tipoUsuarioFiltro={tipoUsuarioFiltro} setTipoUsuarioFiltro={setTipoUsuarioFiltro}
         situacaoPagamentoFiltro={situacaoPagamentoFiltro} setSituacaoPagamentoFiltro={setSituacaoPagamentoFiltro}
         origemCadastroFiltro={origemCadastroFiltro} setOrigemCadastroFiltro={setOrigemCadastroFiltro}
+        periodoFiltro={periodoFiltro} setPeriodoFiltro={setPeriodoFiltro}
+        dataInicioCustom={dataInicioCustom} setDataInicioCustom={setDataInicioCustom}
+        dataFimCustom={dataFimCustom} setDataFimCustom={setDataFimCustom}
       />
 
       <div className="flex flex-wrap items-center justify-end gap-2">
