@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useRef, useEffect, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronRight, Copy, FileText, Trash2 } from "lucide-react";
@@ -49,6 +49,44 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
 
   const isGuiaZR = origemCadastroFiltro === "guia_zr";
 
+  const topBarRef = useRef(null);
+  const topSpacerRef = useRef(null);
+  const bottomRef = useRef(null);
+  const syncing = useRef(false);
+
+  const recalc = useCallback(() => {
+    const bottom = bottomRef.current;
+    const spacer = topSpacerRef.current;
+    const topBar = topBarRef.current;
+    if (!bottom || !spacer || !topBar) return;
+    const sw = bottom.scrollWidth;
+    spacer.style.width = sw + "px";
+    topBar.style.display = sw > bottom.clientWidth + 1 ? "" : "none";
+  }, []);
+
+  const handleBottomScroll = useCallback(() => {
+    if (syncing.current) return;
+    syncing.current = true;
+    if (topBarRef.current && bottomRef.current) topBarRef.current.scrollLeft = bottomRef.current.scrollLeft;
+    requestAnimationFrame(() => { syncing.current = false; });
+  }, []);
+
+  const handleTopScroll = useCallback(() => {
+    if (syncing.current) return;
+    syncing.current = true;
+    if (topBarRef.current && bottomRef.current) bottomRef.current.scrollLeft = topBarRef.current.scrollLeft;
+    requestAnimationFrame(() => { syncing.current = false; });
+  }, []);
+
+  useEffect(() => {
+    const bottom = bottomRef.current;
+    if (!bottom) return;
+    const ro = new ResizeObserver(() => recalc());
+    ro.observe(bottom);
+    recalc();
+    return () => ro.disconnect();
+  }, [usuarios, origemCadastroFiltro, recalc]);
+
   const alterarContaTeste = async (usuario, contaTeste) => {
     setMarcandoTeste(true);
     try {
@@ -85,7 +123,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
   const minRightWidth = rightHeaders.length * 90;
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg">
       {/* Container de dois painéis: esquerdo fixo + direito rolável */}
       <div className="flex">
         {/* Painel esquerdo fixo: checkbox, expandir, nome */}
@@ -139,8 +177,19 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
           })}
         </div>
 
-        {/* Painel direito rolável */}
-        <div className="overflow-x-auto flex-1">
+        {/* Painel direito: barra superior sincronizada + área rolável */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <div
+            ref={topBarRef}
+            onScroll={handleTopScroll}
+            className="sticky top-0 z-10 overflow-x-auto bg-card border-b"
+            style={{ height: 14 }}
+            aria-hidden="true"
+            tabIndex={-1}
+          >
+            <div ref={topSpacerRef} style={{ height: 1 }} />
+          </div>
+          <div ref={bottomRef} onScroll={handleBottomScroll} className="overflow-x-auto flex-1">
           <div style={{ minWidth: minRightWidth }}>
             {/* Cabeçalho */}
             <div className={`flex items-center ${ROW_H} border-b`}>
@@ -235,6 +284,7 @@ export default function UsuariosTable({ usuarios, selecionados, onToggle, onTogg
                 </Fragment>
               );
             })}
+          </div>
           </div>
         </div>
       </div>
