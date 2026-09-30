@@ -56,7 +56,7 @@ export default function Block6Obra() {
         ))}
       </div>
 
-      <p className="zr-carlito text-[#93A6BF] max-w-[65ch] leading-relaxed mt-8 text-sm">
+      <p className="zr-carlito text-[#93A6BF] leading-relaxed mt-8 text-sm">
         O conteúdo é versionado. Quando uma norma é publicada, alterada, retificada ou revogada, o impacto é analisado e a atualização aplicável é incorporada ao Guia durante a vigência do acesso.
       </p>
     </ZRSection>

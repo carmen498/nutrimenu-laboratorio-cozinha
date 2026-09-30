@@ -17,7 +17,7 @@ export default function Block11FAQ() {
     <ZRSection id="faq">
       <ZROlho>Dúvidas frequentes</ZROlho>
       <ZRTitulo>Antes de decidir</ZRTitulo>
-      <Accordion type="single" collapsible className="max-w-[1180px]">
+      <Accordion type="single" collapsible>
         {FAQ.map((item, i) => (
           <AccordionItem key={i} value={`item-${i}`} className="border-[#1B3150]">
             <AccordionTrigger className="zr-archivo text-[#E9EFF7] text-left">{item.q}</AccordionTrigger>
