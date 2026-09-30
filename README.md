@@ -1,39 +1,44 @@
-**Welcome to your Base44 project** 
+# Nutrimenu — Laboratório de Cozinha
 
-**About**
+Aplicação operacional para gestão e execução de receitas, fichas técnicas, rendimento, custos e planejamento de produção.
 
-View and Edit  your app on [Base44.com](http://Base44.com) 
+Este produto integra o ecossistema Nutrimenu, mas tem papel diferente do **Laboratório de Formulações**, voltado ao desenvolvimento técnico, composição nutricional e preparação da análise regulatória.
 
-This project contains everything you need to run your app locally.
+O contrato de escopo e nomenclatura da Fase 1 está em [docs/CONTRATO_PRODUTO_FASE_1.md](docs/CONTRATO_PRODUTO_FASE_1.md).
 
-**Edit the code in your local development environment**
+## Desenvolvimento local
 
-Any change pushed to the repo will also be reflected in the Base44 Builder.
+### Pré-requisitos
 
-**Prerequisites:** 
+- Node.js compatível com o projeto;
+- acesso ao aplicativo Base44;
+- variáveis de ambiente da aplicação.
 
-1. Clone the repository using the project's Git URL 
-2. Navigate to the project directory
-3. Install dependencies: `npm install`
-4. Create an `.env.local` file and set the right environment variables
+### Configuração
 
+1. Clone o repositório.
+2. Entre no diretório do projeto.
+3. Instale as dependências com `npm install`.
+4. Crie `.env.local`:
+
+```dotenv
+VITE_BASE44_APP_ID=seu_app_id
+VITE_BASE44_APP_BASE_URL=sua_url_de_backend
 ```
-VITE_BASE44_APP_ID=your_app_id
-VITE_BASE44_APP_BASE_URL=your_backend_url
 
-e.g.
-VITE_BASE44_APP_ID=cbef744a8545c389ef439ea6
-VITE_BASE44_APP_BASE_URL=https://my-to-do-list-81bfaad7.base44.app
-```
+5. Inicie o ambiente com `npm run dev`.
 
-Run the app: `npm run dev`
+Mudanças enviadas ao repositório também são refletidas no Base44 Builder.
 
-**Publish your changes**
+## Publicação
 
-Open [Base44.com](http://Base44.com) and click on Publish.
+A publicação é realizada no Base44 por meio da ação **Publish**.
 
-**Docs & Support**
+## Limites do produto
 
-Documentation: [https://docs.base44.com/Integrations/Using-GitHub](https://docs.base44.com/Integrations/Using-GitHub)
+O Laboratório de Cozinha não substitui o responsável técnico, não emite parecer regulatório e não promete conformidade automática. A integração futura com análise nutricional e rotulagem deverá ser versionada, rastreável e submetida à revisão humana.
 
-Support: [https://app.base44.com/support](https://app.base44.com/support)
+## Documentação
+
+- [Contrato de produto — Fase 1](docs/CONTRATO_PRODUTO_FASE_1.md)
+- [Documentação Base44](https://docs.base44.com/Integrations/Using-GitHub)
