@@ -55,6 +55,9 @@ jobs:
       - name: Verify database-only configuration
         run: python3 supabase/tests/verify_config.py
 
+      - name: Verify migration sources
+        run: python3 supabase/tests/verify_migrations.py
+
       - name: Start local Supabase
         run: supabase start
 
@@ -66,6 +69,37 @@ jobs:
 
       - name: Run database tests
         run: supabase test db
+
+      - name: Reject drifted legacy ACL
+        env:
+          NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          bash supabase/tests/assert_migration_rejected.sh \
+            20260904194502 \
+            supabase/tests/profile_acl_drift.psql \
+            "reconciliation stopped: public.profiles ACL contract changed" \
+            "$RUNNER_TEMP/profile-acl-drift.log"
+
+      - name: Reject invalid profile domain
+        env:
+          NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          bash supabase/tests/assert_migration_rejected.sh \
+            20260904200532 \
+            supabase/tests/invalid_reconciliation_profile.psql \
+            "reconciliation stopped: segmento is outside the canonical domain" \
+            "$RUNNER_TEMP/invalid-profile.log"
+
+      - name: Verify profile mapping with synthetic data
+        env:
+          NUTRIMENU_LOCAL_DB_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+        run: |
+          supabase db reset --local --no-seed --version=20260904200532
+          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
+            --file supabase/tests/valid_reconciliation_profile.psql
+          supabase migration up --local
+          psql "$NUTRIMENU_LOCAL_DB_URL" --set=ON_ERROR_STOP=on \
+            --file supabase/tests/verify_reconciliation_mapping.psql
 
       - name: Stop local Supabase
         if: always()
